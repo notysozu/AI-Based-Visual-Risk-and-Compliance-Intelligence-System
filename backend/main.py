@@ -1,10 +1,44 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from database.database import engine
+from database.models import Base
+from database.crud import seed_mock_data
+from backend.api import users, records, simulations
+from database.database import SessionLocal
+
+# Create tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Digital Twin AI Backend API",
     description="Backend services for Digital Twin AI simulation and prediction system.",
     version="0.1.0"
 )
+
+# Configure CORS so Streamlit frontend can easily access API endpoints
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.on_event("startup")
+def startup_event():
+    # Make sure we have a default user and seed data initialized
+    db = SessionLocal()
+    try:
+        # Trigger creation of default user & automatic seeding inside users router helper
+        from backend.api.users import get_default_user
+        get_default_user(db)
+    finally:
+        db.close()
+
+# Include routers
+app.include_router(users.router)
+app.include_router(records.router)
+app.include_router(simulations.router)
 
 @app.get("/")
 def read_root():
