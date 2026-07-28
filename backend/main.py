@@ -6,7 +6,6 @@ from database.crud import seed_mock_data
 from backend.api import users, records, simulations
 from database.database import SessionLocal
 
-# Create tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -15,7 +14,6 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# Configure CORS so Streamlit frontend can easily access API endpoints
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,24 +24,26 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_event():
-    # Make sure we have a default user and seed data initialized
     db = SessionLocal()
     try:
-        # Trigger creation of default user & automatic seeding inside users router helper
         from backend.api.users import get_default_user
         get_default_user(db)
     finally:
         db.close()
 
-# Include routers
 app.include_router(users.router)
 app.include_router(records.router)
 app.include_router(simulations.router)
 
 @app.get("/")
 def read_root():
-    return {"message": "Digital Twin AI API is running", "status": "online"}
+    return {
+        "message": "Digital Twin AI API is running",
+        "status": "online"
+    }
 
 @app.get("/health")
 def health_check():
-    return {"status": "healthy"}
+    return {
+        "status": "healthy"
+    }
