@@ -1,6 +1,6 @@
 # Digital Twin AI – Personal Life Simulation & Decision Assistant
 
-## AI Assistant Context (For Codex/Copilot)
+## AI Assistant Context
 **Project Goal:** Build an intelligent decision-support system that creates a "digital twin" of a user to forecast future outcomes of their choices (finances, habits, studies) using predictive analytics, ML, and LLMs.
 **Architecture Style:** Decoupled microservices/monorepo. 
 **Primary Languages:** Python, SQL.
