@@ -371,3 +371,61 @@ if __name__ == "__main__":
     print(study_scenario)
 
     print(compare_scenarios([savings_scenario, goal_scenario, study_scenario]))
+
+# ============================================================
+# Compatibility layer for backend API
+# ============================================================
+
+def get_user_baseline_metrics(db, user_id):
+    """
+    Temporary compatibility function for backend.
+    Replace with the real AI implementation later.
+    """
+    return {
+        "monthly_savings": 1000.0,
+        "current_net_worth": 15000.0,
+        "sleep_hours": 7.5,
+        "exercise_hours": 1.0,
+        "screen_hours": 4.0,
+        "social_hours": 1.0,
+        "study_hours_week": 10.0
+    }
+
+
+def run_what_if_comparison(
+    db,
+    user_id,
+    change_a,
+    change_b,
+    years=5
+):
+    """
+    Temporary backend compatibility function.
+    """
+
+    def build_result(name):
+        datapoints = []
+
+        wealth = 15000
+
+        for year in range(1, years + 1):
+            wealth += 12000
+
+            datapoints.append({
+                "year": year,
+                "net_worth": wealth,
+                "health_index": 80,
+                "focus_index": 82
+            })
+
+        return {
+            "scenario_name": name,
+            "datapoints": datapoints,
+            "attained_retirement": False,
+            "wealth_at_end": wealth
+        }
+
+    return {
+        "scenario_a": build_result("Scenario A"),
+        "scenario_b": build_result("Scenario B")
+    }
