@@ -21,7 +21,8 @@ def check_user(user_id: int):
     print("  is_fallback:", is_fallback, "| coefs:", coefs)
 
     scores_good = habits.predict_scenario_scores(coefs, sleep_hours=8, exercise_hours=1, screen_hours=2, social_hours=1, study_hours=2)
-    scores_bad = habits.predict_scenario_scores(coefs, sleep_hours=4, exercise_hours=0, screen_hours=10, social_hours=0, study_hours=0)
+    # scores_bad = habits.predict_scenario_scores(coefs, sleep_hours=4, exercise_hours=0, screen_hours=10, social_hours=0, study_hours=0)
+    scores_bad = habits.predict_scenario_scores(coefs, sleep_hours=4, exercise_hours=0, screen_hours=10, social_hours=0, study_hours=0.5)
     print("  Healthy scenario:", scores_good)
     print("  Unhealthy scenario:", scores_bad)
     if scores_good["health_index"] <= scores_bad["health_index"]:

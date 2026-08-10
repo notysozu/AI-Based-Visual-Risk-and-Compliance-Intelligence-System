@@ -61,8 +61,28 @@ function SimulatorPage() {
     return { sleep, health, focus, path, terminal: path[path.length - 1].value };
   };
 
-  const A = useMemo(() => evaluate(a), [a, p]);
-  const B = useMemo(() => evaluate(b), [b, p]);
+  // const A = useMemo(() => evaluate(a), [a, p]);
+  // const B = useMemo(() => evaluate(b), [b, p]);
+  const localA = useMemo(() => evaluate(a), [a, p]);
+const localB = useMemo(() => evaluate(b), [b, p]);
+
+const A = backendResult
+  ? {
+      ...localA,
+      health: backendResult.scenario_a.datapoints.at(-1).health_index,
+      focus: backendResult.scenario_a.datapoints.at(-1).focus_index,
+      terminal: backendResult.scenario_a.wealth_at_end,
+    }
+  : localA;
+
+const B = backendResult
+  ? {
+      ...localB,
+      health: backendResult.scenario_b.datapoints.at(-1).health_index,
+      focus: backendResult.scenario_b.datapoints.at(-1).focus_index,
+      terminal: backendResult.scenario_b.wealth_at_end,
+    }
+  : localB;
 
   const chart = useMemo(() => {
     if (backendResult) {

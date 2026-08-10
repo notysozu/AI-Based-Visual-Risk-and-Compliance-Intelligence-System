@@ -16,7 +16,7 @@ def check_readiness(user_id: int):
     if fin:
         cats = set(r.category for r in fin)
         print(f"  categories present: {cats}")
-        print(f"  date range: {min(r.transaction_date for r in fin)} to {max(r.transaction_date for r in fin)}")
+        print(f"  date range: {min(r.record_date for r in fin)} to {max(r.record_date for r in fin)}")
 
     db.close()
 
