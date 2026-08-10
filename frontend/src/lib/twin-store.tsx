@@ -1658,6 +1658,17 @@ export function TwinProvider({ children }: { children: ReactNode }) {
   };
 
   const loadDemo = async () => {
+    let demoUserId: number = 1;
+    try {
+      const res = await fetch("http://localhost:8000/users/default");
+      if (res.ok) {
+        const user = await res.json();
+        demoUserId = user.id;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch default user from backend, using fallback ID 1:", err);
+    }
+
     const demoLogs = generateDemoLogs(30);
     setState((s) => ({
       ...s,
@@ -1665,13 +1676,14 @@ export function TwinProvider({ children }: { children: ReactNode }) {
       logs: demoLogs,
       profile: {
         ...s.profile,
-        id: "demo",
+        id: demoUserId,
         name: "Demo Twin",
         email: "demo@twin.local",
         onboarded: true,
       },
     }));
   };
+
 
   // --- NEW: fetch real forecast from the backend ---
   const loadForecast = async () => {
