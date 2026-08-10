@@ -1536,7 +1536,9 @@ type TwinContextValue = {
   removeTask: (id: string) => void;
   adopt: (suggestion: Suggestion) => void;
   loadForecast: () => Promise<void>; // NEW
+  signOut: () => void;
 };
+
 
 const TwinContext = createContext<TwinContextValue | null>(null);
 
@@ -1584,6 +1586,11 @@ export function TwinProvider({ children }: { children: ReactNode }) {
   const reset = () => {
     setState(DEFAULT_STATE);
   };
+
+  const signOut = () => {
+    setState(DEFAULT_STATE);
+  };
+
 
   const setTheme = (theme: "light" | "dark") => {
     setState((s) => ({ ...s, theme }));
@@ -1723,7 +1730,9 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         removeTask,
         adopt,
         loadForecast, // NEW
+        signOut,
       }}
+
     >
       {children}
     </TwinContext.Provider>
