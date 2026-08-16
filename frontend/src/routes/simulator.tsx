@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   CartesianGrid,
@@ -40,7 +41,7 @@ const ZERO: Scenario = { savings: 0, sleep: 0, study: 0 };
 
 function SimulatorPage() {
   const ok = useGuard();
-  const { state, updateProfile } = useTwin();
+  const { state, updateProfile, saveScenarioPresets, loadScenarioPresets } = useTwin();
   const p = state.profile;
   const [a, setA] = useState<Scenario>({ savings: 400, sleep: 0.5, study: 4 });
   const [b, setB] = useState<Scenario>({ savings: 1200, sleep: -1, study: 12 });
@@ -48,6 +49,21 @@ function SimulatorPage() {
   const [ran, setRan] = useState(true);
   const [burst, setBurst] = useState(false);
   const [backendResult, setBackendResult] = useState<any>(null);
+  const [presetSyncing, setPresetSyncing] = useState(false);
+
+  // On mount, pull any previously-saved Scenario A/B slider positions
+  // from the backend so the sandbox opens where the user left it.
+  useEffect(() => {
+    loadScenarioPresets()
+      .then(({ a: savedA, b: savedB }) => {
+        if (savedA) setA(savedA);
+        if (savedB) setB(savedB);
+      })
+      .catch(() => {
+        // no saved presets yet, or not signed in — keep current defaults
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   const monthlyBase = Math.max(0, p.monthlyIncome - p.monthlyExpenses);
@@ -61,28 +77,28 @@ function SimulatorPage() {
     return { sleep, health, focus, path, terminal: path[path.length - 1].value };
   };
 
-  // const A = useMemo(() => evaluate(a), [a, p]);
-  // const B = useMemo(() => evaluate(b), [b, p]);
   const localA = useMemo(() => evaluate(a), [a, p]);
-const localB = useMemo(() => evaluate(b), [b, p]);
+  const localB = useMemo(() => evaluate(b), [b, p]);
 
-const A = backendResult
-  ? {
-      ...localA,
-      health: backendResult.scenario_a.datapoints.at(-1).health_index,
-      focus: backendResult.scenario_a.datapoints.at(-1).focus_index,
-      terminal: backendResult.scenario_a.wealth_at_end,
-    }
-  : localA;
+  // Backend health_index/focus_index come back on a 0-100 scale;
+  // local evaluate() and the rest of this UI (chart axis, burnout threshold) use 0-10.
+  const A = backendResult
+    ? {
+        ...localA,
+        health: backendResult.scenario_a.datapoints.at(-1).health_index / 10,
+        focus: backendResult.scenario_a.datapoints.at(-1).focus_index / 10,
+        terminal: backendResult.scenario_a.wealth_at_end,
+      }
+    : localA;
 
-const B = backendResult
-  ? {
-      ...localB,
-      health: backendResult.scenario_b.datapoints.at(-1).health_index,
-      focus: backendResult.scenario_b.datapoints.at(-1).focus_index,
-      terminal: backendResult.scenario_b.wealth_at_end,
-    }
-  : localB;
+  const B = backendResult
+    ? {
+        ...localB,
+        health: backendResult.scenario_b.datapoints.at(-1).health_index / 10,
+        focus: backendResult.scenario_b.datapoints.at(-1).focus_index / 10,
+        terminal: backendResult.scenario_b.wealth_at_end,
+      }
+    : localB;
 
   const chart = useMemo(() => {
     if (backendResult) {
@@ -90,18 +106,18 @@ const B = backendResult
         year: `Y${dp.year}`,
         netA: dp.net_worth,
         netB: backendResult.scenario_b.datapoints[i].net_worth,
-        focusA: dp.focus_index,
-        focusB: backendResult.scenario_b.datapoints[i].focus_index
+        focusA: +(dp.focus_index / 10).toFixed(2),
+        focusB: +(backendResult.scenario_b.datapoints[i].focus_index / 10).toFixed(2),
       }));
     }
-    return A.path.map((row, i) => ({
+    return localA.path.map((row, i) => ({
       year: `Y${row.year}`,
       netA: row.value,
-      netB: B.path[i].value,
-      focusA: +(A.focus - i * 0.02).toFixed(2),
-      focusB: +(B.focus - i * 0.05).toFixed(2),
+      netB: localB.path[i].value,
+      focusA: +(localA.focus - i * 0.02).toFixed(2),
+      focusB: +(localB.focus - i * 0.05).toFixed(2),
     }));
-  }, [A, B, backendResult]);
+  }, [localA, localB, backendResult]);
 
   const runComparison = async () => {
     const userId = p.id;
@@ -170,6 +186,32 @@ const B = backendResult
     toast.success(`Scenario ${name} adopted as your active metrics`);
   };
 
+  const handleSavePresets = async () => {
+    setPresetSyncing(true);
+    try {
+      await saveScenarioPresets(a, b);
+      toast.success("Scenario changes saved");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save scenario");
+    } finally {
+      setPresetSyncing(false);
+    }
+  };
+
+  const handleResetToSaved = async () => {
+    setPresetSyncing(true);
+    try {
+      const { a: savedA, b: savedB } = await loadScenarioPresets();
+      if (savedA) setA(savedA);
+      if (savedB) setB(savedB);
+      toast.success("Reset to last saved scenario");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to reset");
+    } finally {
+      setPresetSyncing(false);
+    }
+  };
+
   return (
     <AppShell
       title="Decision Sandbox"
@@ -187,6 +229,22 @@ const B = backendResult
           </Button>
           <Button size="sm" variant="outline" onClick={() => adopt(b, "B")}>
             Adopt Scenario B
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={presetSyncing}
+            onClick={handleSavePresets}
+          >
+            {presetSyncing ? "Saving…" : "Save Changes"}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={presetSyncing}
+            onClick={handleResetToSaved}
+          >
+            Reset to Saved
           </Button>
           <Button
             size="sm"

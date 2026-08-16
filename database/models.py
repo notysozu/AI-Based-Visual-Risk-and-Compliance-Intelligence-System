@@ -4,6 +4,7 @@ from datetime import datetime
 
 Base = declarative_base()
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -20,6 +21,10 @@ class User(Base):
     # Habit targets
     sleep_target_hours = Column(Float, default=8.0)
     study_target_hours_week = Column(Float, default=15.0)
+
+    # Decision Sandbox scenario slider presets (JSON: {"savings": 0, "sleep": 0, "study": 0})
+    scenario_a_preset = Column(String, nullable=True)
+    scenario_b_preset = Column(String, nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
 

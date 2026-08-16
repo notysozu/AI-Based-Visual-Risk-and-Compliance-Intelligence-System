@@ -24,10 +24,14 @@ class UserUpdate(BaseModel):
     monthly_income: Optional[float] = None
     sleep_target_hours: Optional[float] = None
     study_target_hours_week: Optional[float] = None
+    scenario_a_preset: Optional[str] = None
+    scenario_b_preset: Optional[str] = None
 
 class UserResponse(UserBase):
     id: int
     created_at: datetime
+    scenario_a_preset: Optional[str] = None
+    scenario_b_preset: Optional[str] = None
 
     class Config:
         from_attributes = True

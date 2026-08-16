@@ -66,3 +66,11 @@ export function compareScenarios(userId: string | number, payload: Record<string
     body: JSON.stringify(payload),
   });
 }
+
+export function getWealthAdvice(userId: string | number) {
+  return request(`/simulations/wealth-advice/${userId}`);
+}
+
+export function getUser(userId: string | number) {
+  return request(`/users/${userId}`);
+}

@@ -1,20 +1,4 @@
-// import { useEffect } from "react";
-// import { useNavigate } from "@tanstack/react-router";
-// import { useTwin } from "@/lib/twin-store";
 
-// export function useGuard(): boolean {
-//   const { state } = useTwin();
-//   const navigate = useNavigate();
-//   const signedIn = Boolean(state.profile.id);
-
-//   useEffect(() => {
-//     if (!signedIn) {
-//       navigate({ to: "/" });
-//     }
-//   }, [signedIn, navigate]);
-
-//   return signedIn;
-// }
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useTwin } from "@/lib/twin-store";

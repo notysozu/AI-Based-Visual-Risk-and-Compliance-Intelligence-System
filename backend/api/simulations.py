@@ -1,9 +1,11 @@
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import database, crud
 from ai_engine.simulation import simulator
 from ai_engine.forecasting import financial, habits
 from backend.services.llm_service import LLMService
+from ai_engine.llm_integration.advisor import generate_wealth_advice
 from database import schemas
 from typing import Dict, Any
 
@@ -75,6 +77,68 @@ def get_forecasts(user_id: int, db: Session = Depends(database.get_db)):
             "p90": mc_proj["p90"]
         },
         "probability_of_success": prob_success
+    }
+
+@router.get("/wealth-advice/{user_id}")
+def get_wealth_advice(user_id: int, db: Session = Depends(database.get_db)):
+    """
+    Get an AI-generated prediction/narrative interpreting the Monte Carlo
+    and deterministic forecasts for this user. The underlying numbers are
+    still computed statistically (same as /forecast) — Groq is used only
+    to interpret and explain them in plain language, not to generate them.
+    """
+    user = crud.get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    baseline = simulator.get_user_baseline_metrics(db, user_id)
+
+    det_proj = financial.run_deterministic_projection(
+        current_age=user.age,
+        retirement_age=user.retirement_goal_age,
+        current_net_worth=baseline["current_net_worth"],
+        monthly_savings=baseline["monthly_savings"],
+        annual_return_rate=0.08,
+        annual_inflation_rate=0.025
+    )
+
+    mc_proj = financial.run_monte_carlo_simulation(
+        current_age=user.age,
+        retirement_age=user.retirement_goal_age,
+        current_net_worth=baseline["current_net_worth"],
+        monthly_savings=baseline["monthly_savings"],
+        mean_return=0.08,
+        std_dev=0.15,
+        annual_inflation_rate=0.025,
+        num_simulations=500
+    )
+
+    final_values = mc_proj["final_values"]
+    hits = sum(1 for val in final_values if val >= user.target_net_worth)
+    prob_success = float(hits) / len(final_values)
+
+    user_info = {
+        "username": user.username,
+        "age": user.age,
+        "retirement_goal_age": user.retirement_goal_age,
+        "target_net_worth": user.target_net_worth,
+        "monthly_income": user.monthly_income
+    }
+
+    forecast_summary = {
+        "deterministic_final": det_proj[-1]["net_worth"] if det_proj else 0,
+        "monte_carlo_median_final": mc_proj["median"][-1] if mc_proj["median"] else 0,
+        "monte_carlo_p10_final": mc_proj["p10"][-1] if mc_proj["p10"] else 0,
+        "monte_carlo_p90_final": mc_proj["p90"][-1] if mc_proj["p90"] else 0,
+        "probability_of_success": prob_success,
+        "years": mc_proj["years"],
+    }
+
+    advice = generate_wealth_advice(user_info, baseline, forecast_summary)
+
+    return {
+        "advice": advice,
+        "probability_of_success": prob_success,
     }
 
 @router.post("/compare/{user_id}", response_model=schemas.SimulationResponse)
