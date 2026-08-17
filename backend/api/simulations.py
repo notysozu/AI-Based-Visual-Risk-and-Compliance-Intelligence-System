@@ -86,6 +86,7 @@ def get_wealth_advice(user_id: int, db: Session = Depends(database.get_db)):
     and deterministic forecasts for this user. The underlying numbers are
     still computed statistically (same as /forecast) — Groq is used only
     to interpret and explain them in plain language, not to generate them.
+    If the success probability remains the same, cached advice is returned immediately.
     """
     user = crud.get_user(db, user_id)
     if not user:
@@ -116,6 +117,14 @@ def get_wealth_advice(user_id: int, db: Session = Depends(database.get_db)):
     final_values = mc_proj["final_values"]
     hits = sum(1 for val in final_values if val >= user.target_net_worth)
     prob_success = float(hits) / len(final_values)
+    rounded_odds = round(prob_success, 2)
+
+    # Check if success odds are the same and we have cached advice
+    if user.last_success_odds is not None and abs(user.last_success_odds - rounded_odds) < 0.001 and user.last_wealth_prediction:
+        return {
+            "advice": user.last_wealth_prediction,
+            "probability_of_success": prob_success,
+        }
 
     user_info = {
         "username": user.username,
@@ -135,6 +144,11 @@ def get_wealth_advice(user_id: int, db: Session = Depends(database.get_db)):
     }
 
     advice = generate_wealth_advice(user_info, baseline, forecast_summary)
+
+    # Save to user database record
+    user.last_success_odds = rounded_odds
+    user.last_wealth_prediction = advice
+    db.commit()
 
     return {
         "advice": advice,
