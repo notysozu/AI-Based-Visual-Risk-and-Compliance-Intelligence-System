@@ -40,16 +40,25 @@ export const Route = createFileRoute("/wealth")({
 
 function WealthPage() {
   const ok = useGuard();
-  const { state, updateProfile, loadForecast, saveProfile, syncProfile } = useTwin();
+  const { state, updateProfile, loadForecast } = useTwin();
   const p = state.profile;
 
-  const [mode, setMode] = useState<"mc" | "det">("mc");
   const [targets, setTargets] = useState({ targetAge: p.targetAge, targetNetWorth: p.targetNetWorth });
 
-  const [advice, setAdvice] = useState<string | null>(null);
-  const [adviceProbability, setAdviceProbability] = useState<number | null>(null);
+  const [advice, setAdvice] = useState<string | null>(p.lastWealthPrediction ?? null);
+  const [adviceProbability, setAdviceProbability] = useState<number | null>(p.lastSuccessOdds ?? null);
   const [adviceLoading, setAdviceLoading] = useState(false);
   const [adviceError, setAdviceError] = useState<string | null>(null);
+
+  // Sync state advice with loaded profile cache fields
+  useEffect(() => {
+    if (p.lastWealthPrediction) {
+      setAdvice(p.lastWealthPrediction);
+    }
+    if (p.lastSuccessOdds !== undefined && p.lastSuccessOdds !== null) {
+      setAdviceProbability(p.lastSuccessOdds);
+    }
+  }, [p.lastWealthPrediction, p.lastSuccessOdds]);
 
   // Fetch the real forecast from the backend when the page loads
   // or when the profile id becomes available (e.g. right after sign-in).
@@ -75,31 +84,30 @@ function WealthPage() {
     }));
   }, [forecast]);
 
-  // Map backend deterministic shape into the {year, value} shape the chart expects
-  const detData = useMemo(() => {
-    if (!forecast) return [];
-    return forecast.deterministic.map((row) => ({
-      year: row.year,
-      value: row.net_worth,
-    }));
-  }, [forecast]);
-
   const success = forecast ? Math.round(forecast.probability_of_success * 100) : 0;
 
-  const getAiPrediction = async () => {
+  const handleGetPrediction = async () => {
     if (p.id === null || p.id === undefined) {
-      toast.error("Sign in first to get a prediction");
+      toast.error("Sign in first");
       return;
     }
     setAdviceLoading(true);
     setAdviceError(null);
     try {
+      // 1. Save targets to settings (which runs database update automatically)
+      await updateProfile({
+        targetAge: targets.targetAge,
+        targetNetWorth: targets.targetNetWorth,
+      });
+      // 2. Load forecast (refreshes chart data in background)
+      await loadForecast();
+      // 3. Get AI prediction (cache-checked in backend)
       const result = await getWealthAdvice(p.id);
       setAdvice(result.advice);
       setAdviceProbability(result.probability_of_success);
-      toast.success("AI prediction ready");
+      toast.success("Prediction updated");
     } catch (e: any) {
-      const msg = e.message || "Failed to get AI prediction";
+      const msg = e.message || "Failed to get prediction";
       setAdviceError(msg);
       toast.error(msg);
     } finally {
@@ -118,67 +126,12 @@ function WealthPage() {
     <AppShell
       title="Financial Twin"
       subtitle={`${years} years to age ${p.targetAge} · target ${money(p.targetNetWorth)}`}
-      actions={
-        <>
-          <Button
-            size="sm"
-            onClick={getAiPrediction}
-            disabled={adviceLoading}
-          >
-            {adviceLoading ? "Predicting…" : "Get AI Prediction"}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setMode("mc");
-              loadForecast().then(() => toast.success("Forecast refreshed"));
-            }}
-            disabled={running}
-          >
-            {running ? "Running…" : "Refresh Chart Data"}
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setMode("det")}>
-            Show Deterministic Path
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={state.profileSyncing}
-            onClick={async () => {
-              try {
-                await saveProfile();
-                toast.success("Changes saved");
-              } catch (e: any) {
-                toast.error(e.message || "Failed to save changes");
-              }
-            }}
-          >
-            {state.profileSyncing ? "Saving…" : "Save Changes"}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={state.profileSyncing}
-            onClick={async () => {
-              try {
-                await syncProfile();
-                toast.success("Reset to last saved data");
-              } catch (e: any) {
-                toast.error(e.message || "Failed to reset");
-              }
-            }}
-          >
-            Reset
-          </Button>
-        </>
-      }
     >
       <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="space-y-5">
           <div className={`panel p-6 ${running ? "animate-pulse-glow" : ""}`}>
             <p className="label-xs">
-              {mode === "mc" ? "Monte Carlo probability bands" : "Deterministic compound path"}
+              Monte Carlo probability bands
             </p>
 
             {state.forecastError && (
@@ -189,38 +142,28 @@ function WealthPage() {
 
             {!forecast && !running && !state.forecastError && (
               <p className="mt-4 text-sm text-muted-foreground">
-                No chart data yet. Click "Refresh Chart Data" to fetch your projection.
+                No chart data yet. Click "Get Prediction" to fetch your projection.
               </p>
             )}
 
             {forecast && (
               <div className="mt-4 h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  {mode === "mc" ? (
-                    <AreaChart data={mcData}>
-                      <defs>
-                        <linearGradient id="band" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--color-foreground)" stopOpacity={0.18} />
-                          <stop offset="100%" stopColor="var(--color-foreground)" stopOpacity={0.02} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid stroke="var(--color-border)" vertical={false} />
-                      <XAxis dataKey="year" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                      <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={58} tickFormatter={(v) => `$${Math.round(v / 1000)}k`} />
-                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => money(v)} />
-                      <Area type="monotone" dataKey="p90" name="90th percentile" stroke="var(--color-foreground)" strokeWidth={1.5} fill="url(#band)" />
-                      <Area type="monotone" dataKey="p50" name="Median" stroke="var(--color-foreground)" strokeWidth={2.5} fill="none" />
-                      <Area type="monotone" dataKey="p10" name="10th percentile" stroke="var(--color-muted-foreground)" strokeWidth={1.5} strokeDasharray="4 4" fill="none" />
-                    </AreaChart>
-                  ) : (
-                    <LineChart data={detData}>
-                      <CartesianGrid stroke="var(--color-border)" vertical={false} />
-                      <XAxis dataKey="year" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                      <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={58} tickFormatter={(v) => `$${Math.round(v / 1000)}k`} />
-                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => money(v)} />
-                      <Line type="monotone" dataKey="value" name="Projected net worth" stroke="var(--color-foreground)" strokeWidth={2.5} dot={false} />
-                    </LineChart>
-                  )}
+                  <AreaChart data={mcData}>
+                    <defs>
+                      <linearGradient id="band" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--color-foreground)" stopOpacity={0.18} />
+                        <stop offset="100%" stopColor="var(--color-foreground)" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="var(--color-border)" vertical={false} />
+                    <XAxis dataKey="year" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={58} tickFormatter={(v) => `$${Math.round(v / 1000)}k`} />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => money(v)} />
+                    <Area type="monotone" dataKey="p90" name="90th percentile" stroke="var(--color-foreground)" strokeWidth={1.5} fill="url(#band)" />
+                    <Area type="monotone" dataKey="p50" name="Median" stroke="var(--color-foreground)" strokeWidth={2.5} fill="none" />
+                    <Area type="monotone" dataKey="p10" name="10th percentile" stroke="var(--color-muted-foreground)" strokeWidth={1.5} strokeDasharray="4 4" fill="none" />
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
             )}
@@ -233,7 +176,7 @@ function WealthPage() {
                 <p>Analyzing your projections…</p>
               )}
               {!adviceLoading && !advice && !adviceError && (
-                <p>Click "Get AI Prediction" for a plain-language read on your trajectory.</p>
+                <p>Click "Get Prediction" for a plain-language read on your trajectory.</p>
               )}
               {adviceError && (
                 <p className="text-destructive">Couldn't get prediction: {adviceError}</p>
@@ -288,40 +231,10 @@ function WealthPage() {
               </div>
               <Button
                 className="w-full"
-                // onClick={async () => {
-                //   updateProfile(targets);
-                //   toast.success("Targets updated");
-                //   await loadForecast(); // re-fetch so the gauge/chart reflect the new target
-                // }}
-//                 onClick={async () => {
-//   updateProfile(targets);
-//   try {
-//     await saveProfile();
-//     toast.success("Targets updated");
-//     await loadForecast();
-//   } catch (e: any) {
-//     toast.error(e.message || "Failed to update targets");
-//   }
-// }}
-                   onClick={async () => {
-  if (p.id === null || p.id === undefined) {
-    toast.error("Sign in first");
-    return;
-  }
-  try {
-    await updateUser(p.id, {
-      retirement_goal_age: targets.targetAge,
-      target_net_worth: targets.targetNetWorth,
-    });
-    updateProfile(targets); // sync local state after backend confirms
-    toast.success("Targets updated");
-    await loadForecast();
-  } catch (e: any) {
-    toast.error(e.message || "Failed to update targets");
-  }
-}}
+                onClick={handleGetPrediction}
+                disabled={adviceLoading || running}
               >
-                Update Targets
+                {adviceLoading ? "Predicting…" : "Get Prediction"}
               </Button>
             </div>
           </div>
