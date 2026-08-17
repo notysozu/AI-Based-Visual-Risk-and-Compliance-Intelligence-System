@@ -103,25 +103,33 @@ def run_monte_carlo_simulation(current_age: int, retirement_age: int,
     Monte Carlo simulation of net worth growth under randomized annual returns.
     Returns years/ages arrays plus median/p10/p90 net-worth bands per year,
     and final_values (one ending net worth per simulated path).
+    Temporarily seeds the RNG to ensure deterministic results.
     """
     years = max(retirement_age - current_age, 1)
     ages = [current_age + y for y in range(1, years + 1)]
     year_labels = list(range(1, years + 1))
 
-    # paths[sim_index][year_index] = net worth at end of that year
-    paths: List[List[float]] = []
+    # Temporarily seed RNG for reproducibility
+    state = random.getstate()
+    random.seed(42)
 
-    for _ in range(num_simulations):
-        balance = current_net_worth
-        path = []
-        for _year in range(years):
-            # sample one annual return per year, adjust for inflation, apply monthly compounding
-            annual_return = random.gauss(mean_return, std_dev)
-            real_rate = (1 + annual_return) / (1 + annual_inflation_rate) - 1
-            for _month in range(12):
-                balance = balance * (1 + real_rate / 12) + monthly_savings
-            path.append(round(balance, 2))
-        paths.append(path)
+    try:
+        # paths[sim_index][year_index] = net worth at end of that year
+        paths: List[List[float]] = []
+
+        for _ in range(num_simulations):
+            balance = current_net_worth
+            path = []
+            for _year in range(years):
+                # sample one annual return per year, adjust for inflation, apply monthly compounding
+                annual_return = random.gauss(mean_return, std_dev)
+                real_rate = (1 + annual_return) / (1 + annual_inflation_rate) - 1
+                for _month in range(12):
+                    balance = balance * (1 + real_rate / 12) + monthly_savings
+                path.append(round(balance, 2))
+            paths.append(path)
+    finally:
+        random.setstate(state)
 
     # Compute percentile bands per year across all simulations
     median, p10, p90 = [], [], []
