@@ -256,5 +256,5 @@ def get_analytics_summary(user_id: int, payload: schemas.AnalyticsSummaryRequest
     # Convert payload logs schema list to dict list
     log_dicts = [item.model_dump() for item in payload.logs]
     
-    summary = generate_analytics_summary(user_info, log_dicts, payload.age_group)
+    summary = generate_analytics_summary(user_info, log_dicts)
     return {"summary": summary}

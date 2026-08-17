@@ -105,26 +105,10 @@ function AnalyticsPage() {
   const { state, addLog, clearLogs } = useTwin();
   const p = state.profile;
   const [drawer, setDrawer] = useState(false);
-
-  // Dynamic default selection based on user profile age
-  const defaultAgeGroup = useMemo(() => {
-    if (p.age && p.age < 16) return "kid";
-    if (p.age && p.age >= 60) return "grandpa";
-    return "adult";
-  }, [p.age]);
-
-  const [ageGroup, setAgeGroup] = useState<"kid" | "adult" | "grandpa">("adult");
   const [summary, setSummary] = useState<string>("");
   const [summaryLoading, setSummaryLoading] = useState(false);
 
-  // Set default group when age is retrieved
-  useEffect(() => {
-    if (p.age) {
-      setAgeGroup(defaultAgeGroup);
-    }
-  }, [p.age, defaultAgeGroup]);
-
-  // Request the AI Analytics narrative when logs or age Tone changes
+  // Request the AI Analytics narrative when logs change
   useEffect(() => {
     if (!p.id || state.logs.length === 0) return;
     
@@ -137,7 +121,7 @@ function AnalyticsPage() {
       mood: l.mood,
     }));
 
-    getAnalyticsSummary(p.id, { logs: minimalLogs, age_group: ageGroup })
+    getAnalyticsSummary(p.id, { logs: minimalLogs })
       .then((res: any) => {
         setSummary(res.summary);
       })
@@ -147,7 +131,7 @@ function AnalyticsPage() {
       .finally(() => {
         setSummaryLoading(false);
       });
-  }, [p.id, state.logs, ageGroup]);
+  }, [p.id, state.logs]);
 
   const base = useMemo(() => baseline(state.logs), [state.logs]);
   
@@ -244,34 +228,6 @@ function AnalyticsPage() {
             <p className="label-xs">Simplified habit overview</p>
             <h3 className="text-lg font-bold mt-1 text-foreground">AI Digital Twin Insights</h3>
           </div>
-          
-          {/* Tone Selector Buttons */}
-          <div className="flex bg-muted p-1 rounded-md text-xs font-semibold gap-1 self-start sm:self-center">
-            <button
-              onClick={() => setAgeGroup("kid")}
-              className={`px-3 py-1.5 rounded transition-all ${
-                ageGroup === "kid" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              🧒 Kid Mode
-            </button>
-            <button
-              onClick={() => setAgeGroup("adult")}
-              className={`px-3 py-1.5 rounded transition-all ${
-                ageGroup === "adult" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              🧑 Standard Mode
-            </button>
-            <button
-              onClick={() => setAgeGroup("grandpa")}
-              className={`px-3 py-1.5 rounded transition-all ${
-                ageGroup === "grandpa" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              👴 Grandpa Mode
-            </button>
-          </div>
         </div>
 
         {/* Large Simplified Metric Cards */}
@@ -308,7 +264,7 @@ function AnalyticsPage() {
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1.5 h-3.5 bg-foreground rounded" />
             <p className="text-xs font-semibold uppercase tracking-wider text-foreground">
-              {ageGroup === "kid" ? "🎮 Game Host Report" : ageGroup === "grandpa" ? "🩺 Friendly Medical Note" : "twin feedback"}
+              AI Analysis Summary
             </p>
           </div>
           <div className="space-y-1 text-muted-foreground leading-relaxed">

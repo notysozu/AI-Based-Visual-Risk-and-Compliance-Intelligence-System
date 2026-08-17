@@ -137,4 +137,3 @@ class AnalyticsLogItem(BaseModel):
 
 class AnalyticsSummaryRequest(BaseModel):
     logs: List[AnalyticsLogItem]
-    age_group: str
