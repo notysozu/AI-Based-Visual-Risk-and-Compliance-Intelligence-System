@@ -18,7 +18,7 @@ import { AppShell } from "@/components/app-shell";
 import { useGuard } from "@/lib/use-guard";
 import { focusIndex, healthIndex, money, projectNetWorth, useTwin } from "@/lib/twin-store";
 import { tooltipStyle } from "@/routes/dashboard";
-import { compareScenarios } from "@/lib/api";
+import { compareScenarios, getScenarioSuggestions } from "@/lib/api";
 
 
 export const Route = createFileRoute("/simulator")({
@@ -179,21 +179,49 @@ function SimulatorPage() {
       return;
     }
     setRan(false);
+
+    let currentA = a;
+    let currentB = b;
+
+    // If both Scenario A and Scenario B are ZERO (baseline), use AI to generate suggestions!
+    const isAZero = a.savings === 0 && a.sleep === 0 && a.study === 0;
+    const isBZero = b.savings === 0 && b.sleep === 0 && b.study === 0;
+
+    if (isAZero && isBZero) {
+      toast.info("No inputs detected. AI is generating alternative scenarios for you...");
+      try {
+        const suggestions = await getScenarioSuggestions(userId);
+        currentA = suggestions.scenario_a;
+        currentB = suggestions.scenario_b;
+        setA(currentA);
+        setB(currentB);
+        toast.success("AI scenario suggestions loaded");
+      } catch (err: any) {
+        console.error("AI scenario generation failed, using defaults:", err);
+        // Fallback defaults
+        currentA = { savings: 400, sleep: 0.5, study: 4 };
+        currentB = { savings: 1200, sleep: -1.0, study: 12 };
+        setA(currentA);
+        setB(currentB);
+        toast.success("Loaded fallback scenario suggestions");
+      }
+    }
+
     try {
       // 1. Auto-save presets to database in background
-      await saveScenarioPresets(a, b);
+      await saveScenarioPresets(currentA, currentB);
 
       // 2. Run comparative analysis
       const result = await compareScenarios(userId, {
         scenario_a: {
-          monthly_investment_change: a.savings,
-          sleep_hours_change: a.sleep,
-          weekly_study_change: a.study
+          monthly_investment_change: currentA.savings,
+          sleep_hours_change: currentA.sleep,
+          weekly_study_change: currentA.study
         },
         scenario_b: {
-          monthly_investment_change: b.savings,
-          sleep_hours_change: b.sleep,
-          weekly_study_change: b.study
+          monthly_investment_change: currentB.savings,
+          sleep_hours_change: currentB.sleep,
+          weekly_study_change: currentB.study
         },
         years: 5
       });

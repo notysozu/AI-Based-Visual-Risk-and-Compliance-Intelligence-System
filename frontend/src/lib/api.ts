@@ -67,6 +67,10 @@ export function compareScenarios(userId: string | number, payload: Record<string
   });
 }
 
+export function getScenarioSuggestions(userId: string | number) {
+  return request(`/simulations/suggest/${userId}`);
+}
+
 export function getWealthAdvice(userId: string | number) {
   return request(`/simulations/wealth-advice/${userId}`);
 }

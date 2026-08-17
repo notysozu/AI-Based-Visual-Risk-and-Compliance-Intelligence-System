@@ -5,7 +5,7 @@ from database import database, crud
 from ai_engine.simulation import simulator
 from ai_engine.forecasting import financial, habits
 from backend.services.llm_service import LLMService
-from ai_engine.llm_integration.advisor import generate_wealth_advice
+from ai_engine.llm_integration.advisor import generate_wealth_advice, generate_scenario_suggestions
 from database import schemas
 from typing import Dict, Any
 
@@ -154,6 +154,28 @@ def get_wealth_advice(user_id: int, db: Session = Depends(database.get_db)):
         "advice": advice,
         "probability_of_success": prob_success,
     }
+
+@router.get("/suggest/{user_id}")
+def get_scenario_suggestions(user_id: int, db: Session = Depends(database.get_db)):
+    """
+    Get AI-generated suggestions for Scenario A and Scenario B sliders.
+    """
+    user = crud.get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    baseline = simulator.get_user_baseline_metrics(db, user_id)
+    
+    user_info = {
+        "username": user.username,
+        "age": user.age,
+        "retirement_goal_age": user.retirement_goal_age,
+        "target_net_worth": user.target_net_worth,
+        "monthly_income": user.monthly_income
+    }
+    
+    suggestions = generate_scenario_suggestions(user_info, baseline)
+    return suggestions
 
 @router.post("/compare/{user_id}", response_model=schemas.SimulationResponse)
 def compare_scenarios(user_id: int, payload: schemas.SimulationRequest, db: Session = Depends(database.get_db)):

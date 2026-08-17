@@ -329,3 +329,99 @@ When you state the user's target net worth, target age, or any dollar figures fr
     except Exception as e:
         print(f"Error calling Groq API: {e}. Falling back to rule-based advice.")
         return get_rule_based_wealth_advice(user_info, baseline, forecast_summary)
+
+
+import json
+
+def generate_scenario_suggestions(user_info: Dict[str, Any], baseline: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Generate two alternative sandbox scenarios (Scenario A and Scenario B) using Groq.
+    If Groq is offline, return fallback suggestions.
+    """
+    fallback = {
+        "scenario_a": {"savings": 400, "sleep": 0.5, "study": 4},
+        "scenario_b": {"savings": 1200, "sleep": -1.0, "study": 12}
+    }
+    
+    if client is None:
+        return fallback
+
+    prompt = f"""
+You are an AI financial and lifestyle optimizer. Suggest two contrasting future scenarios for the following user profile to run in a simulator:
+
+USER PROFILE:
+- Username: {user_info['username']}
+- Age: {user_info['age']}
+- Current Monthly Income: ${user_info['monthly_income']:.2f}
+- Current Monthly Savings Pace: ${baseline.get('monthly_savings', 1000.0):.2f}/month
+- Target Net Worth: ${user_info['target_net_worth']:.2f} by age {user_info['retirement_goal_age']}
+
+Create two scenarios (Scenario A and Scenario B) as changes relative to their baseline:
+- Scenario A: A "Wellbeing-Optimized" scenario. Focuses on healthy living, slightly more sleep, moderate study, and sustainable/moderate savings increase.
+- Scenario B: A "High-Growth/Hustle" scenario. Focuses on aggressive career/study growth, higher savings increase, but with some sacrifice in sleep/rest.
+
+You MUST restrict the values to these ranges and steps:
+- savings: monthly savings increase in USD. Must be between 0 and 2000, in steps of 50 (e.g. 0, 50, 100, 150... 2000).
+- sleep: change in sleep hours per night. Must be between -2.0 and 3.0, in steps of 0.5 (e.g. -1.5, 0, 0.5, 1.0...).
+- study: change in weekly study hours. Must be between -10 and 20, in steps of 1 (e.g. -5, 0, 4, 15...).
+
+Return ONLY a valid JSON object matching the following structure. No explanation, no markdown wraps.
+{{
+  "scenario_a": {{
+    "savings": <number>,
+    "sleep": <number>,
+    "study": <number>
+  }},
+  "scenario_b": {{
+    "savings": <number>,
+    "sleep": <number>,
+    "study": <number>
+  }}
+}}
+"""
+
+    try:
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model="llama-3.1-8b-instant",
+            temperature=0.3,
+            max_tokens=200,
+        )
+        response_text = chat_completion.choices[0].message.content.strip()
+        # Clean markdown wrappers if any
+        if response_text.startswith("```"):
+            response_text = response_text.split("```")[1]
+            if response_text.startswith("json"):
+                response_text = response_text[4:]
+        
+        parsed = json.loads(response_text.strip())
+        
+        # Validate output shape and round to matching steps
+        def clean_val(val, min_v, max_v, step_v):
+            val = float(val)
+            val = max(min_v, min(max_v, val))
+            return round(round(val / step_v) * step_v, 2)
+
+        sa = parsed["scenario_a"]
+        sb = parsed["scenario_b"]
+        
+        return {
+            "scenario_a": {
+                "savings": int(clean_val(sa.get("savings", 400), 0, 2000, 50)),
+                "sleep": clean_val(sa.get("sleep", 0.5), -2, 3, 0.5),
+                "study": int(clean_val(sa.get("study", 4), -10, 20, 1))
+            },
+            "scenario_b": {
+                "savings": int(clean_val(sb.get("savings", 1200), 0, 2000, 50)),
+                "sleep": clean_val(sb.get("sleep", -1.0), -2, 3, 0.5),
+                "study": int(clean_val(sb.get("study", 12), -10, 20, 1))
+            }
+        }
+    except Exception as e:
+        print(f"Error calling Groq for scenario suggestions: {e}")
+        return fallback
