@@ -26,6 +26,14 @@ class User(Base):
     scenario_a_preset = Column(String, nullable=True)
     scenario_b_preset = Column(String, nullable=True)
     
+    # Financial profile settings sync
+    monthly_expenses = Column(Float, default=2900.0)
+    net_worth = Column(Float, default=15000.0)
+
+    # AI prediction cache
+    last_success_odds = Column(Float, nullable=True)
+    last_wealth_prediction = Column(String, nullable=True)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
