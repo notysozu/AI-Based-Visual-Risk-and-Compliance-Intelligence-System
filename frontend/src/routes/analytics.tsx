@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { HabitDrawer, tooltipStyle } from "@/routes/dashboard";
 import { useGuard } from "@/lib/use-guard";
-import { baseline, focusIndex, useTwin } from "@/lib/twin-store";
+import { baseline, focusIndex, useTwin, getRoleConfig } from "@/lib/twin-store";
 import { getAnalyticsSummary } from "@/lib/api";
 
 export const Route = createFileRoute("/analytics")({

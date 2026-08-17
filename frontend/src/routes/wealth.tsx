@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Gauge } from "@/components/gauge";
 import { useGuard } from "@/lib/use-guard";
-import { money, useTwin } from "@/lib/twin-store";
+import { money, useTwin, getRoleConfig } from "@/lib/twin-store";
 import { tooltipStyle } from "@/routes/dashboard";
 import { getWealthAdvice, updateUser } from "@/lib/api";
 
