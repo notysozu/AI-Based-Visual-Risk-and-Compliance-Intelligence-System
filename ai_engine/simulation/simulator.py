@@ -26,44 +26,21 @@ def get_user_baseline_metrics(db: Session, user_id: int) -> Dict[str, float]:
     if not user:
         return defaults
         
-    # Calculate current net worth (sum of investments - expenses + income in all records is complex,
-    # let's calculate it by starting with a base net worth (e.g., $15000) and summing income - expenses)
-    # Actually, a simple approach: net worth can be calculated by summing all "Income" and "Investment" records,
-    # subtracting "Fixed Expense" and "Discretionary Expense" from a starting seed of $15000.
-    start_net_worth = 15000.0
-    financials = db.query(models.FinancialRecord).filter_by(user_id=user_id).all()
-    
-    net_worth = start_net_worth
-    for f in financials:
-        if f.category == "Income":
-            # Net worth doesn't double just because you get salary, it depends on savings.
-            # But let's compute net worth as: cumulative (Income + Investment - Fixed Expense - Discretionary Expense)
-            # Actually, standard net worth is sum of assets (investments). Let's define:
-            # Net Worth = Sum(Investment) + Cash (which is Salary - All Expenses).
-            # Let's write a simple formula:
-            pass
-            
-    # Let's count actual investment record totals
-    total_investments = sum(f.amount for f in financials if f.category == "Investment")
-    total_income = sum(f.amount for f in financials if f.category == "Income")
-    total_expenses = sum(f.amount for f in financials if f.category in ["Fixed Expense", "Discretionary Expense"])
-    
-    current_net_worth = max(1000.0, start_net_worth + total_income - total_expenses)
-    
-    # Calculate monthly savings:
-    # Look at last 30 days of income vs expenses
-    # Or simplified: User.monthly_income - average monthly expenses, or just average monthly Investment records.
-    # Let's use average monthly investments as the savings rate.
-    # In seeded data, it is $1000/month.
-    monthly_savings = 1000.0
-    if financials:
-        # Sum of investments in last 30 days
-        now_naive = pd.Timestamp.utcnow().tz_localize(None)
-        monthly_savings = sum(f.amount for f in financials if f.category == "Investment" and f.record_date >= now_naive - pd.Timedelta(days=30))
-        if monthly_savings == 0:
-            monthly_savings = 1000.0
-            
-    # Calculate habit averages in last 30 days
+    # 1. Current Net Worth:
+    # Use user profile's net_worth, fallback to 15000 if not set
+    user_net_worth = getattr(user, "net_worth", None)
+    if user_net_worth is not None and user_net_worth > 0:
+        current_net_worth = float(user_net_worth)
+    else:
+        current_net_worth = 15000.0
+
+    # 2. Monthly Savings Pace:
+    # Calculated directly from user's income - expenses on their profile
+    user_income = float(getattr(user, "monthly_income", None) or 5000.0)
+    user_expenses = float(getattr(user, "monthly_expenses", None) or 2900.0)
+    monthly_savings = max(0.0, user_income - user_expenses)
+
+    # 3. Habit metrics in last 30 days or fallback to profile targets
     thirty_days_ago = pd.Timestamp.utcnow().tz_localize(None) - pd.Timedelta(days=30)
     habit_logs = db.query(models.HabitRecord).filter(
         models.HabitRecord.user_id == user_id,
@@ -91,21 +68,23 @@ def get_user_baseline_metrics(db: Session, user_id: int) -> Dict[str, float]:
         models.StudyRecord.created_at >= thirty_days_ago
     ).all()
     
-    study_hours_daily = [s.duration_minutes / 60.0 for s in study_logs]
-    
-    # Average weekly study hours: total study duration in 30 days / (30/7)
+    avg_sleep = np.mean(sleep_hours) if len(sleep_hours) > 0 else float(getattr(user, "sleep_target_hours", 7.5) or 7.5)
+    avg_exercise = np.mean(exercise_hours) if len(exercise_hours) > 0 else 0.5
+    avg_screen = np.mean(screen_hours) if len(screen_hours) > 0 else 3.5
+    avg_social = np.mean(social_hours) if len(social_hours) > 0 else 1.0
+
     total_study_hours = sum(s.duration_minutes / 60.0 for s in study_logs)
-    study_hours_week = total_study_hours / (30.0 / 7.0) if len(study_logs) > 0 else defaults["study_hours_week"]
+    avg_study_week = total_study_hours / (30.0 / 7.0) if len(study_logs) > 0 else float(getattr(user, "study_target_hours_week", 10.0) or 10.0)
 
     return {
-        "monthly_savings": float(monthly_savings),
-        "current_net_worth": float(current_net_worth),
-        "sleep_hours": float(np.mean(sleep_hours)) if sleep_hours else defaults["sleep_hours"],
-        "exercise_hours": float(np.sum(exercise_hours) / 30.0) if exercise_hours else defaults["exercise_hours"], # daily average
-        "screen_hours": float(np.mean(screen_hours)) if screen_hours else defaults["screen_hours"],
-        "social_hours": float(np.sum(social_hours) / 30.0) if social_hours else defaults["social_hours"], # daily average
-        "study_hours_week": float(study_hours_week),
-        "study_hours_daily": float(total_study_hours / 30.0)
+        "monthly_savings": round(monthly_savings, 2),
+        "current_net_worth": round(current_net_worth, 2),
+        "sleep_hours": round(float(avg_sleep), 2),
+        "exercise_hours": round(float(avg_exercise), 2),
+        "screen_hours": round(float(avg_screen), 2),
+        "social_hours": round(float(avg_social), 2),
+        "study_hours_week": round(float(avg_study_week), 2),
+        "study_hours_daily": round(float(avg_study_week / 7.0), 2)
     }
 
 def run_what_if_comparison(

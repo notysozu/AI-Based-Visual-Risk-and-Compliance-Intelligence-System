@@ -105,6 +105,11 @@ function WealthPage() {
   const [adviceLoading, setAdviceLoading] = useState(false);
   const [adviceError, setAdviceError] = useState<string | null>(null);
 
+  // Synchronize targets when profile changes (e.g. switching demo persona)
+  useEffect(() => {
+    setTargets({ targetAge: p.targetAge, targetNetWorth: p.targetNetWorth });
+  }, [p.targetAge, p.targetNetWorth]);
+
   // Sync state advice with loaded profile cache fields
   useEffect(() => {
     if (p.lastWealthPrediction) {
@@ -116,13 +121,13 @@ function WealthPage() {
   }, [p.lastWealthPrediction, p.lastSuccessOdds]);
 
   // Fetch the real forecast from the backend when the page loads
-  // or when the profile id becomes available (e.g. right after sign-in).
+  // or when the profile id/targets change.
   useEffect(() => {
     if (p.id !== null && p.id !== undefined) {
       loadForecast();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [p.id]);
+  }, [p.id, p.age, p.targetAge, p.targetNetWorth, p.monthlyIncome, p.monthlyExpenses, p.netWorth]);
 
   const forecast = state.forecast;
   const running = state.forecastLoading;
@@ -176,6 +181,7 @@ function WealthPage() {
   const discretionary = Math.round(p.monthlyExpenses * 0.35);
   const fixed = p.monthlyExpenses - discretionary;
   const years = Math.max(1, p.targetAge - p.age);
+  const incomeSafe = Math.max(1, p.monthlyIncome);
 
   return (
     <AppShell
@@ -213,7 +219,18 @@ function WealthPage() {
                     </defs>
                     <CartesianGrid stroke="var(--color-border)" vertical={false} />
                     <XAxis dataKey="year" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                    <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={58} tickFormatter={(v) => `$${Math.round(v / 1000)}k`} />
+                    <YAxis
+                      stroke="var(--color-muted-foreground)"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      width={62}
+                      tickFormatter={(v) => {
+                        if (Math.abs(v) >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+                        if (Math.abs(v) >= 1_000) return `$${Math.round(v / 1000)}k`;
+                        return `$${Math.round(v)}`;
+                      }}
+                    />
                     <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => money(v)} />
                     <Area type="monotone" dataKey="p90" name="90th percentile" stroke="var(--color-foreground)" strokeWidth={1.5} fill="url(#band)" />
                     <Area type="monotone" dataKey="p50" name="Median" stroke="var(--color-foreground)" strokeWidth={2.5} fill="none" />
@@ -305,9 +322,9 @@ function WealthPage() {
           <Figure label={p.role === "student" ? "Saved / Extra" : p.role === "retiree" ? "Preserved / Saved" : "Invested & Saved"} value={money(monthly)} />
         </div>
         <div className="mt-6 flex h-3 overflow-hidden rounded-full bg-muted">
-          <Bar w={(fixed / p.monthlyIncome) * 100} className="bg-foreground" />
-          <Bar w={(discretionary / p.monthlyIncome) * 100} className="bg-muted-foreground" />
-          <Bar w={(monthly / p.monthlyIncome) * 100} className="bg-foreground/30" />
+          <Bar w={(fixed / incomeSafe) * 100} className="bg-foreground" />
+          <Bar w={(discretionary / incomeSafe) * 100} className="bg-muted-foreground" />
+          <Bar w={(monthly / incomeSafe) * 100} className="bg-foreground/30" />
         </div>
       </div>
     </AppShell>
