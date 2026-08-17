@@ -295,7 +295,11 @@ def generate_wealth_advice(
         role = user_info.get("role", "professional")
         role_instructions = ""
         if role == "student":
-            role_instructions = "The user is a STUDENT. Their monthly income is their pocket money, allowance, or part-time earnings, and their target is a student savings/milestone goal. Advise them warmly on building early money-saving habits and compounding."
+            role_instructions = "The user is a STUDENT. Their monthly income is pocket money, allowance, or part-time earnings, and their target is a student savings/milestone goal. Advise them warmly on building early money-saving habits and compounding."
+        elif role == "freelancer":
+            role_instructions = "The user is a FREELANCER / CREATOR. Their income is client invoices, and their target is financial freedom & emergency runway. Advise them on managing invoice volatility, tax buffers, and steady compounding."
+        elif role == "entrepreneur":
+            role_instructions = "The user is a FOUNDER / ENTREPRENEUR. Their income is founder draw, and their target is venture equity realization. Advise them on personal runway, reinvestment pace, and equity compounding."
         elif role == "retiree":
             role_instructions = "The user is a RETIREE / SENIOR. Their monthly income is pension, annuities, or passive returns, and their target is nest egg preservation and longevity. Advise them on sustainable living, healthcare buffers, and peace of mind."
         else:
@@ -310,7 +314,7 @@ You are the "Digital Twin Wealth Advisor" — an AI assistant predicting a user'
 - Current Age: {user_info['age']} years
 - Target Goal Age: {user_info['retirement_goal_age']} years
 - Target Net Worth / Goal: ${user_info['target_net_worth']:,.2f}
-- Monthly Income / Allowance: ${user_info['monthly_income']:,.2f}
+- Monthly Income / Inflow: ${user_info['monthly_income']:,.2f}
 
 === ROLE CONTEXT ===
 {role_instructions}
@@ -329,7 +333,7 @@ You are the "Digital Twin Wealth Advisor" — an AI assistant predicting a user'
 === INSTRUCTIONS ===
 Write a short, direct prediction (3-5 sentences) explaining what these numbers mean for the user in plain language.
 State clearly whether they're on track, and if not, give one specific concrete suggestion (e.g. a dollar amount to increase monthly savings by) to improve their odds.
-When you state the user's target net worth, target age, or any dollar figures from the data above, you MUST use the exact numbers given — do not round, alter, abbreviate, or invent different figures. You may explain what the numbers mean, but never change the digits. Keep it warm but direct, addressed to the user by name.
+When you state the user's target net worth, target age, or any dollar figures from the data above, you MUST use the exact numbers given — do not round, alter, abbreviate, or invent different figures. You may explain what the numbers mean, but never change the digits. Keep it direct and helpful, addressed to the user.
 """
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
@@ -351,19 +355,29 @@ def generate_scenario_suggestions(user_info: Dict[str, Any], baseline: Dict[str,
     Generate two alternative sandbox scenarios (Scenario A and Scenario B) using Groq tailored to user role.
     If Groq is offline, return fallback suggestions.
     """
+    role = user_info.get("role", "professional")
     fallback = {
-        "scenario_a": {"savings": 200 if user_info.get("role") == "student" else 400, "sleep": 0.5, "study": 4},
-        "scenario_b": {"savings": 500 if user_info.get("role") == "student" else 1000, "sleep": -1.0, "study": 10}
+        "scenario_a": {"savings": 200 if role == "student" else 350 if role == "freelancer" else 500 if role == "entrepreneur" else 400, "sleep": 0.5, "study": 4},
+        "scenario_b": {"savings": 500 if role == "student" else 800 if role == "freelancer" else 1200 if role == "entrepreneur" else 1000, "sleep": -1.0, "study": 10}
     }
     
     if client is None:
         return fallback
 
-    role = user_info.get("role", "professional")
     if role == "student":
         scenario_guidance = """
 - Scenario A: "Balanced Campus Life" (Healthy sleep +0.5h, moderate study +3h, manageable pocket money savings +$100).
 - Scenario B: "Exam & Study Sprint" (High study boost +8h, tighter budget savings +$300, slight sleep trade-off -1h).
+"""
+    elif role == "freelancer":
+        scenario_guidance = """
+- Scenario A: "Sustainable Client Cadence" (Restful sleep +0.5h, skill/portfolio work +3h, steady runway savings +$350).
+- Scenario B: "High-Inbound / Agency Sprint" (Intensive billable sprint +8h, high emergency runway savings +$850, slight sleep trade-off -1h).
+"""
+    elif role == "entrepreneur":
+        scenario_guidance = """
+- Scenario A: "High-Leverage Execution" (Restful sleep +0.5h, strategic build +4h, steady personal savings +$500).
+- Scenario B: "Product Launch Blitz" (Intensive launch hours +12h, aggressive capital buffer +$1400, slight sleep trade-off -1h).
 """
     elif role == "retiree":
         scenario_guidance = """
@@ -383,7 +397,7 @@ USER PROFILE:
 - Username: {user_info['username']}
 - Role: {role.upper()}
 - Age: {user_info['age']}
-- Current Monthly Income / Allowance: ${user_info['monthly_income']:.2f}
+- Current Monthly Income / Inflow: ${user_info['monthly_income']:.2f}
 - Current Monthly Savings Pace: ${baseline.get('monthly_savings', 500.0):.2f}/month
 - Target Net Worth: ${user_info['target_net_worth']:.2f} by age {user_info['retirement_goal_age']}
 
@@ -423,7 +437,6 @@ Return ONLY a valid JSON object matching the following structure. No explanation
             max_tokens=200,
         )
         response_text = chat_completion.choices[0].message.content.strip()
-        # Clean markdown wrappers if any
         if response_text.startswith("```"):
             response_text = response_text.split("```")[1]
             if response_text.startswith("json"):
@@ -431,7 +444,6 @@ Return ONLY a valid JSON object matching the following structure. No explanation
         
         parsed = json.loads(response_text.strip())
         
-        # Validate output shape and round to matching steps
         def clean_val(val, min_v, max_v, step_v):
             val = float(val)
             val = max(min_v, min(max_v, val))
@@ -460,10 +472,9 @@ Return ONLY a valid JSON object matching the following structure. No explanation
 def generate_analytics_summary(user_info: Dict[str, Any], logs: List[Dict[str, Any]]) -> str:
     """
     Generate a simple, universally understandable summary of habit logs tailored to the user's role.
-    Warm, jargon-free, and highly visual with emojis.
     """
     if not logs:
-        return "No logs logged yet! Start tracking your daily sleep and activities to get your twin's feedback! 📝✨"
+        return "No logs recorded yet. Start logging your daily sleep and activities to get your twin's analysis."
 
     total_days = len(logs)
     avg_sleep = sum(l["sleep"] for l in logs) / total_days
@@ -473,27 +484,50 @@ def generate_analytics_summary(user_info: Dict[str, Any], logs: List[Dict[str, A
     avg_mood = sum(l["mood"] for l in logs) / total_days
     role = user_info.get("role", "professional")
 
+    focus_domain = (
+        "studies and exam preparation" if role == "student"
+        else "client delivery and creative flow" if role == "freelancer"
+        else "high-leverage execution and strategic stamina" if role == "entrepreneur"
+        else "daily wellness, health, and vitality" if role == "retiree"
+        else "work performance and physical energy"
+    )
+
     prompt = f"""
-You are a caring Digital Twin who helps people of all ages understand their daily routines.
-Write a warm, simple overview of this {role.upper()}'s average habits:
+You are an intelligent Digital Twin analyzing daily habit patterns.
+Write a clear, concise overview of this {role.upper()}'s routine:
 - Role: {role.upper()}
 - Average Sleep: {avg_sleep:.1f} hours/night
 - Average Screen Time: {avg_screen:.1f} hours/day
 - Average Learning/Reading/Study: {avg_study:.1f} hours/day
-- Average Active Exercise/Movement: {avg_exercise:.1f} minutes/day
-- Average Mood/Happiness: {avg_mood:.1f} out of 10
+- Average Active Movement: {avg_exercise:.1f} minutes/day
+- Average Wellbeing Rating: {avg_mood:.1f} out of 10
 
 Instructions:
-1. Explain in simple, engaging terms how their balance of sleep, screen breaks, and movement supports their { 'studies and exams' if role == 'student' else 'daily wellness and vitality' if role == 'retiree' else 'work focus and health' }.
-2. Avoid any dry statistical vocabulary or technical terms.
-3. Keep sentences short and clear. Use friendly emojis to make it fun and easy to scan.
-4. Highlight 1 positive habit they are doing great, and 1 very simple advice to feel even better.
-5. Limit the response to 3-4 simple sentences. Use bold text for key insights.
+1. Explain how their balance of sleep, screen time, and movement supports their {focus_domain}.
+2. Keep sentences clear, direct, and accessible.
+3. Highlight 1 strong positive habit, and 1 specific actionable adjustment.
+4. Limit the response to 3-4 concise sentences.
 """
 
+    activity_label = (
+        "Study & Coursework" if role == "student"
+        else "Portfolio & Inbound" if role == "freelancer"
+        else "Strategy & Market Research" if role == "entrepreneur"
+        else "Reading & Hobbies" if role == "retiree"
+        else "Learning & Upskilling"
+    )
+
+    fallback_summary = (
+        f"**Daily Habit Overview**\n\n"
+        f"- **Average Sleep:** {avg_sleep:.1f} hours/night (consistent rest protects focus).\n"
+        f"- **Screen Time:** {avg_screen:.1f} hours/day.\n"
+        f"- **{activity_label}:** {avg_study:.1f} hours/day.\n"
+        f"- **Active Movement:** {avg_exercise:.1f} minutes/day.\n"
+        f"- **Overall Rating:** {avg_mood:.1f}/10."
+    )
+
     if client is None:
-        activity_label = "Study & Homework" if role == "student" else "Reading & Hobbies" if role == "retiree" else "Learning & Upskilling"
-        return f"**Daily Reflection** 🌟\n* Average Sleep: **{avg_sleep:.1f} hours** (Great for recharging your energy! 🔋)\n* Screen Time: **{avg_screen:.1f} hours** (Remember to take screen breaks to rest your eyes! 📱)\n* {activity_label}: **{avg_study:.1f} hours** 📚\n* Active Movement: **{avg_exercise:.1f} minutes** (Keeping you active and happy! 🏃‍♂️)\n* Mood: **{avg_mood:.1f}/10** 😊"
+        return fallback_summary
 
     try:
         response = client.chat.completions.create(
@@ -505,5 +539,4 @@ Instructions:
         return response.choices[0].message.content
     except Exception as e:
         print(f"Error generating analytics summary: {e}")
-        activity_label = "Study & Homework" if role == "student" else "Reading & Hobbies" if role == "retiree" else "Learning & Upskilling"
-        return f"**Daily Reflection** 🌟\n* Average Sleep: **{avg_sleep:.1f} hours** (Great for recharging your energy! 🔋)\n* Screen Time: **{avg_screen:.1f} hours** (Remember to take screen breaks to rest your eyes! 📱)\n* {activity_label}: **{avg_study:.1f} hours** 📚\n* Active Movement: **{avg_exercise:.1f} minutes** (Keeping you active and happy! 🏃‍♂️)\n* Mood: **{avg_mood:.1f}/10** 😊"
+        return fallback_summary

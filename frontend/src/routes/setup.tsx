@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, GraduationCap, Briefcase, HeartHandshake } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, GraduationCap, Briefcase, Laptop, Rocket, HeartHandshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -37,11 +37,11 @@ function getQuestionsForRole(role: UserRole): Q[] {
   if (role === "student") {
     return [
       { key: "age", question: "How old are you?", hint: "Starting point of your student model.", kind: "slider", min: 14, max: 28, step: 1 },
-      { key: "targetAge", question: "By what age do you want to be financially independent / launch your career?", hint: "Your target milestone horizon.", kind: "slider", min: 20, max: 35, step: 1 },
+      { key: "targetAge", question: "By what age do you want to launch your career / achieve independence?", hint: "Your target milestone horizon.", kind: "slider", min: 20, max: 35, step: 1 },
       { key: "monthlyIncome", question: "What comes in each month as pocket money, allowance, or part-time earnings?", hint: "Your monthly inflow in dollars.", kind: "slider", min: 0, max: 3000, step: 50, unit: "$" },
       { key: "monthlyExpenses", question: "What goes out each month for food, books, study supplies, and fun?", hint: "Your monthly spending.", kind: "slider", min: 0, max: 2000, step: 50, unit: "$" },
       { key: "netWorth", question: "How much pocket money / savings do you have saved so far?", hint: "Bank account plus cash saved.", kind: "number", unit: "$" },
-      { key: "targetNetWorth", question: "What target savings milestone are you aiming for?", hint: "For tech gear, emergency fund, or graduation trip.", kind: "number", unit: "$" },
+      { key: "targetNetWorth", question: "What target savings milestone are you aiming for?", hint: "For tech gear, emergency fund, or graduation fund.", kind: "number", unit: "$" },
       { key: "sleepHours", question: "How many hours do you usually sleep?", hint: "Crucial for memory consolidation and exam focus.", kind: "slider", min: 4, max: 11, step: 0.5, unit: "h" },
       { key: "screenTime", question: "How much screen time on an average day outside of study?", hint: "Reels, games, social apps.", kind: "slider", min: 0, max: 12, step: 0.5, unit: "h" },
       { key: "studyHours", question: "Hours a week spent studying, doing coursework or homework?", hint: "Lectures, study sessions, reading.", kind: "slider", min: 0, max: 50, step: 1, unit: "h" },
@@ -50,6 +50,44 @@ function getQuestionsForRole(role: UserRole): Q[] {
       { key: "goalName", question: "Name your primary student goal.", hint: "Something you want to achieve soon.", kind: "text" },
       { key: "goalTarget", question: "What does this goal cost in total?", hint: "Total amount needed in dollars.", kind: "number", unit: "$" },
       { key: "goalCurrent", question: "How much have you saved toward it?", hint: "Already set aside.", kind: "number", unit: "$" },
+    ];
+  }
+
+  if (role === "freelancer") {
+    return [
+      { key: "age", question: "How old are you?", hint: "Starting point of your freelance career trajectory.", kind: "slider", min: 18, max: 65, step: 1 },
+      { key: "targetAge", question: "By what age do you want to reach complete financial independence?", hint: "Your financial freedom horizon.", kind: "slider", min: 35, max: 70, step: 1 },
+      { key: "monthlyIncome", question: "What is your average monthly invoiced revenue?", hint: "Average monthly client billings.", kind: "slider", min: 500, max: 30000, step: 100, unit: "$" },
+      { key: "monthlyExpenses", question: "What are your total monthly business and living expenses?", hint: "Software, home office, rent, bills, living costs.", kind: "slider", min: 400, max: 20000, step: 100, unit: "$" },
+      { key: "netWorth", question: "How much cash buffer and liquid savings do you have?", hint: "Emergency runway plus investment portfolio.", kind: "number", unit: "$" },
+      { key: "targetNetWorth", question: "What financial freedom net worth target do you aim for?", hint: "Target runway and long-term net worth.", kind: "number", unit: "$" },
+      { key: "sleepHours", question: "How many hours do you usually sleep per night?", hint: "Essential for sustained creative clarity.", kind: "slider", min: 4, max: 11, step: 0.5, unit: "h" },
+      { key: "screenTime", question: "How much recreational screen time outside of client work?", hint: "Social feeds, streaming, gaming.", kind: "slider", min: 0, max: 12, step: 0.5, unit: "h" },
+      { key: "studyHours", question: "Hours a week spent on high-income skill building & portfolio work?", hint: "Upgrading tools, case studies, inbound marketing.", kind: "slider", min: 0, max: 40, step: 0.5, unit: "h" },
+      { key: "exerciseDays", question: "How many active workout or movement days per week?", hint: "Combats sedentary desk fatigue.", kind: "slider", min: 0, max: 7, step: 1 },
+      { key: "focusArea", question: "What is your current freelance focus or key project?", hint: "e.g. Scaling retainer clients, launching SaaS, brand revamp.", kind: "text" },
+      { key: "goalName", question: "Name your primary freelance milestone goal.", hint: "e.g. 12-month runway fund, new workstation gear.", kind: "text" },
+      { key: "goalTarget", question: "What is the dollar target for this goal?", hint: "Amount needed in dollars.", kind: "number", unit: "$" },
+      { key: "goalCurrent", question: "How much do you currently have allocated?", hint: "Already set aside.", kind: "number", unit: "$" },
+    ];
+  }
+
+  if (role === "entrepreneur") {
+    return [
+      { key: "age", question: "How old are you?", hint: "Starting point of your founder model.", kind: "slider", min: 18, max: 65, step: 1 },
+      { key: "targetAge", question: "By what age do you aim for a major venture exit or financial freedom?", hint: "Target liquidity or exit age.", kind: "slider", min: 30, max: 65, step: 1 },
+      { key: "monthlyIncome", question: "What is your monthly founder draw or take-home income?", hint: "Current personal salary from your venture.", kind: "slider", min: 500, max: 35000, step: 100, unit: "$" },
+      { key: "monthlyExpenses", question: "What are your fixed monthly personal living expenses?", hint: "Living costs required to sustain your focus.", kind: "slider", min: 500, max: 25000, step: 100, unit: "$" },
+      { key: "netWorth", question: "What is your current liquid net worth & capital reserve?", hint: "Personal cash, liquid assets, and investments.", kind: "number", unit: "$" },
+      { key: "targetNetWorth", question: "What target equity value or exit net worth are you building toward?", hint: "Target exit valuation or liquid wealth.", kind: "number", unit: "$" },
+      { key: "sleepHours", question: "How many hours of sleep do you average per night?", hint: "Protects executive decision-making and cognitive stamina.", kind: "slider", min: 4, max: 11, step: 0.5, unit: "h" },
+      { key: "screenTime", question: "Recreational screen time per day outside of business operations?", hint: "Casual browsing, social media, entertainment.", kind: "slider", min: 0, max: 12, step: 0.5, unit: "h" },
+      { key: "studyHours", question: "Hours a week spent on market research, strategy, and books?", hint: "Industry insights, strategy, and strategic learning.", kind: "slider", min: 0, max: 40, step: 0.5, unit: "h" },
+      { key: "exerciseDays", question: "How many active training or physical wellness days per week?", hint: "Maintains high energy and stress resilience.", kind: "slider", min: 0, max: 7, step: 1 },
+      { key: "focusArea", question: "What is your company's core strategic milestone right now?", hint: "e.g. Reaching $50k MRR, closing seed round, product launch.", kind: "text" },
+      { key: "goalName", question: "Name your primary venture or personal milestone goal.", hint: "e.g. 18-month business runway, initial seed round.", kind: "text" },
+      { key: "goalTarget", question: "What is the financial target for this goal?", hint: "Target in dollars.", kind: "number", unit: "$" },
+      { key: "goalCurrent", question: "How much is currently banked toward it?", hint: "Already secured.", kind: "number", unit: "$" },
     ];
   }
 
@@ -168,26 +206,26 @@ function SetupPage() {
                 Select your role. Your twin will adapt its questions, wealth vocabulary, task planner, and AI advice specifically for your journey.
               </p>
 
-              <div className="mt-8 grid gap-4">
+              <div className="mt-6 grid gap-3">
                 {/* Option 1: Student */}
                 <button
                   type="button"
                   onClick={() => handleSelectRole("student")}
-                  className={`flex items-start gap-4 rounded-xl border p-5 text-left transition-all ${
+                  className={`flex items-start gap-4 rounded-xl border p-4 text-left transition-all ${
                     draft.role === "student"
                       ? "border-foreground bg-accent/60 shadow-[0_0_20px_-8px_var(--color-foreground)]"
                       : "border-border bg-muted/20 hover:border-foreground/40 hover:bg-muted/40"
                   }`}
                 >
-                  <div className="rounded-lg bg-background p-3 border border-border shrink-0">
-                    <GraduationCap className="h-6 w-6 text-foreground" />
+                  <div className="rounded-lg bg-background p-2.5 border border-border shrink-0">
+                    <GraduationCap className="h-5 w-5 text-foreground" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-display font-semibold text-base">Student</h3>
                       {draft.role === "student" && <span className="text-xs bg-foreground text-background font-semibold px-2 py-0.5 rounded-full">Selected</span>}
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                    <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
                       In school, college, or learning. Model study blocks, exam goals, habit streaks, and pocket money savings.
                     </p>
                   </div>
@@ -197,45 +235,93 @@ function SetupPage() {
                 <button
                   type="button"
                   onClick={() => handleSelectRole("professional")}
-                  className={`flex items-start gap-4 rounded-xl border p-5 text-left transition-all ${
+                  className={`flex items-start gap-4 rounded-xl border p-4 text-left transition-all ${
                     draft.role === "professional"
                       ? "border-foreground bg-accent/60 shadow-[0_0_20px_-8px_var(--color-foreground)]"
                       : "border-border bg-muted/20 hover:border-foreground/40 hover:bg-muted/40"
                   }`}
                 >
-                  <div className="rounded-lg bg-background p-3 border border-border shrink-0">
-                    <Briefcase className="h-6 w-6 text-foreground" />
+                  <div className="rounded-lg bg-background p-2.5 border border-border shrink-0">
+                    <Briefcase className="h-5 w-5 text-foreground" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-display font-semibold text-base">Working Professional</h3>
                       {draft.role === "professional" && <span className="text-xs bg-foreground text-background font-semibold px-2 py-0.5 rounded-full">Selected</span>}
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                      Job, freelancing, or career. Model monthly salary, 401(k) / retirement net worth, upskilling, and work-life balance.
+                    <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+                      Salaried career. Model monthly salary, 401(k) / retirement net worth, upskilling, and deep-work sprints.
                     </p>
                   </div>
                 </button>
 
-                {/* Option 3: Retiree */}
+                {/* Option 3: Freelancer */}
+                <button
+                  type="button"
+                  onClick={() => handleSelectRole("freelancer")}
+                  className={`flex items-start gap-4 rounded-xl border p-4 text-left transition-all ${
+                    draft.role === "freelancer"
+                      ? "border-foreground bg-accent/60 shadow-[0_0_20px_-8px_var(--color-foreground)]"
+                      : "border-border bg-muted/20 hover:border-foreground/40 hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="rounded-lg bg-background p-2.5 border border-border shrink-0">
+                    <Laptop className="h-5 w-5 text-foreground" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-display font-semibold text-base">Freelancer / Creator</h3>
+                      {draft.role === "freelancer" && <span className="text-xs bg-foreground text-background font-semibold px-2 py-0.5 rounded-full">Selected</span>}
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+                      Independent contractor or creator. Model variable client invoicing, emergency runway, and creative sprints.
+                    </p>
+                  </div>
+                </button>
+
+                {/* Option 4: Entrepreneur */}
+                <button
+                  type="button"
+                  onClick={() => handleSelectRole("entrepreneur")}
+                  className={`flex items-start gap-4 rounded-xl border p-4 text-left transition-all ${
+                    draft.role === "entrepreneur"
+                      ? "border-foreground bg-accent/60 shadow-[0_0_20px_-8px_var(--color-foreground)]"
+                      : "border-border bg-muted/20 hover:border-foreground/40 hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="rounded-lg bg-background p-2.5 border border-border shrink-0">
+                    <Rocket className="h-5 w-5 text-foreground" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-display font-semibold text-base">Founder / Entrepreneur</h3>
+                      {draft.role === "entrepreneur" && <span className="text-xs bg-foreground text-background font-semibold px-2 py-0.5 rounded-full">Selected</span>}
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+                      Building a startup or business. Model founder runway, equity targets, intensive build cycles, and growth milestones.
+                    </p>
+                  </div>
+                </button>
+
+                {/* Option 5: Retiree */}
                 <button
                   type="button"
                   onClick={() => handleSelectRole("retiree")}
-                  className={`flex items-start gap-4 rounded-xl border p-5 text-left transition-all ${
+                  className={`flex items-start gap-4 rounded-xl border p-4 text-left transition-all ${
                     draft.role === "retiree"
                       ? "border-foreground bg-accent/60 shadow-[0_0_20px_-8px_var(--color-foreground)]"
                       : "border-border bg-muted/20 hover:border-foreground/40 hover:bg-muted/40"
                   }`}
                 >
-                  <div className="rounded-lg bg-background p-3 border border-border shrink-0">
-                    <HeartHandshake className="h-6 w-6 text-foreground" />
+                  <div className="rounded-lg bg-background p-2.5 border border-border shrink-0">
+                    <HeartHandshake className="h-5 w-5 text-foreground" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-display font-semibold text-base">Retiree / Senior</h3>
                       {draft.role === "retiree" && <span className="text-xs bg-foreground text-background font-semibold px-2 py-0.5 rounded-full">Selected</span>}
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                    <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
                       Retired or financially independent. Model pension drawdown, healthcare buffer, active walking, and legacy goals.
                     </p>
                   </div>

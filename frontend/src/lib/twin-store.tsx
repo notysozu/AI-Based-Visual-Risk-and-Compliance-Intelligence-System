@@ -4,7 +4,7 @@ import { createUser, getUserByUsername, getForecast, getUser, updateUser } from 
 
 // --- Types ---
 
-export type UserRole = "student" | "professional" | "retiree";
+export type UserRole = "student" | "professional" | "freelancer" | "entrepreneur" | "retiree";
 
 export type Profile = {
   id: string | number | null;
@@ -230,8 +230,8 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
   student: {
     role: "student",
     name: "Student",
-    badge: "🎓 Student",
-    tagline: "Track coursework, study blocks, exam goals & pocket money savings.",
+    badge: "Student",
+    tagline: "Track coursework, study blocks, exam goals, and pocket money / allowance savings.",
     incomeLabel: "Pocket Money / Allowance",
     expensesLabel: "Living & Course Spending",
     savingsLabel: "Saved Pocket Money",
@@ -243,7 +243,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     wealthTitle: "Pocket Money & Savings",
     wealthSubtitle: "Model your savings rate, allowance growth, and milestone targets.",
     defaultAge: 20,
-    defaultTargetAge: 26,
+    defaultTargetAge: 25,
     defaultIncome: 800,
     defaultExpenses: 500,
     defaultNetWorth: 1200,
@@ -253,7 +253,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
   professional: {
     role: "professional",
     name: "Working Professional",
-    badge: "💼 Professional",
+    badge: "Professional",
     tagline: "Optimize salary growth, deep-work sprints, and retirement trajectory.",
     incomeLabel: "Monthly Take-Home Salary",
     expensesLabel: "Fixed & Living Costs",
@@ -273,11 +273,57 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     defaultTargetNetWorth: 1000000,
     taskCategories: ["Work", "Career", "Finance", "Health", "Upskilling", "Personal"],
   },
+  freelancer: {
+    role: "freelancer",
+    name: "Freelancer / Creator",
+    badge: "Freelancer",
+    tagline: "Manage variable invoice cashflow, client projects, and emergency runway.",
+    incomeLabel: "Average Monthly Invoiced Revenue",
+    expensesLabel: "Monthly Operating & Living Costs",
+    savingsLabel: "Cash Buffer & Net Worth",
+    targetSavingsLabel: "Target Emergency Runway & Wealth",
+    targetAgeLabel: "Target Financial Freedom Age",
+    studyLabel: "Skill Building & Portfolio Work",
+    focusLabel: "Current Client or Portfolio Focus",
+    goalLabel: "Freelance Goal (Runway/Gear)",
+    wealthTitle: "Cashflow & Runway Planner",
+    wealthSubtitle: "Simulate variable income, emergency buffers, and investment compounding.",
+    defaultAge: 26,
+    defaultTargetAge: 50,
+    defaultIncome: 6500,
+    defaultExpenses: 3800,
+    defaultNetWorth: 25000,
+    defaultTargetNetWorth: 800000,
+    taskCategories: ["Client Work", "Projects", "Invoices", "Admin", "Health", "Upskilling"],
+  },
+  entrepreneur: {
+    role: "entrepreneur",
+    name: "Founder / Entrepreneur",
+    badge: "Founder",
+    tagline: "Model startup runway, intensive build sprints, and equity/growth goals.",
+    incomeLabel: "Founder Draw / Monthly Income",
+    expensesLabel: "Personal & Business Fixed Costs",
+    savingsLabel: "Liquid Capital & Net Worth",
+    targetSavingsLabel: "Target Exit / Business Valuation",
+    targetAgeLabel: "Target Exit / Independence Age",
+    studyLabel: "Market Research & Strategic Learning",
+    focusLabel: "Company Milestone Focus",
+    goalLabel: "Venture Goal (Milestone/Launch)",
+    wealthTitle: "Venture & Equity Wealth",
+    wealthSubtitle: "Forecast personal runway, reinvestment pace, and equity realization.",
+    defaultAge: 29,
+    defaultTargetAge: 45,
+    defaultIncome: 7000,
+    defaultExpenses: 4200,
+    defaultNetWorth: 60000,
+    defaultTargetNetWorth: 2500000,
+    taskCategories: ["Product", "Growth", "Fundraising", "Operations", "Team", "Health"],
+  },
   retiree: {
     role: "retiree",
     name: "Retiree / Senior",
-    badge: "🌿 Retiree",
-    tagline: "Preserve wealth, sustain pension drawdown, and protect health & vitality.",
+    badge: "Retiree",
+    tagline: "Preserve portfolio wealth, sustain pension drawdown, and protect health & vitality.",
     incomeLabel: "Monthly Pension / Passive Income",
     expensesLabel: "Healthcare & Living Expenses",
     savingsLabel: "Nest Egg & Portfolio",
@@ -300,6 +346,8 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
 
 export function getRoleConfig(role?: string | null): RoleConfig {
   if (role === "student") return ROLE_CONFIGS.student;
+  if (role === "freelancer") return ROLE_CONFIGS.freelancer;
+  if (role === "entrepreneur") return ROLE_CONFIGS.entrepreneur;
   if (role === "retiree") return ROLE_CONFIGS.retiree;
   return ROLE_CONFIGS.professional;
 }
@@ -384,6 +432,84 @@ export const WORKER_SUGGESTIONS: Suggestion[] = [
   },
 ];
 
+export const FREELANCER_SUGGESTIONS: Suggestion[] = [
+  {
+    id: "freelance-client-block",
+    category: "Work",
+    impact: "+1.0 focus",
+    title: "Dedicated client delivery sprint",
+    detail: "Zero-distraction 2-hour sprint focused strictly on billable client deliverables.",
+    start: "09:00",
+    minutes: 120,
+  },
+  {
+    id: "freelance-invoice-audit",
+    category: "Money",
+    impact: "+Runway clarity",
+    title: "Weekly invoice & tax buffer audit",
+    detail: "Check outstanding client accounts receivable and set aside 25% for tax buffer.",
+    start: "16:30",
+    minutes: 20,
+  },
+  {
+    id: "freelance-portfolio-hour",
+    category: "Study",
+    impact: "+0.7 pipeline",
+    title: "Inbound pipeline & skill building",
+    detail: "Spend 45 minutes publishing case studies or upgrading high-value freelance skills.",
+    start: "14:00",
+    minutes: 45,
+  },
+  {
+    id: "freelance-shutdown-ritual",
+    category: "Personal",
+    impact: "+0.5 wellbeing",
+    title: "Clear workspace shutdown",
+    detail: "Close client tabs and transition out of work mode to prevent freelancer boundary creep.",
+    start: "18:30",
+    minutes: 15,
+  },
+];
+
+export const ENTREPRENEUR_SUGGESTIONS: Suggestion[] = [
+  {
+    id: "founder-strategy-sprint",
+    category: "Work",
+    impact: "+1.2 leverage",
+    title: "Morning high-leverage product sprint",
+    detail: "Work on core product and distribution before team messages and operational fires.",
+    start: "08:30",
+    minutes: 90,
+  },
+  {
+    id: "founder-runway-check",
+    category: "Money",
+    impact: "+Runway extension",
+    title: "Burn rate & runway review",
+    detail: "Analyze monthly business burn vs cash buffer to maintain minimum 18-month runway.",
+    start: "17:00",
+    minutes: 25,
+  },
+  {
+    id: "founder-customer-talk",
+    category: "Study",
+    impact: "+Product clarity",
+    title: "Direct customer feedback synthesis",
+    detail: "Synthesize user interviews and feedback logs to refine product roadmap.",
+    start: "13:30",
+    minutes: 45,
+  },
+  {
+    id: "founder-recovery-walk",
+    category: "Health",
+    impact: "+0.6 resilience",
+    title: "Midday reset & walking break",
+    detail: "Step away from screens to maintain high cognitive stamina under pressure.",
+    start: "12:30",
+    minutes: 25,
+  },
+];
+
 export const RETIREE_SUGGESTIONS: Suggestion[] = [
   {
     id: "retiree-morning-walk",
@@ -425,6 +551,8 @@ export const RETIREE_SUGGESTIONS: Suggestion[] = [
 
 export function getRoleSuggestions(role?: string | null): Suggestion[] {
   if (role === "student") return STUDENT_SUGGESTIONS;
+  if (role === "freelancer") return FREELANCER_SUGGESTIONS;
+  if (role === "entrepreneur") return ENTREPRENEUR_SUGGESTIONS;
   if (role === "retiree") return RETIREE_SUGGESTIONS;
   return WORKER_SUGGESTIONS;
 }

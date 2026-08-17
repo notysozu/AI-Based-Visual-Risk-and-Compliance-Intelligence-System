@@ -1,51 +1,73 @@
-# Digital Twin AI – Personal Life Simulation & Decision Assistant
+# Digital Twin AI — Multi-Persona Life & Financial Simulation Engine
 
-## AI Assistant Context
-**Project Goal:** Build an intelligent decision-support system that creates a "digital twin" of a user to forecast future life outcomes of their choices (finances, habits, studies) using predictive analytics, machine learning, and LLM advice.
-**Architecture Style:** Decoupled frontend/backend monorepo.
+Digital Twin AI is an intelligent decision-support system that models, forecasts, and optimizes a user's life trajectory across finances, health, cognitive performance, and daily habits.
 
-## Tech Stack
-* **Frontend Client:** React 19, TypeScript, Vite, TanStack Router & Start, Tailwind CSS, Radix UI, Recharts.
-* **Backend API Server:** FastAPI (Python), Uvicorn.
-* **Database:** PostgreSQL or SQLite (SQLAlchemy ORM).
-* **AI & Predictive Engines:** Scikit-learn, Pandas, Gemini & Groq LLM Advisors.
+By combining stochastic Monte Carlo simulations, deterministic compound growth algorithms, biological feedback models, and conversational AI (Groq LLaMA 3.1), the platform creates a living "digital twin" tailored to the user's specific life stage.
 
 ---
 
-## 🚀 Getting Started
+## Core Capabilities
 
-### 1. Backend Environment Setup
+- **5 Life-Stage Personas**: Universal adaptation across **Student**, **Working Professional**, **Freelancer / Creator**, **Founder / Entrepreneur**, and **Retiree / Senior** profiles.
+- **Financial Twin & Monte Carlo Forecasting**: 500-iteration stochastic wealth simulations with percentile bands ($p_{10}$, $p_{50}$, $p_{90}$), probability of success calculations, and intelligent backend caching.
+- **Interactive Decision Sandbox ("What-If" Simulator)**: Compare two competing lifestyle scenarios side-by-side. Includes automated AI scenario generation and multi-variable biological tradeoff modeling (sleep vs health vs cognitive focus).
+- **Universal Habit Analytics**: Grouped correlation charts (Sleep vs Focus, Screen Time vs Mood) designed for all age groups, paired with an automated daily 12:00 PM local noon AI reflection cache.
+- **Daily Task Planner & Suggestion Adoption**: Role-filtered task categories and a curated habit suggestion engine with one-click adoption to today's schedule.
 
-Clone the repository and set up a Python virtual environment:
+---
+
+## Step-by-Step Workflow Documentation
+
+Detailed technical design documents for each layer of the platform are located in [`docs/workflow/`](docs/workflow/):
+
+1. [**01. System Architecture & Data Flow**](docs/workflow/01_system_architecture.md) — High-level architecture, module breakdown, and REST communication.
+2. [**02. Onboarding & Persona Architecture**](docs/workflow/02_onboarding_and_personas.md) — The 5 life-stage personas, adaptive question progression, and baseline state initialization.
+3. [**03. Financial Forecasting & Monte Carlo Simulation**](docs/workflow/03_forecasting_and_monte_carlo.md) — Mathematical models, 500-path stochastic modeling, and prediction caching.
+4. [**04. Decision Sandbox & What-If Simulation**](docs/workflow/04_decision_sandbox_and_whatif.md) — Dual-scenario comparison, biological feedback calculations, and structured verdict reporting.
+5. [**05. Habit Analytics & Daily Noon Cache**](docs/workflow/05_habit_analytics_and_feedback.md) — Metric tracking, grouped correlation charts, and automated 12:00 PM cache invalidation.
+6. [**06. Task Planner & Suggestion Adoption Engine**](docs/workflow/06_task_planner_and_suggestions.md) — Role-specific task categories, suggestion libraries, and schedule injection.
+
+---
+
+## Tech Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 19, TypeScript, Vite, TanStack Router & Start, Tailwind CSS, Radix UI, Recharts, Lucide Icons |
+| **Backend API** | FastAPI (Python 3.10+), Uvicorn, Pydantic v2 |
+| **Database** | SQLite / PostgreSQL with SQLAlchemy ORM |
+| **AI & Predictive** | Groq (LLaMA 3.1-8B-Instant), NumPy, Pandas, Scikit-learn |
+
+---
+
+## Quickstart Guide
+
+### 1. Prerequisites
+- Python 3.10 or higher
+- Node.js 18.0 or higher
+- npm or pnpm
+
+### 2. Backend Environment Setup
 
 ```bash
-# Create virtual environment
+# 1. Create and activate a Python virtual environment
 python3 -m venv .venv
-
-# Activate virtual environment
 source .venv/bin/activate
 
-# Install dependencies
+# 2. Install backend dependencies
 pip install -r requirements.txt
 ```
 
-> [!TIP]
-> **Database Schema Reset:** If you pull new updates and encounter SQLAlchemy schema errors (e.g. `no such column: users.scenario_a_preset`), delete the local SQLite file in the root folder so the ORM can recreate it cleanly on start:
-> ```bash
-> rm -f digital_twin.db
-> ```
-
-### 2. Frontend Environment Setup
-
-Ensure you have Node.js installed, then install frontend dependencies:
+### 3. Frontend Client Setup
 
 ```bash
+# 1. Navigate to the frontend directory and install dependencies
 cd frontend
 npm install
 cd ..
 ```
 
-### 3. Environment Variables Configuration
+### 4. Environment Variables Configuration
 
 Copy `.env.example` to `.env` in the root directory:
 
@@ -53,94 +75,99 @@ Copy `.env.example` to `.env` in the root directory:
 cp .env.example .env
 ```
 
-Open `.env` and set your configuration options:
+Set your configuration in `.env`:
 
 ```env
 DATABASE_URL=sqlite:///./digital_twin.db
-GEMINI_API_KEY=your_gemini_api_key_here
 GROQ_API_KEY=your_groq_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
+
+> **Note:** A valid `GROQ_API_KEY` enables conversational LLM predictions and scenario generation. If omitted, the platform runs using deterministic rule-based fallback engines.
 
 ---
 
-## 🏃 Running the Application
+## Running the Application
 
-The application consists of a **FastAPI backend API** and a **React Vite frontend**. You can run both concurrently in separate terminal sessions.
+Run the backend and frontend in separate terminal sessions:
 
 ### Start Backend API (FastAPI)
 
 ```bash
-# Activate virtual environment
 source .venv/bin/activate
-
-# Launch uvicorn server
 uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
 - **Backend Base URL:** [http://127.0.0.1:8000](http://127.0.0.1:8000)
+- **Interactive OpenAPI Documentation:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 - **Health Check Endpoint:** [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
-- **Interactive OpenAPI Docs:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
-### Start Frontend Client (Vite React)
+### Start Frontend Client (React)
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-- **Frontend Client URL:** [http://localhost:8080](http://localhost:8080)
+- **Frontend Application URL:** [http://localhost:8080](http://localhost:8080)
 
 ---
 
-## 📂 Project Directory Structure
+## Project Directory Layout
 
 ```text
 digital-twin-ai/
-│
-├── frontend/                 # React, TypeScript and Vite client
-│   ├── src/
-│   │   ├── routes/           # Routing tree (Landing, Dashboard, Simulator, Setup, Tasks)
-│   │   ├── components/       # App Shell, Scenario Comparison chart, and Radix widgets
-│   │   └── lib/              # API Client (api.ts) & Central State Provider (twin-store.tsx)
-│   ├── package.json          # Node dependencies and build scripts
-│   └── vite.config.ts        # Vite environment configs
-│
-├── backend/                  # FastAPI server and route handlers
-│   ├── main.py               # FastAPI application instance
-│   ├── api/                  # API routers (users, records, simulations, finance, habits, study)
-│   ├── config/               # App configuration
-│   └── services/             # Business logic and external API calls
-│
-├── database/                 # Database schemas, models, and CRUD operations
-│   ├── database.py           # SQLAlchemy engine & session setup
-│   ├── models.py             # SQLAlchemy ORM models (Users, Finances, Habits, Studies)
-│   ├── schemas.py            # Pydantic models for data validation
-│   └── crud.py               # Database transaction functions & seed data
-│
-├── ai_engine/                # Machine learning and simulation logic
-│   ├── forecasting/          # Financial, study, and wellness predictive models
-│   ├── simulation/           # Multi-scenario "what-if" simulation logic
-│   └── llm_integration/      # Conversational AI advisor prompt handling
-│
-├── requirements.txt          # Python dependencies
-└── .env.example              # Environment variables template
+|-- docs/
+|   `-- workflow/                 # Step-by-step workflow and system design documents
+|       |-- 01_system_architecture.md
+|       |-- 02_onboarding_and_personas.md
+|       |-- 03_forecasting_and_monte_carlo.md
+|       |-- 04_decision_sandbox_and_whatif.md
+|       |-- 05_habit_analytics_and_feedback.md
+|       `-- 06_task_planner_and_suggestions.md
+|
+|-- frontend/                     # React 19 + TanStack Router + Tailwind CSS
+|   |-- src/
+|   |   |-- components/           # UI components, AppShell, SettingsDialog, Gauge
+|   |   |-- routes/               # Page routes (Dashboard, Wealth, Planner, Simulator, etc.)
+|   |   |-- lib/                  # Central state store (twin-store.tsx) & API client
+|   |   `-- hooks/                # Responsive layout and state hooks
+|   |-- package.json
+|   `-- vite.config.ts
+|
+|-- backend/                      # FastAPI application
+|   |-- main.py                   # FastAPI initialization & middleware
+|   `-- api/                      # REST routers (users, records, simulations)
+|
+|-- database/                     # Database layer
+|   |-- models.py                 # SQLAlchemy ORM schemas
+|   |-- schemas.py                # Pydantic data validation schemas
+|   |-- crud.py                   # CRUD transaction helpers
+|   `-- database.py               # Engine session management
+|
+|-- ai_engine/                    # Intelligence & simulation layer
+|   |-- forecasting/              # Deterministic & Monte Carlo financial models
+|   |-- simulation/               # Multi-scenario lifestyle & biological tradeoff engine
+|   `-- llm_integration/          # Groq LLaMA 3.1 prompt advisor & rule-based fallbacks
+|
+|-- requirements.txt              # Python package requirements
+`-- README.md
 ```
 
 ---
 
-## 📡 API Endpoints Overview
+## Key API Endpoints
 
-| Endpoint | Method | Description |
+| Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `/` | `GET` | API root status check |
-| `/health` | `GET` | Health check endpoint |
-| `/users/` | `POST` | Create a new user profile |
-| `/users/{user_id}` | `PUT` | Update user settings/metrics (including `scenario_a_preset` and `scenario_b_preset` slider JSON sets) |
-| `/users/username/{username}` | `GET` | Retrieve user profile by username |
-| `/users/email/{email}` | `GET` | Retrieve user profile by email |
-| `/records/habit/{user_id}` | `GET / POST` | Log/get habit duration & wellness impact records |
-| `/records/study/{user_id}` | `GET / POST` | Log/get study duration & focus performance records |
-| `/records/financial/{user_id}` | `GET / POST` | Log/get financial transaction ledger records |
-| `/simulations/baseline/{user_id}` | `GET` | Compute user's average baseline parameters |
-| `/simulations/forecast/{user_id}` | `GET` | Generate deterministic net worth forecast |
-| `/simulations/compare/{user_id}` | `POST` | Execute multi-scenario What-If simulations with custom offsets and prompt LLM Advisor |
+| `GET` | `/health` | Server health check |
+| `POST` | `/users/` | Create a new user profile with selected persona role |
+| `GET` | `/users/{user_id}` | Retrieve user profile, cached predictions, and role |
+| `PUT` | `/users/{user_id}` | Update profile metrics, target age, net worth, and role |
+| `GET` | `/records/habit/{user_id}` | Retrieve historical habit logs |
+| `POST` | `/records/habit/{user_id}` | Record daily sleep, screen, study, and mood log |
+| `GET` | `/simulations/forecast/{user_id}` | Execute 500-iteration Monte Carlo wealth forecast |
+| `GET` | `/simulations/wealth-advice/{user_id}` | Fetch cache-checked AI wealth prediction |
+| `POST` | `/simulations/compare/{user_id}` | Run comparative What-If simulation with AI verdict |
+| `GET` | `/simulations/scenario-suggestions/{user_id}` | AI-generated Scenario A & B slider suggestions |
+| `GET` | `/simulations/analytics-summary/{user_id}` | Daily 12:00 PM cached habit overview summary |

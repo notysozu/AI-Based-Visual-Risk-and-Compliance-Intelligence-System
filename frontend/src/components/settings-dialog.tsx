@@ -66,9 +66,11 @@ export function SettingsDialog({
               <SelectValue placeholder="Select role" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="student">🎓 Student (Coursework, study & pocket savings)</SelectItem>
-              <SelectItem value="professional">💼 Working Professional (Salary, career & retirement)</SelectItem>
-              <SelectItem value="retiree">🌿 Retiree / Senior (Pension, wellness & longevity)</SelectItem>
+              <SelectItem value="student">Student (Coursework, study & pocket savings)</SelectItem>
+              <SelectItem value="professional">Working Professional (Salary, career & retirement)</SelectItem>
+              <SelectItem value="freelancer">Freelancer / Creator (Client projects, invoices & runway)</SelectItem>
+              <SelectItem value="entrepreneur">Founder / Entrepreneur (Startup runway, equity & build sprints)</SelectItem>
+              <SelectItem value="retiree">Retiree / Senior (Pension, wellness & longevity)</SelectItem>
             </SelectContent>
           </Select>
         </div>
