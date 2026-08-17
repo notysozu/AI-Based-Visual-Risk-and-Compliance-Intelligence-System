@@ -8,19 +8,33 @@ By combining stochastic Monte Carlo simulations, deterministic compound growth a
 
 ## Core Capabilities
 
-- **5 Life-Stage Personas**: Universal adaptation across **Student**, **Working Professional**, **Freelancer / Creator**, **Founder / Entrepreneur**, and **Retiree / Senior** profiles.
-- **Financial Twin & Monte Carlo Forecasting**: 500-iteration stochastic wealth simulations with percentile bands ($p_{10}$, $p_{50}$, $p_{90}$), probability of success calculations, and intelligent backend caching.
-- **Interactive Decision Sandbox ("What-If" Simulator)**: Compare two competing lifestyle scenarios side-by-side. Includes automated AI scenario generation and multi-variable biological tradeoff modeling (sleep vs health vs cognitive focus).
-- **Universal Habit Analytics**: Grouped correlation charts (Sleep vs Focus, Screen Time vs Mood) designed for all age groups, paired with an automated daily 12:00 PM local noon AI reflection cache.
-- **Daily Task Planner & Suggestion Adoption**: Role-filtered task categories and a curated habit suggestion engine with one-click adoption to today's schedule.
+- **5 Life-Stage Personas**: Dynamic UI and mathematical adaptation across **Student**, **Working Professional**, **Freelancer / Creator**, **Founder / Entrepreneur**, and **Retiree / Senior** profiles.
+- **Demo Twin Dropdown & Random Generator**: One-click exploration of pre-calibrated standard personas or randomized stochastic profiles with 30 days of synthetic historical logs.
+- **Financial Twin & Monte Carlo Forecasting**: 500-iteration stochastic wealth simulations with percentile bands ($p_{10}$, $p_{50}$, $p_{90}$), real-time probability of success calculations, and intelligent backend prediction caching.
+- **Adaptive Multi-Scale Financial Charts**: Dynamic Y-axis scaling that gracefully handles values from student allowances in hundreds/thousands to venture founders and retirees in millions.
+- **Interactive Decision Sandbox ("What-If" Simulator)**: Side-by-side comparison of two competing lifestyle scenarios. Features automated AI scenario generation, multi-variable biological tradeoff modeling (sleep vs health index vs cognitive focus), and 1-click scenario adoption.
+- **Universal Habit Analytics**: Grouped correlation charts (Sleep vs Focus, Screen Time vs Mood) designed for all ages, paired with an automated 12:00 PM local noon AI reflection cache.
+- **Daily Task Planner & Suggestion Adoption**: Role-filtered task categories and a curated habit suggestion engine with instant injection into today's schedule.
+
+---
+
+## The 5 User Personas
+
+| Persona | Core Focus | Inflow Label | Baseline Net Worth | Target Horizon | Focus / Learning Metric |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Student** | Exams, coursework & allowance savings | Pocket Money / Allowance | Saved Allowance ($1.6k) | Career Launch Age ($12k–$30k) | Coursework & Study Blocks |
+| **Working Professional** | Salaried career, 401(k) & retirement | Monthly Take-Home Salary | Current Net Worth ($48k) | Retirement Age ($1.2M) | Upskilling & Deep Work |
+| **Freelancer / Creator** | Client contracts, invoices & runway | Average Invoiced Revenue | Cash Buffer & Portfolio ($35k) | Financial Freedom Age ($850k) | Skill Building & Inbound |
+| **Founder / Entrepreneur**| Venture sprints, equity & runway | Founder Draw / Income | Capital Reserve ($90k) | Exit / Valuation Age ($3.0M) | Strategy & Product Sprints |
+| **Retiree / Senior** | Longevity, health buffer & legacy | Monthly Pension / Passive | Nest Egg ($520k) | Longevity Target Age ($650k) | Reading & Daily Vitality |
 
 ---
 
 ## Step-by-Step Workflow Documentation
 
-Detailed technical design documents for each layer of the platform are located in [`docs/workflow/`](docs/workflow/):
+Detailed technical design documents for every layer of the platform are located in [`docs/workflow/`](docs/workflow/):
 
-1. [**01. System Architecture & Data Flow**](docs/workflow/01_system_architecture.md) — High-level architecture, module breakdown, and REST communication.
+1. [**01. System Architecture & Data Flow**](docs/workflow/01_system_architecture.md) — High-level architecture, module breakdown, and REST layer communication.
 2. [**02. Onboarding & Persona Architecture**](docs/workflow/02_onboarding_and_personas.md) — The 5 life-stage personas, adaptive question progression, and baseline state initialization.
 3. [**03. Financial Forecasting & Monte Carlo Simulation**](docs/workflow/03_forecasting_and_monte_carlo.md) — Mathematical models, 500-path stochastic modeling, and prediction caching.
 4. [**04. Decision Sandbox & What-If Simulation**](docs/workflow/04_decision_sandbox_and_whatif.md) — Dual-scenario comparison, biological feedback calculations, and structured verdict reporting.
