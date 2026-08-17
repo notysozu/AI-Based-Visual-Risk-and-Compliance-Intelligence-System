@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   CartesianGrid,
@@ -29,6 +29,7 @@ import { AppShell } from "@/components/app-shell";
 import { HabitDrawer, tooltipStyle } from "@/routes/dashboard";
 import { useGuard } from "@/lib/use-guard";
 import { baseline, focusIndex, useTwin } from "@/lib/twin-store";
+import { getAnalyticsSummary } from "@/lib/api";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({
@@ -45,12 +46,124 @@ export const Route = createFileRoute("/analytics")({
   component: AnalyticsPage,
 });
 
+function parseMarkdown(text: string) {
+  if (!text) return null;
+  const lines = text.split("\n");
+  return lines.map((line, i) => {
+    let cleanLine = line.trim();
+    if (!cleanLine) return <div key={i} className="h-2" />;
+    
+    if (cleanLine.startsWith("### ")) {
+      return <h4 key={i} className="text-sm font-semibold mt-3 mb-1 text-foreground">{cleanLine.replace("### ", "")}</h4>;
+    }
+    if (cleanLine.startsWith("## ")) {
+      return <h3 key={i} className="text-base font-bold mt-4 mb-2 text-foreground">{cleanLine.replace("## ", "")}</h3>;
+    }
+    if (cleanLine.startsWith("# ")) {
+      return <h2 key={i} className="text-lg font-bold mt-4 mb-2 text-foreground">{cleanLine.replace("# ", "")}</h2>;
+    }
+    
+    let isBullet = false;
+    if (cleanLine.startsWith("- ") || cleanLine.startsWith("* ")) {
+      isBullet = true;
+      cleanLine = cleanLine.substring(2);
+    }
+    
+    const parts = [];
+    const regex = /\*\*(.*?)\*\*/g;
+    let match;
+    let lastIndex = 0;
+    while ((match = regex.exec(cleanLine)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(cleanLine.substring(lastIndex, match.index));
+      }
+      parts.push(<strong key={match.index} className="font-bold text-foreground">{match[1]}</strong>);
+      lastIndex = regex.lastIndex;
+    }
+    if (lastIndex < cleanLine.length) {
+      parts.push(cleanLine.substring(lastIndex));
+    }
+    
+    if (isBullet) {
+      return (
+        <li key={i} className="ml-4 list-disc text-sm text-muted-foreground pl-1 py-0.5">
+          {parts}
+        </li>
+      );
+    }
+    
+    return (
+      <p key={i} className="text-sm text-muted-foreground leading-relaxed my-1">
+        {parts}
+      </p>
+    );
+  });
+}
+
 function AnalyticsPage() {
   const ok = useGuard();
   const { state, addLog, clearLogs } = useTwin();
+  const p = state.profile;
   const [drawer, setDrawer] = useState(false);
 
+  // Dynamic default selection based on user profile age
+  const defaultAgeGroup = useMemo(() => {
+    if (p.age && p.age < 16) return "kid";
+    if (p.age && p.age >= 60) return "grandpa";
+    return "adult";
+  }, [p.age]);
+
+  const [ageGroup, setAgeGroup] = useState<"kid" | "adult" | "grandpa">("adult");
+  const [summary, setSummary] = useState<string>("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
+  // Set default group when age is retrieved
+  useEffect(() => {
+    if (p.age) {
+      setAgeGroup(defaultAgeGroup);
+    }
+  }, [p.age, defaultAgeGroup]);
+
+  // Request the AI Analytics narrative when logs or age Tone changes
+  useEffect(() => {
+    if (!p.id || state.logs.length === 0) return;
+    
+    setSummaryLoading(true);
+    const minimalLogs = state.logs.map((l) => ({
+      sleep: l.sleep,
+      screen: l.screen,
+      study: l.study,
+      exercise: l.exercise,
+      mood: l.mood,
+    }));
+
+    getAnalyticsSummary(p.id, { logs: minimalLogs, age_group: ageGroup })
+      .then((res: any) => {
+        setSummary(res.summary);
+      })
+      .catch((err: any) => {
+        console.error("Failed to generate analytics summary:", err);
+      })
+      .finally(() => {
+        setSummaryLoading(false);
+      });
+  }, [p.id, state.logs, ageGroup]);
+
   const base = useMemo(() => baseline(state.logs), [state.logs]);
+  
+  // Calculate average stats for simplified widgets
+  const avgStats = useMemo(() => {
+    if (!state.logs.length) return { sleep: 0, screen: 0, exercise: 0, study: 0, mood: 0 };
+    const len = state.logs.length;
+    return {
+      sleep: +(state.logs.reduce((acc, l) => acc + l.sleep, 0) / len).toFixed(1),
+      screen: +(state.logs.reduce((acc, l) => acc + l.screen, 0) / len).toFixed(1),
+      exercise: +(state.logs.reduce((acc, l) => acc + l.exercise, 0) / len).toFixed(0),
+      study: +(state.logs.reduce((acc, l) => acc + l.study, 0) / len).toFixed(1),
+      mood: +(state.logs.reduce((acc, l) => acc + l.mood, 0) / len).toFixed(1),
+    };
+  }, [state.logs]);
+
   const scatter = useMemo(
     () =>
       state.logs.map((l) => ({
@@ -75,10 +188,10 @@ function AnalyticsPage() {
     ];
     const blob = new Blob([rows.map((r) => r.join(",")).join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "twin-history.csv";
-    a.click();
+    const aEl = document.createElement("a");
+    aEl.href = url;
+    aEl.download = "twin-history.csv";
+    aEl.click();
     URL.revokeObjectURL(url);
     toast.success("History exported");
   };
@@ -124,6 +237,90 @@ function AnalyticsPage() {
         </>
       }
     >
+      {/* Dynamic AI Habit Overview panel */}
+      <div className="panel p-6 mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-4">
+          <div>
+            <p className="label-xs">Simplified habit overview</p>
+            <h3 className="text-lg font-bold mt-1 text-foreground">AI Digital Twin Insights</h3>
+          </div>
+          
+          {/* Tone Selector Buttons */}
+          <div className="flex bg-muted p-1 rounded-md text-xs font-semibold gap-1 self-start sm:self-center">
+            <button
+              onClick={() => setAgeGroup("kid")}
+              className={`px-3 py-1.5 rounded transition-all ${
+                ageGroup === "kid" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              🧒 Kid Mode
+            </button>
+            <button
+              onClick={() => setAgeGroup("adult")}
+              className={`px-3 py-1.5 rounded transition-all ${
+                ageGroup === "adult" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              🧑 Standard Mode
+            </button>
+            <button
+              onClick={() => setAgeGroup("grandpa")}
+              className={`px-3 py-1.5 rounded transition-all ${
+                ageGroup === "grandpa" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              👴 Grandpa Mode
+            </button>
+          </div>
+        </div>
+
+        {/* Large Simplified Metric Cards */}
+        <div className="grid gap-3 sm:grid-cols-5 mt-5">
+          <div className="panel p-4 border border-border text-center">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Sleep 🛌</span>
+            <p className="text-xl font-bold mt-1 font-display">{avgStats.sleep}h</p>
+            <span className="text-[10px] text-muted-foreground">Avg / night</span>
+          </div>
+          <div className="panel p-4 border border-border text-center">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Screen 📱</span>
+            <p className="text-xl font-bold mt-1 font-display">{avgStats.screen}h</p>
+            <span className="text-[10px] text-muted-foreground">Avg / day</span>
+          </div>
+          <div className="panel p-4 border border-border text-center">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Study/Read 📚</span>
+            <p className="text-xl font-bold mt-1 font-display">{avgStats.study}h</p>
+            <span className="text-[10px] text-muted-foreground">Avg / day</span>
+          </div>
+          <div className="panel p-4 border border-border text-center">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Exercise 🏃</span>
+            <p className="text-xl font-bold mt-1 font-display">{avgStats.exercise}m</p>
+            <span className="text-[10px] text-muted-foreground">Avg / day</span>
+          </div>
+          <div className="panel p-4 border border-border text-center">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Mood/Wellbeing 😊</span>
+            <p className="text-xl font-bold mt-1 font-display">{avgStats.mood}/10</p>
+            <span className="text-[10px] text-muted-foreground">Avg rating</span>
+          </div>
+        </div>
+
+        {/* AI Explanatory Narrative */}
+        <div className="mt-5 panel p-5 border border-border bg-muted/20">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1.5 h-3.5 bg-foreground rounded" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-foreground">
+              {ageGroup === "kid" ? "🎮 Game Host Report" : ageGroup === "grandpa" ? "🩺 Friendly Medical Note" : "twin feedback"}
+            </p>
+          </div>
+          <div className="space-y-1 text-muted-foreground leading-relaxed">
+            {summaryLoading ? (
+              <p className="text-sm animate-pulse-glow">Twin is reading your logs...</p>
+            ) : (
+              parseMarkdown(summary)
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="grid gap-5 lg:grid-cols-2">
         <ChartCard title="Sleep hours vs focus rating">
           <ScatterChart>

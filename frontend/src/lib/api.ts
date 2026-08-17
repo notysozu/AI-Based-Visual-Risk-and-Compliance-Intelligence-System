@@ -71,6 +71,13 @@ export function getScenarioSuggestions(userId: string | number) {
   return request(`/simulations/suggest/${userId}`);
 }
 
+export function getAnalyticsSummary(userId: string | number, payload: { logs: any[]; age_group: string }) {
+  return request(`/simulations/analytics-summary/${userId}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function getWealthAdvice(userId: string | number) {
   return request(`/simulations/wealth-advice/${userId}`);
 }

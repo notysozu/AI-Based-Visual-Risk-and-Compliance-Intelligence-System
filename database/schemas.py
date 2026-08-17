@@ -127,3 +127,14 @@ class SimulationResponse(BaseModel):
     scenario_a: SimulationResult
     scenario_b: SimulationResult
     recommendation: str
+
+class AnalyticsLogItem(BaseModel):
+    sleep: float
+    screen: float
+    study: float
+    exercise: float
+    mood: int
+
+class AnalyticsSummaryRequest(BaseModel):
+    logs: List[AnalyticsLogItem]
+    age_group: str

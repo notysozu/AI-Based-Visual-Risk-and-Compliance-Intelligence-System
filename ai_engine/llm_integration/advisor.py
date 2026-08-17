@@ -425,3 +425,82 @@ Return ONLY a valid JSON object matching the following structure. No explanation
     except Exception as e:
         print(f"Error calling Groq for scenario suggestions: {e}")
         return fallback
+
+
+def generate_analytics_summary(user_info: Dict[str, Any], logs: List[Dict[str, Any]], age_group: str) -> str:
+    """
+    Generate a simple, user-friendly summary of the daily habits logs tailored to a specific age group.
+    """
+    if not logs:
+        if age_group == "kid":
+            return "No logs yet! Play some games and sleep well to start tracking! 🎮✨"
+        elif age_group == "grandpa":
+            return "No entries logged yet, dear. Take care and log your day when you're ready. ☕"
+        else:
+            return "No activity logs available yet to compile analytics."
+
+    total_days = len(logs)
+    avg_sleep = sum(l["sleep"] for l in logs) / total_days
+    avg_screen = sum(l["screen"] for l in logs) / total_days
+    avg_study = sum(l["study"] for l in logs) / total_days
+    avg_exercise = sum(l["exercise"] for l in logs) / total_days
+    avg_mood = sum(l["mood"] for l in logs) / total_days
+
+    if age_group == "kid":
+        prompt_tone = f"""
+You are a friendly AI game host explaining habit stats to a KID. Use fun game-like metrics, emojis, and very simple terms:
+- Average Sleep: {avg_sleep:.1f} hours/night
+- Average Screen Time: {avg_screen:.1f} hours/day
+- Average Study/Learning: {avg_study:.1f} hours/day
+- Average Play/Exercise: {avg_exercise:.1f} minutes/day
+- Average Mood/Happiness: {avg_mood:.1f} out of 10
+
+State 2 friendly insights (e.g. sleep gives brain power-ups, screen time drains energy blocks) and give a clear recommendation. Keep it simple, exciting, and short (3-4 sentences). Use markdown with bold items. Do NOT mention target net worth.
+"""
+    elif age_group == "grandpa":
+        prompt_tone = f"""
+You are a caring, patient AI family doctor explaining habit stats to an ELDERLY PERSON (Grandpa/Grandma). Use warm, respectful, slow-paced terms:
+- Average Sleep: {avg_sleep:.1f} hours/night
+- Average Screen/TV Time: {avg_screen:.1f} hours/day
+- Average Reading/Active Mind Time: {avg_study:.1f} hours/day
+- Average Walking/Exercise: {avg_exercise:.1f} minutes/day
+- Average Mood/Wellbeing: {avg_mood:.1f} out of 10
+
+Explain in 3-4 gentle sentences how these daily routines affect their energy, rest, and happiness. Suggest one gentle advice. Use markdown with bold items.
+"""
+    else:
+        prompt_tone = f"""
+You are an advanced digital twin analyst summarizing behavioral correlations for an ADULT. Be clean, data-driven, yet highly readable:
+- Average Sleep: {avg_sleep:.1f} hours/night
+- Average Screen Time: {avg_screen:.1f} hours/day
+- Average Study/Work: {avg_study:.1f} hours/day
+- Average Exercise: {avg_exercise:.1f} minutes/day
+- Average Mood: {avg_mood:.1f} out of 10
+
+Analyze the correlation between their sleep/screen habits and their daily mood/focus in 3-4 sentences. Give a concise, actionable recommendation. Use markdown with bold items.
+"""
+
+    if client is None:
+        if age_group == "kid":
+            return f"**Game Stats!** 🎮 Your sleep score is **{avg_sleep:.1f} hours**! Keep screens under **2 hours** to keep your energy bar full! 🚀"
+        elif age_group == "grandpa":
+            return f"**Daily Reflection** ☕ You are getting **{avg_sleep:.1f} hours of rest** and walking for **{avg_exercise:.1f} minutes** on average. Keep up the steady pace, dear."
+        else:
+            return f"**Performance Insight** 📈 Averaging **{avg_sleep:.1f}h sleep** and **{avg_screen:.1f}h screen time**. Keep screen time below **3h** to optimize focus and mood."
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt_tone}],
+            temperature=0.4,
+            max_tokens=300,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"Error generating analytics summary: {e}")
+        if age_group == "kid":
+            return f"**Game Stats!** 🎮 Your sleep score is **{avg_sleep:.1f} hours**! Keep screens under **2 hours** to keep your energy bar full! 🚀"
+        elif age_group == "grandpa":
+            return f"**Daily Reflection** ☕ You are getting **{avg_sleep:.1f} hours of rest** and walking for **{avg_exercise:.1f} minutes** on average. Keep up the steady pace, dear."
+        else:
+            return f"**Performance Insight** 📈 Averaging **{avg_sleep:.1f}h sleep** and **{avg_screen:.1f}h screen time**. Keep screen time below **3h** to optimize focus and mood."

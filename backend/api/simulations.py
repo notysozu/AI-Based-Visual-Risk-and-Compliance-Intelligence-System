@@ -5,7 +5,7 @@ from database import database, crud
 from ai_engine.simulation import simulator
 from ai_engine.forecasting import financial, habits
 from backend.services.llm_service import LLMService
-from ai_engine.llm_integration.advisor import generate_wealth_advice, generate_scenario_suggestions
+from ai_engine.llm_integration.advisor import generate_wealth_advice, generate_scenario_suggestions, generate_analytics_summary
 from database import schemas
 from typing import Dict, Any
 
@@ -235,3 +235,26 @@ def compare_scenarios(user_id: int, payload: schemas.SimulationRequest, db: Sess
         scenario_b=map_to_result("scenario_b", sim_outputs["scenario_b"]),
         recommendation=advice_text
     )
+
+@router.post("/analytics-summary/{user_id}")
+def get_analytics_summary(user_id: int, payload: schemas.AnalyticsSummaryRequest, db: Session = Depends(database.get_db)):
+    """
+    Get AI-generated readable overview of daily logs.
+    """
+    user = crud.get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    user_info = {
+        "username": user.username,
+        "age": user.age,
+        "retirement_goal_age": user.retirement_goal_age,
+        "target_net_worth": user.target_net_worth,
+        "monthly_income": user.monthly_income
+    }
+    
+    # Convert payload logs schema list to dict list
+    log_dicts = [item.model_dump() for item in payload.logs]
+    
+    summary = generate_analytics_summary(user_info, log_dicts, payload.age_group)
+    return {"summary": summary}
