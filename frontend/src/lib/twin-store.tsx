@@ -24,7 +24,10 @@ export type Profile = {
   goalName: string;
   goalCurrent: number;
   goalTarget: number;
+  lastSuccessOdds?: number | null;
+  lastWealthPrediction?: string | null;
 };
+
 
 export type Log = {
   id: string;
@@ -125,7 +128,10 @@ const DEFAULT_PROFILE: Profile = {
   goalName: "Emergency Fund",
   goalCurrent: 15000,
   goalTarget: 20000,
+  lastSuccessOdds: null,
+  lastWealthPrediction: null,
 };
+
 
 const DEFAULT_STATE: TwinState = {
   authed: false,
@@ -257,6 +263,8 @@ function mapProfileToBackend(profile: Profile) {
     retirement_goal_age: profile.targetAge,
     target_net_worth: profile.targetNetWorth,
     monthly_income: profile.monthlyIncome,
+    monthly_expenses: profile.monthlyExpenses,
+    net_worth: profile.netWorth,
     sleep_target_hours: profile.sleepHours,
     study_target_hours_week: profile.studyHours,
   };
@@ -268,10 +276,14 @@ function mapBackendToProfile(user: any): Partial<Profile> {
     targetAge: user.retirement_goal_age,
     targetNetWorth: user.target_net_worth,
     monthlyIncome: user.monthly_income,
+    monthlyExpenses: user.monthly_expenses ?? 2900,
+    netWorth: user.net_worth ?? 15000,
     sleepHours: user.sleep_target_hours,
     studyHours: user.study_target_hours_week,
     name: user.username ?? undefined,
     email: user.email ?? undefined,
+    lastSuccessOdds: user.last_success_odds ?? null,
+    lastWealthPrediction: user.last_wealth_prediction ?? null,
   };
 }
 
@@ -299,7 +311,7 @@ type TwinContextValue = {
   ready: boolean;
   addLog: (log: Omit<Log, "id">) => void;
   addTxn: (txn: Txn) => void;
-  updateProfile: (partial: Partial<Profile>) => void;
+  updateProfile: (partial: Partial<Profile>) => Promise<void>;
   reset: () => void;
   clearLogs: () => void;
   signIn: (username: string, email: string, isSignup: boolean) => Promise<boolean>;
@@ -358,8 +370,20 @@ export function TwinProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const updateProfile = (partial: Partial<Profile>) => {
+  const updateProfile = async (partial: Partial<Profile>) => {
     setState((s) => ({ ...s, profile: { ...s.profile, ...partial } }));
+    
+    // Auto-save settings in the background to backend database
+    const userId = state.profile.id;
+    if (userId !== null && userId !== undefined) {
+      try {
+        const fullProfile = { ...state.profile, ...partial };
+        const payload = mapProfileToBackend(fullProfile);
+        await updateUser(userId, payload);
+      } catch (err) {
+        console.error("Failed to auto-save profile settings to backend:", err);
+      }
+    }
   };
 
   const reset = () => {
