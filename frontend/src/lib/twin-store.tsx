@@ -123,7 +123,7 @@ const DEFAULT_PROFILE: Profile = {
   monthlyIncome: 3800,
   monthlyExpenses: 2900,
   netWorth: 15000,
-  targetNetWorth: 250000,
+  targetNetWorth: 1000000,
   focusArea: "Finishing my degree",
   goalName: "Emergency Fund",
   goalCurrent: 15000,
