@@ -10,6 +10,8 @@ class UserBase(BaseModel):
     retirement_goal_age: Optional[int] = 60
     target_net_worth: Optional[float] = 1000000.0
     monthly_income: Optional[float] = 5000.0
+    monthly_expenses: Optional[float] = 2900.0
+    net_worth: Optional[float] = 15000.0
     sleep_target_hours: Optional[float] = 8.0
     study_target_hours_week: Optional[float] = 15.0
 
@@ -22,16 +24,22 @@ class UserUpdate(BaseModel):
     retirement_goal_age: Optional[int] = None
     target_net_worth: Optional[float] = None
     monthly_income: Optional[float] = None
+    monthly_expenses: Optional[float] = None
+    net_worth: Optional[float] = None
     sleep_target_hours: Optional[float] = None
     study_target_hours_week: Optional[float] = None
     scenario_a_preset: Optional[str] = None
     scenario_b_preset: Optional[str] = None
+    last_success_odds: Optional[float] = None
+    last_wealth_prediction: Optional[str] = None
 
 class UserResponse(UserBase):
     id: int
     created_at: datetime
     scenario_a_preset: Optional[str] = None
     scenario_b_preset: Optional[str] = None
+    last_success_odds: Optional[float] = None
+    last_wealth_prediction: Optional[str] = None
 
     class Config:
         from_attributes = True
