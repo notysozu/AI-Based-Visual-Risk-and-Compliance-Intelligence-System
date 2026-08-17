@@ -29,6 +29,12 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+> [!TIP]
+> **Database Schema Reset:** If you pull new updates and encounter SQLAlchemy schema errors (e.g. `no such column: users.scenario_a_preset`), delete the local SQLite file in the root folder so the ORM can recreate it cleanly on start:
+> ```bash
+> rm -f digital_twin.db
+> ```
+
 ### 2. Frontend Environment Setup
 
 Ensure you have Node.js installed, then install frontend dependencies:
@@ -88,7 +94,7 @@ digital-twin-ai/
 ├── frontend/                 # React, TypeScript and Vite client
 │   ├── src/
 │   │   ├── routes/           # Routing tree (Landing, Dashboard, Simulator, Setup, Tasks)
-│   │   ├── components/       # App Shell, Settings Dialog, charts, and Radix widgets
+│   │   ├── components/       # App Shell, Scenario Comparison chart, and Radix widgets
 │   │   └── lib/              # API Client (api.ts) & Central State Provider (twin-store.tsx)
 │   ├── package.json          # Node dependencies and build scripts
 │   └── vite.config.ts        # Vite environment configs
@@ -106,7 +112,7 @@ digital-twin-ai/
 │   └── crud.py               # Database transaction functions & seed data
 │
 ├── ai_engine/                # Machine learning and simulation logic
-│   ├── forecasting/          # Financial and study predictive models
+│   ├── forecasting/          # Financial, study, and wellness predictive models
 │   ├── simulation/           # Multi-scenario "what-if" simulation logic
 │   └── llm_integration/      # Conversational AI advisor prompt handling
 │
@@ -123,7 +129,7 @@ digital-twin-ai/
 | `/` | `GET` | API root status check |
 | `/health` | `GET` | Health check endpoint |
 | `/users/` | `POST` | Create a new user profile |
-| `/users/{user_id}` | `PUT` | Update user settings/metrics |
+| `/users/{user_id}` | `PUT` | Update user settings/metrics (including `scenario_a_preset` and `scenario_b_preset` slider JSON sets) |
 | `/users/username/{username}` | `GET` | Retrieve user profile by username |
 | `/users/email/{email}` | `GET` | Retrieve user profile by email |
 | `/records/habit/{user_id}` | `GET / POST` | Log/get habit duration & wellness impact records |
@@ -131,4 +137,4 @@ digital-twin-ai/
 | `/records/financial/{user_id}` | `GET / POST` | Log/get financial transaction ledger records |
 | `/simulations/baseline/{user_id}` | `GET` | Compute user's average baseline parameters |
 | `/simulations/forecast/{user_id}` | `GET` | Generate deterministic net worth forecast |
-| `/simulations/compare/{user_id}` | `POST` | Execute multi-scenario What-If simulations & AI recommendations |
+| `/simulations/compare/{user_id}` | `POST` | Execute multi-scenario What-If simulations with custom offsets and prompt LLM Advisor |
