@@ -229,6 +229,15 @@ function generateDemoLogs(days = 30, role: UserRole = "professional"): Log[] {
 }
 
 export function buildDemoProfile(role: UserRole = "professional", randomize = false): Profile {
+  const baseDefaults = {
+    id: 1,
+    onboarded: true,
+    lastSuccessOdds: null,
+    lastWealthPrediction: null,
+    lastAnalyticsSummary: null,
+    lastAnalyticsUpdated: null,
+  };
+
   if (role === "student") {
     const age = randomize ? 18 + Math.floor(Math.random() * 6) : 20;
     const targetAge = randomize ? age + 4 + Math.floor(Math.random() * 3) : 25;
@@ -236,11 +245,10 @@ export function buildDemoProfile(role: UserRole = "professional", randomize = fa
     const expenses = randomize ? 350 + Math.floor(Math.random() * 8) * 50 : 520;
     const savingsRate = Math.max(0, Math.round(((income - expenses) / Math.max(1, income)) * 100));
     return {
-      id: 1,
+      ...baseDefaults,
       name: randomize ? "Alex Rivera (Student - Randomized)" : "Alex Rivera (Student)",
       email: "student.demo@twin.local",
       role: "student",
-      onboarded: true,
       age,
       targetAge,
       sleepHours: randomize ? +(6.5 + Math.random() * 2).toFixed(1) : 7.5,
@@ -251,7 +259,7 @@ export function buildDemoProfile(role: UserRole = "professional", randomize = fa
       monthlyIncome: income,
       monthlyExpenses: expenses,
       netWorth: randomize ? 800 + Math.floor(Math.random() * 20) * 100 : 1600,
-      targetNetWorth: randomize ? 8000 + Math.floor(Math.random() * 8) * 1000 : 12000,
+      targetNetWorth: randomize ? 15000 + Math.floor(Math.random() * 10) * 1000 : 25000,
       focusArea: "Computer Science & Machine Learning Finals",
       goalName: "MacBook Pro & Tech Rig",
       goalCurrent: 1200,
@@ -265,11 +273,10 @@ export function buildDemoProfile(role: UserRole = "professional", randomize = fa
     const expenses = randomize ? 3200 + Math.floor(Math.random() * 10) * 150 : 3600;
     const savingsRate = Math.max(0, Math.round(((income - expenses) / Math.max(1, income)) * 100));
     return {
-      id: 1,
+      ...baseDefaults,
       name: randomize ? "Samira Chen (Freelancer - Randomized)" : "Samira Chen (Freelancer)",
       email: "freelancer.demo@twin.local",
       role: "freelancer",
-      onboarded: true,
       age,
       targetAge,
       sleepHours: randomize ? +(6.5 + Math.random() * 2).toFixed(1) : 7.2,
@@ -294,11 +301,10 @@ export function buildDemoProfile(role: UserRole = "professional", randomize = fa
     const expenses = randomize ? 3800 + Math.floor(Math.random() * 12) * 150 : 4400;
     const savingsRate = Math.max(0, Math.round(((income - expenses) / Math.max(1, income)) * 100));
     return {
-      id: 1,
+      ...baseDefaults,
       name: randomize ? "Marcus Vance (Founder - Randomized)" : "Marcus Vance (Founder)",
       email: "founder.demo@twin.local",
       role: "entrepreneur",
-      onboarded: true,
       age,
       targetAge,
       sleepHours: randomize ? +(5.5 + Math.random() * 2.5).toFixed(1) : 6.8,
@@ -323,11 +329,10 @@ export function buildDemoProfile(role: UserRole = "professional", randomize = fa
     const expenses = randomize ? 2000 + Math.floor(Math.random() * 8) * 150 : 2400;
     const savingsRate = Math.max(0, Math.round(((income - expenses) / Math.max(1, income)) * 100));
     return {
-      id: 1,
+      ...baseDefaults,
       name: randomize ? "Eleanor Woods (Retiree - Randomized)" : "Eleanor Woods (Retiree)",
       email: "retiree.demo@twin.local",
       role: "retiree",
-      onboarded: true,
       age,
       targetAge,
       sleepHours: randomize ? +(7.0 + Math.random() * 2).toFixed(1) : 7.8,
@@ -352,11 +357,10 @@ export function buildDemoProfile(role: UserRole = "professional", randomize = fa
   const expenses = randomize ? 2800 + Math.floor(Math.random() * 10) * 150 : 3400;
   const savingsRate = Math.max(0, Math.round(((income - expenses) / Math.max(1, income)) * 100));
   return {
-    id: 1,
+    ...baseDefaults,
     name: randomize ? "Jordan Taylor (Professional - Randomized)" : "Jordan Taylor (Professional)",
     email: "pro.demo@twin.local",
     role: "professional",
-    onboarded: true,
     age,
     targetAge,
     sleepHours: randomize ? +(6.0 + Math.random() * 2).toFixed(1) : 7.0,
@@ -751,6 +755,8 @@ function mapProfileToBackend(profile: Profile) {
     net_worth: profile.netWorth,
     sleep_target_hours: profile.sleepHours,
     study_target_hours_week: profile.studyHours,
+    last_success_odds: profile.lastSuccessOdds,
+    last_wealth_prediction: profile.lastWealthPrediction,
     last_analytics_summary: profile.lastAnalyticsSummary,
     last_analytics_updated: profile.lastAnalyticsUpdated,
   };
@@ -991,7 +997,18 @@ export function TwinProvider({ children }: { children: ReactNode }) {
       authed: true,
       logs: demoLogs,
       profile: demoProfile,
+      forecast: null,
+      forecastLoading: false,
+      forecastError: null,
     }));
+
+    // Immediately fetch updated forecast for this demo role
+    try {
+      const data: ForecastResult = await getForecast(demoUserId);
+      setState((s) => ({ ...s, forecast: data, forecastLoading: false }));
+    } catch (err) {
+      console.warn("Failed to load initial forecast for demo twin:", err);
+    }
   };
 
   const loadForecast = async () => {

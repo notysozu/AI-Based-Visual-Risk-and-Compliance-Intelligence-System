@@ -101,7 +101,7 @@ function parseMarkdown(text: string) {
 
 function AnalyticsPage() {
   const ok = useGuard();
-  const { state, addLog, clearLogs } = useTwin();
+  const { state, addLog, clearLogs, updateProfile } = useTwin();
   const p = state.profile;
   const [drawer, setDrawer] = useState(false);
   const [summary, setSummary] = useState<string>(p.lastAnalyticsSummary ?? "");
@@ -151,16 +151,14 @@ function AnalyticsPage() {
 
     getAnalyticsSummary(p.id, { logs: minimalLogs })
       .then((res: any) => {
-        setSummary(res.summary);
-        // Save to state profile context so it automatically triggers database synchronization
-        state.profile.lastAnalyticsSummary = res.summary;
-        state.profile.lastAnalyticsUpdated = new Date().toISOString();
-        
-        // Trigger a background save
-        useTwin.getState().updateProfile({
-          lastAnalyticsSummary: res.summary,
-          lastAnalyticsUpdated: new Date().toISOString()
-        });
+        if (res?.summary) {
+          setSummary(res.summary);
+          // Save to state profile context and persist to database
+          updateProfile({
+            lastAnalyticsSummary: res.summary,
+            lastAnalyticsUpdated: new Date().toISOString()
+          });
+        }
       })
       .catch((err: any) => {
         console.error("Failed to generate analytics summary:", err);
