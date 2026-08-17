@@ -2,7 +2,7 @@
 
 import os
 from groq import Groq
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 client = None

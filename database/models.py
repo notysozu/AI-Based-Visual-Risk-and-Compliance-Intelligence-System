@@ -33,6 +33,8 @@ class User(Base):
     # AI prediction cache
     last_success_odds = Column(Float, nullable=True)
     last_wealth_prediction = Column(String, nullable=True)
+    last_analytics_summary = Column(String, nullable=True)
+    last_analytics_updated = Column(String, nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
 

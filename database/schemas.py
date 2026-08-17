@@ -32,6 +32,8 @@ class UserUpdate(BaseModel):
     scenario_b_preset: Optional[str] = None
     last_success_odds: Optional[float] = None
     last_wealth_prediction: Optional[str] = None
+    last_analytics_summary: Optional[str] = None
+    last_analytics_updated: Optional[str] = None
 
 class UserResponse(UserBase):
     id: int
@@ -40,6 +42,8 @@ class UserResponse(UserBase):
     scenario_b_preset: Optional[str] = None
     last_success_odds: Optional[float] = None
     last_wealth_prediction: Optional[str] = None
+    last_analytics_summary: Optional[str] = None
+    last_analytics_updated: Optional[str] = None
 
     class Config:
         from_attributes = True

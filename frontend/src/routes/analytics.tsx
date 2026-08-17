@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
   ResponsiveContainer,
-  Scatter,
-  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
-  ZAxis,
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import {
@@ -105,13 +104,42 @@ function AnalyticsPage() {
   const { state, addLog, clearLogs } = useTwin();
   const p = state.profile;
   const [drawer, setDrawer] = useState(false);
-  const [summary, setSummary] = useState<string>("");
+  const [summary, setSummary] = useState<string>(p.lastAnalyticsSummary ?? "");
   const [summaryLoading, setSummaryLoading] = useState(false);
 
-  // Request the AI Analytics narrative when logs change
+  // Request/Update the AI Analytics narrative based on the 12:00 PM internal time rule
   useEffect(() => {
     if (!p.id || state.logs.length === 0) return;
-    
+
+    // Check if we already have a cached summary and if it's still fresh for today
+    if (p.lastAnalyticsSummary && p.lastAnalyticsUpdated) {
+      const lastUpdated = new Date(p.lastAnalyticsUpdated);
+      const now = new Date();
+      
+      // Determine the critical "last 12:00 PM" milestone
+      const todayNoon = new Date();
+      todayNoon.setHours(12, 0, 0, 0);
+
+      let criticalMilestone: Date;
+      if (now >= todayNoon) {
+        // If current time is past 12 PM today, the update must have occurred after 12 PM today
+        criticalMilestone = todayNoon;
+      } else {
+        // If current time is before 12 PM today, the update must have occurred after 12 PM yesterday
+        const yesterdayNoon = new Date();
+        yesterdayNoon.setDate(yesterdayNoon.getDate() - 1);
+        yesterdayNoon.setHours(12, 0, 0, 0);
+        criticalMilestone = yesterdayNoon;
+      }
+
+      // If the cache was updated after the milestone, skip generation and load cache!
+      if (lastUpdated >= criticalMilestone) {
+        setSummary(p.lastAnalyticsSummary);
+        return;
+      }
+    }
+
+    // Otherwise, generate a fresh summary!
     setSummaryLoading(true);
     const minimalLogs = state.logs.map((l) => ({
       sleep: l.sleep,
@@ -124,6 +152,15 @@ function AnalyticsPage() {
     getAnalyticsSummary(p.id, { logs: minimalLogs })
       .then((res: any) => {
         setSummary(res.summary);
+        // Save to state profile context so it automatically triggers database synchronization
+        state.profile.lastAnalyticsSummary = res.summary;
+        state.profile.lastAnalyticsUpdated = new Date().toISOString();
+        
+        // Trigger a background save
+        useTwin.getState().updateProfile({
+          lastAnalyticsSummary: res.summary,
+          lastAnalyticsUpdated: new Date().toISOString()
+        });
       })
       .catch((err: any) => {
         console.error("Failed to generate analytics summary:", err);
@@ -131,7 +168,7 @@ function AnalyticsPage() {
       .finally(() => {
         setSummaryLoading(false);
       });
-  }, [p.id, state.logs]);
+  }, [p.id, state.logs, p.lastAnalyticsSummary, p.lastAnalyticsUpdated]);
 
   const base = useMemo(() => baseline(state.logs), [state.logs]);
   
@@ -148,19 +185,53 @@ function AnalyticsPage() {
     };
   }, [state.logs]);
 
-  const scatter = useMemo(
-    () =>
-      state.logs.map((l) => ({
-        sleep: l.sleep,
-        focus: focusIndex(l.sleep, l.study, l.screen),
-        z: Math.max(20, l.exercise),
-      })),
-    [state.logs],
-  );
-  const screenScatter = useMemo(
-    () => state.logs.map((l) => ({ screen: l.screen, mood: l.mood, z: 40 })),
-    [state.logs],
-  );
+  // 1. Group focus ratings by sleep duration
+  const sleepFocusData = useMemo(() => {
+    const categories = [
+      { label: "Short Sleep (<7h)", min: 0, max: 7, sum: 0, count: 0 },
+      { label: "Healthy Sleep (7-8.5h)", min: 7, max: 8.5, sum: 0, count: 0 },
+      { label: "Long Sleep (>8.5h)", min: 8.5, max: 24, sum: 0, count: 0 },
+    ];
+    
+    state.logs.forEach((l) => {
+      const focus = focusIndex(l.sleep, l.study, l.screen);
+      categories.forEach((c) => {
+        if (l.sleep >= c.min && l.sleep < c.max) {
+          c.sum += focus;
+          c.count += 1;
+        }
+      });
+    });
+
+    return categories.map((c) => ({
+      name: c.label,
+      "Avg Focus": c.count > 0 ? +(c.sum / c.count).toFixed(1) : 0,
+    }));
+  }, [state.logs]);
+
+  // 2. Group mood ratings by screen duration
+  const screenMoodData = useMemo(() => {
+    const categories = [
+      { label: "Low Screen (<3h)", min: 0, max: 3, sum: 0, count: 0 },
+      { label: "Moderate Screen (3-5h)", min: 3, max: 5, sum: 0, count: 0 },
+      { label: "High Screen (>5h)", min: 5, max: 24, sum: 0, count: 0 },
+    ];
+
+    state.logs.forEach((l) => {
+      categories.forEach((c) => {
+        if (l.screen >= c.min && l.screen < c.max) {
+          c.sum += l.mood;
+          c.count += 1;
+        }
+      });
+    });
+
+    return categories.map((c) => ({
+      name: c.label,
+      "Avg Mood": c.count > 0 ? +(c.sum / c.count).toFixed(1) : 0,
+    }));
+  }, [state.logs]);
+
   const week = state.logs.slice(-7);
 
   if (!ok) return null;
@@ -278,26 +349,24 @@ function AnalyticsPage() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <ChartCard title="Sleep hours vs focus rating">
-          <ScatterChart>
-            <CartesianGrid stroke="var(--color-border)" />
-            <XAxis dataKey="sleep" name="Sleep" unit="h" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-            <YAxis dataKey="focus" name="Focus" domain={[0, 10]} stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={26} />
-            <ZAxis dataKey="z" range={[40, 180]} />
-            <Tooltip contentStyle={tooltipStyle} cursor={{ strokeDasharray: "3 3" }} />
-            <Scatter data={scatter} fill="var(--color-foreground)" fillOpacity={0.55} />
-          </ScatterChart>
+        <ChartCard title="How sleep affects your focus">
+          <BarChart data={sleepFocusData}>
+            <CartesianGrid stroke="var(--color-border)" vertical={false} />
+            <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
+            <YAxis domain={[0, 10]} stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={26} />
+            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
+            <Bar dataKey="Avg Focus" fill="var(--color-foreground)" radius={[4, 4, 0, 0]} barSize={40} />
+          </BarChart>
         </ChartCard>
 
-        <ChartCard title="Screen time vs mood">
-          <ScatterChart>
-            <CartesianGrid stroke="var(--color-border)" />
-            <XAxis dataKey="screen" name="Screen" unit="h" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-            <YAxis dataKey="mood" name="Mood" domain={[0, 10]} stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={26} />
-            <ZAxis dataKey="z" range={[40, 140]} />
-            <Tooltip contentStyle={tooltipStyle} cursor={{ strokeDasharray: "3 3" }} />
-            <Scatter data={screenScatter} fill="var(--color-muted-foreground)" fillOpacity={0.7} />
-          </ScatterChart>
+        <ChartCard title="How screen time affects your mood">
+          <BarChart data={screenMoodData}>
+            <CartesianGrid stroke="var(--color-border)" vertical={false} />
+            <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
+            <YAxis domain={[0, 10]} stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={26} />
+            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
+            <Bar dataKey="Avg Mood" fill="var(--color-muted-foreground)" radius={[4, 4, 0, 0]} barSize={40} />
+          </BarChart>
         </ChartCard>
       </div>
 

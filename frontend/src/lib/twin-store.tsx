@@ -26,6 +26,8 @@ export type Profile = {
   goalTarget: number;
   lastSuccessOdds?: number | null;
   lastWealthPrediction?: string | null;
+  lastAnalyticsSummary?: string | null;
+  lastAnalyticsUpdated?: string | null;
 };
 
 
@@ -130,6 +132,8 @@ const DEFAULT_PROFILE: Profile = {
   goalTarget: 20000,
   lastSuccessOdds: null,
   lastWealthPrediction: null,
+  lastAnalyticsSummary: null,
+  lastAnalyticsUpdated: null,
 };
 
 
@@ -267,6 +271,8 @@ function mapProfileToBackend(profile: Profile) {
     net_worth: profile.netWorth,
     sleep_target_hours: profile.sleepHours,
     study_target_hours_week: profile.studyHours,
+    last_analytics_summary: profile.lastAnalyticsSummary,
+    last_analytics_updated: profile.lastAnalyticsUpdated,
   };
 }
 
@@ -284,6 +290,8 @@ function mapBackendToProfile(user: any): Partial<Profile> {
     email: user.email ?? undefined,
     lastSuccessOdds: user.last_success_odds ?? null,
     lastWealthPrediction: user.last_wealth_prediction ?? null,
+    lastAnalyticsSummary: user.last_analytics_summary ?? null,
+    lastAnalyticsUpdated: user.last_analytics_updated ?? null,
   };
 }
 
