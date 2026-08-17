@@ -96,6 +96,7 @@ function WealthPage() {
   const ok = useGuard();
   const { state, updateProfile, loadForecast } = useTwin();
   const p = state.profile;
+  const cfg = getRoleConfig(p.role);
 
   const [targets, setTargets] = useState({ targetAge: p.targetAge, targetNetWorth: p.targetNetWorth });
 
@@ -178,8 +179,8 @@ function WealthPage() {
 
   return (
     <AppShell
-      title="Financial Twin"
-      subtitle={`${years} years to age ${p.targetAge} · target ${money(p.targetNetWorth)}`}
+      title={cfg.wealthTitle}
+      subtitle={`${years} years to ${cfg.targetAgeLabel.toLowerCase()} (${p.targetAge}) · target ${money(p.targetNetWorth)}`}
     >
       <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="space-y-5">
@@ -224,7 +225,7 @@ function WealthPage() {
           </div>
 
           <div className="panel p-6 font-mono text-xs leading-relaxed">
-            <p className="label-xs font-sans pb-3">AI wealth prediction</p>
+            <p className="label-xs font-sans pb-3">AI prediction analysis</p>
             <div className="space-y-1 border-t border-border pt-3 text-muted-foreground font-sans">
               {adviceLoading && (
                 <p>Analyzing your projections…</p>
@@ -266,7 +267,7 @@ function WealthPage() {
             <p className="label-xs">Targets</p>
             <div className="mt-4 space-y-3">
               <div className="grid gap-1.5">
-                <Label className="label-xs">Target age</Label>
+                <Label className="label-xs">{cfg.targetAgeLabel}</Label>
                 <Input
                   type="number"
                   value={targets.targetAge}
@@ -274,7 +275,7 @@ function WealthPage() {
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label className="label-xs">Target net worth</Label>
+                <Label className="label-xs">{cfg.targetSavingsLabel}</Label>
                 <Input
                   type="number"
                   value={targets.targetNetWorth}
@@ -296,12 +297,12 @@ function WealthPage() {
       </div>
 
       <div className="mt-5 panel p-6">
-        <p className="label-xs">Monthly budget</p>
+        <p className="label-xs">Monthly budget & cashflow</p>
         <div className="mt-4 grid gap-6 md:grid-cols-4">
-          <Figure label="Income" value={money(p.monthlyIncome)} />
-          <Figure label="Fixed costs" value={money(fixed)} />
-          <Figure label="Discretionary" value={money(discretionary)} />
-          <Figure label="Invested" value={money(monthly)} />
+          <Figure label={cfg.incomeLabel} value={money(p.monthlyIncome)} />
+          <Figure label="Fixed living costs" value={money(fixed)} />
+          <Figure label="Discretionary & fun" value={money(discretionary)} />
+          <Figure label={p.role === "student" ? "Saved / Extra" : p.role === "retiree" ? "Preserved / Saved" : "Invested & Saved"} value={money(monthly)} />
         </div>
         <div className="mt-6 flex h-3 overflow-hidden rounded-full bg-muted">
           <Bar w={(fixed / p.monthlyIncome) * 100} className="bg-foreground" />

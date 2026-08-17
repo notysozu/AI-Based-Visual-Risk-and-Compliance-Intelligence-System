@@ -263,8 +263,8 @@ function SimulatorPage() {
     >
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
         <div className="space-y-4">
-          <ScenarioCard name="A" s={a} set={setA} result={A} onDrag={setDragging} adopt={adopt} />
-          <ScenarioCard name="B" s={b} set={setB} result={B} onDrag={setDragging} adopt={adopt} />
+          <ScenarioCard name="A" s={a} set={setA} result={A} onDrag={setDragging} adopt={adopt} role={p.role} />
+          <ScenarioCard name="B" s={b} set={setB} result={B} onDrag={setDragging} adopt={adopt} role={p.role} />
           <div className="flex gap-2">
             <Button
               className="flex-1"
@@ -423,19 +423,35 @@ function ScenarioCard({
   result,
   onDrag,
   adopt,
+  role = "professional",
 }: {
-  name: string;
+  name: "A" | "B";
   s: Scenario;
-  set: (v: Scenario) => void;
-  result: { health: number; focus: number; terminal: number };
+  set: (s: Scenario) => void;
+  result: Result;
   onDrag: (v: boolean) => void;
   adopt: (s: Scenario, name: string) => void;
+  role?: string;
 }) {
-  const warn = result.health < 5 || result.focus < 5;
+  const warn = result.health < 4;
+  const savingsLabel =
+    role === "student"
+      ? "Pocket savings change"
+      : role === "retiree"
+      ? "Monthly savings change"
+      : "Monthly investment change";
+
+  const studyLabel =
+    role === "student"
+      ? "Weekly study & homework"
+      : role === "retiree"
+      ? "Weekly hobbies & reading"
+      : "Weekly upskilling & work";
+
   return (
     <div
-      className={`panel p-5 transition-all ${
-        warn ? "border-foreground/60 shadow-[0_0_22px_-10px_var(--color-foreground)]" : ""
+      className={`panel p-6 transition-all ${
+        warn ? "border-foreground/50 shadow-[0_0_20px_-10px_var(--color-foreground)]" : ""
       }`}
     >
       <div className="flex items-center justify-between">
@@ -449,7 +465,7 @@ function ScenarioCard({
 
       <div className="mt-5 space-y-6">
         <SliderRow
-          label="Monthly savings change"
+          label={savingsLabel}
           value={s.savings}
           display={`+$${s.savings}`}
           min={0}
@@ -469,7 +485,7 @@ function ScenarioCard({
           onDrag={onDrag}
         />
         <SliderRow
-          label="Weekly study change"
+          label={studyLabel}
           value={s.study}
           display={`${s.study > 0 ? "+" : ""}${s.study}h`}
           min={-10}

@@ -171,6 +171,7 @@ function AnalyticsPage() {
   }, [p.id, state.logs, p.lastAnalyticsSummary, p.lastAnalyticsUpdated]);
 
   const base = useMemo(() => baseline(state.logs), [state.logs]);
+  const cfg = getRoleConfig(p.role);
   
   // Calculate average stats for simplified widgets
   const avgStats = useMemo(() => {
@@ -254,7 +255,7 @@ function AnalyticsPage() {
   return (
     <AppShell
       title="Analytics"
-      subtitle={`${base.days} days of history`}
+      subtitle={`${cfg.badge} · ${base.days} days of history`}
       actions={
         <>
           <Button size="sm" onClick={() => setDrawer(true)}>
@@ -314,7 +315,7 @@ function AnalyticsPage() {
             <span className="text-[10px] text-muted-foreground">Avg / day</span>
           </div>
           <div className="panel p-4 border border-border text-center">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Study/Read 📚</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{cfg.studyLabel} 📚</span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.study}h</p>
             <span className="text-[10px] text-muted-foreground">Avg / day</span>
           </div>

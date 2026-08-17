@@ -4,10 +4,13 @@ import { createUser, getUserByUsername, getForecast, getUser, updateUser } from 
 
 // --- Types ---
 
+export type UserRole = "student" | "professional" | "retiree";
+
 export type Profile = {
   id: string | number | null;
   name: string;
   email: string;
+  role: UserRole;
   onboarded: boolean;
   age: number;
   targetAge: number;
@@ -114,19 +117,20 @@ const DEFAULT_PROFILE: Profile = {
   id: null,
   name: "",
   email: "",
+  role: "professional",
   onboarded: false,
-  age: 22,
-  targetAge: 45,
+  age: 25,
+  targetAge: 60,
   sleepHours: 7.5,
   exerciseDays: 3,
   screenTime: 4,
   studyHours: 10,
   savingsRate: 20,
-  monthlyIncome: 3800,
+  monthlyIncome: 5000,
   monthlyExpenses: 2900,
   netWorth: 15000,
   targetNetWorth: 1000000,
-  focusArea: "Finishing my degree",
+  focusArea: "Career progression",
   goalName: "Emergency Fund",
   goalCurrent: 15000,
   goalTarget: 20000,
@@ -196,54 +200,152 @@ function generateDemoLogs(days = 30): Log[] {
   return logs;
 }
 
-// --- Suggestions library ---
+// --- Role Configurations & Dynamic Vocabulary ---
 
-export const SUGGESTIONS: Suggestion[] = [
-  {
-    id: "sleep-wind-down",
-    category: "Health",
-    impact: "+0.6 focus",
-    title: "Wind-down routine before bed",
-    detail: "Dim screens 30 minutes before sleep so you fall asleep faster and wake up sharper.",
-    start: "22:00",
-    minutes: 30,
+export type RoleConfig = {
+  role: UserRole;
+  name: string;
+  badge: string;
+  tagline: string;
+  incomeLabel: string;
+  expensesLabel: string;
+  savingsLabel: string;
+  targetSavingsLabel: string;
+  targetAgeLabel: string;
+  studyLabel: string;
+  focusLabel: string;
+  goalLabel: string;
+  wealthTitle: string;
+  wealthSubtitle: string;
+  defaultAge: number;
+  defaultTargetAge: number;
+  defaultIncome: number;
+  defaultExpenses: number;
+  defaultNetWorth: number;
+  defaultTargetNetWorth: number;
+  taskCategories: string[];
+};
+
+export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
+  student: {
+    role: "student",
+    name: "Student",
+    badge: "🎓 Student",
+    tagline: "Track coursework, study blocks, exam goals & pocket money savings.",
+    incomeLabel: "Pocket Money / Allowance",
+    expensesLabel: "Living & Course Spending",
+    savingsLabel: "Saved Pocket Money",
+    targetSavingsLabel: "Target Savings Milestone",
+    targetAgeLabel: "Career Launch Target Age",
+    studyLabel: "Study & Coursework",
+    focusLabel: "Academic / Skill Focus",
+    goalLabel: "Student Goal (Gear/Courses)",
+    wealthTitle: "Pocket Money & Savings",
+    wealthSubtitle: "Model your savings rate, allowance growth, and milestone targets.",
+    defaultAge: 20,
+    defaultTargetAge: 26,
+    defaultIncome: 800,
+    defaultExpenses: 500,
+    defaultNetWorth: 1200,
+    defaultTargetNetWorth: 10000,
+    taskCategories: ["Study", "Exams", "Campus", "Money", "Health", "Social"],
   },
+  professional: {
+    role: "professional",
+    name: "Working Professional",
+    badge: "💼 Professional",
+    tagline: "Optimize salary growth, deep-work sprints, and retirement trajectory.",
+    incomeLabel: "Monthly Take-Home Salary",
+    expensesLabel: "Fixed & Living Costs",
+    savingsLabel: "Current Net Worth",
+    targetSavingsLabel: "Target Retirement Wealth",
+    targetAgeLabel: "Target Retirement Age",
+    studyLabel: "Upskilling & Learning",
+    focusLabel: "Career / Project Focus",
+    goalLabel: "Financial Goal (Assets/Home)",
+    wealthTitle: "Wealth & Net Worth",
+    wealthSubtitle: "Monte Carlo wealth projections, success odds, and retirement velocity.",
+    defaultAge: 28,
+    defaultTargetAge: 55,
+    defaultIncome: 5000,
+    defaultExpenses: 3200,
+    defaultNetWorth: 35000,
+    defaultTargetNetWorth: 1000000,
+    taskCategories: ["Work", "Career", "Finance", "Health", "Upskilling", "Personal"],
+  },
+  retiree: {
+    role: "retiree",
+    name: "Retiree / Senior",
+    badge: "🌿 Retiree",
+    tagline: "Preserve wealth, sustain pension drawdown, and protect health & vitality.",
+    incomeLabel: "Monthly Pension / Passive Income",
+    expensesLabel: "Healthcare & Living Expenses",
+    savingsLabel: "Nest Egg & Portfolio",
+    targetSavingsLabel: "Preservation & Legacy Target",
+    targetAgeLabel: "Longevity Target Age",
+    studyLabel: "Reading & Mind Hobbies",
+    focusLabel: "Health & Lifestyle Focus",
+    goalLabel: "Milestone Goal (Family/Travel)",
+    wealthTitle: "Retirement & Longevity",
+    wealthSubtitle: "Simulate portfolio sustainability, health buffer, and peace of mind.",
+    defaultAge: 65,
+    defaultTargetAge: 85,
+    defaultIncome: 3500,
+    defaultExpenses: 2400,
+    defaultNetWorth: 450000,
+    defaultTargetNetWorth: 600000,
+    taskCategories: ["Health", "Hobbies", "Finance", "Family", "Home", "Leisure"],
+  },
+};
+
+export function getRoleConfig(role?: string | null): RoleConfig {
+  if (role === "student") return ROLE_CONFIGS.student;
+  if (role === "retiree") return ROLE_CONFIGS.retiree;
+  return ROLE_CONFIGS.professional;
+}
+
+// --- Suggestions library by Role ---
+
+export const STUDENT_SUGGESTIONS: Suggestion[] = [
   {
-    id: "morning-study-block",
+    id: "student-study-sprint",
     category: "Study",
-    impact: "+0.8 focus",
-    title: "Protect a morning study block",
-    detail: "Your focus score is highest early in the day — use it before notifications pile up.",
-    start: "07:30",
+    impact: "+1.2 focus",
+    title: "Morning library & study block",
+    detail: "Block 60 minutes for your hardest coursework topic before campus distractions.",
+    start: "08:00",
     minutes: 60,
   },
   {
-    id: "midday-walk",
-    category: "Health",
-    impact: "+0.4 health",
-    title: "Midday walk",
-    detail: "A short walk after lunch resets attention and counts toward your active days.",
-    start: "13:00",
-    minutes: 20,
-  },
-  {
-    id: "weekly-budget-review",
+    id: "student-pocket-budget",
     category: "Money",
-    impact: "+2% savings",
-    title: "Weekly budget review",
-    detail: "15 minutes reviewing transactions catches leaks before they become a pattern.",
-    start: "18:00",
+    impact: "+5% savings",
+    title: "Pocket money weekly review",
+    detail: "Log coffee, snacks, and subscription spending to keep your allowance on track.",
+    start: "19:00",
     minutes: 15,
   },
   {
-    id: "screen-free-wind-down",
-    category: "Personal",
-    impact: "+0.3 mood",
-    title: "Screen-free wind-down",
-    detail: "Trade the last 20 minutes before bed for reading or journaling instead of a screen.",
-    start: "21:30",
+    id: "student-exam-walk",
+    category: "Health",
+    impact: "+0.5 mood",
+    title: "Post-class fresh air walk",
+    detail: "Take a 20-minute walk between study sessions to reset your memory consolidation.",
+    start: "16:00",
     minutes: 20,
   },
+  {
+    id: "student-sleep-recovery",
+    category: "Health",
+    impact: "+0.8 focus",
+    title: "Consistent sleep cutoff",
+    detail: "Turn off video reels and gaming 30 minutes before bed to wake up sharp for class.",
+    start: "22:30",
+    minutes: 30,
+  },
+];
+
+export const WORKER_SUGGESTIONS: Suggestion[] = [
   {
     id: "deep-work-sprint",
     category: "Work",
@@ -253,7 +355,81 @@ export const SUGGESTIONS: Suggestion[] = [
     start: "10:00",
     minutes: 90,
   },
+  {
+    id: "weekly-budget-review",
+    category: "Money",
+    impact: "+2% savings",
+    title: "Weekly financial review",
+    detail: "15 minutes reviewing transactions catches leaks before they become a pattern.",
+    start: "18:00",
+    minutes: 15,
+  },
+  {
+    id: "morning-upskill-block",
+    category: "Study",
+    impact: "+0.8 focus",
+    title: "Morning learning & upskilling",
+    detail: "Dedicate 45 minutes to tutorials, certifications, or side projects before standup.",
+    start: "07:30",
+    minutes: 45,
+  },
+  {
+    id: "sleep-wind-down",
+    category: "Health",
+    impact: "+0.6 focus",
+    title: "Wind-down routine before bed",
+    detail: "Dim screens 30 minutes before sleep so you fall asleep faster and wake up sharper.",
+    start: "22:00",
+    minutes: 30,
+  },
 ];
+
+export const RETIREE_SUGGESTIONS: Suggestion[] = [
+  {
+    id: "retiree-morning-walk",
+    category: "Health",
+    impact: "+0.8 health",
+    title: "Morning sunshine walk",
+    detail: "A gentle 30-minute morning walk maintains cardiovascular vitality and joint health.",
+    start: "08:00",
+    minutes: 30,
+  },
+  {
+    id: "retiree-mind-reading",
+    category: "Personal",
+    impact: "+0.6 focus",
+    title: "Daily reading & brain puzzle",
+    detail: "Spend 45 minutes with a book, crossword, or crafting hobby to keep your mind sharp.",
+    start: "10:30",
+    minutes: 45,
+  },
+  {
+    id: "retiree-pension-check",
+    category: "Money",
+    impact: "+Peace of mind",
+    title: "Monthly pension & healthcare check",
+    detail: "Review monthly healthcare expenses and utility bills for peace of mind.",
+    start: "15:00",
+    minutes: 20,
+  },
+  {
+    id: "retiree-evening-stretch",
+    category: "Health",
+    impact: "+0.4 sleep",
+    title: "Evening calming tea & stretching",
+    detail: "Gentle stretching and quiet music to prepare for restful, rejuvenating sleep.",
+    start: "20:30",
+    minutes: 25,
+  },
+];
+
+export function getRoleSuggestions(role?: string | null): Suggestion[] {
+  if (role === "student") return STUDENT_SUGGESTIONS;
+  if (role === "retiree") return RETIREE_SUGGESTIONS;
+  return WORKER_SUGGESTIONS;
+}
+
+export const SUGGESTIONS = WORKER_SUGGESTIONS;
 
 // --- Backend <-> frontend Profile field mapping ---
 // Only these fields currently have a home on the backend User model.
@@ -263,6 +439,7 @@ export const SUGGESTIONS: Suggestion[] = [
 
 function mapProfileToBackend(profile: Profile) {
   return {
+    role: profile.role,
     age: profile.age,
     retirement_goal_age: profile.targetAge,
     target_net_worth: profile.targetNetWorth,
@@ -278,6 +455,7 @@ function mapProfileToBackend(profile: Profile) {
 
 function mapBackendToProfile(user: any): Partial<Profile> {
   return {
+    role: user.role ?? "professional",
     age: user.age,
     targetAge: user.retirement_goal_age,
     targetNetWorth: user.target_net_worth,

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { useGuard } from "@/lib/use-guard";
-import { today, useTwin, type Task } from "@/lib/twin-store";
+import { today, useTwin, type Task, getRoleConfig } from "@/lib/twin-store";
 
 export const Route = createFileRoute("/planner")({
   head: () => ({
@@ -26,15 +26,16 @@ export const Route = createFileRoute("/planner")({
   component: PlannerPage,
 });
 
-const CATEGORIES: Task["category"][] = ["Work", "Study", "Health", "Money", "Personal"];
-
 function PlannerPage() {
   const ok = useGuard();
   const { state, addTask, toggleTask, removeTask } = useTwin();
+  const cfg = getRoleConfig(state.profile.role);
+  const categories = cfg.taskCategories;
+
   const [title, setTitle] = useState("");
   const [start, setStart] = useState("09:00");
   const [minutes, setMinutes] = useState(45);
-  const [category, setCategory] = useState<Task["category"]>("Work");
+  const [category, setCategory] = useState<string>(categories[0]);
 
   const todays = useMemo(
     () =>
@@ -50,12 +51,19 @@ function PlannerPage() {
   const done = todays.filter((t) => t.done).length;
   const planned = todays.reduce((s, t) => s + t.minutes, 0);
 
+  const placeholder =
+    state.profile.role === "student"
+      ? "e.g. Study Chapter 4 & do problem set"
+      : state.profile.role === "retiree"
+      ? "e.g. Morning 30-min walk & crossword"
+      : "e.g. Prepare project presentation";
+
   const submit = () => {
     if (!title.trim()) {
       toast.error("Give the task a name");
       return;
     }
-    addTask({ title: title.trim(), start, minutes, category, done: false, date: today() });
+    addTask({ title: title.trim(), start, minutes, category: category as any, done: false, date: today() });
     setTitle("");
     toast.success("Task added to today's plan");
   };
@@ -63,7 +71,7 @@ function PlannerPage() {
   return (
     <AppShell
       title="Today's Plan"
-      subtitle={`${done} of ${todays.length} done · ${Math.round(planned / 60 * 10) / 10}h scheduled`}
+      subtitle={`${cfg.badge} · ${done} of ${todays.length} done · ${Math.round(planned / 60 * 10) / 10}h scheduled`}
     >
       <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="panel divide-y divide-border">
@@ -106,7 +114,7 @@ function PlannerPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && submit()}
-                  placeholder="Write the report"
+                  placeholder={placeholder}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -115,18 +123,22 @@ function PlannerPage() {
                   <Input type="time" value={start} onChange={(e) => setStart(e.target.value)} />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label className="label-xs">Minutes</Label>
-                  <Input type="number" value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} />
+                  <Label className="label-xs">Duration</Label>
+                  <Input
+                    type="number"
+                    value={minutes}
+                    onChange={(e) => setMinutes(Number(e.target.value))}
+                  />
                 </div>
               </div>
               <div className="grid gap-1.5">
                 <Label className="label-xs">Category</Label>
-                <Select value={category} onValueChange={(v) => setCategory(v as Task["category"])}>
+                <Select value={category} onValueChange={setCategory}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((c) => (
+                    {categories.map((c) => (
                       <SelectItem key={c} value={c}>
                         {c}
                       </SelectItem>
@@ -135,7 +147,7 @@ function PlannerPage() {
                 </Select>
               </div>
               <Button className="w-full" onClick={submit}>
-                <Plus className="mr-2 h-4 w-4" /> Add to plan
+                <Plus className="mr-2 h-4 w-4" /> Add Task
               </Button>
             </div>
           </div>

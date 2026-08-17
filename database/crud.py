@@ -19,6 +19,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user = models.User(
         username=user.username,
         email=user.email,
+        role=user.role or "professional",
         age=user.age,
         retirement_goal_age=user.retirement_goal_age,
         target_net_worth=user.target_net_worth,

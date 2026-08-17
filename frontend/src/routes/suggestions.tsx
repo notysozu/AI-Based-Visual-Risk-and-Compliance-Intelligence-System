@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { useGuard } from "@/lib/use-guard";
-import { SUGGESTIONS, baseline, useTwin } from "@/lib/twin-store";
+import { getRoleSuggestions, baseline, useTwin, getRoleConfig } from "@/lib/twin-store";
 
 export const Route = createFileRoute("/suggestions")({
   head: () => ({
@@ -27,20 +27,22 @@ function SuggestionsPage() {
   if (!ok) return null;
 
   const base = baseline(state.logs);
+  const cfg = getRoleConfig(state.profile.role);
+  const suggestions = getRoleSuggestions(state.profile.role);
 
   return (
     <AppShell
       title="Suggestions"
-      subtitle="Kept separate from your task list until you choose to adopt one."
+      subtitle={`${cfg.badge} · Ideas recommended for your role, ready to drop into today's plan.`}
     >
       <div className="panel mb-5 p-5 text-sm text-muted-foreground">
         Based on {base.days || 0} logged days: sleep {base.sleep || state.profile.sleepHours}h,
-        screen {base.screen || state.profile.screenTime}h, study{" "}
+        screen {base.screen || state.profile.screenTime}h, {cfg.studyLabel.toLowerCase()}{" "}
         {base.study || (state.profile.studyHours / 7).toFixed(1)}h per day.
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
-        {SUGGESTIONS.map((s) => {
+        {suggestions.map((s) => {
           const taken = state.adopted.includes(s.id);
           return (
             <div

@@ -128,6 +128,7 @@ def get_wealth_advice(user_id: int, db: Session = Depends(database.get_db)):
 
     user_info = {
         "username": user.username,
+        "role": getattr(user, "role", "professional") or "professional",
         "age": user.age,
         "retirement_goal_age": user.retirement_goal_age,
         "target_net_worth": user.target_net_worth,
@@ -168,6 +169,7 @@ def get_scenario_suggestions(user_id: int, db: Session = Depends(database.get_db
     
     user_info = {
         "username": user.username,
+        "role": getattr(user, "role", "professional") or "professional",
         "age": user.age,
         "retirement_goal_age": user.retirement_goal_age,
         "target_net_worth": user.target_net_worth,
@@ -203,6 +205,7 @@ def compare_scenarios(user_id: int, payload: schemas.SimulationRequest, db: Sess
     # Get conversational advice from LLM
     user_info = {
         "username": user.username,
+        "role": getattr(user, "role", "professional") or "professional",
         "age": user.age,
         "retirement_goal_age": user.retirement_goal_age,
         "target_net_worth": user.target_net_worth,
@@ -247,6 +250,7 @@ def get_analytics_summary(user_id: int, payload: schemas.AnalyticsSummaryRequest
         
     user_info = {
         "username": user.username,
+        "role": getattr(user, "role", "professional") or "professional",
         "age": user.age,
         "retirement_goal_age": user.retirement_goal_age,
         "target_net_worth": user.target_net_worth,

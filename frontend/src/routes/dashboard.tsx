@@ -27,7 +27,7 @@ import { AppShell } from "@/components/app-shell";
 import { Gauge } from "@/components/gauge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useGuard } from "@/lib/use-guard";
-import { baseline, focusIndex, healthIndex, money, today, useTwin } from "@/lib/twin-store";
+import { baseline, focusIndex, healthIndex, money, today, useTwin, getRoleConfig } from "@/lib/twin-store";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -57,6 +57,7 @@ function DashboardPage() {
 
   const base = useMemo(() => baseline(state.logs), [state.logs, stamp]);
   const p = state.profile;
+  const cfg = getRoleConfig(p.role);
   const health = base.days
     ? healthIndex(base.sleep, base.exercise, base.screen)
     : healthIndex(p.sleepHours, p.exerciseDays * 20, p.screenTime);
@@ -81,7 +82,7 @@ function DashboardPage() {
   return (
     <AppShell
       title="Twin Core"
-      subtitle={`Modelled on ${base.days || 0} days of logged history`}
+      subtitle={`${cfg.badge} · Modelled on ${base.days || 0} days of logged history`}
       actions={
         <>
           <Button size="sm" onClick={() => setDrawer(true)}>
@@ -152,11 +153,11 @@ function DashboardPage() {
       </div>
 
       <div className="mt-5 grid gap-5 sm:grid-cols-3">
-        <Stat icon={Wallet} label="Current net worth" value={money(p.netWorth)} />
+        <Stat icon={Wallet} label={cfg.savingsLabel} value={money(p.netWorth)} />
         <Stat icon={MoonStar} label="Daily sleep" value={`${base.sleep || p.sleepHours}h`} />
         <Stat
           icon={BookOpen}
-          label="Weekly study hours"
+          label={`${cfg.studyLabel} (weekly)`}
           value={`${base.days ? (base.study * 7).toFixed(1) : p.studyHours}h`}
         />
       </div>
@@ -186,7 +187,7 @@ function DashboardPage() {
 
         <div className="panel flex flex-col justify-between p-6">
           <div>
-            <p className="label-xs">Primary goal</p>
+            <p className="label-xs">{cfg.goalLabel}</p>
             <h3 className="mt-2 font-display text-xl font-semibold">{p.goalName}</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               {money(p.goalCurrent)} of {money(p.goalTarget)}

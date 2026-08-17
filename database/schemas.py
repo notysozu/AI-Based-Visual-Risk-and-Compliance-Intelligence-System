@@ -6,6 +6,7 @@ from typing import Optional, List
 class UserBase(BaseModel):
     username: str
     email: EmailStr
+    role: Optional[str] = "professional"
     age: Optional[int] = 25
     retirement_goal_age: Optional[int] = 60
     target_net_worth: Optional[float] = 1000000.0
@@ -20,6 +21,7 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
+    role: Optional[str] = None
     age: Optional[int] = None
     retirement_goal_age: Optional[int] = None
     target_net_worth: Optional[float] = None

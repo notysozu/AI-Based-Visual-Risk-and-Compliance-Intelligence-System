@@ -4,27 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useTwin, type Profile } from "@/lib/twin-store";
-
-const FIELDS: { key: keyof Profile; label: string; type?: string; suffix?: string }[] = [
-  { key: "name", label: "Name" },
-  { key: "age", label: "Current age", type: "number" },
-  { key: "targetAge", label: "Target age", type: "number" },
-  { key: "monthlyIncome", label: "Monthly income", type: "number" },
-  { key: "monthlyExpenses", label: "Monthly expenses", type: "number" },
-  { key: "netWorth", label: "Current net worth", type: "number" },
-  { key: "targetNetWorth", label: "Target net worth", type: "number" },
-  { key: "savingsRate", label: "Savings rate (%)", type: "number" },
-  { key: "sleepHours", label: "Usual sleep (h/night)", type: "number" },
-  { key: "studyHours", label: "Study or learning (h/week)", type: "number" },
-  { key: "screenTime", label: "Screen time (h/day)", type: "number" },
-  { key: "exerciseDays", label: "Active days per week", type: "number" },
-  { key: "focusArea", label: "Main focus right now" },
-  { key: "goalName", label: "Primary goal" },
-  { key: "goalCurrent", label: "Goal progress", type: "number" },
-  { key: "goalTarget", label: "Goal target", type: "number" },
-];
+import { useTwin, type Profile, type UserRole, getRoleConfig } from "@/lib/twin-store";
 
 export function SettingsDialog({
   open,
@@ -35,6 +17,27 @@ export function SettingsDialog({
 }) {
   const { state, updateProfile } = useTwin();
   const [draft, setDraft] = useState<Profile>(state.profile);
+
+  const cfg = getRoleConfig(draft.role);
+
+  const fields: { key: keyof Profile; label: string; type?: string; suffix?: string }[] = [
+    { key: "name", label: "Name" },
+    { key: "age", label: "Current age", type: "number" },
+    { key: "targetAge", label: cfg.targetAgeLabel, type: "number" },
+    { key: "monthlyIncome", label: cfg.incomeLabel, type: "number" },
+    { key: "monthlyExpenses", label: cfg.expensesLabel, type: "number" },
+    { key: "netWorth", label: cfg.savingsLabel, type: "number" },
+    { key: "targetNetWorth", label: cfg.targetSavingsLabel, type: "number" },
+    { key: "savingsRate", label: "Savings rate (%)", type: "number" },
+    { key: "sleepHours", label: "Usual sleep (h/night)", type: "number" },
+    { key: "studyHours", label: cfg.studyLabel + " (h/week)", type: "number" },
+    { key: "screenTime", label: "Screen time (h/day)", type: "number" },
+    { key: "exerciseDays", label: "Active days per week", type: "number" },
+    { key: "focusArea", label: cfg.focusLabel },
+    { key: "goalName", label: cfg.goalLabel },
+    { key: "goalCurrent", label: "Goal progress", type: "number" },
+    { key: "goalTarget", label: "Goal target", type: "number" },
+  ];
 
   return (
     <Dialog
@@ -48,12 +51,31 @@ export function SettingsDialog({
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
-            Everything your twin uses to model your future. Change it any time.
+            Everything your twin uses to model your future. Change role or metrics at any time.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[55vh] pr-4">
+        
+        {/* Role Selector */}
+        <div className="rounded-lg border border-border bg-muted/20 p-3.5 mb-2">
+          <Label className="label-xs mb-1.5 block">Your Active Role Persona</Label>
+          <Select
+            value={draft.role || "professional"}
+            onValueChange={(val: UserRole) => setDraft({ ...draft, role: val })}
+          >
+            <SelectTrigger className="w-full bg-background">
+              <SelectValue placeholder="Select role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="student">🎓 Student (Coursework, study & pocket savings)</SelectItem>
+              <SelectItem value="professional">💼 Working Professional (Salary, career & retirement)</SelectItem>
+              <SelectItem value="retiree">🌿 Retiree / Senior (Pension, wellness & longevity)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <ScrollArea className="max-h-[50vh] pr-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            {FIELDS.map((f) => (
+            {fields.map((f) => (
               <div key={String(f.key)} className="grid gap-1.5">
                 <Label className="label-xs" htmlFor={String(f.key)}>
                   {f.label}
@@ -81,7 +103,7 @@ export function SettingsDialog({
             onClick={async () => {
               try {
                 await updateProfile(draft);
-                toast.success("Settings saved");
+                toast.success("Settings and role updated!");
                 onOpenChange(false);
               } catch (e: any) {
                 toast.error(e.message || "Failed to save settings");
@@ -90,7 +112,6 @@ export function SettingsDialog({
           >
             Save Settings
           </Button>
-
         </div>
       </DialogContent>
     </Dialog>
