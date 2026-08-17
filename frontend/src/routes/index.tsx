@@ -1,12 +1,33 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { GaugeCircle, Moon, Sun } from "lucide-react";
+import {
+  GaugeCircle,
+  Moon,
+  Sun,
+  ChevronDown,
+  GraduationCap,
+  Briefcase,
+  Laptop,
+  Rocket,
+  HeartHandshake,
+  Dices,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { useTwin } from "@/lib/twin-store";
+import { useTwin, type UserRole } from "@/lib/twin-store";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,19 +39,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Sign in — Digital Twin" },
       {
         name: "description",
-        content: "Create your twin profile or load the demo twin to explore the dashboard.",
+        content: "Create your twin profile or load a demo twin to explore the dashboard.",
       },
       { property: "og:title", content: "Sign in — Digital Twin" },
       {
         property: "og:description",
-        content: "Create your twin profile or load the demo twin to explore the dashboard.",
+        content: "Create your twin profile or load a demo twin to explore the dashboard.",
       },
     ],
   }),
@@ -45,11 +65,11 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [activeTab, setActiveTab] = useState<"signup" | "login">("signup");
   const [showSignUpDialog, setShowSignUpDialog] = useState(false);
+  const [loadingRole, setLoadingRole] = useState<string | null>(null);
 
   useEffect(() => {
     if (ready && state.authed && state.profile.onboarded) navigate({ to: "/dashboard" });
   }, [ready, state.authed, state.profile.onboarded, navigate]);
-
 
   const submit = async (mode: "signup" | "login") => {
     if (!email || !password || (mode === "signup" && !name)) {
@@ -71,7 +91,35 @@ function AuthPage() {
     }
   };
 
+  const handleLoadDemoRole = async (role: UserRole, randomize = false) => {
+    setLoadingRole(role + (randomize ? "-rand" : ""));
+    try {
+      await loadDemo(role, randomize);
+      const roleName =
+        role === "student"
+          ? "Student"
+          : role === "freelancer"
+          ? "Freelancer / Creator"
+          : role === "entrepreneur"
+          ? "Founder / Entrepreneur"
+          : role === "retiree"
+          ? "Retiree / Senior"
+          : "Working Professional";
 
+      toast.success(`${randomize ? "Randomized " : ""}${roleName} demo twin loaded with 30 days of history`);
+      navigate({ to: "/dashboard" });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to load demo twin");
+    } finally {
+      setLoadingRole(null);
+    }
+  };
+
+  const handleLoadFullyRandom = async () => {
+    const roles: UserRole[] = ["student", "professional", "freelancer", "entrepreneur", "retiree"];
+    const randomRole = roles[Math.floor(Math.random() * roles.length)];
+    await handleLoadDemoRole(randomRole, true);
+  };
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
@@ -85,7 +133,7 @@ function AuthPage() {
             A model of you, running a few years ahead.
           </h2>
           <p className="mt-4 text-sm text-muted-foreground">
-            Log the day, plan the day, and watch how small changes to money, sleep and focus
+            Log the day, plan the day, and watch how small changes to money, sleep, and focus
             reshape the next five years.
           </p>
           <div className="mt-10 grid grid-cols-3 gap-6 border-t border-border pt-6">
@@ -128,7 +176,6 @@ function AuthPage() {
               <TabsTrigger value="login">Log in</TabsTrigger>
             </TabsList>
 
-
             <TabsContent value="signup" className="mt-6 space-y-4">
               <div className="grid gap-1.5">
                 <Label className="label-xs" htmlFor="name">Name</Label>
@@ -139,22 +186,6 @@ function AuthPage() {
               <Button className="w-full" onClick={() => submit("signup")}>
                 Create Twin Profile
               </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={async () => {
-                  try {
-                    await loadDemo();
-                    toast.success("Demo twin loaded with 30 days of history");
-                    navigate({ to: "/dashboard" });
-                  } catch (e: any) {
-                    toast.error(e.message || "Failed to load demo twin");
-                  }
-                }}
-              >
-                Load Demo Twin
-              </Button>
-
             </TabsContent>
 
             <TabsContent value="login" className="mt-6 space-y-4">
@@ -165,6 +196,143 @@ function AuthPage() {
               </Button>
             </TabsContent>
           </Tabs>
+
+          {/* Dedicated Demo Twin Multi-Role Dropdown Selector */}
+          <div className="mt-6">
+            <div className="relative mb-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or explore demo personas</span>
+              </div>
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full flex items-center justify-between" disabled={!!loadingRole}>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-foreground" />
+                    <span>{loadingRole ? "Loading Demo..." : "Load Demo Twin"}</span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-80 p-1.5" align="center">
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal px-2 py-1">
+                  Preset Demo Personas (Standard)
+                </DropdownMenuLabel>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    className="flex items-center gap-2.5 py-2 cursor-pointer"
+                    onClick={() => handleLoadDemoRole("student", false)}
+                  >
+                    <GraduationCap className="h-4 w-4 text-foreground shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Student</p>
+                      <p className="text-xs text-muted-foreground">Study blocks, exams & allowance savings</p>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex items-center gap-2.5 py-2 cursor-pointer"
+                    onClick={() => handleLoadDemoRole("professional", false)}
+                  >
+                    <Briefcase className="h-4 w-4 text-foreground shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Working Professional</p>
+                      <p className="text-xs text-muted-foreground">Monthly salary, 401(k) & deep work</p>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex items-center gap-2.5 py-2 cursor-pointer"
+                    onClick={() => handleLoadDemoRole("freelancer", false)}
+                  >
+                    <Laptop className="h-4 w-4 text-foreground shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Freelancer / Creator</p>
+                      <p className="text-xs text-muted-foreground">Client billings, tax buffer & runway</p>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex items-center gap-2.5 py-2 cursor-pointer"
+                    onClick={() => handleLoadDemoRole("entrepreneur", false)}
+                  >
+                    <Rocket className="h-4 w-4 text-foreground shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Founder / Entrepreneur</p>
+                      <p className="text-xs text-muted-foreground">Venture equity, runway & build sprints</p>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex items-center gap-2.5 py-2 cursor-pointer"
+                    onClick={() => handleLoadDemoRole("retiree", false)}
+                  >
+                    <HeartHandshake className="h-4 w-4 text-foreground shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Retiree / Senior</p>
+                      <p className="text-xs text-muted-foreground">Pension, longevity & wellness buffer</p>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+
+                <DropdownMenuSeparator className="my-1" />
+
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal px-2 py-1">
+                  Randomized Demo Values
+                </DropdownMenuLabel>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => handleLoadDemoRole("student", true)}
+                  >
+                    <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+                    <span>Random Student (Varied Age & Allowance)</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => handleLoadDemoRole("professional", true)}
+                  >
+                    <Briefcase className="h-3.5 w-3.5 shrink-0" />
+                    <span>Random Professional (Varied Salary & Net Worth)</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => handleLoadDemoRole("freelancer", true)}
+                  >
+                    <Laptop className="h-3.5 w-3.5 shrink-0" />
+                    <span>Random Freelancer (Varied Invoicing & Runway)</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => handleLoadDemoRole("entrepreneur", true)}
+                  >
+                    <Rocket className="h-3.5 w-3.5 shrink-0" />
+                    <span>Random Founder (Varied Valuation & Burn)</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => handleLoadDemoRole("retiree", true)}
+                  >
+                    <HeartHandshake className="h-3.5 w-3.5 shrink-0" />
+                    <span>Random Retiree (Varied Nest Egg & Routine)</span>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+
+                <DropdownMenuSeparator className="my-1" />
+
+                <DropdownMenuItem
+                  className="flex items-center gap-2.5 py-2 cursor-pointer font-medium bg-accent/40 hover:bg-accent"
+                  onClick={handleLoadFullyRandom}
+                >
+                  <Dices className="h-4 w-4 text-foreground shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold">Fully Random Twin</p>
+                    <p className="text-xs text-muted-foreground">Surprise me with any role & random habits</p>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
