@@ -47,7 +47,13 @@ cd ..
 
 ### 3. Environment Variables Configuration
 
-Create a `.env` file in the root directory and set your configuration options:
+Copy `.env.example` to `.env` in the root directory:
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and set your configuration options:
 
 ```env
 DATABASE_URL=sqlite:///./digital_twin.db
