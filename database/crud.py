@@ -23,6 +23,8 @@ def create_user(db: Session, user: schemas.UserCreate):
         retirement_goal_age=user.retirement_goal_age,
         target_net_worth=user.target_net_worth,
         monthly_income=user.monthly_income,
+        monthly_expenses=user.monthly_expenses,
+        net_worth=user.net_worth,
         sleep_target_hours=user.sleep_target_hours,
         study_target_hours_week=user.study_target_hours_week
     )
