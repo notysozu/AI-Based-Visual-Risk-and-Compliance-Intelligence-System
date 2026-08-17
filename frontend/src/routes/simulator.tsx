@@ -39,6 +39,60 @@ export const Route = createFileRoute("/simulator")({
 type Scenario = { savings: number; sleep: number; study: number };
 const ZERO: Scenario = { savings: 0, sleep: 0, study: 0 };
 
+function parseMarkdown(text: string) {
+  if (!text) return null;
+  const lines = text.split("\n");
+  return lines.map((line, i) => {
+    let cleanLine = line.trim();
+    if (!cleanLine) return <div key={i} className="h-2" />;
+    
+    if (cleanLine.startsWith("### ")) {
+      return <h4 key={i} className="text-sm font-semibold mt-3 mb-1 text-foreground">{cleanLine.replace("### ", "")}</h4>;
+    }
+    if (cleanLine.startsWith("## ")) {
+      return <h3 key={i} className="text-base font-bold mt-4 mb-2 text-foreground">{cleanLine.replace("## ", "")}</h3>;
+    }
+    if (cleanLine.startsWith("# ")) {
+      return <h2 key={i} className="text-lg font-bold mt-4 mb-2 text-foreground">{cleanLine.replace("# ", "")}</h2>;
+    }
+    
+    let isBullet = false;
+    if (cleanLine.startsWith("- ") || cleanLine.startsWith("* ")) {
+      isBullet = true;
+      cleanLine = cleanLine.substring(2);
+    }
+    
+    const parts = [];
+    const regex = /\*\*(.*?)\*\*/g;
+    let match;
+    let lastIndex = 0;
+    while ((match = regex.exec(cleanLine)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(cleanLine.substring(lastIndex, match.index));
+      }
+      parts.push(<strong key={match.index} className="font-bold text-foreground">{match[1]}</strong>);
+      lastIndex = regex.lastIndex;
+    }
+    if (lastIndex < cleanLine.length) {
+      parts.push(cleanLine.substring(lastIndex));
+    }
+    
+    if (isBullet) {
+      return (
+        <li key={i} className="ml-4 list-disc text-sm text-muted-foreground pl-1 py-0.5">
+          {parts}
+        </li>
+      );
+    }
+    
+    return (
+      <p key={i} className="text-sm text-muted-foreground leading-relaxed my-1">
+        {parts}
+      </p>
+    );
+  });
+}
+
 function SimulatorPage() {
   const ok = useGuard();
   const { state, updateProfile, saveScenarioPresets, loadScenarioPresets } = useTwin();
@@ -49,7 +103,6 @@ function SimulatorPage() {
   const [ran, setRan] = useState(true);
   const [burst, setBurst] = useState(false);
   const [backendResult, setBackendResult] = useState<any>(null);
-  const [presetSyncing, setPresetSyncing] = useState(false);
 
   // On mount, pull any previously-saved Scenario A/B slider positions
   // from the backend so the sandbox opens where the user left it.
@@ -103,7 +156,7 @@ function SimulatorPage() {
   const chart = useMemo(() => {
     if (backendResult) {
       return backendResult.scenario_a.datapoints.map((dp: any, i: number) => ({
-        year: `Y${dp.year}`,
+        year: `Age ${p.age + dp.year}`,
         netA: dp.net_worth,
         netB: backendResult.scenario_b.datapoints[i].net_worth,
         focusA: +(dp.focus_index / 10).toFixed(2),
@@ -111,13 +164,13 @@ function SimulatorPage() {
       }));
     }
     return localA.path.map((row, i) => ({
-      year: `Y${row.year}`,
+      year: `Age ${p.age + row.year}`,
       netA: row.value,
       netB: localB.path[i].value,
       focusA: +(localA.focus - i * 0.02).toFixed(2),
       focusB: +(localB.focus - i * 0.05).toFixed(2),
     }));
-  }, [localA, localB, backendResult]);
+  }, [localA, localB, backendResult, p.age]);
 
   const runComparison = async () => {
     const userId = p.id;
@@ -127,6 +180,10 @@ function SimulatorPage() {
     }
     setRan(false);
     try {
+      // 1. Auto-save presets to database in background
+      await saveScenarioPresets(a, b);
+
+      // 2. Run comparative analysis
       const result = await compareScenarios(userId, {
         scenario_a: {
           monthly_investment_change: a.savings,
@@ -149,28 +206,6 @@ function SimulatorPage() {
     }
   };
 
-
-  if (!ok) return null;
-
-  const verdict = () => {
-    const better = B.terminal > A.terminal ? "B" : "A";
-    const worse = better === "A" ? B : A;
-    const win = better === "A" ? A : B;
-    const gap = Math.abs(A.terminal - B.terminal);
-    return [
-      `> comparing scenario a and scenario b over 60 months`,
-      `> net worth delta: ${money(gap)} in favour of scenario ${better.toLowerCase()}`,
-      `> health index: A ${A.health} / B ${B.health}`,
-      `> focus index: A ${A.focus} / B ${B.focus}`,
-      worse.health < 5
-        ? `> warning: scenario ${better === "A" ? "b" : "a"} drops health below 5.0 — burnout risk`
-        : `> both scenarios keep health above the safe floor`,
-      `> VERDICT: adopt scenario ${better.toLowerCase()} — it reaches ${money(
-        win.terminal,
-      )} while holding focus at ${win.focus}.`,
-    ];
-  };
-
   const adopt = (s: Scenario, name: string) => {
     const r = evaluate(s);
     updateProfile({
@@ -186,86 +221,42 @@ function SimulatorPage() {
     toast.success(`Scenario ${name} adopted as your active metrics`);
   };
 
-  const handleSavePresets = async () => {
-    setPresetSyncing(true);
-    try {
-      await saveScenarioPresets(a, b);
-      toast.success("Scenario changes saved");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to save scenario");
-    } finally {
-      setPresetSyncing(false);
-    }
-  };
+  if (!ok) return null;
 
-  const handleResetToSaved = async () => {
-    setPresetSyncing(true);
-    try {
-      const { a: savedA, b: savedB } = await loadScenarioPresets();
-      if (savedA) setA(savedA);
-      if (savedB) setB(savedB);
-      toast.success("Reset to last saved scenario");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to reset");
-    } finally {
-      setPresetSyncing(false);
-    }
-  };
+  const better = B.terminal > A.terminal ? "B" : "A";
+  const worse = better === "A" ? B : A;
+  const win = better === "A" ? A : B;
+  const gap = Math.abs(A.terminal - B.terminal);
 
   return (
     <AppShell
       title="Decision Sandbox"
       subtitle="Move the sliders. The twin re-runs the next five years instantly."
-      actions={
-        <>
-          <Button
-            size="sm"
-            onClick={runComparison}
-          >
-            Run Comparative Analysis
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => adopt(a, "A")}>
-            Adopt Scenario A
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => adopt(b, "B")}>
-            Adopt Scenario B
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={presetSyncing}
-            onClick={handleSavePresets}
-          >
-            {presetSyncing ? "Saving…" : "Save Changes"}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={presetSyncing}
-            onClick={handleResetToSaved}
-          >
-            Reset to Saved
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              setA(ZERO);
-              setB(ZERO);
-              setBackendResult(null);
-              toast("Sandbox reset to your baseline");
-            }}
-          >
-            Reset Sandbox
-          </Button>
-        </>
-      }
     >
-
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-        <div className="space-y-5">
-          <ScenarioCard name="A" s={a} set={setA} result={A} onDrag={setDragging} />
-          <ScenarioCard name="B" s={b} set={setB} result={B} onDrag={setDragging} />
+        <div className="space-y-4">
+          <ScenarioCard name="A" s={a} set={setA} result={A} onDrag={setDragging} adopt={adopt} />
+          <ScenarioCard name="B" s={b} set={setB} result={B} onDrag={setDragging} adopt={adopt} />
+          <div className="flex gap-2">
+            <Button
+              className="flex-1"
+              onClick={runComparison}
+              disabled={!ran}
+            >
+              {!ran ? "Analyzing..." : "Compare & Analyze"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setA(ZERO);
+                setB(ZERO);
+                setBackendResult(null);
+                toast("Sandbox reset to baseline");
+              }}
+            >
+              Reset
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-5">
@@ -295,30 +286,102 @@ function SimulatorPage() {
             </div>
           </div>
 
-          <div className="panel p-6 font-mono text-xs leading-relaxed">
-            <div className="flex items-center justify-between pb-3">
-              <p className="label-xs font-sans">Twin advisor verdict</p>
+          <div className="panel p-6">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <p className="label-xs">Twin advisor verdict</p>
               {burst && (
                 <span className="flex items-center gap-1 text-xs text-foreground animate-pulse-glow rounded-full px-2">
                   <CheckCircle2 className="h-4 w-4" /> adopted
                 </span>
               )}
             </div>
-            <div className="space-y-1 border-t border-border pt-3 text-muted-foreground font-sans">
-              {backendResult ? (
-                <div className="whitespace-pre-line text-sm text-foreground">
-                  {backendResult.recommendation}
-                </div>
-              ) : (
-                verdict().map((line) => (
-                  <p key={line} className={line.startsWith("> VERDICT") ? "text-foreground" : ""}>
-                    {line}
-                  </p>
-                ))
-              )}
-            </div>
-          </div>
 
+            {/* Structured Verdict Cards Grid */}
+            <div className="grid gap-4 sm:grid-cols-3 mt-4">
+              {/* Financial Impact Card */}
+              <div className="panel p-4 border border-border flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Financial Impact</span>
+                  <h4 className="text-sm font-semibold mt-1">Net Worth @ 5 Years</h4>
+                  <div className="mt-2 space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Scenario A:</span>
+                      <span className="font-semibold">{money(A.terminal)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Scenario B:</span>
+                      <span className="font-semibold">{money(B.terminal)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 pt-2 border-t border-border flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-semibold">Advantage:</span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-muted text-foreground">
+                    Scenario {better} (+{money(gap)})
+                  </span>
+                </div>
+              </div>
+
+              {/* Wellbeing Impact Card */}
+              <div className="panel p-4 border border-border flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Wellbeing Analysis</span>
+                  <h4 className="text-sm font-semibold mt-1">Health & Focus Index</h4>
+                  <div className="mt-2 space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Health (A/B):</span>
+                      <span className="font-semibold">{A.health.toFixed(1)} / {B.health.toFixed(1)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Focus (A/B):</span>
+                      <span className="font-semibold">{A.focus.toFixed(1)} / {B.focus.toFixed(1)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 pt-2 border-t border-border flex items-center">
+                  {worse.health < 5 ? (
+                    <span className="text-xs text-foreground flex items-center gap-1 font-semibold">
+                      <TriangleAlert className="h-3.5 w-3.5 text-foreground animate-pulse" /> Burnout risk warning
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      ✅ Safe health levels
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Summary Verdict Card */}
+              <div className="panel p-4 border border-border flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Verdict Recommendation</span>
+                  <h4 className="text-sm font-semibold mt-1">Best Choice Trajectory</h4>
+                  <div className="mt-2 text-xs text-muted-foreground leading-relaxed">
+                    Adopt Scenario {better.toLowerCase()} — it reaches {money(win.terminal)} while holding focus at {win.focus.toFixed(1)}.
+                  </div>
+                </div>
+                <div className="mt-3 pt-2 border-t border-border flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Winner:</span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-foreground text-background">
+                    Scenario {better}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Rich text compatible AI Advice Narrative Card */}
+            {backendResult && (
+              <div className="panel p-5 mt-4 border border-border bg-muted/20">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1.5 h-3.5 bg-foreground rounded" />
+                  <p className="text-xs font-semibold uppercase tracking-wider text-foreground">AI Narrative & Recommendations</p>
+                </div>
+                <div className="space-y-1 text-muted-foreground leading-relaxed">
+                  {parseMarkdown(backendResult.recommendation)}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </AppShell>
@@ -331,12 +394,14 @@ function ScenarioCard({
   set,
   result,
   onDrag,
+  adopt,
 }: {
   name: string;
   s: Scenario;
   set: (v: Scenario) => void;
   result: { health: number; focus: number; terminal: number };
   onDrag: (v: boolean) => void;
+  adopt: (s: Scenario, name: string) => void;
 }) {
   const warn = result.health < 5 || result.focus < 5;
   return (
@@ -348,7 +413,7 @@ function ScenarioCard({
       <div className="flex items-center justify-between">
         <p className="label-xs">Scenario {name}</p>
         {warn && (
-          <span className="flex items-center gap-1 text-xs text-foreground">
+          <span className="flex items-center gap-1 text-xs text-foreground font-semibold">
             <TriangleAlert className="h-3.5 w-3.5" /> burnout risk
           </span>
         )}
@@ -392,6 +457,15 @@ function ScenarioCard({
         <Mini label="Focus" value={result.focus.toFixed(1)} />
         <Mini label="5y net" value={money(result.terminal)} />
       </div>
+
+      <Button
+        className="mt-4 w-full"
+        variant="outline"
+        size="sm"
+        onClick={() => adopt(s, name)}
+      >
+        Adopt Scenario {name}
+      </Button>
     </div>
   );
 }
