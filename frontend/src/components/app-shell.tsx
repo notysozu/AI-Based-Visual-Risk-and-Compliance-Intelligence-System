@@ -179,7 +179,7 @@ export function AppShell({
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-border bg-background/95 py-2 backdrop-blur md:hidden">
-        {NAV.slice(0, 5).map((item) => (
+        {navItems.slice(0, 5).map((item) => (
           <Link
             key={item.to}
             to={item.to}
