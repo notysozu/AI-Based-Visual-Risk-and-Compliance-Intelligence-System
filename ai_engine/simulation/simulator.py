@@ -295,7 +295,6 @@ def simulate_goal_timeline(current_savings: float, monthly_savings: float,
 def simulate_study_hours_change(current_records: List[Dict], additional_weekly_hours: float) -> Dict:
     """
     Scenario: "What if I studied X more hours per week?"
-
     Approximates the effect by nudging each record's performance_score
     upward proportionally to the added study time, then re-running the
     trend predictor. This is a simple heuristic, not a trained model -
@@ -335,7 +334,7 @@ def compare_scenarios(scenarios: List[Dict]) -> Dict:
     Takes a list of already-computed scenario_result dicts and returns
     them bundled together, e.g. for side-by-side chart rendering.
 
-    scenarios: list of dicts, each from one of the simulate_* functions above.
+    scenarios: list of dicts, each from the simulate_* functions above.
     """
     return {
         "comparison_count": len(scenarios),
@@ -372,6 +371,7 @@ if __name__ == "__main__":
 
     print(compare_scenarios([savings_scenario, goal_scenario, study_scenario]))
 
+
 # ============================================================
 # Compatibility layer for backend API
 # ============================================================
@@ -400,32 +400,96 @@ def run_what_if_comparison(
     years=5
 ):
     """
-    Temporary backend compatibility function.
+    Run Scenario A and Scenario B using the backend baseline
+    and the requested lifestyle changes.
     """
 
-    def build_result(name):
+    baseline = get_user_baseline_metrics(db, user_id)
+
+    scenarios = {
+        "scenario_a": change_a,
+        "scenario_b": change_b
+    }
+
+    results = {}
+
+    for name, change in scenarios.items():
+
+        # Apply monthly investment change
+        monthly_savings = max(
+            0.0,
+            baseline["monthly_savings"]
+            + change.get("monthly_investment_change", 0.0)
+        )
+
+        # Apply sleep change
+        sleep_hours = max(
+            4.0,
+            min(
+                12.0,
+                baseline["sleep_hours"]
+                + change.get("sleep_hours_change", 0.0)
+            )
+        )
+
+        # Apply weekly study change
+        study_hours_week = max(
+            0.0,
+            baseline["study_hours_week"]
+            + change.get("weekly_study_change", 0.0)
+        )
+
+        # Calculate health index based on sleep
+        sleep_difference = abs(sleep_hours - 8.0)
+        health_index = max(
+            0.0,
+            min(
+                100.0,
+                100.0 - (sleep_difference * 10.0)
+            )
+        )
+
+        # Calculate focus index based on study hours
+        study_difference = abs(study_hours_week - 15.0)
+        focus_index = max(
+            0.0,
+            min(
+                100.0,
+                100.0 - (study_difference * 3.0)
+            )
+        )
+
+        # Project final wealth
+        projected_wealth = project_savings(
+            current_savings=baseline["current_net_worth"],
+            monthly_savings=monthly_savings,
+            months=years * 12,
+            annual_growth_rate=0.08
+        )
+
         datapoints = []
 
-        wealth = 15000
-
         for year in range(1, years + 1):
-            wealth += 12000
+
+            year_wealth = project_savings(
+                current_savings=baseline["current_net_worth"],
+                monthly_savings=monthly_savings,
+                months=year * 12,
+                annual_growth_rate=0.08
+            )
 
             datapoints.append({
                 "year": year,
-                "net_worth": wealth,
-                "health_index": 80,
-                "focus_index": 82
+                "net_worth": year_wealth,
+                "health_index": round(health_index, 2),
+                "focus_index": round(focus_index, 2)
             })
 
-        return {
-            "scenario_name": name,
+        results[name] = {
+            "scenario_name": "Scenario A" if name == "scenario_a" else "Scenario B",
             "datapoints": datapoints,
             "attained_retirement": False,
-            "wealth_at_end": wealth
+            "wealth_at_end": projected_wealth
         }
 
-    return {
-        "scenario_a": build_result("Scenario A"),
-        "scenario_b": build_result("Scenario B")
-    }
+    return results

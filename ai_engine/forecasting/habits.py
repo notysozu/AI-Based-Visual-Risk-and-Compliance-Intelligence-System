@@ -346,7 +346,7 @@ def analyze_habits_correlation(db, user_id):
         },
         "sample_size": 90
     }
-    
+
 if __name__ == "__main__":
     # Quick manual sanity check
     sample_data = {
