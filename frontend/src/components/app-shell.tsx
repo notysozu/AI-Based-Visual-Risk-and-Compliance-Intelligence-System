@@ -1,10 +1,11 @@
-import { useState, type ReactNode } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Activity,
   Bell,
   ChevronLeft,
   GaugeCircle,
+  GraduationCap,
   LayoutGrid,
   ListChecks,
   Lightbulb,
@@ -26,17 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SettingsDialog } from "@/components/settings-dialog";
-import { useTwin } from "@/lib/twin-store";
-
-const NAV = [
-  { to: "/dashboard", label: "Overview", icon: LayoutGrid },
-  { to: "/planner", label: "Tasks & Planner", icon: ListChecks },
-  { to: "/suggestions", label: "Suggestions", icon: Lightbulb },
-  { to: "/simulator", label: "What-If Simulator", icon: Split },
-  { to: "/wealth", label: "Wealth Planner", icon: Wallet },
-  { to: "/analytics", label: "Analytics", icon: Activity },
-  { to: "/profile", label: "Profile & Goals", icon: User },
-] as const;
+import { useTwin, getRoleConfig } from "@/lib/twin-store";
 
 export function AppShell({
   title,
@@ -55,6 +46,29 @@ export function AppShell({
   const [collapsed, setCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  const cfg = getRoleConfig(state.profile.role);
+
+  const navItems = useMemo(() => {
+    const items = [
+      { to: "/dashboard", label: "Overview", icon: LayoutGrid },
+      { to: "/planner", label: "Tasks & Planner", icon: ListChecks },
+    ];
+
+    if (cfg.hasStudyIntelligence) {
+      items.push({ to: "/study", label: "Study & Academic", icon: GraduationCap });
+    }
+
+    items.push(
+      { to: "/suggestions", label: "Suggestions", icon: Lightbulb },
+      { to: "/simulator", label: "What-If Simulator", icon: Split },
+      { to: "/wealth", label: "Wealth Planner", icon: Wallet },
+      { to: "/analytics", label: "Analytics", icon: Activity },
+      { to: "/profile", label: "Profile & Goals", icon: User },
+    );
+
+    return items;
+  }, [cfg.hasStudyIntelligence]);
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       <aside
@@ -71,7 +85,7 @@ export function AppShell({
           )}
         </div>
         <nav className="flex flex-1 flex-col gap-1 px-2">
-          {NAV.map((item) => {
+          {navItems.map((item) => {
             const active = pathname === item.to;
             return (
               <Link

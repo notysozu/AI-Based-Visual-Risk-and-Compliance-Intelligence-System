@@ -16,6 +16,7 @@ import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SimulatorRouteImport } from './routes/simulator'
+import { Route as StudyRouteImport } from './routes/study'
 import { Route as SuggestionsRouteImport } from './routes/suggestions'
 import { Route as WealthRouteImport } from './routes/wealth'
 
@@ -54,6 +55,11 @@ const SimulatorRoute = SimulatorRouteImport.update({
   path: '/simulator',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudyRoute = StudyRouteImport.update({
+  id: '/study',
+  path: '/study',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SuggestionsRoute = SuggestionsRouteImport.update({
   id: '/suggestions',
   path: '/suggestions',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/setup': typeof SetupRoute
   '/simulator': typeof SimulatorRoute
+  '/study': typeof StudyRoute
   '/suggestions': typeof SuggestionsRoute
   '/wealth': typeof WealthRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/setup': typeof SetupRoute
   '/simulator': typeof SimulatorRoute
+  '/study': typeof StudyRoute
   '/suggestions': typeof SuggestionsRoute
   '/wealth': typeof WealthRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/setup': typeof SetupRoute
   '/simulator': typeof SimulatorRoute
+  '/study': typeof StudyRoute
   '/suggestions': typeof SuggestionsRoute
   '/wealth': typeof WealthRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/setup'
     | '/simulator'
+    | '/study'
     | '/suggestions'
     | '/wealth'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/setup'
     | '/simulator'
+    | '/study'
     | '/suggestions'
     | '/wealth'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/setup'
     | '/simulator'
+    | '/study'
     | '/suggestions'
     | '/wealth'
   fileRoutesById: FileRoutesById
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   SetupRoute: typeof SetupRoute
   SimulatorRoute: typeof SimulatorRoute
+  StudyRoute: typeof StudyRoute
   SuggestionsRoute: typeof SuggestionsRoute
   WealthRoute: typeof WealthRoute
 }
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SimulatorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/study': {
+      id: '/study'
+      path: '/study'
+      fullPath: '/study'
+      preLoaderRoute: typeof StudyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/suggestions': {
       id: '/suggestions'
       path: '/suggestions'
@@ -223,6 +243,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   SetupRoute: SetupRoute,
   SimulatorRoute: SimulatorRoute,
+  StudyRoute: StudyRoute,
   SuggestionsRoute: SuggestionsRoute,
   WealthRoute: WealthRoute,
 }

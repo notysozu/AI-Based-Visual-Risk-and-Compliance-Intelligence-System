@@ -36,6 +36,8 @@ class User(Base):
     last_wealth_prediction = Column(String, nullable=True)
     last_analytics_summary = Column(String, nullable=True)
     last_analytics_updated = Column(String, nullable=True)
+    last_study_plan = Column(String, nullable=True)
+    last_study_plan_updated = Column(String, nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -77,6 +79,8 @@ class StudyRecord(Base):
     duration_minutes = Column(Integer, default=0)
     focus_score = Column(Integer, default=7)  # 1-10 focus level
     exam_score = Column(Float, nullable=True)  # Optional exam score result (0-100)
+    notes = Column(String, nullable=True)
+    session_type = Column(String, default="study")  # study, revision, exam, deep_work
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="study_records")

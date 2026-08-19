@@ -403,6 +403,7 @@ export type RoleConfig = {
   defaultNetWorth: number;
   defaultTargetNetWorth: number;
   taskCategories: string[];
+  hasStudyIntelligence?: boolean;
 };
 
 export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
@@ -410,12 +411,12 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     role: "student",
     name: "Student",
     badge: "Student",
-    tagline: "Track coursework, study blocks, exam goals, and pocket money / allowance savings.",
+    tagline: "Track coursework blocks, exam readiness, and pocket money savings.",
     incomeLabel: "Pocket Money / Allowance",
-    expensesLabel: "Living & Course Spending",
+    expensesLabel: "Daily Student Expenses",
     savingsLabel: "Saved Pocket Money",
     targetSavingsLabel: "Target Savings Milestone",
-    targetAgeLabel: "Career Launch Target Age",
+    targetAgeLabel: "Target Career Launch Age",
     studyLabel: "Study & Coursework",
     focusLabel: "Academic / Skill Focus",
     goalLabel: "Student Goal (Gear/Courses)",
@@ -428,6 +429,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     defaultNetWorth: 1200,
     defaultTargetNetWorth: 10000,
     taskCategories: ["Study", "Exams", "Campus", "Money", "Health", "Social"],
+    hasStudyIntelligence: true,
   },
   professional: {
     role: "professional",
@@ -451,6 +453,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     defaultNetWorth: 35000,
     defaultTargetNetWorth: 1000000,
     taskCategories: ["Work", "Career", "Finance", "Health", "Upskilling", "Personal"],
+    hasStudyIntelligence: false,
   },
   freelancer: {
     role: "freelancer",
@@ -474,6 +477,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     defaultNetWorth: 25000,
     defaultTargetNetWorth: 800000,
     taskCategories: ["Client Work", "Projects", "Invoices", "Admin", "Health", "Upskilling"],
+    hasStudyIntelligence: false,
   },
   entrepreneur: {
     role: "entrepreneur",
@@ -497,6 +501,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     defaultNetWorth: 60000,
     defaultTargetNetWorth: 2500000,
     taskCategories: ["Product", "Growth", "Fundraising", "Operations", "Team", "Health"],
+    hasStudyIntelligence: false,
   },
   retiree: {
     role: "retiree",
@@ -520,6 +525,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     defaultNetWorth: 450000,
     defaultTargetNetWorth: 600000,
     taskCategories: ["Health", "Hobbies", "Finance", "Family", "Home", "Leisure"],
+    hasStudyIntelligence: false,
   },
 };
 

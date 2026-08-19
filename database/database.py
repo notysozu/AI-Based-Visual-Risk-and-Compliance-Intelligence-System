@@ -30,6 +30,51 @@ except Exception as e:
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+def run_migrations():
+    """Safely adds missing columns to existing SQLite database tables."""
+    if not DATABASE_URL.startswith("sqlite"):
+        return
+    with engine.connect() as conn:
+        # Check users table
+        try:
+            res = conn.exec_driver_sql("PRAGMA table_info(users)")
+            existing_user_cols = {row[1] for row in res.fetchall()}
+            
+            user_migrations = [
+                ("monthly_expenses", "FLOAT DEFAULT 2900.0"),
+                ("net_worth", "FLOAT DEFAULT 15000.0"),
+                ("last_success_odds", "FLOAT"),
+                ("last_wealth_prediction", "TEXT"),
+                ("last_analytics_summary", "TEXT"),
+                ("last_analytics_updated", "TEXT"),
+                ("last_study_plan", "TEXT"),
+                ("last_study_plan_updated", "TEXT"),
+            ]
+            for col_name, col_def in user_migrations:
+                if col_name not in existing_user_cols:
+                    conn.exec_driver_sql(f"ALTER TABLE users ADD COLUMN {col_name} {col_def}")
+                    conn.commit()
+        except Exception as e:
+            print(f"Error migrating users table: {e}")
+
+        # Check study_records table
+        try:
+            res = conn.exec_driver_sql("PRAGMA table_info(study_records)")
+            existing_study_cols = {row[1] for row in res.fetchall()}
+            
+            study_migrations = [
+                ("notes", "TEXT"),
+                ("session_type", "TEXT DEFAULT 'study'"),
+            ]
+            for col_name, col_def in study_migrations:
+                if col_name not in existing_study_cols:
+                    conn.exec_driver_sql(f"ALTER TABLE study_records ADD COLUMN {col_name} {col_def}")
+                    conn.commit()
+        except Exception as e:
+            print(f"Error migrating study_records table: {e}")
+
+run_migrations()
+
 def get_db():
     db = SessionLocal()
     try:

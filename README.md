@@ -138,12 +138,13 @@ digital-twin-ai/
 |       |-- 03_forecasting_and_monte_carlo.md
 |       |-- 04_decision_sandbox_and_whatif.md
 |       |-- 05_habit_analytics_and_feedback.md
-|       `-- 06_task_planner_and_suggestions.md
+|       |-- 06_task_planner_and_suggestions.md
+|       `-- 07_study_and_productivity_intelligence.md
 |
 |-- frontend/                     # React 19 + TanStack Router + Tailwind CSS
 |   |-- src/
 |   |   |-- components/           # UI components, AppShell, SettingsDialog, Gauge
-|   |   |-- routes/               # Page routes (Dashboard, Wealth, Planner, Simulator, etc.)
+|   |   |-- routes/               # Page routes (Dashboard, Wealth, Study, Planner, Simulator, etc.)
 |   |   |-- lib/                  # Central state store (twin-store.tsx) & API client
 |   |   `-- hooks/                # Responsive layout and state hooks
 |   |-- package.json
@@ -151,16 +152,16 @@ digital-twin-ai/
 |
 |-- backend/                      # FastAPI application
 |   |-- main.py                   # FastAPI initialization & middleware
-|   `-- api/                      # REST routers (users, records, simulations)
+|   `-- api/                      # REST routers (users, records, simulations, study, finance, habits)
 |
 |-- database/                     # Database layer
 |   |-- models.py                 # SQLAlchemy ORM schemas
 |   |-- schemas.py                # Pydantic data validation schemas
 |   |-- crud.py                   # CRUD transaction helpers
-|   `-- database.py               # Engine session management
+|   `-- database.py               # Engine session management & SQLite auto-migrations
 |
 |-- ai_engine/                    # Intelligence & simulation layer
-|   |-- forecasting/              # Deterministic & Monte Carlo financial models
+|   |-- forecasting/              # Monte Carlo wealth & study regression models
 |   |-- simulation/               # Multi-scenario lifestyle & biological tradeoff engine
 |   `-- llm_integration/          # Groq LLaMA 3.1 prompt advisor & rule-based fallbacks
 |
@@ -178,6 +179,14 @@ digital-twin-ai/
 | `POST` | `/users/` | Create a new user profile with selected persona role |
 | `GET` | `/users/{user_id}` | Retrieve user profile, cached predictions, and role |
 | `PUT` | `/users/{user_id}` | Update profile metrics, target age, net worth, and role |
+| `GET` | `/study/analytics/{user_id}` | Aggregated subject breakdown, retention score, and weekly hours |
+| `GET` | `/study/forecast/{user_id}` | Performance trend regression and exam readiness probability |
+| `POST` | `/study/generate-plan/{user_id}` | AI-generated 7-day optimized study plan with caching |
+| `POST` | `/study/log/{user_id}` | Log a completed study session with focus and test score |
+| `GET` | `/simulations/forecast/{user_id}` | Monte Carlo forecast with percentile curves and success odds |
+| `POST` | `/simulations/compare/{user_id}` | Evaluate Scenario A vs. Scenario B tradeoff analysis |
+| `POST` | `/simulations/analytics-summary/{user_id}` | AI daily habit analysis narrative (noon milestone cache) |
+| `GET` | `/simulations/wealth-advice/{user_id}` | AI wealth coach guidance and milestone actions |
 | `GET` | `/records/habit/{user_id}` | Retrieve historical habit logs |
 | `POST` | `/records/habit/{user_id}` | Record daily sleep, screen, study, and mood log |
 | `GET` | `/simulations/forecast/{user_id}` | Execute 500-iteration Monte Carlo wealth forecast |

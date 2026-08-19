@@ -1,8 +1,10 @@
 
 
 import os
+import re
+import json
 from groq import Groq
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 client = None
@@ -540,3 +542,204 @@ Instructions:
     except Exception as e:
         print(f"Error generating analytics summary: {e}")
         return fallback_summary
+
+
+def generate_optimized_study_plan(user_info: Dict[str, Any], study_summary: Dict[str, Any], target_milestone: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Generates a structured, role-adapted 7-day study and learning plan.
+    Optimized for students preparing for coursework, midterms, and finals.
+    """
+    role = user_info.get("role", "student")
+    subjects = study_summary.get("subjects", [])
+    subject_names = [s.get("subject", "Coursework") for s in subjects] or ["Computer Science", "Algorithms", "Database Systems", "Linear Algebra"]
+    subjects_str = ", ".join(subject_names)
+    milestone_str = target_milestone or "Upcoming Midterm & Final Exams"
+    avg_hours = study_summary.get("avg_weekly_hours", 18.0)
+    retention_score = study_summary.get("retention_health_score", 82)
+
+    fallback_plan = {
+        "weekly_goal": f"Execute high-retention study sprints for {subject_names[0]} and {subject_names[1] if len(subject_names) > 1 else 'Core Topics'}.",
+        "focus_strategy": "Morning 60-90 minute deep-focus block prior to campus distractions, followed by a 30-minute evening active recall review.",
+        "daily_plans": [
+            {
+                "day": "Monday",
+                "blocks": [
+                    {
+                        "subject": subject_names[0],
+                        "start_time": "08:30",
+                        "duration_minutes": 60,
+                        "focus_type": "Deep Concept Sprint",
+                        "task_title": f"{subject_names[0]}: Core Problem Set & Practice"
+                    },
+                    {
+                        "subject": subject_names[1] if len(subject_names) > 1 else "Revision",
+                        "start_time": "16:30",
+                        "duration_minutes": 45,
+                        "focus_type": "Active Recall",
+                        "task_title": f"{subject_names[1] if len(subject_names) > 1 else 'Revision'}: Spaced Flashcards & Notes"
+                    }
+                ]
+            },
+            {
+                "day": "Tuesday",
+                "blocks": [
+                    {
+                        "subject": subject_names[1] if len(subject_names) > 1 else subject_names[0],
+                        "start_time": "09:00",
+                        "duration_minutes": 75,
+                        "focus_type": "Deep Problem Solving",
+                        "task_title": f"{subject_names[1] if len(subject_names) > 1 else subject_names[0]}: Lab Exercises & Code"
+                    }
+                ]
+            },
+            {
+                "day": "Wednesday",
+                "blocks": [
+                    {
+                        "subject": subject_names[2] if len(subject_names) > 2 else subject_names[0],
+                        "start_time": "08:30",
+                        "duration_minutes": 60,
+                        "focus_type": "Lecture Synthesis",
+                        "task_title": f"{subject_names[2] if len(subject_names) > 2 else subject_names[0]}: Chapter Synthesis & Exercises"
+                    },
+                    {
+                        "subject": subject_names[0],
+                        "start_time": "17:00",
+                        "duration_minutes": 45,
+                        "focus_type": "Mock Test",
+                        "task_title": f"{subject_names[0]}: Timed Quiz Practice"
+                    }
+                ]
+            },
+            {
+                "day": "Thursday",
+                "blocks": [
+                    {
+                        "subject": subject_names[0],
+                        "start_time": "09:00",
+                        "duration_minutes": 90,
+                        "focus_type": "Exam Prep Blitz",
+                        "task_title": f"{subject_names[0]}: Past Exam Questions Review"
+                    }
+                ]
+            },
+            {
+                "day": "Friday",
+                "blocks": [
+                    {
+                        "subject": subject_names[1] if len(subject_names) > 1 else subject_names[0],
+                        "start_time": "08:30",
+                        "duration_minutes": 60,
+                        "focus_type": "Weakness Targeting",
+                        "task_title": f"{subject_names[1] if len(subject_names) > 1 else subject_names[0]}: Error Log Analysis"
+                    }
+                ]
+            },
+            {
+                "day": "Saturday",
+                "blocks": [
+                    {
+                        "subject": "Comprehensive Review",
+                        "start_time": "10:00",
+                        "duration_minutes": 90,
+                        "focus_type": "Full Mock Exam",
+                        "task_title": f"Timed Mock Exam: {subject_names[0]} & {subject_names[1] if len(subject_names) > 1 else 'All Topics'}"
+                    }
+                ]
+            },
+            {
+                "day": "Sunday",
+                "blocks": [
+                    {
+                        "subject": "Weekly Reset & Prep",
+                        "start_time": "11:00",
+                        "duration_minutes": 45,
+                        "focus_type": "Light Revision",
+                        "task_title": "Weekly Summary Sheet & Schedule Plan"
+                    }
+                ]
+            }
+        ],
+        "recommendations": [
+            {
+                "title": "Ebbinghaus Spaced Repetition",
+                "impact": "+12% recall score",
+                "description": "Review newly introduced lecture topics 24 hours after class, then again 4 days later.",
+                "category": "Study"
+            },
+            {
+                "title": "90-Min Pre-Noon Deep Sprint",
+                "impact": "+1.4 focus rating",
+                "description": "Schedule demanding algorithmic and mathematical topics during peak cognitive alertness between 08:30 and 11:00.",
+                "category": "Focus"
+            },
+            {
+                "title": "Post-Sprint Walk Reset",
+                "impact": "+0.6 mood & memory",
+                "description": "Take a 15-minute screen-free walk after long problem sets to consolidate long-term synaptic retention.",
+                "category": "Health"
+            }
+        ]
+    }
+
+    if client is None:
+        return fallback_plan
+
+    prompt = f"""
+You are an advanced Academic & Productivity AI Coach generating an optimized 7-day study plan.
+Student Details:
+- Target Milestone / Exam: {milestone_str}
+- Current Subjects: {subjects_str}
+- Current Weekly Study Hours: {avg_hours}h
+- Retention Health Score: {retention_score}/100
+
+Generate a structured, realistic 7-day study schedule in strictly valid JSON format.
+Each day (Monday through Sunday) must have 1-2 focused study blocks with:
+- "subject": (one of the student's subjects)
+- "start_time": (e.g. "08:30", "16:00")
+- "duration_minutes": (number between 30 and 90)
+- "focus_type": (e.g. "Deep Problem Solving", "Active Recall", "Exam Simulation")
+- "task_title": (concrete, actionable task title)
+
+Also provide:
+- "weekly_goal": (1-sentence clear objective)
+- "focus_strategy": (1-2 sentences on timing and fatigue mitigation)
+- "recommendations": array of 3 objects with "title", "impact", "description", "category" ("Study"|"Focus"|"Health")
+
+Respond with ONLY the raw JSON object, without markdown formatting or code fences:
+{{
+  "weekly_goal": "...",
+  "focus_strategy": "...",
+  "daily_plans": [
+    {{
+      "day": "Monday",
+      "blocks": [
+        {{ "subject": "...", "start_time": "...", "duration_minutes": 60, "focus_type": "...", "task_title": "..." }}
+      ]
+    }}
+  ],
+  "recommendations": [
+    {{ "title": "...", "impact": "...", "description": "...", "category": "Study" }}
+  ]
+}}
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=1500,
+        )
+        content = response.choices[0].message.content.strip()
+        if content.startswith("```"):
+            content = re.sub(r"^```[a-zA-Z]*\n?", "", content)
+            content = re.sub(r"\n?```$", "", content)
+        
+        parsed = json.loads(content)
+        if "daily_plans" in parsed and "weekly_goal" in parsed:
+            return parsed
+        return fallback_plan
+    except Exception as e:
+        print(f"Error calling Groq for study plan: {e}")
+        return fallback_plan

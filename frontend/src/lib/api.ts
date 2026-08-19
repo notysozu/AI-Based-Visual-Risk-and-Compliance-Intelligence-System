@@ -85,3 +85,25 @@ export function getWealthAdvice(userId: string | number) {
 export function getUser(userId: string | number) {
   return request(`/users/${userId}`);
 }
+
+export function getStudyAnalytics(userId: string | number) {
+  return request(`/study/analytics/${userId}`);
+}
+
+export function getStudyForecast(userId: string | number, targetScore: number = 85) {
+  return request(`/study/forecast/${userId}?target_score=${targetScore}`);
+}
+
+export function generateStudyPlan(userId: string | number, payload: { target_milestone?: string; force_refresh?: boolean }) {
+  return request(`/study/generate-plan/${userId}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function logStudySession(userId: string | number, payload: Record<string, unknown>) {
+  return request(`/study/log/${userId}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}

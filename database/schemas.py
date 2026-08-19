@@ -36,6 +36,8 @@ class UserUpdate(BaseModel):
     last_wealth_prediction: Optional[str] = None
     last_analytics_summary: Optional[str] = None
     last_analytics_updated: Optional[str] = None
+    last_study_plan: Optional[str] = None
+    last_study_plan_updated: Optional[str] = None
 
 class UserResponse(UserBase):
     id: int
@@ -46,6 +48,8 @@ class UserResponse(UserBase):
     last_wealth_prediction: Optional[str] = None
     last_analytics_summary: Optional[str] = None
     last_analytics_updated: Optional[str] = None
+    last_study_plan: Optional[str] = None
+    last_study_plan_updated: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -92,6 +96,8 @@ class StudyRecordBase(BaseModel):
     duration_minutes: int = Field(0, ge=0)
     focus_score: int = Field(7, ge=1, le=10)
     exam_score: Optional[float] = Field(None, ge=0, le=100)
+    notes: Optional[str] = None
+    session_type: Optional[str] = "study"
     created_at: Optional[datetime] = None
 
 class StudyRecordCreate(StudyRecordBase):
@@ -104,6 +110,33 @@ class StudyRecordResponse(StudyRecordBase):
 
     class Config:
         from_attributes = True
+
+class StudyPlanRequest(BaseModel):
+    target_milestone: Optional[str] = None
+    force_refresh: Optional[bool] = False
+
+class StudyBlockItem(BaseModel):
+    subject: str
+    start_time: str
+    duration_minutes: int
+    focus_type: str
+    task_title: str
+
+class DayStudyPlan(BaseModel):
+    day: str
+    blocks: List[StudyBlockItem]
+
+class StudyRecommendationItem(BaseModel):
+    title: str
+    impact: str
+    description: str
+    category: str
+
+class StudyPlanResponse(BaseModel):
+    weekly_goal: str
+    focus_strategy: str
+    daily_plans: List[DayStudyPlan]
+    recommendations: List[StudyRecommendationItem]
 
 # Simulation & What-If schemas
 class ScenarioInput(BaseModel):
