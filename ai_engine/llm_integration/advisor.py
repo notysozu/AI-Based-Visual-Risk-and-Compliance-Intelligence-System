@@ -830,7 +830,7 @@ def generate_smart_role_suggestions(
         }
 
     prompt = f"""
-You are the Digital Twin AI Coach. Deeply analyze this user's persona and data to formulate {4 if mode == 'regenerate' else 3} high-impact, actionable daily suggestions.
+You are the Digital Twin AI Coach. Deeply analyze this user's persona and data to formulate {6 if mode == 'regenerate' else 4} high-impact, actionable daily suggestions.
 
 USER PERSONA & METRICS:
 - Role: {role.upper()}
@@ -850,7 +850,7 @@ PREVIOUS/EXISTING SUGGESTION TITLES (DO NOT REPEAT THESE):
 [{existing_titles_str}]
 
 INSTRUCTIONS:
-Formulate {4 if mode == 'regenerate' else 3} hyper-personalized, distinct suggestions targeting the user's role and data bottlenecks.
+Formulate {6 if mode == 'regenerate' else 4} hyper-personalized, distinct suggestions targeting the user's role and data bottlenecks.
 Cover diverse categories:
 - Focus (deep work blocks, focus sprints)
 - Vitality (sleep hygiene, circadian resets, movement)
@@ -876,11 +876,12 @@ Respond with ONLY valid raw JSON in the following format:
 """
 
     try:
+        import time, random
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,
-            max_tokens=1000,
+            max_tokens=1400,
         )
         content = response.choices[0].message.content.strip()
         if content.startswith("```"):
@@ -889,9 +890,28 @@ Respond with ONLY valid raw JSON in the following format:
 
         parsed = json.loads(content)
         if "suggestions" in parsed and isinstance(parsed["suggestions"], list) and len(parsed["suggestions"]) > 0:
+            ts = int(time.time())
+            cleaned_suggestions = []
+            for idx, s in enumerate(parsed["suggestions"]):
+                # Ensure unique suggestion ID so multiple batches do not overwrite
+                s_id = s.get("suggestion_id") or f"ai-sug-{ts}-{idx}-{random.randint(100, 999)}"
+                if s_id.startswith("ai-sug-") and len(s_id) < 12:
+                    s_id = f"ai-sug-{ts}-{idx}-{random.randint(100, 999)}"
+                cleaned_suggestions.append({
+                    "suggestion_id": s_id,
+                    "title": s.get("title", f"Smart Action {idx+1}"),
+                    "category": s.get("category", "Focus"),
+                    "detail": s.get("detail", ""),
+                    "impact": s.get("impact", "+1.0 focus"),
+                    "start_time": s.get("start_time", "09:00"),
+                    "duration_minutes": s.get("duration_minutes", 30),
+                    "is_ai_generated": True,
+                    "is_adopted": False
+                })
+
             return {
                 "diagnostic": parsed.get("diagnostic", diagnostic_summary),
-                "suggestions": parsed["suggestions"]
+                "suggestions": cleaned_suggestions
             }
     except Exception as e:
         print(f"Error calling Groq for smart role suggestions: {e}")

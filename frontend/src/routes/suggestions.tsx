@@ -4,7 +4,6 @@ import {
   Check,
   Plus,
   Sparkles,
-  RefreshCw,
   PlusCircle,
   RotateCcw,
   Search,
@@ -13,6 +12,10 @@ import {
   TrendingUp,
   BrainCircuit,
   SlidersHorizontal,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +27,6 @@ import {
   getUserSuggestions,
   generateSmartSuggestions,
   resetSuggestionsApi,
-  adoptSuggestionApi,
 } from "@/lib/api";
 
 export const Route = createFileRoute("/suggestions")({
@@ -55,6 +57,8 @@ interface SuggestionItemData {
   is_ai_generated: boolean;
 }
 
+type SortOption = "newest" | "oldest" | "duration_desc" | "duration_asc" | "category";
+
 function SuggestionsPage() {
   const ok = useGuard();
   const { state, adopt } = useTwin();
@@ -68,6 +72,11 @@ function SuggestionsPage() {
 
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(6);
 
   const base = baseline(state.logs);
   const cfg = getRoleConfig(state.profile.role);
@@ -132,6 +141,7 @@ function SuggestionsPage() {
       if (res?.suggestions) {
         setItems(res.suggestions);
         setDiagnostic(res.lifestyle_diagnostic || "");
+        setCurrentPage(1);
         toast.success("Fresh AI suggestions generated from your data");
       }
     } catch (err: any) {
@@ -141,7 +151,7 @@ function SuggestionsPage() {
     }
   };
 
-  // Handle Suggest More (Append 3-4 extra suggestions)
+  // Handle Suggest More (Append 4 extra suggestions to the TOP)
   const handleSuggestMore = async () => {
     setAddingMore(true);
     toast.info("AI is synthesizing additional complementary suggestions...");
@@ -149,7 +159,8 @@ function SuggestionsPage() {
       const res = await generateSmartSuggestions(userId, { mode: "more" });
       if (res?.suggestions) {
         setItems(res.suggestions);
-        toast.success("Added extra AI suggestions to your library");
+        setCurrentPage(1); // Return to page 1 so user immediately sees newly added suggestions on top!
+        toast.success("Added extra AI suggestions to the top of your library");
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to add more suggestions");
@@ -166,6 +177,7 @@ function SuggestionsPage() {
       if (res?.suggestions) {
         setItems(res.suggestions);
         setDiagnostic(res.lifestyle_diagnostic || "");
+        setCurrentPage(1);
         toast.success(`Reset to default ${cfg.badge} suggestions`);
       }
     } catch (err: any) {
@@ -194,13 +206,41 @@ function SuggestionsPage() {
     toast.success(`"${item.title}" added to today's planner tasks`);
   };
 
+  // Category counts calculation
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      all: items.length,
+      focus: 0,
+      vitality: 0,
+      finance: 0,
+      study: 0,
+      adopted: 0,
+    };
+
+    for (const i of items) {
+      if (i.is_adopted || state.adopted.includes(i.suggestion_id)) {
+        counts.adopted++;
+      }
+      const cat = i.category.toLowerCase();
+      if (cat.includes("focus") || cat.includes("work")) counts.focus++;
+      if (cat.includes("vitality") || cat.includes("health") || cat.includes("sleep")) counts.vitality++;
+      if (cat.includes("finance") || cat.includes("money") || cat.includes("savings")) counts.finance++;
+      if (cat.includes("study") || cat.includes("academic") || cat.includes("skill")) counts.study++;
+    }
+
+    return counts;
+  }, [items, state.adopted]);
+
   // Filtered & Searched Suggestions
   const filteredSuggestions = useMemo(() => {
-    return items.filter((item) => {
+    let filtered = items.filter((item) => {
+      const query = searchQuery.toLowerCase().trim();
       const matchSearch =
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.detail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchQuery.toLowerCase());
+        !query ||
+        item.title.toLowerCase().includes(query) ||
+        item.detail.toLowerCase().includes(query) ||
+        item.category.toLowerCase().includes(query) ||
+        item.impact.toLowerCase().includes(query);
 
       if (!matchSearch) return false;
 
@@ -215,7 +255,33 @@ function SuggestionsPage() {
 
       return true;
     });
-  }, [items, activeCategory, searchQuery, state.adopted]);
+
+    // Apply Sorting
+    if (sortBy === "oldest") {
+      filtered = [...filtered].reverse();
+    } else if (sortBy === "duration_desc") {
+      filtered = [...filtered].sort((a, b) => b.duration_minutes - a.duration_minutes);
+    } else if (sortBy === "duration_asc") {
+      filtered = [...filtered].sort((a, b) => a.duration_minutes - b.duration_minutes);
+    } else if (sortBy === "category") {
+      filtered = [...filtered].sort((a, b) => a.category.localeCompare(b.category));
+    }
+    // "newest" is the default order from DB (created_at desc)
+
+    return filtered;
+  }, [items, activeCategory, searchQuery, sortBy, state.adopted]);
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory, searchQuery, sortBy, itemsPerPage]);
+
+  // Pagination calculation
+  const totalPages = Math.max(1, Math.ceil(filteredSuggestions.length / itemsPerPage));
+  const paginatedSuggestions = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredSuggestions.slice(start, start + itemsPerPage);
+  }, [filteredSuggestions, currentPage, itemsPerPage]);
 
   if (!ok) return null;
 
@@ -258,7 +324,7 @@ function SuggestionsPage() {
                 disabled={addingMore || generating}
               >
                 <PlusCircle className={`h-3.5 w-3.5 text-indigo-500 ${addingMore ? "animate-spin" : ""}`} />
-                <span>{addingMore ? "Synthesizing..." : "Suggest More"}</span>
+                <span>{addingMore ? "Synthesizing..." : "Suggest More (+4)"}</span>
               </Button>
 
               <Button
@@ -299,49 +365,109 @@ function SuggestionsPage() {
               <p className="text-sm font-bold mt-0.5 font-display">{base.study || (state.profile.studyHours / 7).toFixed(1)}h / day</p>
             </div>
             <div className="rounded-xl bg-input/40 p-2.5 border border-border/30 shadow-[var(--clay-inset)] text-center">
-              <span className="text-[10px] text-muted-foreground uppercase font-semibold">Adopted Habits</span>
-              <p className="text-sm font-bold mt-0.5 font-display text-emerald-600 dark:text-emerald-400">
-                {items.filter((i) => i.is_adopted || state.adopted.includes(i.suggestion_id)).length} Active
+              <span className="text-[10px] text-muted-foreground uppercase font-semibold">Total in Library</span>
+              <p className="text-sm font-bold mt-0.5 font-display text-indigo-600 dark:text-indigo-400">
+                {items.length} Suggestions
               </p>
             </div>
           </div>
         </div>
 
-        {/* Filter and Search Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-input/50 p-1 border border-border/40 shadow-[var(--clay-inset)] text-xs">
-            {[
-              { id: "all", label: "All Suggestions" },
-              { id: "focus", label: "Focus & Work" },
-              { id: "vitality", label: "Vitality & Sleep" },
-              { id: "finance", label: "Finance & Savings" },
-              { id: "study", label: cfg.studyLabel },
-              { id: "adopted", label: "Adopted in Plan" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveCategory(tab.id)}
-                className={`px-3 py-1.5 rounded-xl font-semibold transition-all ${
-                  activeCategory === tab.id
-                    ? "bg-card text-foreground shadow-[var(--clay-shadow-sm)]"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+        {/* Filter, Search, and Sort Controls Bar */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Category Tabs with dynamic badge counts */}
+            <div className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-input/50 p-1 border border-border/40 shadow-[var(--clay-inset)] text-xs">
+              {[
+                { id: "all", label: "All", count: categoryCounts.all },
+                { id: "focus", label: "Focus & Work", count: categoryCounts.focus },
+                { id: "vitality", label: "Vitality & Sleep", count: categoryCounts.vitality },
+                { id: "finance", label: "Finance", count: categoryCounts.finance },
+                { id: "study", label: cfg.studyLabel, count: categoryCounts.study },
+                { id: "adopted", label: "In Plan", count: categoryCounts.adopted },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveCategory(tab.id)}
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition-all flex items-center gap-1.5 ${
+                    activeCategory === tab.id
+                      ? "bg-card text-foreground shadow-[var(--clay-shadow-sm)]"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      activeCategory === tab.id
+                        ? "bg-foreground text-background"
+                        : "bg-muted-foreground/20 text-muted-foreground"
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Search Input & Sort Selector */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-60">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search suggestions or impact..."
+                  className="pl-8 pr-7 h-9 text-xs rounded-xl shadow-[var(--clay-inset)] bg-input/40 border-border/40"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center rounded-xl bg-input/50 p-0.5 border border-border/40 shadow-[var(--clay-inset)] text-xs">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="bg-transparent px-2.5 py-1.5 text-xs text-foreground font-medium rounded-lg focus:outline-none cursor-pointer"
+                >
+                  <option value="newest" className="bg-card text-foreground">Newest First</option>
+                  <option value="oldest" className="bg-card text-foreground">Oldest First</option>
+                  <option value="duration_desc" className="bg-card text-foreground">Longest Duration</option>
+                  <option value="duration_asc" className="bg-card text-foreground">Shortest Duration</option>
+                  <option value="category" className="bg-card text-foreground">By Category</option>
+                </select>
+              </div>
+            </div>
           </div>
 
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search suggestions..."
-              className="pl-8 h-9 text-xs rounded-xl shadow-[var(--clay-inset)] bg-input/40 border-border/40"
-            />
-          </div>
+          {/* Active filter summary & Clear pill */}
+          {(searchQuery || activeCategory !== "all" || sortBy !== "newest") && (
+            <div className="flex items-center justify-between px-2 text-xs text-muted-foreground">
+              <span>
+                Found <strong className="text-foreground">{filteredSuggestions.length}</strong> matching suggestions
+                {activeCategory !== "all" && ` in ${activeCategory}`}
+                {searchQuery && ` matching "${searchQuery}"`}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveCategory("all");
+                  setSearchQuery("");
+                  setSortBy("newest");
+                }}
+                className="text-xs text-indigo-500 hover:underline font-medium"
+              >
+                Reset all filters
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Suggestions Grid */}
@@ -351,94 +477,183 @@ function SuggestionsPage() {
             Loading calibrated recommendations...
           </div>
         ) : filteredSuggestions.length === 0 ? (
-          <div className="panel p-10 text-center text-sm text-muted-foreground">
-            <p>No suggestions match the selected category.</p>
+          <div className="panel p-10 text-center text-sm text-muted-foreground space-y-3">
+            <p>No suggestions match your active search or category filter.</p>
             <Button
               variant="outline"
               size="sm"
-              className="mt-3 rounded-xl text-xs"
+              className="rounded-xl text-xs"
               onClick={() => {
                 setActiveCategory("all");
                 setSearchQuery("");
+                setSortBy("newest");
               }}
             >
               Clear Filters
             </Button>
           </div>
         ) : (
-          <div className="grid gap-5 md:grid-cols-2">
-            {filteredSuggestions.map((s) => {
-              const taken = s.is_adopted || state.adopted.includes(s.suggestion_id);
-              const cat = s.category.toLowerCase();
-              const catClass =
-                cat.includes("study") || cat.includes("academic")
-                  ? "clay-badge-purple"
-                  : cat.includes("work") || cat.includes("focus")
-                  ? "clay-badge-indigo"
-                  : cat.includes("health") || cat.includes("sleep") || cat.includes("vitality") || cat.includes("fitness")
-                  ? "clay-badge-emerald"
-                  : "clay-badge-amber";
+          <div className="space-y-4">
+            <div className="grid gap-5 md:grid-cols-2">
+              {paginatedSuggestions.map((s, index) => {
+                const taken = s.is_adopted || state.adopted.includes(s.suggestion_id);
+                const cat = s.category.toLowerCase();
+                const catClass =
+                  cat.includes("study") || cat.includes("academic")
+                    ? "clay-badge-purple"
+                    : cat.includes("work") || cat.includes("focus")
+                    ? "clay-badge-indigo"
+                    : cat.includes("health") || cat.includes("sleep") || cat.includes("vitality") || cat.includes("fitness")
+                    ? "clay-badge-emerald"
+                    : "clay-badge-amber";
 
-              return (
-                <div
-                  key={s.suggestion_id}
-                  className={`panel flex flex-col justify-between p-6 hover:-translate-y-1 hover:shadow-[var(--clay-shadow-lg)] transition-all duration-200 border ${
-                    taken ? "border-emerald-500/40 bg-emerald-500/[0.02]" : "border-border/60"
-                  }`}
-                >
-                  <div>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${catClass}`}>
-                          {s.category}
-                        </span>
-                        {s.is_ai_generated && (
-                          <span className="clay-badge-indigo rounded-full px-2 py-0.5 text-[10px] font-bold flex items-center gap-1">
-                            <Zap className="h-2.5 w-2.5" /> AI
+                // Highlight newest suggestions on page 1
+                const isNewestBatch = currentPage === 1 && index < 4 && s.is_ai_generated;
+
+                return (
+                  <div
+                    key={s.suggestion_id}
+                    className={`panel flex flex-col justify-between p-6 hover:-translate-y-1 hover:shadow-[var(--clay-shadow-lg)] transition-all duration-200 border ${
+                      taken
+                        ? "border-emerald-500/40 bg-emerald-500/[0.02]"
+                        : isNewestBatch
+                        ? "border-indigo-500/40 shadow-[var(--clay-shadow)]"
+                        : "border-border/60"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${catClass}`}>
+                            {s.category}
                           </span>
-                        )}
+                          {s.is_ai_generated && (
+                            <span className="clay-badge-indigo rounded-full px-2 py-0.5 text-[10px] font-bold flex items-center gap-1">
+                              <Zap className="h-2.5 w-2.5" /> AI
+                            </span>
+                          )}
+                          {isNewestBatch && (
+                            <span className="bg-indigo-500/10 text-indigo-500 border border-indigo-500/30 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                              New
+                            </span>
+                          )}
+                        </div>
+                        <span className="clay-badge-emerald rounded-full px-2.5 py-0.5 text-xs font-bold flex items-center gap-1">
+                          <TrendingUp className="h-3 w-3" />
+                          {s.impact}
+                        </span>
                       </div>
-                      <span className="clay-badge-emerald rounded-full px-2.5 py-0.5 text-xs font-bold flex items-center gap-1">
-                        <TrendingUp className="h-3 w-3" />
-                        {s.impact}
-                      </span>
+
+                      <h3 className="mt-3 font-display text-base sm:text-lg font-bold text-foreground">{s.title}</h3>
+                      <p className="mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground">{s.detail}</p>
                     </div>
 
-                    <h3 className="mt-3 font-display text-base sm:text-lg font-bold text-foreground">{s.title}</h3>
-                    <p className="mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground">{s.detail}</p>
+                    <div className="mt-5 flex items-center justify-between border-t border-border/50 pt-4">
+                      <span className="text-xs font-mono text-muted-foreground flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                        {s.start_time} · {s.duration_minutes} min
+                      </span>
+
+                      <Button
+                        size="sm"
+                        variant={taken ? "outline" : "default"}
+                        disabled={taken}
+                        className={`rounded-xl text-xs font-semibold ${
+                          taken
+                            ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                            : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-[0_2px_8px_rgba(99,102,241,0.3)] hover:from-indigo-700 hover:to-purple-700"
+                        }`}
+                        onClick={() => handleAdopt(s)}
+                      >
+                        {taken ? (
+                          <>
+                            <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-500" /> In your plan
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="mr-1.5 h-3.5 w-3.5" /> Add to tasks
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  <div className="mt-5 flex items-center justify-between border-t border-border/50 pt-4">
-                    <span className="text-xs font-mono text-muted-foreground flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                      {s.start_time} · {s.duration_minutes} min
-                    </span>
+            {/* Pagination Controls Bar */}
+            {filteredSuggestions.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-card border border-border/50 shadow-[var(--clay-shadow-sm)] mt-6">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>
+                    Showing{" "}
+                    <strong className="text-foreground">
+                      {(currentPage - 1) * itemsPerPage + 1}–
+                      {Math.min(currentPage * itemsPerPage, filteredSuggestions.length)}
+                    </strong>{" "}
+                    of <strong className="text-foreground">{filteredSuggestions.length}</strong>
+                  </span>
 
-                    <Button
-                      size="sm"
-                      variant={taken ? "outline" : "default"}
-                      disabled={taken}
-                      className={`rounded-xl text-xs font-semibold ${
-                        taken
-                          ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
-                          : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-[0_2px_8px_rgba(99,102,241,0.3)] hover:from-indigo-700 hover:to-purple-700"
-                      }`}
-                      onClick={() => handleAdopt(s)}
-                    >
-                      {taken ? (
-                        <>
-                          <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-500" /> In your plan
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="mr-1.5 h-3.5 w-3.5" /> Add to tasks
-                        </>
-                      )}
-                    </Button>
+                  <span className="mx-1 text-border">|</span>
+
+                  <div className="flex items-center gap-1">
+                    <span>Per page:</span>
+                    {[4, 6, 8, 12].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setItemsPerPage(n)}
+                        className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all ${
+                          itemsPerPage === n
+                            ? "bg-foreground text-background"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Page Buttons */}
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-xl"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`h-8 w-8 rounded-xl text-xs font-bold transition-all ${
+                        currentPage === pageNum
+                          ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-[0_2px_8px_rgba(99,102,241,0.4)]"
+                          : "bg-input/40 border border-border/40 text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-xl"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
