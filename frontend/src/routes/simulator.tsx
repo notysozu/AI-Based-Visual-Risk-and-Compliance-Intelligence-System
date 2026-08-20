@@ -311,101 +311,90 @@ function SimulatorPage() {
             </div>
           </div>
 
-          <div className="panel p-6">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <p className="label-xs">Twin advisor verdict</p>
-              {burst && (
-                <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-bold animate-pulse-glow rounded-full px-2">
-                  <CheckCircle2 className="h-4 w-4" /> adopted
+          {/* Structured Verdict Summary Cards Grid */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            {/* Financial Impact Card */}
+            <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] flex flex-col justify-between hover:shadow-[var(--clay-shadow)] transition-all">
+              <div>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Financial Impact</span>
+                <h4 className="text-sm font-bold mt-1 font-display">Net Worth @ 5 Years</h4>
+                <div className="mt-2.5 space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Scenario A:</span>
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400">{money(A.terminal)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Scenario B:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{money(B.terminal)}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3.5 pt-2.5 border-t border-border/40 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground font-medium">Advantage:</span>
+                <span className="clay-badge-emerald text-xs font-bold px-2.5 py-0.5 rounded-full">
+                  Scenario {better} (+{money(gap)})
                 </span>
-              )}
-            </div>
-
-            {/* Structured Verdict Cards Grid */}
-            <div className="grid gap-4 sm:grid-cols-3 mt-4">
-              {/* Financial Impact Card */}
-              <div className="panel p-4 border border-border flex flex-col justify-between">
-                <div>
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Financial Impact</span>
-                  <h4 className="text-sm font-semibold mt-1">Net Worth @ 5 Years</h4>
-                  <div className="mt-2 space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Scenario A:</span>
-                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">{money(A.terminal)}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Scenario B:</span>
-                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">{money(B.terminal)}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3 pt-2 border-t border-border flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground font-semibold">Advantage:</span>
-                  <span className="clay-badge-emerald text-xs font-bold px-2.5 py-0.5 rounded-full">
-                    Scenario {better} (+{money(gap)})
-                  </span>
-                </div>
-              </div>
-
-              {/* Wellbeing Impact Card */}
-              <div className="panel p-4 border border-border flex flex-col justify-between">
-                <div>
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Wellbeing Analysis</span>
-                  <h4 className="text-sm font-semibold mt-1">Health & Focus Index</h4>
-                  <div className="mt-2 space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Health (A/B):</span>
-                      <span className="font-semibold">{A.health.toFixed(1)} / {B.health.toFixed(1)}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Focus (A/B):</span>
-                      <span className="font-semibold">{A.focus.toFixed(1)} / {B.focus.toFixed(1)}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3 pt-2 border-t border-border flex items-center">
-                  {worse.health < 5 ? (
-                    <span className="text-xs text-rose-500 dark:text-rose-400 flex items-center gap-1 font-semibold">
-                      <TriangleAlert className="h-3.5 w-3.5 text-rose-500 animate-pulse" /> Burnout risk warning
-                    </span>
-                  ) : (
-                    <span className="clay-badge-emerald text-[11px] px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Safe health levels
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Summary Verdict Card */}
-              <div className="panel p-4 border border-border flex flex-col justify-between">
-                <div>
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Verdict Recommendation</span>
-                  <h4 className="text-sm font-semibold mt-1">Best Choice Trajectory</h4>
-                  <div className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                    Adopt Scenario {better.toLowerCase()} — it reaches {money(win.terminal)} while holding focus at {win.focus.toFixed(1)}.
-                  </div>
-                </div>
-                <div className="mt-3 pt-2 border-t border-border flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Winner:</span>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-foreground text-background">
-                    Scenario {better}
-                  </span>
-                </div>
               </div>
             </div>
 
-            {/* Interactive Claymorphic AI Advice Narrative Card */}
-            {backendResult && (
-              <AIIntelligenceCard
-                title="Twin Strategy & Tradeoff Analysis"
-                badge="Neural Engine"
-                content={backendResult.recommendation}
-                recommendedScenario={better}
-                onAdoptA={() => adopt(a, "A")}
-                onAdoptB={() => adopt(b, "B")}
-              />
-            )}
+            {/* Wellbeing Impact Card */}
+            <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] flex flex-col justify-between hover:shadow-[var(--clay-shadow)] transition-all">
+              <div>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Wellbeing Analysis</span>
+                <h4 className="text-sm font-bold mt-1 font-display">Health & Focus Index</h4>
+                <div className="mt-2.5 space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Health (A / B):</span>
+                    <span className="font-bold text-foreground">{A.health.toFixed(1)} / {B.health.toFixed(1)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Focus (A / B):</span>
+                    <span className="font-bold text-foreground">{A.focus.toFixed(1)} / {B.focus.toFixed(1)}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3.5 pt-2.5 border-t border-border/40 flex items-center">
+                {worse.health < 5 ? (
+                  <span className="text-xs text-rose-500 dark:text-rose-400 flex items-center gap-1 font-semibold">
+                    <TriangleAlert className="h-3.5 w-3.5 text-rose-500 animate-pulse" /> Burnout risk warning
+                  </span>
+                ) : (
+                  <span className="clay-badge-emerald text-[11px] px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Safe health levels
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Summary Verdict Card */}
+            <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] flex flex-col justify-between hover:shadow-[var(--clay-shadow)] transition-all">
+              <div>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Strategy Verdict</span>
+                <h4 className="text-sm font-bold mt-1 font-display">Recommended Trajectory</h4>
+                <div className="mt-2 text-xs text-muted-foreground leading-relaxed">
+                  Scenario {better.toUpperCase()} yields {money(win.terminal)} while holding focus at {win.focus.toFixed(1)}/10.
+                </div>
+              </div>
+              <div className="mt-3.5 pt-2.5 border-t border-border/40 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground font-medium">Winner:</span>
+                <span className="clay-badge-indigo text-xs font-bold px-2.5 py-0.5 rounded-full">
+                  Scenario {better}
+                </span>
+              </div>
+            </div>
           </div>
+
+          {/* Interactive AI Advice Narrative Card */}
+          {backendResult && (
+            <AIIntelligenceCard
+              title="Twin Strategy & Tradeoff Analysis"
+              badge="Neural Engine"
+              content={backendResult.recommendation}
+              recommendedScenario={better}
+              onAdoptA={() => adopt(a, "A")}
+              onAdoptB={() => adopt(b, "B")}
+            />
+          )}
         </div>
       </div>
     </AppShell>

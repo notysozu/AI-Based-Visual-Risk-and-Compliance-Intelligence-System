@@ -229,22 +229,22 @@ export function AIIntelligenceCard({
       </div>
 
       {/* Sections Grid */}
-      <div className="space-y-4">
+      <div className="space-y-3.5">
         {filteredSections.map((sec, idx) => {
           const isA = sec.type === "scenario_a";
           const isB = sec.type === "scenario_b";
           const isChoice = sec.type === "choice";
           const isTradeoff = sec.type === "tradeoff";
 
-          const cardBorder = isA
-            ? "border-indigo-500/30 bg-indigo-500/[0.03]"
+          const cardStyle = isA
+            ? "border-indigo-500/30 bg-indigo-500/[0.04]"
             : isB
-            ? "border-emerald-500/30 bg-emerald-500/[0.03]"
+            ? "border-emerald-500/30 bg-emerald-500/[0.04]"
             : isChoice
-            ? "border-purple-500/40 bg-gradient-to-br from-purple-500/[0.05] via-card to-card shadow-[var(--clay-shadow)]"
+            ? "border-purple-500/40 bg-gradient-to-br from-purple-500/[0.06] via-purple-500/[0.02] to-transparent"
             : isTradeoff
-            ? "border-amber-500/30 bg-amber-500/[0.02]"
-            : "border-border/50 bg-card";
+            ? "border-amber-500/30 bg-amber-500/[0.03]"
+            : "border-border/40 bg-input/40";
 
           const badgeClass = isA
             ? "clay-badge-indigo"
@@ -259,9 +259,9 @@ export function AIIntelligenceCard({
           return (
             <div
               key={idx}
-              className={`rounded-2xl border p-4 shadow-[var(--clay-shadow-sm)] transition-all hover:shadow-[var(--clay-shadow)] ${cardBorder}`}
+              className={`rounded-2xl border p-4 shadow-[var(--clay-inset)] transition-all ${cardStyle}`}
             >
-              <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className={`text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full tracking-wider ${badgeClass}`}>
                     {sec.title}
@@ -269,13 +269,13 @@ export function AIIntelligenceCard({
                 </div>
 
                 {isChoice && winner && (
-                  <span className="clay-badge-emerald text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    <Zap className="h-3 w-3" /> Recommended Scenario {winner}
+                  <span className="clay-badge-emerald text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <Zap className="h-3 w-3" /> Optimal: Scenario {winner}
                   </span>
                 )}
               </div>
 
-              <div className="space-y-1 mt-2">
+              <div className="space-y-1.5 mt-2">
                 {sec.lines.map((l, lIdx) => renderFormattedLine(l, lIdx))}
               </div>
 
