@@ -97,6 +97,7 @@ def get_financial_summary(db: Session, user_id: int) -> dict:
         "savings_rate": savings_rate
     }
 
+"""Executes 500 stochastic simulation runs with normal return distributions."""
 def run_monte_carlo_simulation(current_age: int, retirement_age: int,
                                 current_net_worth: float, monthly_savings: float,
                                 mean_return: float = 0.08, std_dev: float = 0.15,
