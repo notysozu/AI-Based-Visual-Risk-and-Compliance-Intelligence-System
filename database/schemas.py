@@ -181,6 +181,7 @@ class AnalyticsSummaryRequest(BaseModel):
 
 # Suggestions schemas
 class SuggestionItem(BaseModel):
+    """Structured habit & lifestyle suggestion model."""
     id: Optional[int] = None
     suggestion_id: str
     title: str
