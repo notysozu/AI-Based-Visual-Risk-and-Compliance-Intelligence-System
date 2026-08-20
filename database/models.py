@@ -75,8 +75,8 @@ class StudyRecord(Base):
     __tablename__ = "study_records"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    subject = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    subject = Column(String, nullable=False, index=True)
     duration_minutes = Column(Integer, default=0)
     focus_score = Column(Integer, default=7)  # 1-10 focus level
     exam_score = Column(Float, nullable=True)  # Optional exam score result (0-100)
