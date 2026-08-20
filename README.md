@@ -152,3 +152,11 @@ npm run dev
 | `POST` | `/study/log/{user_id}` | Log a completed study session with focus and test score |
 | `GET` | `/records/habit/{user_id}` | Retrieve historical habit logs |
 | `POST` | `/records/habit/{user_id}` | Record daily sleep, screen, study, and mood log |
+
+### Module Verification Scripts
+
+Run quick health checks across core engines:
+```bash
+python3 scratch/verify_simulations_math.py
+python3 scratch/verify_mc_convergence.py
+```
