@@ -91,6 +91,7 @@ export function getUser(userId: string | number) {
   return request(`/users/${userId}`);
 }
 
+/** Fetch aggregated study schedule analytics */
 export function getStudyAnalytics(userId: string | number) {
   return request(`/study/analytics/${userId}`);
 }
