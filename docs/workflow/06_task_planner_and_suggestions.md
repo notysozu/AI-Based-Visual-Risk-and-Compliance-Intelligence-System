@@ -78,3 +78,8 @@ When a user clicks **"Add to tasks"** on any suggestion card:
 1. The suggestion is marked as adopted in the frontend store and synced to the database via `adoptSuggestionApi()`.
 2. A corresponding `Task` item is created with matching title, start time, duration, and category.
 3. The task is injected into **Today's Plan** (`/planner`), allowing the user to mark it done as part of their daily schedule.
+
+
+## 7. Task Board Injection Lifecycle
+- Adopted suggestions instantiate Task models in the daily planner.
+- Completion toggles sync progress back to the twin intelligence engine.
