@@ -160,3 +160,7 @@ Run quick health checks across core engines:
 python3 scratch/verify_simulations_math.py
 python3 scratch/verify_mc_convergence.py
 ```
+
+### Zero-Emoji Clean SVG Design System
+
+All legacy unicode emojis have been completely replaced with Lucide React SVG icons and accessible pastel clay badges.
