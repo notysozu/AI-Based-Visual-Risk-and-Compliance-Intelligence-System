@@ -320,3 +320,289 @@ def delete_study_record(db: Session, record_id: int):
     db.commit()
     return True
 
+
+DEFAULT_ROLE_SUGGESTIONS = {
+    "student": [
+        {
+            "suggestion_id": "stu-spaced-review",
+            "title": "Morning Spaced-Repetition Review",
+            "category": "Study",
+            "detail": "Review yesterday's flashcards and lecture notes within 24h to lock synaptic retention.",
+            "impact": "+14% recall score",
+            "start_time": "08:30",
+            "duration_minutes": 30,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "stu-deep-block",
+            "title": "Pre-Noon Deep Problem Solving",
+            "category": "Focus",
+            "detail": "Tackle hardest algorithmic and mathematical homework before cognitive fatigue sets in.",
+            "impact": "+1.6 focus rating",
+            "start_time": "10:00",
+            "duration_minutes": 75,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "stu-micro-savings",
+            "title": "Micro-Allowance Auto-Allocation",
+            "category": "Finance",
+            "detail": "Set aside 15% of weekly allowance into high-yield student reserve before discretionary outings.",
+            "impact": "+$180/term saved",
+            "start_time": "18:00",
+            "duration_minutes": 15,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "stu-screen-hygiene",
+            "title": "Post-Lecture Screen-Free Reset",
+            "category": "Vitality",
+            "detail": "15-minute campus walk or eye-rest to reset dopamine and mental clarity between classes.",
+            "impact": "-0.8h screen strain",
+            "start_time": "15:30",
+            "duration_minutes": 20,
+            "is_ai_generated": False
+        }
+    ],
+    "freelancer": [
+        {
+            "suggestion_id": "free-deep-sprint",
+            "title": "Golden Hour Billable Sprint",
+            "category": "Work",
+            "detail": "High-intensity client milestone execution with all messaging notifications silenced.",
+            "impact": "+$450 weekly output",
+            "start_time": "09:00",
+            "duration_minutes": 90,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "free-pipeline-outreach",
+            "title": "Inbound & Portfolio Refresh",
+            "category": "Focus",
+            "detail": "Follow up with previous clients, share case studies, and pitch high-ticket retainers.",
+            "impact": "+22% contract win rate",
+            "start_time": "14:00",
+            "duration_minutes": 45,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "free-runway-buffer",
+            "title": "Tax & 6-Month Runway Sweep",
+            "category": "Finance",
+            "detail": "Transfer 30% of recent invoice payments into tax escrow and liquid emergency runway.",
+            "impact": "+$600 buffer/mo",
+            "start_time": "17:30",
+            "duration_minutes": 20,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "free-circadian-walk",
+            "title": "Post-Client Sunlight Walk",
+            "category": "Vitality",
+            "detail": "Screen-free outdoor movement to reset circadian rhythm and relieve desk stiffness.",
+            "impact": "+1.2 mood rating",
+            "start_time": "16:30",
+            "duration_minutes": 30,
+            "is_ai_generated": False
+        }
+    ],
+    "entrepreneur": [
+        {
+            "suggestion_id": "ent-strategy-block",
+            "title": "Zero-Distraction Strategy Block",
+            "category": "Focus",
+            "detail": "Focus on high-leverage product decisions, key distribution bottlenecks, and roadmapping.",
+            "impact": "+2.0 leverage rating",
+            "start_time": "08:00",
+            "duration_minutes": 90,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "ent-delegation-triage",
+            "title": "Daily Async Delegation & Triage",
+            "category": "Work",
+            "detail": "Review blocker tickets, record async video briefs, and unblock key team deliverables.",
+            "impact": "+3.5 hrs saved weekly",
+            "start_time": "11:30",
+            "duration_minutes": 30,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "ent-cash-burn",
+            "title": "Runway & CapEx Health Check",
+            "category": "Finance",
+            "detail": "Audit SaaS subscriptions, customer acquisition CAC/LTV, and extend cash runway.",
+            "impact": "+$1,200/mo net retained",
+            "start_time": "16:00",
+            "duration_minutes": 30,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "ent-stress-downshift",
+            "title": "Evening Nervous System Downshift",
+            "category": "Vitality",
+            "detail": "Cold shower or breathwork followed by no-screen recovery to protect sleep architecture.",
+            "impact": "+0.9h deep sleep",
+            "start_time": "21:00",
+            "duration_minutes": 25,
+            "is_ai_generated": False
+        }
+    ],
+    "retiree": [
+        {
+            "suggestion_id": "ret-morning-mobility",
+            "title": "Sunrise Mobility & Joint Warmup",
+            "category": "Vitality",
+            "detail": "Gentle yoga, stretching, and brisk morning walk to sustain cardiovascular vigor.",
+            "impact": "+1.8 physical vitality",
+            "start_time": "07:30",
+            "duration_minutes": 40,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "ret-learning-hobbies",
+            "title": "Cognitive Hobbies & Literature",
+            "category": "Focus",
+            "detail": "Engage with non-fiction books, chess, language practice, or creative writing.",
+            "impact": "+1.5 focus score",
+            "start_time": "10:30",
+            "duration_minutes": 60,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "ret-budget-audit",
+            "title": "Dividends & Safe Withdrawal Audit",
+            "category": "Finance",
+            "detail": "Verify asset yield allocation, emergency liquid cash, and adjust lifestyle budget.",
+            "impact": "Preserves capital safe rate",
+            "start_time": "15:00",
+            "duration_minutes": 30,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "ret-evening-unwind",
+            "title": "Evening Herbal Tea & Wind-down",
+            "category": "Vitality",
+            "detail": "Calming acoustic music, screen-free reading, and herbal tea for restorative deep sleep.",
+            "impact": "+1.0 sleep quality",
+            "start_time": "20:30",
+            "duration_minutes": 30,
+            "is_ai_generated": False
+        }
+    ],
+    "professional": [
+        {
+            "suggestion_id": "pro-deep-work",
+            "title": "High-Focus Deep Work Block",
+            "category": "Focus",
+            "detail": "Prioritize complex core deliverables before opening email or team Slack channels.",
+            "impact": "+1.5 daily focus score",
+            "start_time": "09:00",
+            "duration_minutes": 75,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "pro-upskill-hour",
+            "title": "Career Upskilling & Reading",
+            "category": "Study",
+            "detail": "Study industry trends, system design patterns, or technical certifications.",
+            "impact": "+2.0 career trajectory",
+            "start_time": "17:30",
+            "duration_minutes": 45,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "pro-dca-savings",
+            "title": "Auto-DCA Index Investment Transfer",
+            "category": "Finance",
+            "detail": "Direct salary savings into broad index funds to maintain target compound pace.",
+            "impact": "+$400/mo net compounding",
+            "start_time": "12:30",
+            "duration_minutes": 15,
+            "is_ai_generated": False
+        },
+        {
+            "suggestion_id": "pro-screen-break",
+            "title": "Midday Sunlight Mobility Reset",
+            "category": "Vitality",
+            "detail": "20-minute outdoor walk to offset sedentary desk posture and reduce screen fatigue.",
+            "impact": "+0.8 focus recovery",
+            "start_time": "13:30",
+            "duration_minutes": 20,
+            "is_ai_generated": False
+        }
+    ]
+}
+
+
+def get_user_suggestions(db: Session, user_id: int):
+    return db.query(models.UserSuggestion).filter(models.UserSuggestion.user_id == user_id).order_by(models.UserSuggestion.created_at.asc()).all()
+
+
+def save_user_suggestions(db: Session, user_id: int, suggestions: list, overwrite: bool = False):
+    if overwrite:
+        # Delete existing suggestions for this user
+        db.query(models.UserSuggestion).filter(models.UserSuggestion.user_id == user_id).delete()
+        db.commit()
+
+    saved_items = []
+    for s in suggestions:
+        # Check if suggestion_id already exists for this user
+        s_id = s.get("suggestion_id") or s.get("id") or f"sug-{random.randint(1000, 9999)}"
+        existing = db.query(models.UserSuggestion).filter(
+            models.UserSuggestion.user_id == user_id,
+            models.UserSuggestion.suggestion_id == s_id
+        ).first()
+
+        if existing and not overwrite:
+            existing.title = s.get("title", existing.title)
+            existing.category = s.get("category", existing.category)
+            existing.detail = s.get("detail", existing.detail)
+            existing.impact = s.get("impact", existing.impact)
+            existing.start_time = s.get("start_time") or s.get("start", existing.start_time)
+            existing.duration_minutes = s.get("duration_minutes") or s.get("minutes", existing.duration_minutes)
+            saved_items.append(existing)
+        else:
+            db_sug = models.UserSuggestion(
+                user_id=user_id,
+                suggestion_id=s_id,
+                title=s.get("title", "Smart Suggestion"),
+                category=s.get("category", "Focus"),
+                detail=s.get("detail", ""),
+                impact=s.get("impact", "+1.0 focus"),
+                start_time=s.get("start_time") or s.get("start", "09:00"),
+                duration_minutes=s.get("duration_minutes") or s.get("minutes", 30),
+                is_adopted=1 if s.get("is_adopted") else 0,
+                is_ai_generated=1 if s.get("is_ai_generated", True) else 0,
+                created_at=datetime.utcnow()
+            )
+            db.add(db_sug)
+            saved_items.append(db_sug)
+
+    db.commit()
+    for item in saved_items:
+        db.refresh(item)
+    return saved_items
+
+
+def adopt_user_suggestion(db: Session, user_id: int, suggestion_id: str, is_adopted: bool):
+    sug = db.query(models.UserSuggestion).filter(
+        models.UserSuggestion.user_id == user_id,
+        models.UserSuggestion.suggestion_id == suggestion_id
+    ).first()
+
+    if sug:
+        sug.is_adopted = 1 if is_adopted else 0
+        db.commit()
+        db.refresh(sug)
+        return sug
+    return None
+
+
+def reset_user_suggestions(db: Session, user_id: int, role: str = "professional"):
+    db.query(models.UserSuggestion).filter(models.UserSuggestion.user_id == user_id).delete()
+    db.commit()
+    defaults = DEFAULT_ROLE_SUGGESTIONS.get(role, DEFAULT_ROLE_SUGGESTIONS["professional"])
+    return save_user_suggestions(db, user_id, defaults, overwrite=True)
+
+

@@ -107,3 +107,33 @@ export function logStudySession(userId: string | number, payload: Record<string,
     body: JSON.stringify(payload),
   });
 }
+
+export function getUserSuggestions(userId: string | number) {
+  return request(`/suggestions/${userId}`);
+}
+
+export function generateSmartSuggestions(
+  userId: string | number,
+  payload: { mode: "regenerate" | "more"; custom_focus?: string } = { mode: "regenerate" }
+) {
+  return request(`/suggestions/generate/${userId}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function adoptSuggestionApi(
+  userId: string | number,
+  payload: { suggestion_id: string; is_adopted: boolean }
+) {
+  return request(`/suggestions/adopt/${userId}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function resetSuggestionsApi(userId: string | number) {
+  return request(`/suggestions/reset/${userId}`, {
+    method: "POST",
+  });
+}

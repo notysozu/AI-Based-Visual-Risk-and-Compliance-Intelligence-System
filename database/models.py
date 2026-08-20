@@ -45,6 +45,7 @@ class User(Base):
     financial_records = relationship("FinancialRecord", back_populates="user", cascade="all, delete-orphan")
     habit_records = relationship("HabitRecord", back_populates="user", cascade="all, delete-orphan")
     study_records = relationship("StudyRecord", back_populates="user", cascade="all, delete-orphan")
+    suggestions = relationship("UserSuggestion", back_populates="user", cascade="all, delete-orphan")
 
 class FinancialRecord(Base):
     __tablename__ = "financial_records"
@@ -84,3 +85,22 @@ class StudyRecord(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="study_records")
+
+
+class UserSuggestion(Base):
+    __tablename__ = "user_suggestions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    suggestion_id = Column(String, index=True, nullable=False)
+    title = Column(String, nullable=False)
+    category = Column(String, default="Focus")  # Focus, Vitality, Finance, Study, Leisure, Habits
+    detail = Column(String, nullable=False)
+    impact = Column(String, default="+1.0 focus")
+    start_time = Column(String, default="09:00")
+    duration_minutes = Column(Integer, default=30)
+    is_adopted = Column(Integer, default=0)  # 0: false, 1: true (compatible with all SQLite/PostgreSQL setups)
+    is_ai_generated = Column(Integer, default=1)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="suggestions")

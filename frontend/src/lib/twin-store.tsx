@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { createUser, getUserByUsername, getForecast, getUser, updateUser } from "@/lib/api";
+import { createUser, getUserByUsername, getForecast, getUser, updateUser, adoptSuggestionApi } from "@/lib/api";
 
 // --- Types ---
 
@@ -936,6 +936,13 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         tasks: [...s.tasks, task],
       };
     });
+
+    if (state.profile.id) {
+      adoptSuggestionApi(state.profile.id, {
+        suggestion_id: suggestion.id,
+        is_adopted: true,
+      }).catch((e) => console.warn("Failed to persist suggestion adoption to DB:", e));
+    }
   };
 
   // signIn pulls saved backend fields (age, sleep target, study target,

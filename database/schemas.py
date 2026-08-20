@@ -176,3 +176,32 @@ class AnalyticsLogItem(BaseModel):
 
 class AnalyticsSummaryRequest(BaseModel):
     logs: List[AnalyticsLogItem]
+
+# Suggestions schemas
+class SuggestionItem(BaseModel):
+    id: Optional[int] = None
+    suggestion_id: str
+    title: str
+    category: str
+    detail: str
+    impact: str
+    start_time: str
+    duration_minutes: int
+    is_adopted: bool = False
+    is_ai_generated: bool = False
+    created_at: Optional[datetime] = None
+
+class SuggestionAdoptRequest(BaseModel):
+    suggestion_id: str
+    is_adopted: bool = True
+
+class GenerateSuggestionsRequest(BaseModel):
+    mode: str = Field("regenerate", description="'regenerate' to replace, 'more' to append extra suggestions")
+    custom_focus: Optional[str] = None
+
+class SuggestionsListResponse(BaseModel):
+    user_id: int
+    role: str
+    lifestyle_diagnostic: Optional[str] = None
+    suggestions: List[SuggestionItem]
+

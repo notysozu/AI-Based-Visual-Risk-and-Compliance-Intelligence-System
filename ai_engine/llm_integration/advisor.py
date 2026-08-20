@@ -775,3 +775,131 @@ Respond with ONLY the raw JSON object, without markdown formatting or code fence
     except Exception as e:
         print(f"Error calling Groq for study plan: {e}")
         return fallback_plan
+
+
+def generate_smart_role_suggestions(
+    user_info: Dict[str, Any],
+    baseline: Dict[str, Any],
+    recent_logs: List[Dict[str, Any]],
+    existing_suggestions: List[Dict[str, Any]],
+    mode: str = "regenerate"
+) -> Dict[str, Any]:
+    """
+    Analyzes user profile, role, financial trajectory, and 30-day baseline data
+    to generate hyper-personalized lifestyle, focus, and financial suggestions.
+    """
+    role = (user_info.get("role") or "professional").lower()
+    avg_sleep = baseline.get("sleep", baseline.get("sleep_hours", 7.5))
+    avg_screen = baseline.get("screen", baseline.get("screen_hours", 4.0))
+    avg_study = baseline.get("study", baseline.get("study_hours_week", 10.0) / 7.0)
+    avg_exercise = baseline.get("exercise", baseline.get("exercise_hours", 0.5) * 60)
+    avg_mood = baseline.get("mood", 7.0)
+
+    monthly_income = user_info.get("monthly_income", 5000.0)
+    target_net_worth = user_info.get("target_net_worth", 1000000.0)
+    target_age = user_info.get("retirement_goal_age", 60)
+    current_age = user_info.get("age", 25)
+
+    # Diagnostic bottleneck analysis
+    diagnostic_notes = []
+    if avg_sleep < 7.0:
+        diagnostic_notes.append(f"Sleep deficit identified ({avg_sleep:.1f}h avg vs 8.0h target). Cognitive recovery is constrained.")
+    elif avg_sleep >= 8.0:
+        diagnostic_notes.append(f"Restful sleep baseline ({avg_sleep:.1f}h avg) is protecting mental endurance.")
+
+    if avg_screen > 5.0:
+        diagnostic_notes.append(f"Heavy screen exposure ({avg_screen:.1f}h/day) may cause afternoon focus degradation.")
+
+    if avg_exercise < 20:
+        diagnostic_notes.append("Sedentary physical movement pattern detected.")
+
+    diagnostic_summary = " · ".join(diagnostic_notes) if diagnostic_notes else "Balanced baseline lifestyle metrics."
+
+    # Avoid duplicate titles with existing suggestions if mode == 'more'
+    existing_titles = [s.get("title", "") for s in existing_suggestions if s.get("title")]
+    existing_titles_str = ", ".join(f'"{t}"' for t in existing_titles[-10:])
+
+    client = get_groq_client()
+    if client is None:
+        # Return fallback items tailored to persona
+        from database.crud import DEFAULT_ROLE_SUGGESTIONS
+        base_defaults = DEFAULT_ROLE_SUGGESTIONS.get(role, DEFAULT_ROLE_SUGGESTIONS["professional"])
+        return {
+            "diagnostic": diagnostic_summary,
+            "suggestions": [dict(s, is_ai_generated=True) for s in base_defaults]
+        }
+
+    prompt = f"""
+You are the Digital Twin AI Coach. Deeply analyze this user's persona and data to formulate {4 if mode == 'regenerate' else 3} high-impact, actionable daily suggestions.
+
+USER PERSONA & METRICS:
+- Role: {role.upper()}
+- Age: {current_age} | Target Milestone Age: {target_age}
+- Monthly Income / Allowance: ${monthly_income:,.2f}
+- Target Net Worth: ${target_net_worth:,.2f}
+
+MEASURED 30-DAY BASELINE:
+- Average Sleep: {avg_sleep:.1f} hours/night
+- Average Screen Time: {avg_screen:.1f} hours/day
+- Average Daily Focus / Study / Skill Work: {avg_study:.1f} hours/day
+- Average Active Movement: {avg_exercise:.1f} minutes/day
+- Average Mood & Energy: {avg_mood:.1f} / 10
+- Key Diagnostic Bottlenecks: {diagnostic_summary}
+
+PREVIOUS/EXISTING SUGGESTION TITLES (DO NOT REPEAT THESE):
+[{existing_titles_str}]
+
+INSTRUCTIONS:
+Formulate {4 if mode == 'regenerate' else 3} hyper-personalized, distinct suggestions targeting the user's role and data bottlenecks.
+Cover diverse categories:
+- Focus (deep work blocks, focus sprints)
+- Vitality (sleep hygiene, circadian resets, movement)
+- Finance (micro-savings, runway allocation, investment sweeps)
+- Study / Work (spaced repetition, skill acquisition, pipeline triage)
+
+Respond with ONLY valid raw JSON in the following format:
+{{
+  "diagnostic": "{diagnostic_summary}",
+  "suggestions": [
+    {{
+      "suggestion_id": "ai-sug-1",
+      "title": "Concise Action Title",
+      "category": "Focus" | "Vitality" | "Finance" | "Study" | "Work",
+      "detail": "Actionable 1-2 sentence description explaining why this helps based on their data.",
+      "impact": "+1.8 focus rating" | "+$300/mo savings" | "+15% retention",
+      "start_time": "09:00",
+      "duration_minutes": 45,
+      "is_ai_generated": true
+    }}
+  ]
+}}
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4,
+            max_tokens=1000,
+        )
+        content = response.choices[0].message.content.strip()
+        if content.startswith("```"):
+            content = re.sub(r"^```[a-zA-Z]*\n?", "", content)
+            content = re.sub(r"\n?```$", "", content)
+
+        parsed = json.loads(content)
+        if "suggestions" in parsed and isinstance(parsed["suggestions"], list) and len(parsed["suggestions"]) > 0:
+            return {
+                "diagnostic": parsed.get("diagnostic", diagnostic_summary),
+                "suggestions": parsed["suggestions"]
+            }
+    except Exception as e:
+        print(f"Error calling Groq for smart role suggestions: {e}")
+
+    # Fallback if parsing or API failed
+    from database.crud import DEFAULT_ROLE_SUGGESTIONS
+    base_defaults = DEFAULT_ROLE_SUGGESTIONS.get(role, DEFAULT_ROLE_SUGGESTIONS["professional"])
+    return {
+        "diagnostic": diagnostic_summary,
+        "suggestions": [dict(s, is_ai_generated=True) for s in base_defaults]
+    }
