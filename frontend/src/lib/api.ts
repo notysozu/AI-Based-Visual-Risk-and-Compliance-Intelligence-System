@@ -61,6 +61,7 @@ export function getForecast(userId: string | number) {
   return request(`/simulations/forecast/${userId}`);
 }
 
+/** Run comparative What-If simulation against baseline */
 export function compareScenarios(userId: string | number, payload: Record<string, unknown>) {
   return request(`/simulations/compare/${userId}`, {
     method: "POST",
