@@ -66,3 +66,8 @@ The AI Digital Twin Habit Summary provides high-level coaching on user routine b
 ## 6. Pearson Correlation Calculation
 - Evaluates statistical correlation between nightly sleep hours and daily focus ratings.
 - Highlights actionable adjustments in the AI explanatory briefing.
+
+
+## 7. Verification & Health Monitoring
+- Scratch verification scripts in `scratch/` validate database health, simulation math, and API routes.
+- Continuous regression testing guarantees deterministic and stochastic computational integrity.
