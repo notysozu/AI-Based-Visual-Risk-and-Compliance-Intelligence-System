@@ -2,7 +2,7 @@
 
 Digital Twin AI is an intelligent decision-support system that models, forecasts, and optimizes a user's life trajectory across finances, health, cognitive performance, and daily habits.
 
-By combining stochastic Monte Carlo simulations, deterministic compound growth algorithms, biological feedback models, and conversational AI (Groq LLaMA 3.1), the platform creates a living "digital twin" tailored to the user's specific life stage.
+By combining stochastic Monte Carlo simulations, deterministic compound growth algorithms, biological feedback models, and conversational AI (Groq LLaMA 3.3 / 3.1), the platform creates a living "digital twin" tailored to the user's specific life stage.
 
 ---
 
@@ -14,7 +14,9 @@ By combining stochastic Monte Carlo simulations, deterministic compound growth a
 - **Adaptive Multi-Scale Financial Charts**: Dynamic Y-axis scaling that gracefully handles values from student allowances in hundreds/thousands to venture founders and retirees in millions.
 - **Interactive Decision Sandbox ("What-If" Simulator)**: Side-by-side comparison of two competing lifestyle scenarios. Features automated AI scenario generation, multi-variable biological tradeoff modeling (sleep vs health index vs cognitive focus), and 1-click scenario adoption.
 - **Universal Habit Analytics**: Grouped correlation charts (Sleep vs Focus, Screen Time vs Mood) designed for all ages, paired with an automated 12:00 PM local noon AI reflection cache.
-- **Daily Task Planner & Suggestion Adoption**: Role-filtered task categories and a curated habit suggestion engine with instant injection into today's schedule.
+- **Smart AI Suggestions Engine**: Deep pre-analysis of persona data, habit bottlenecks (sleep deficits, screen load), and financial targets. Features **"Suggest More"** (+4 AI expansion), **"Regenerate with AI"**, **"Reset to Role Defaults"**, and full database persistence (`user_suggestions`).
+- **Interactive Claymorphic AI Response Cards**: Rich UI cards featuring section filtering tabs (`All`, `Scenarios`, `Verdict`), one-click clipboard copying with toast feedback, and inline roadmap adoption buttons.
+- **Daily Task Planner & Schedule Injection**: Role-filtered task categories and a curated habit suggestion engine with instant 1-click injection into today's schedule.
 
 ---
 
@@ -39,7 +41,8 @@ Detailed technical design documents for every layer of the platform are located 
 3. [**03. Financial Forecasting & Monte Carlo Simulation**](docs/workflow/03_forecasting_and_monte_carlo.md) — Mathematical models, 500-path stochastic modeling, and prediction caching.
 4. [**04. Decision Sandbox & What-If Simulation**](docs/workflow/04_decision_sandbox_and_whatif.md) — Dual-scenario comparison, biological feedback calculations, and structured verdict reporting.
 5. [**05. Habit Analytics & Daily Noon Cache**](docs/workflow/05_habit_analytics_and_feedback.md) — Metric tracking, grouped correlation charts, and automated 12:00 PM cache invalidation.
-6. [**06. Task Planner & Suggestion Adoption Engine**](docs/workflow/06_task_planner_and_suggestions.md) — Role-specific task categories, suggestion libraries, and schedule injection.
+6. [**06. Task Planner & Suggestion Adoption Engine**](docs/workflow/06_task_planner_and_suggestions.md) — Data-analyzed suggestion engine, expansion pipelines, database persistence, and schedule injection.
+7. [**07. Study & Productivity Intelligence**](docs/workflow/07_study_and_productivity_intelligence.md) — Spaced repetition analytics, 7-day optimized schedules, and exam readiness regression models.
 
 ---
 
@@ -50,7 +53,7 @@ Detailed technical design documents for every layer of the platform are located 
 | **Frontend** | React 19, TypeScript, Vite, TanStack Router & Start, Tailwind CSS, Radix UI, Recharts, Lucide Icons |
 | **Backend API** | FastAPI (Python 3.10+), Uvicorn, Pydantic v2 |
 | **Database** | SQLite / PostgreSQL with SQLAlchemy ORM |
-| **AI & Predictive** | Groq (LLaMA 3.1-8B-Instant), NumPy, Pandas, Scikit-learn |
+| **AI & Predictive** | Groq (LLaMA 3.3-70B & 3.1-8B), NumPy, Pandas, Scikit-learn |
 
 ---
 
@@ -97,7 +100,7 @@ GROQ_API_KEY=your_groq_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-> **Note:** A valid `GROQ_API_KEY` enables conversational LLM predictions and scenario generation. If omitted, the platform runs using deterministic rule-based fallback engines.
+> **Note:** A valid `GROQ_API_KEY` enables live conversational LLM intelligence, adaptive scenario suggestions, and personalized study roadmaps. The system dynamically reads `.env` on demand and includes robust rule-based fallbacks if offline.
 
 ---
 
@@ -109,7 +112,7 @@ Run the backend and frontend in separate terminal sessions:
 
 ```bash
 source .venv/bin/activate
-uvicorn backend.main:app --host 127.0.0.1 --port 8000
+uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 - **Backend Base URL:** [http://127.0.0.1:8000](http://127.0.0.1:8000)
@@ -127,50 +130,6 @@ npm run dev
 
 ---
 
-## Project Directory Layout
-
-```text
-digital-twin-ai/
-|-- docs/
-|   `-- workflow/                 # Step-by-step workflow and system design documents
-|       |-- 01_system_architecture.md
-|       |-- 02_onboarding_and_personas.md
-|       |-- 03_forecasting_and_monte_carlo.md
-|       |-- 04_decision_sandbox_and_whatif.md
-|       |-- 05_habit_analytics_and_feedback.md
-|       |-- 06_task_planner_and_suggestions.md
-|       `-- 07_study_and_productivity_intelligence.md
-|
-|-- frontend/                     # React 19 + TanStack Router + Tailwind CSS
-|   |-- src/
-|   |   |-- components/           # UI components, AppShell, SettingsDialog, Gauge
-|   |   |-- routes/               # Page routes (Dashboard, Wealth, Study, Planner, Simulator, etc.)
-|   |   |-- lib/                  # Central state store (twin-store.tsx) & API client
-|   |   `-- hooks/                # Responsive layout and state hooks
-|   |-- package.json
-|   `-- vite.config.ts
-|
-|-- backend/                      # FastAPI application
-|   |-- main.py                   # FastAPI initialization & middleware
-|   `-- api/                      # REST routers (users, records, simulations, study, finance, habits)
-|
-|-- database/                     # Database layer
-|   |-- models.py                 # SQLAlchemy ORM schemas
-|   |-- schemas.py                # Pydantic data validation schemas
-|   |-- crud.py                   # CRUD transaction helpers
-|   `-- database.py               # Engine session management & SQLite auto-migrations
-|
-|-- ai_engine/                    # Intelligence & simulation layer
-|   |-- forecasting/              # Monte Carlo wealth & study regression models
-|   |-- simulation/               # Multi-scenario lifestyle & biological tradeoff engine
-|   `-- llm_integration/          # Groq LLaMA 3.1 prompt advisor & rule-based fallbacks
-|
-|-- requirements.txt              # Python package requirements
-`-- README.md
-```
-
----
-
 ## Key API Endpoints
 
 | Method | Endpoint | Description |
@@ -179,18 +138,17 @@ digital-twin-ai/
 | `POST` | `/users/` | Create a new user profile with selected persona role |
 | `GET` | `/users/{user_id}` | Retrieve user profile, cached predictions, and role |
 | `PUT` | `/users/{user_id}` | Update profile metrics, target age, net worth, and role |
+| `GET` | `/suggestions/{user_id}` | Retrieve persisted suggestions or initialize persona defaults |
+| `POST` | `/suggestions/generate/{user_id}` | AI pre-analysis of habit logs + generate (`regenerate` or `more`) |
+| `POST` | `/suggestions/adopt/{user_id}` | Toggle suggestion adoption status and sync with database |
+| `POST` | `/suggestions/reset/{user_id}` | Reset suggestions back to role default baseline |
+| `GET` | `/simulations/forecast/{user_id}` | Monte Carlo forecast with percentile curves and success odds |
+| `GET` | `/simulations/wealth-advice/{user_id}` | AI wealth coach guidance with `force=true` recalculation |
+| `POST` | `/simulations/compare/{user_id}` | Evaluate Scenario A vs. Scenario B tradeoff analysis |
+| `POST` | `/simulations/analytics-summary/{user_id}` | AI daily habit analysis narrative (noon milestone cache) |
 | `GET` | `/study/analytics/{user_id}` | Aggregated subject breakdown, retention score, and weekly hours |
 | `GET` | `/study/forecast/{user_id}` | Performance trend regression and exam readiness probability |
 | `POST` | `/study/generate-plan/{user_id}` | AI-generated 7-day optimized study plan with caching |
 | `POST` | `/study/log/{user_id}` | Log a completed study session with focus and test score |
-| `GET` | `/simulations/forecast/{user_id}` | Monte Carlo forecast with percentile curves and success odds |
-| `POST` | `/simulations/compare/{user_id}` | Evaluate Scenario A vs. Scenario B tradeoff analysis |
-| `POST` | `/simulations/analytics-summary/{user_id}` | AI daily habit analysis narrative (noon milestone cache) |
-| `GET` | `/simulations/wealth-advice/{user_id}` | AI wealth coach guidance and milestone actions |
 | `GET` | `/records/habit/{user_id}` | Retrieve historical habit logs |
 | `POST` | `/records/habit/{user_id}` | Record daily sleep, screen, study, and mood log |
-| `GET` | `/simulations/forecast/{user_id}` | Execute 500-iteration Monte Carlo wealth forecast |
-| `GET` | `/simulations/wealth-advice/{user_id}` | Fetch cache-checked AI wealth prediction |
-| `POST` | `/simulations/compare/{user_id}` | Run comparative What-If simulation with AI verdict |
-| `GET` | `/simulations/scenario-suggestions/{user_id}` | AI-generated Scenario A & B slider suggestions |
-| `GET` | `/simulations/analytics-summary/{user_id}` | Daily 12:00 PM cached habit overview summary |

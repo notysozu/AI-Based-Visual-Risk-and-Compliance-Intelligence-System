@@ -1,6 +1,6 @@
-# Workflow Step 6: Task Planner & Suggestion Adoption Engine
+# Workflow Step 6: Task Planner & Smart Suggestions Engine
 
-This document details the role-adapted daily task planner (`/planner`), persona suggestion libraries (`/suggestions`), and one-click task scheduling.
+This document details the role-adapted daily task planner (`/planner`), the data-driven smart suggestions intelligence engine (`/suggestions`), database persistence, and one-click task scheduling.
 
 ---
 
@@ -16,42 +16,65 @@ The task planner dynamically filters and organizes categories based on the user'
 
 ---
 
-## 2. Suggestion Recommendation Engine (`/suggestions`)
+## 2. Smart AI Suggestion Engine (`/suggestions`)
 
-The suggestions view provides pre-calibrated lifestyle habits tailored to the user's persona and baseline history.
+The suggestions engine performs deep data pre-analysis before synthesizing personalized lifestyle, focus, and financial suggestions.
 
-### Persona Suggestion Examples:
-
-#### 1. Student
-- *Morning library & study block*: 60 min deep coursework block before campus distractions (+1.2 focus).
-- *Pocket money weekly review*: 15 min review of coffee, snack, and subscription costs (+5% savings).
-- *Post-class fresh air walk*: 20 min reset between study sessions for memory consolidation (+0.5 mood).
-
-#### 2. Working Professional
-- *One uninterrupted deep-work sprint*: 90 min sprint with notifications muted (+0.7 focus).
-- *Weekly financial review*: 15 min review of account balances and expense patterns (+2% savings).
-- *Morning learning & upskilling*: 45 min dedicated to certifications or technical books (+0.8 focus).
-
-#### 3. Freelancer / Creator
-- *Dedicated client delivery sprint*: 120 min sprint focused strictly on billable client deliverables (+1.0 focus).
-- *Weekly invoice & tax buffer audit*: 20 min accounts receivable check with 25% tax set-aside (+Runway clarity).
-- *Inbound pipeline & skill building*: 45 min publishing case studies and upgrading high-value skills (+0.7 pipeline).
-
-#### 4. Founder / Entrepreneur
-- *Morning high-leverage product sprint*: 90 min focus on core product before team standups (+1.2 leverage).
-- *Burn rate & runway review*: 25 min review of monthly business burn vs liquid buffer (+Runway extension).
-- *Direct customer feedback synthesis*: 45 min synthesizing user interview feedback for roadmap refinement (+Product clarity).
-
-#### 5. Retiree / Senior
-- *Morning sunshine walk*: 30 min gentle walk for cardiovascular vitality and joint health (+0.8 health).
-- *Daily reading & brain puzzle*: 45 min with a book, crossword, or crafting hobby (+0.6 focus).
-- *Monthly pension & healthcare check*: 20 min review of healthcare expenses and utility bills (+Peace of mind).
+### A. Pre-Analysis Pipeline
+Before calling the LLM, the backend analyzes:
+1. **Active Role Persona**: Adapts expectations (e.g. Student allowance vs Founder equity runways).
+2. **30-Day Measured Baseline**:
+   - Sleep averages (detects sleep debt $<7.0$h vs restorative $>8.0$h).
+   - Screen time load (identifies digital fatigue $>5.0$h/day).
+   - Study & focus hours (assesses consistency vs cramming).
+   - Daily active movement & mood scores.
+3. **Financial Milestone Targets**: Evaluates current net worth vs retirement/milestone target.
+4. **Lifestyle Bottlenecks**: Automatically formulates concise diagnostic callouts that guide the generation prompt.
 
 ---
 
-## 3. One-Click Adoption Pipeline
+## 3. Database Persistence (`user_suggestions`)
+
+Suggestions are stored in the database via the `UserSuggestion` model, ensuring custom recommendations and adoption states persist across sessions:
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `id` | `Integer` | Primary key |
+| `user_id` | `Integer` | Foreign key to `users.id` |
+| `suggestion_id` | `String` | Unique slug (e.g. `stu-deep-block`) |
+| `title` | `String` | Actionable recommendation title |
+| `category` | `String` | Category (`Focus`, `Vitality`, `Finance`, `Study`, `Work`) |
+| `detail` | `Text` | Contextual rationale based on user metrics |
+| `impact` | `String` | Quantified impact (e.g. `+1.6 focus rating`, `+$300/mo savings`) |
+| `start_time` | `String` | Suggested start time (e.g. `09:00`) |
+| `duration_minutes` | `Integer` | Suggested duration in minutes |
+| `is_adopted` | `Integer` | 0 (unadopted) or 1 (adopted into today's plan) |
+| `is_ai_generated` | `Integer` | 0 (template) or 1 (AI-synthesized) |
+| `created_at` | `DateTime` | Generation timestamp |
+
+---
+
+## 4. Suggestion Actions & REST Endpoints
+
+### 1. Retrieve Suggestions (`GET /suggestions/{user_id}`)
+Returns all saved suggestions for the user. If the user is new, automatically initializes pre-calibrated baseline templates for their role.
+
+### 2. Generate Suggestions (`POST /suggestions/generate/{user_id}`)
+Accepts `GenerateSuggestionsRequest(mode="regenerate" | "more")`:
+- **`mode: "regenerate"`**: Clears previous AI recommendations, re-runs full metric analysis, and persists a fresh set of 4 tailored suggestions.
+- **`mode: "more"`**: Synthesizes 3–4 extra complementary suggestions without repeating existing titles and appends them to the user's library.
+
+### 3. Adopt Suggestion (`POST /suggestions/adopt/{user_id}`)
+Toggles `is_adopted` in the database, ensuring state synchronization between local browser memory and backend databases.
+
+### 4. Reset Suggestions (`POST /suggestions/reset/{user_id}`)
+Clears custom AI suggestions and restores the standard baseline templates for the active role persona.
+
+---
+
+## 5. One-Click Adoption Pipeline
 
 When a user clicks **"Add to tasks"** on any suggestion card:
-1. The suggestion is added to `state.adopted` list in `twin-store.tsx` (preventing duplicates and marking the button as *"In your plan"*).
+1. The suggestion is marked as adopted in the frontend store and synced to the database via `adoptSuggestionApi()`.
 2. A corresponding `Task` item is created with matching title, start time, duration, and category.
 3. The task is injected into **Today's Plan** (`/planner`), allowing the user to mark it done as part of their daily schedule.

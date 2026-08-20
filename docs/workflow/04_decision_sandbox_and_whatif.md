@@ -34,7 +34,7 @@ The engine calculates mathematical indices reflecting the biological and cogniti
 
 If a user opens the sandbox and clicks **"Compare & Analyze"** with empty or default inputs ($0$ offsets on both scenarios):
 1. The backend automatically calls `generate_scenario_suggestions()` in `advisor.py`.
-2. Groq LLaMA 3.1 creates two contrasting, realistic scenarios tailored to the user's role:
+2. Groq LLaMA 3.3 creates two contrasting, realistic scenarios tailored to the user's role:
    - *Student*: **Balanced Campus Life** vs **Exam & Study Sprint**.
    - *Freelancer*: **Sustainable Client Cadence** vs **High-Inbound Agency Sprint**.
    - *Entrepreneur*: **High-Leverage Execution** vs **Product Launch Blitz**.
@@ -44,9 +44,17 @@ If a user opens the sandbox and clicks **"Compare & Analyze"** with empty or def
 
 ---
 
-## 4. Structured Verdict Cards Grid
+## 4. Structured Verdict Cards Grid & AI Intelligence
 
-The LLM advisor generates a verdict structured into 3 distinct insight cards:
+The simulator displays comparison results through two layers:
+
+### A. Standalone Summary Cards Grid
 1. **Financial Impact Card**: Evaluates the 5-year wealth difference and retirement/independence pacing.
-2. **Lifestyle & Health Card**: Analyzes burnout risk, sleep sufficiency, and cognitive sustainability.
-3. **Twin Advisor Choice Card**: Highlights the winning scenario with clear rationale and provides a single-click **"Adopt Scenario"** button to apply the winner directly to the user's active profile.
+2. **Wellbeing Analysis Card**: Analyzes burnout risk, sleep sufficiency, and cognitive sustainability.
+3. **Strategy Verdict Card**: Highlights the winning scenario with clear rationale and outcome metrics.
+
+### B. Interactive `AIIntelligenceCard`
+- **View Filter Tabs**: Toggle between **All**, **Scenarios**, or **Verdict**.
+- **Formatted Callout Panels**: Scenario A, Scenario B, and Tradeoff dynamics rendered with distinct pastel badges.
+- **Inline Adoption**: Direct **"Adopt Scenario A"** and **"Adopt Scenario B"** buttons to immediately sync winning parameters into active profile metrics.
+- **One-Click Clipboard Copy**: Easy copying of the complete AI analysis.
