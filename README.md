@@ -168,3 +168,10 @@ All legacy unicode emojis have been completely replaced with Lucide React SVG ic
 ### Dynamic Environment Loading
 
 Backend AI modules load `.env` credentials dynamically per request, eliminating the need to restart Python modules on credential changes.
+
+### Smart Suggestions Release Notes
+
+- **Persona Pre-Analysis**: Detects sleep debt, screen load, and study gaps.
+- **Suggest More & Expansion**: Generates non-overlapping recommendations.
+- **Database Persistence**: Persists all custom suggestions in `user_suggestions` table.
+- **Pagination & Search**: Full range navigation with newest-on-top ordering.
