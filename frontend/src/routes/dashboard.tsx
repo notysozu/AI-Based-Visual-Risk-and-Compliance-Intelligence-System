@@ -308,6 +308,7 @@ function Stat({
   );
 }
 
+/** Interactive sliding drawer for logging daily habits */
 export function HabitDrawer({
   open,
   onOpenChange,
