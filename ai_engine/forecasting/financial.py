@@ -21,6 +21,7 @@ def project_savings(current_savings: float, monthly_savings: float, months: int,
     return round(balance, 2)
 
 
+"""Calculates months required to achieve target capital milestone."""
 def project_toward_goal(current_savings: float, monthly_savings: float,
                          target_value: float, annual_growth_rate: float = 0.0,
                          max_months: int = 240) -> Optional[int]:
