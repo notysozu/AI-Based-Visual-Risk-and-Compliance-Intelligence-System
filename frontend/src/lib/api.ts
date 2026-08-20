@@ -56,6 +56,7 @@ export function getBaseline(userId: string | number) {
   return request(`/simulations/baseline/${userId}`);
 }
 
+/** Retrieve 500-run Monte Carlo forecast */
 export function getForecast(userId: string | number) {
   return request(`/simulations/forecast/${userId}`);
 }
