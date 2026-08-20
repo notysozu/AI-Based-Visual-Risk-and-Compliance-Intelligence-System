@@ -384,6 +384,7 @@ When you state the user's target net worth, target age, or any dollar figures fr
 
 import json
 
+# Generates dual sandbox slider presets
 def generate_scenario_suggestions(user_info: Dict[str, Any], baseline: Dict[str, Any]) -> Dict[str, Any]:
     """
     Generate two alternative sandbox scenarios (Scenario A and Scenario B) using Groq tailored to user role.
