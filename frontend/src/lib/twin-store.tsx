@@ -228,7 +228,8 @@ function generateDemoLogs(days = 30, role: UserRole = "professional"): Log[] {
   return logs;
 }
 
-export function buildDemoProfile(role: UserRole = "professional", randomize = false): Profile {
+export /** Generates pre-calibrated baseline profile for demo persona */
+function buildDemoProfile(role: UserRole = "professional", randomize = false): Profile {
   const baseDefaults = {
     id: 1,
     onboarded: true,
