@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from database import models
 
 
+"""Calculates monthly compound savings accumulation."""
 def project_savings(current_savings: float, monthly_savings: float, months: int,
                      annual_growth_rate: float = 0.0) -> float:
     """Compound monthly savings growth projection."""
