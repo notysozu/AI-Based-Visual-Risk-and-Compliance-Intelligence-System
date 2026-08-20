@@ -173,11 +173,7 @@ function SimulatorPage() {
   }, [localA, localB, backendResult, p.age]);
 
   const runComparison = async () => {
-    const userId = p.id;
-    if (!userId) {
-      toast.error("Sign in first to run comparisons");
-      return;
-    }
+    const userId = p.id ?? 1;
     setRan(false);
 
     let currentA = a;

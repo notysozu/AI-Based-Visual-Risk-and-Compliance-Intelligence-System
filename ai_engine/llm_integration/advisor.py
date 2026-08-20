@@ -109,6 +109,7 @@ def generate_digital_twin_advice(
     """
     Generate conversational recommendations using Groq (Llama 3.1), or fallback to rule-based logic.
     """
+    client = get_groq_client()
     if client is None:
         return get_rule_based_advice(user_info, baseline, sim_results)
 
