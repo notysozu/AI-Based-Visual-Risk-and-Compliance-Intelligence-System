@@ -1187,6 +1187,7 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
+/** Calculate 0-10 Health Index from lifestyle metrics */
 export function healthIndex(sleepHours: number, exerciseMinutes: number, screenHours: number): number {
   const score = (sleepHours / 8) * 4 + (exerciseMinutes / 30) * 3 - (screenHours / 4) * 2 + 3;
   return +clamp(score, 0, 10).toFixed(1);
