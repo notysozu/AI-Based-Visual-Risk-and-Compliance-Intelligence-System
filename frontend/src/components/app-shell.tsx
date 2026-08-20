@@ -50,20 +50,20 @@ export function AppShell({
 
   const navItems = useMemo(() => {
     const items = [
-      { to: "/dashboard", label: "Overview", icon: LayoutGrid },
-      { to: "/planner", label: "Tasks & Planner", icon: ListChecks },
+      { to: "/dashboard", label: "Overview", icon: LayoutGrid, color: "text-indigo-500", activeBg: "clay-badge-indigo" },
+      { to: "/planner", label: "Tasks & Planner", icon: ListChecks, color: "text-cyan-500", activeBg: "clay-badge-cyan" },
     ];
 
     if (cfg.hasStudyIntelligence) {
-      items.push({ to: "/study", label: "Study & Academic", icon: GraduationCap });
+      items.push({ to: "/study", label: "Study & Academic", icon: GraduationCap, color: "text-purple-500", activeBg: "clay-badge-purple" });
     }
 
     items.push(
-      { to: "/suggestions", label: "Suggestions", icon: Lightbulb },
-      { to: "/simulator", label: "What-If Simulator", icon: Split },
-      { to: "/wealth", label: "Wealth Planner", icon: Wallet },
-      { to: "/analytics", label: "Analytics", icon: Activity },
-      { to: "/profile", label: "Profile & Goals", icon: User },
+      { to: "/suggestions", label: "Suggestions", icon: Lightbulb, color: "text-amber-500", activeBg: "clay-badge-amber" },
+      { to: "/simulator", label: "What-If Simulator", icon: Split, color: "text-rose-500", activeBg: "clay-badge-rose" },
+      { to: "/wealth", label: "Wealth Planner", icon: Wallet, color: "text-emerald-500", activeBg: "clay-badge-emerald" },
+      { to: "/analytics", label: "Analytics", icon: Activity, color: "text-blue-500", activeBg: "clay-badge-indigo" },
+      { to: "/profile", label: "Profile & Goals", icon: User, color: "text-violet-500", activeBg: "clay-badge-purple" },
     );
 
     return items;
@@ -77,13 +77,14 @@ export function AppShell({
         }`}
       >
         <div className="flex h-16 items-center gap-2.5 px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[var(--clay-btn-primary)]">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 text-white shadow-[0_4px_14px_rgba(99,102,241,0.4)]">
             <GaugeCircle className="h-5 w-5 shrink-0" />
           </div>
           {!collapsed && (
-            <span className="font-display text-base font-bold tracking-tight">
-              Digital Twin
-            </span>
+            <div className="flex items-center gap-1.5 font-display text-base font-bold tracking-tight">
+              <span>Digital Twin</span>
+              <span className="text-[10px] bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 font-bold px-1.5 py-0.2 rounded-md">AI</span>
+            </div>
           )}
         </div>
         
@@ -101,7 +102,7 @@ export function AppShell({
                     : "text-muted-foreground hover:bg-card/50 hover:text-foreground hover:shadow-[var(--clay-shadow-sm)]"
                 }`}
               >
-                <item.icon className="h-4 w-4 shrink-0" />
+                <item.icon className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-110 ${active ? item.color : "text-muted-foreground group-hover:text-foreground"}`} />
                 {!collapsed && <span className="truncate">{item.label}</span>}
               </Link>
             );
@@ -210,8 +211,8 @@ export function AppShell({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <item.icon className="h-4 w-4" />
-              {item.label.split(" ")[0]}
+              <item.icon className={`h-4 w-4 ${active ? item.color : "text-muted-foreground"}`} />
+              <span>{item.label.split(" ")[0]}</span>
             </Link>
           );
         })}

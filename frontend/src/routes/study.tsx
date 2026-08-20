@@ -257,27 +257,31 @@ function StudyIntelligencePage() {
 
         {/* TAB 1: SCHEDULE & HABITS */}
         <TabsContent value="analytics" className="space-y-6">
-          {/* Top Metric Cards */}
+          {/* 4 Stat Overview Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="panel p-5">
+            <div className="panel p-5 hover:-translate-y-1 transition-all">
               <div className="flex items-center justify-between">
-                <span className="label-xs">Total Study (30d)</span>
-                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="label-xs">30-Day Study Time</span>
+                <div className="clay-icon-purple p-1.5 rounded-xl">
+                  <BookOpen className="h-4 w-4" />
+                </div>
               </div>
-              <div className="mt-3 font-display text-2xl font-semibold">
-                {analytics?.total_study_hours ?? "36.0"} hrs
+              <div className="mt-3 font-display text-2xl font-bold text-purple-600 dark:text-purple-400">
+                {analytics?.total_study_hours ?? "64.5"}h
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 ~{analytics?.avg_weekly_hours ?? "18.0"}h weekly average
               </p>
             </div>
 
-            <div className="panel p-5">
+            <div className="panel p-5 hover:-translate-y-1 transition-all">
               <div className="flex items-center justify-between">
                 <span className="label-xs">Average Focus</span>
-                <BrainCircuit className="h-4 w-4 text-muted-foreground" />
+                <div className="clay-icon-indigo p-1.5 rounded-xl">
+                  <BrainCircuit className="h-4 w-4" />
+                </div>
               </div>
-              <div className="mt-3 font-display text-2xl font-semibold">
+              <div className="mt-3 font-display text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                 {analytics?.avg_focus_score ?? "8.2"} / 10
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -285,12 +289,14 @@ function StudyIntelligencePage() {
               </p>
             </div>
 
-            <div className="panel p-5">
+            <div className="panel p-5 hover:-translate-y-1 transition-all">
               <div className="flex items-center justify-between">
                 <span className="label-xs">Retention Health</span>
-                <Flame className="h-4 w-4 text-muted-foreground" />
+                <div className="clay-icon-emerald p-1.5 rounded-xl">
+                  <Flame className="h-4 w-4" />
+                </div>
               </div>
-              <div className="mt-3 font-display text-2xl font-semibold">
+              <div className="mt-3 font-display text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                 {retentionScore}%
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -298,12 +304,14 @@ function StudyIntelligencePage() {
               </p>
             </div>
 
-            <div className="panel p-5">
+            <div className="panel p-5 hover:-translate-y-1 transition-all">
               <div className="flex items-center justify-between">
                 <span className="label-xs">Sleep-Focus Boost</span>
-                <Award className="h-4 w-4 text-muted-foreground" />
+                <div className="clay-icon-cyan p-1.5 rounded-xl">
+                  <Award className="h-4 w-4" />
+                </div>
               </div>
-              <div className="mt-3 font-display text-2xl font-semibold">
+              <div className="mt-3 font-display text-2xl font-bold text-cyan-600 dark:text-cyan-400">
                 +1.2 pts
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -503,13 +511,17 @@ function StudyIntelligencePage() {
               <div className="mt-6 space-y-6">
                 {/* Goal & Focus Strategy */}
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="p-4 rounded-lg bg-accent/40 border border-border/60">
-                    <p className="label-xs">Weekly Objective</p>
-                    <p className="text-sm font-medium mt-1">{plan.weekly_goal}</p>
+                  <div className="p-4 rounded-2xl bg-card border border-border/50 shadow-[var(--clay-shadow-sm)]">
+                    <div className="flex items-center gap-2">
+                      <span className="clay-badge-purple px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Weekly Objective</span>
+                    </div>
+                    <p className="text-sm font-semibold mt-2 text-foreground leading-relaxed">{plan.weekly_goal}</p>
                   </div>
-                  <div className="p-4 rounded-lg bg-accent/40 border border-border/60">
-                    <p className="label-xs">Cognitive Focus Strategy</p>
-                    <p className="text-sm font-medium mt-1">{plan.focus_strategy}</p>
+                  <div className="p-4 rounded-2xl bg-card border border-border/50 shadow-[var(--clay-shadow-sm)]">
+                    <div className="flex items-center gap-2">
+                      <span className="clay-badge-indigo px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Cognitive Strategy</span>
+                    </div>
+                    <p className="text-sm font-semibold mt-2 text-foreground leading-relaxed">{plan.focus_strategy}</p>
                   </div>
                 </div>
 
@@ -517,41 +529,56 @@ function StudyIntelligencePage() {
                 <div className="space-y-4">
                   <h4 className="font-display text-sm font-semibold">7-Day Study Blocks</h4>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {plan.daily_plans?.map((dayPlan: any, i: number) => (
-                      <div key={i} className="panel p-4 space-y-3 shadow-[var(--clay-shadow-sm)] hover:shadow-[var(--clay-shadow)] transition-all duration-150">
-                        <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                          <span className="font-bold text-sm">{dayPlan.day}</span>
-                          <span className="text-xs font-mono text-muted-foreground">
-                            {dayPlan.blocks?.reduce((acc: number, b: any) => acc + (b.duration_minutes || 0), 0)} min total
-                          </span>
-                        </div>
+                    {plan.daily_plans?.map((dayPlan: any, i: number) => {
+                      const dayColorClass =
+                        i % 3 === 0 ? "clay-badge-purple" : i % 3 === 1 ? "clay-badge-indigo" : "clay-badge-cyan";
 
-                        <div className="space-y-2.5">
-                          {dayPlan.blocks?.map((block: any, j: number) => (
-                            <div key={j} className="p-3 rounded-2xl bg-input/70 border border-border/40 shadow-[var(--clay-inset)] text-xs space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="font-bold text-foreground">{block.subject}</span>
-                                <span className="font-mono text-muted-foreground text-[11px]">{block.start_time} ({block.duration_minutes}m)</span>
-                              </div>
-                              <p className="text-muted-foreground text-xs leading-relaxed">{block.task_title}</p>
-                              <div className="pt-1 flex items-center justify-between">
-                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-foreground font-semibold shadow-[var(--clay-shadow-sm)] border border-border/30">
-                                  {block.focus_type}
-                                </span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 text-[11px] px-2.5 rounded-xl text-foreground font-semibold"
-                                  onClick={() => handleAdoptBlock(block)}
-                                >
-                                  <span>+ Add to Tasks</span>
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
+                      return (
+                        <div key={i} className="panel p-4 space-y-3 shadow-[var(--clay-shadow-sm)] hover:shadow-[var(--clay-shadow)] hover:-translate-y-1 transition-all duration-150">
+                          <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${dayColorClass}`}>{dayPlan.day}</span>
+                            <span className="text-xs font-mono text-muted-foreground">
+                              {dayPlan.blocks?.reduce((acc: number, b: any) => acc + (b.duration_minutes || 0), 0)} min
+                            </span>
+                          </div>
+
+                          <div className="space-y-2.5">
+                            {dayPlan.blocks?.map((block: any, j: number) => {
+                              const typeLower = (block.focus_type || "").toLowerCase();
+                              const typeBadge =
+                                typeLower.includes("deep") || typeLower.includes("problem")
+                                  ? "clay-badge-indigo"
+                                  : typeLower.includes("recall") || typeLower.includes("flash")
+                                  ? "clay-badge-purple"
+                                  : "clay-badge-emerald";
+
+                              return (
+                                <div key={j} className="p-3 rounded-2xl bg-input/70 border border-border/40 shadow-[var(--clay-inset)] text-xs space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-foreground">{block.subject}</span>
+                                    <span className="font-mono text-muted-foreground text-[11px]">{block.start_time} ({block.duration_minutes}m)</span>
+                                  </div>
+                                  <p className="text-muted-foreground text-xs leading-relaxed">{block.task_title}</p>
+                                  <div className="pt-1 flex items-center justify-between">
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${typeBadge}`}>
+                                      {block.focus_type}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 text-[11px] px-2.5 rounded-xl text-foreground font-semibold hover:border-foreground/60"
+                                      onClick={() => handleAdoptBlock(block)}
+                                    >
+                                      <span>+ Add to Tasks</span>
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -564,7 +591,7 @@ function StudyIntelligencePage() {
                         <div key={i} className="rounded-2xl border border-border/50 bg-card p-4 shadow-[var(--clay-shadow-sm)] space-y-2 hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold">{rec.title}</span>
-                            <span className="text-[10px] font-mono font-semibold text-foreground bg-accent px-2 py-0.5 rounded-full border border-border/30 shadow-[var(--clay-shadow-sm)]">
+                            <span className="clay-badge-emerald text-[10px] font-bold px-2 py-0.5 rounded-full">
                               {rec.impact}
                             </span>
                           </div>

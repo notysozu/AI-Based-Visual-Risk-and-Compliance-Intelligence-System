@@ -123,40 +123,52 @@ function AuthPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="relative hidden flex-col justify-between border-r border-border bg-sidebar p-12 lg:flex">
-        <div className="flex items-center gap-2">
-          <GaugeCircle className="h-5 w-5" />
-          <span className="font-display text-sm font-semibold">Digital Twin</span>
+      <div className="relative hidden flex-col justify-between border-r border-border bg-sidebar p-12 lg:flex overflow-hidden">
+        {/* Soft background ambient tints */}
+        <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+
+        <div className="flex items-center gap-2.5 z-10">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.4)]">
+            <GaugeCircle className="h-4.5 w-4.5" />
+          </div>
+          <span className="font-display text-base font-bold tracking-tight">Digital Twin</span>
         </div>
-        <div className="max-w-md">
-          <h2 className="font-display text-4xl font-semibold leading-tight">
+        <div className="max-w-md z-10">
+          <h2 className="font-display text-4xl font-bold leading-tight tracking-tight">
             A model of you, running a few years ahead.
           </h2>
-          <p className="mt-4 text-sm text-muted-foreground">
+          <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
             Log the day, plan the day, and watch how small changes to money, sleep, and focus
             reshape the next five years.
           </p>
           <div className="mt-10 grid grid-cols-3 gap-6 border-t border-border pt-6">
-            {[
-              ["30d", "history modelled"],
-              ["500", "Monte Carlo runs"],
-              ["5y", "forward horizon"],
-            ].map(([a, b]) => (
-              <div key={b}>
-                <div className="font-display text-2xl font-semibold">{a}</div>
-                <div className="label-xs mt-1">{b}</div>
-              </div>
-            ))}
+            <div>
+              <div className="font-display text-2xl font-bold text-purple-600 dark:text-purple-400">30d</div>
+              <div className="label-xs mt-1">history modelled</div>
+            </div>
+            <div>
+              <div className="font-display text-2xl font-bold text-indigo-600 dark:text-indigo-400">500</div>
+              <div className="label-xs mt-1">Monte Carlo runs</div>
+            </div>
+            <div>
+              <div className="font-display text-2xl font-bold text-emerald-600 dark:text-emerald-400">5y</div>
+              <div className="label-xs mt-1">forward horizon</div>
+            </div>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">Local demo — data stays in your browser.</p>
+        <p className="text-xs text-muted-foreground z-10">Local demo — data stays in your browser.</p>
       </div>
 
-      <div className="flex items-center justify-center p-6 sm:p-10">
-        <div className="panel w-full max-w-md p-8 animate-rise">
+      <div className="relative flex items-center justify-center p-6 sm:p-10 overflow-hidden">
+        {/* Soft background ambient tints */}
+        <div className="absolute top-1/4 right-10 h-72 w-72 rounded-full bg-indigo-500/8 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 left-10 h-72 w-72 rounded-full bg-emerald-500/8 blur-3xl pointer-events-none" />
+
+        <div className="panel w-full max-w-md p-8 animate-rise z-10">
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[var(--clay-btn-primary)]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.4)]">
                 <GaugeCircle className="h-4 w-4" />
               </div>
               <span className="font-display text-base font-bold">Digital Twin</span>
@@ -168,7 +180,7 @@ function AuthPage() {
               aria-label="Toggle theme"
               onClick={() => setTheme(state.theme === "dark" ? "light" : "dark")}
             >
-              {state.theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {state.theme === "dark" ? <Sun className="h-4 w-4 text-amber-500" /> : <Moon className="h-4 w-4 text-indigo-500" />}
             </Button>
           </div>
 
