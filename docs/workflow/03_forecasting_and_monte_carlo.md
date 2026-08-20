@@ -42,3 +42,8 @@ To ensure fast UI responses and prevent redundant LLM inference calls:
    - `GET /simulations/wealth-advice/{user_id}` inspects the user's current `probability_of_success`.
    - If `last_success_odds` in the database matches the newly simulated probability, the cached advice is returned instantly without calling the LLM.
    - If the simulation output changed, Groq LLaMA 3.1 is invoked with persona-specific instructions to generate a fresh 3–5 sentence prediction, which is saved to `last_wealth_prediction` in the database.
+
+
+## 4. LLM Narrative Generation & Token Limits
+- Wealth narratives run on LLaMA 3.3 (70B) with temperature set to 0.4 for consistent financial projections.
+- Fallback algorithms calculate deterministic trajectory and success percentage when offline.
