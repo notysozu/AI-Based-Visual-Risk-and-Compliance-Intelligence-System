@@ -164,3 +164,7 @@ python3 scratch/verify_mc_convergence.py
 ### Zero-Emoji Clean SVG Design System
 
 All legacy unicode emojis have been completely replaced with Lucide React SVG icons and accessible pastel clay badges.
+
+### Dynamic Environment Loading
+
+Backend AI modules load `.env` credentials dynamically per request, eliminating the need to restart Python modules on credential changes.
