@@ -39,7 +39,7 @@ class User(Base):
     last_study_plan = Column(String, nullable=True)
     last_study_plan_updated = Column(String, nullable=True)
     
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
     # Relationships
     financial_records = relationship("FinancialRecord", back_populates="user", cascade="all, delete-orphan")
@@ -67,7 +67,7 @@ class HabitRecord(Base):
     habit_name = Column(String, nullable=False)  # Sleep, Exercise, Screen Time, Diet, Socializing
     duration_minutes = Column(Integer, default=0)
     impact_score = Column(Integer, default=5)  # Subjective rating 1-10 of how they feel
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
     user = relationship("User", back_populates="habit_records")
 
@@ -82,7 +82,7 @@ class StudyRecord(Base):
     exam_score = Column(Float, nullable=True)  # Optional exam score result (0-100)
     notes = Column(String, nullable=True)
     session_type = Column(String, default="study")  # study, revision, exam, deep_work
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
     user = relationship("User", back_populates="study_records")
 
@@ -101,6 +101,6 @@ class UserSuggestion(Base):
     duration_minutes = Column(Integer, default=30)
     is_adopted = Column(Integer, default=0)  # 0: false, 1: true (compatible with all SQLite/PostgreSQL setups)
     is_ai_generated = Column(Integer, default=1)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
     user = relationship("User", back_populates="suggestions")
