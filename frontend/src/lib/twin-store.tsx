@@ -1239,6 +1239,7 @@ function randomNormal(mean: number, std: number): number {
   return mean + std * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
 
+/** 500-iteration client-side Monte Carlo fallback */
 export function monteCarlo(
   current: number,
   monthlyContribution: number,
