@@ -175,6 +175,7 @@ Output the analysis in clean, professional markdown with beautiful emojis. Keep 
         return get_rule_based_advice(user_info, baseline, sim_results)
 
 
+"""Constructs persona system prompt."""
 def build_system_prompt(user_profile: dict, financial_summary: dict,
                          study_summary: dict, habits: list, goals: list) -> str:
     """
