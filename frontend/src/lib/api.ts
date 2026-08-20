@@ -82,6 +82,7 @@ export function getAnalyticsSummary(userId: string | number, payload: { logs: an
   });
 }
 
+/** Fetch AI wealth advice and success probability */
 export function getWealthAdvice(userId: string | number, force: boolean = false) {
   return request(`/simulations/wealth-advice/${userId}${force ? "?force=true" : ""}`);
 }
