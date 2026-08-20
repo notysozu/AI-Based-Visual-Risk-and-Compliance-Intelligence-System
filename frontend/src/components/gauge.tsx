@@ -22,17 +22,17 @@ export function Gauge({
   display,
 }: Props) {
   const pct = Math.max(0, Math.min(1, value / max));
-  const r = size / 2 - 14;
+  const r = size / 2 - 16;
   const c = 2 * Math.PI * r;
   const dash = useMemo(() => `${(c * pct * 0.75).toFixed(2)} ${c}`, [c, pct]);
 
   return (
     <div className="flex max-w-full flex-col items-center">
       <div
-        className={`relative rounded-full transition-all ${
+        className={`relative flex items-center justify-center rounded-full p-2.5 bg-input shadow-[var(--clay-inset)] border border-border/40 transition-all ${
           animating ? "animate-pulse-glow" : ""
         }`}
-        style={{ width: size, height: size }}
+        style={{ width: size + 20, height: size + 20 }}
       >
         <svg width={size} height={size} className="-rotate-[135deg]">
           <circle
@@ -41,8 +41,8 @@ export function Gauge({
             r={r}
             fill="none"
             stroke="currentColor"
-            className="text-border"
-            strokeWidth={10}
+            className="text-border/60"
+            strokeWidth={12}
             strokeDasharray={`${(c * 0.75).toFixed(2)} ${c}`}
             strokeLinecap="round"
           />
@@ -52,18 +52,20 @@ export function Gauge({
             r={r}
             fill="none"
             stroke="currentColor"
-            className={warning ? "text-muted-foreground" : "text-foreground"}
-            strokeWidth={10}
+            className={warning ? "text-amber-500" : "text-foreground"}
+            strokeWidth={12}
             strokeDasharray={dash}
             strokeLinecap="round"
-            style={{ transition: "stroke-dasharray 600ms cubic-bezier(.4,0,.2,1)" }}
+            style={{ transition: "stroke-dasharray 700ms cubic-bezier(.34,1.56,.64,1)" }}
           />
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center font-display text-4xl font-semibold tabular-nums">
-          {display ?? value.toFixed(1)}
-        </span>
+        <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-card shadow-[var(--clay-shadow-sm)] border border-border/40">
+          <span className="font-display text-3xl font-bold tabular-nums tracking-tight">
+            {display ?? value.toFixed(1)}
+          </span>
+        </div>
       </div>
-      <span className="label-xs mt-2 text-center">{label}</span>
+      <span className="label-xs mt-3 text-center">{label}</span>
       {sublabel ? (
         <span className="mt-1 text-center text-xs text-muted-foreground">{sublabel}</span>
       ) : null}

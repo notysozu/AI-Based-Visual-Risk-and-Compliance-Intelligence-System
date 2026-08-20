@@ -517,30 +517,30 @@ function StudyIntelligencePage() {
                   <h4 className="font-display text-sm font-semibold">7-Day Study Blocks</h4>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {plan.daily_plans?.map((dayPlan: any, i: number) => (
-                      <div key={i} className="panel p-4 space-y-3 bg-card/60">
-                        <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                          <span className="font-semibold text-sm">{dayPlan.day}</span>
-                          <span className="text-xs text-muted-foreground">
+                      <div key={i} className="panel p-4 space-y-3 shadow-[var(--clay-shadow-sm)] hover:shadow-[var(--clay-shadow)] transition-all duration-150">
+                        <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                          <span className="font-bold text-sm">{dayPlan.day}</span>
+                          <span className="text-xs font-mono text-muted-foreground">
                             {dayPlan.blocks?.reduce((acc: number, b: any) => acc + (b.duration_minutes || 0), 0)} min total
                           </span>
                         </div>
 
                         <div className="space-y-2.5">
                           {dayPlan.blocks?.map((block: any, j: number) => (
-                            <div key={j} className="p-2.5 rounded-md bg-accent/30 border border-border/40 text-xs space-y-1.5">
+                            <div key={j} className="p-3 rounded-2xl bg-input/70 border border-border/40 shadow-[var(--clay-inset)] text-xs space-y-2">
                               <div className="flex items-center justify-between">
-                                <span className="font-medium text-foreground">{block.subject}</span>
-                                <span className="font-mono text-muted-foreground">{block.start_time} ({block.duration_minutes}m)</span>
+                                <span className="font-bold text-foreground">{block.subject}</span>
+                                <span className="font-mono text-muted-foreground text-[11px]">{block.start_time} ({block.duration_minutes}m)</span>
                               </div>
-                              <p className="text-muted-foreground text-xs">{block.task_title}</p>
+                              <p className="text-muted-foreground text-xs leading-relaxed">{block.task_title}</p>
                               <div className="pt-1 flex items-center justify-between">
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-foreground/10 text-foreground font-medium">
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-foreground font-semibold shadow-[var(--clay-shadow-sm)] border border-border/30">
                                   {block.focus_type}
                                 </span>
                                 <Button
-                                  variant="ghost"
+                                  variant="outline"
                                   size="sm"
-                                  className="h-6 text-[11px] px-2 text-muted-foreground hover:text-foreground"
+                                  className="h-7 text-[11px] px-2.5 rounded-xl text-foreground font-semibold"
                                   onClick={() => handleAdoptBlock(block)}
                                 >
                                   <span>+ Add to Tasks</span>
@@ -556,14 +556,14 @@ function StudyIntelligencePage() {
 
                 {/* Recommendations */}
                 {plan.recommendations && plan.recommendations.length > 0 && (
-                  <div className="pt-4 border-t border-border/60 space-y-3">
+                  <div className="pt-4 border-t border-border/50 space-y-3">
                     <h4 className="font-display text-sm font-semibold">AI Productivity Recommendations</h4>
                     <div className="grid gap-3 sm:grid-cols-3">
                       {plan.recommendations.map((rec: any, i: number) => (
-                        <div key={i} className="p-3.5 rounded-lg border border-border bg-sidebar/50 space-y-1.5">
+                        <div key={i} className="rounded-2xl border border-border/50 bg-card p-4 shadow-[var(--clay-shadow-sm)] space-y-2 hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold">{rec.title}</span>
-                            <span className="text-[10px] font-mono font-medium text-foreground bg-accent px-1.5 py-0.5 rounded">
+                            <span className="text-xs font-bold">{rec.title}</span>
+                            <span className="text-[10px] font-mono font-semibold text-foreground bg-accent px-2 py-0.5 rounded-full border border-border/30 shadow-[var(--clay-shadow-sm)]">
                               {rec.impact}
                             </span>
                           </div>

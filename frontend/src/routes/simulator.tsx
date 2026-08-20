@@ -450,20 +450,20 @@ function ScenarioCard({
 
   return (
     <div
-      className={`panel p-6 transition-all ${
-        warn ? "border-foreground/50 shadow-[0_0_20px_-10px_var(--color-foreground)]" : ""
+      className={`panel p-6 transition-all duration-200 ${
+        warn ? "border-destructive/60 shadow-[0_0_20px_rgba(239,68,68,0.2)]" : ""
       }`}
     >
       <div className="flex items-center justify-between">
-        <p className="label-xs">Scenario {name}</p>
+        <p className="label-xs font-bold">Scenario {name}</p>
         {warn && (
-          <span className="flex items-center gap-1 text-xs text-foreground font-semibold">
-            <TriangleAlert className="h-3.5 w-3.5" /> burnout risk
+          <span className="flex items-center gap-1 text-xs text-destructive font-semibold">
+            <TriangleAlert className="h-3.5 w-3.5" /> Burnout risk
           </span>
         )}
       </div>
 
-      <div className="mt-5 space-y-6">
+      <div className="mt-5 space-y-5">
         <SliderRow
           label={savingsLabel}
           value={s.savings}
@@ -496,14 +496,14 @@ function ScenarioCard({
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-3 gap-3 border-t border-border pt-4 text-center">
+      <div className="mt-6 grid grid-cols-3 gap-2.5 rounded-2xl bg-input p-3 shadow-[var(--clay-inset)] border border-border/30 text-center">
         <Mini label="Health" value={result.health.toFixed(1)} />
         <Mini label="Focus" value={result.focus.toFixed(1)} />
         <Mini label="5y net" value={money(result.terminal)} />
       </div>
 
       <Button
-        className="mt-4 w-full"
+        className="mt-5 w-full rounded-xl"
         variant="outline"
         size="sm"
         onClick={() => adopt(s, name)}
@@ -517,8 +517,8 @@ function ScenarioCard({
 function Mini({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="label-xs">{label}</p>
-      <p className="mt-1 font-display text-sm font-semibold">{value}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-0.5 font-display text-sm font-bold tabular-nums text-foreground">{value}</p>
     </div>
   );
 }

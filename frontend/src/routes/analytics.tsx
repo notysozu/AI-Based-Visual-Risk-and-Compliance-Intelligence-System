@@ -302,44 +302,44 @@ function AnalyticsPage() {
 
         {/* Large Simplified Metric Cards */}
         <div className="grid gap-3 sm:grid-cols-5 mt-5">
-          <div className="panel p-4 border border-border text-center">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Sleep 🛌</span>
+          <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Sleep 🛌</span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.sleep}h</p>
             <span className="text-[10px] text-muted-foreground">Avg / night</span>
           </div>
-          <div className="panel p-4 border border-border text-center">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Screen 📱</span>
+          <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Screen 📱</span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.screen}h</p>
             <span className="text-[10px] text-muted-foreground">Avg / day</span>
           </div>
-          <div className="panel p-4 border border-border text-center">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{cfg.studyLabel} 📚</span>
+          <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">{cfg.studyLabel} 📚</span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.study}h</p>
             <span className="text-[10px] text-muted-foreground">Avg / day</span>
           </div>
-          <div className="panel p-4 border border-border text-center">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Exercise 🏃</span>
+          <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Exercise 🏃</span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.exercise}m</p>
             <span className="text-[10px] text-muted-foreground">Avg / day</span>
           </div>
-          <div className="panel p-4 border border-border text-center">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Mood/Wellbeing 😊</span>
+          <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Mood 😊</span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.mood}/10</p>
             <span className="text-[10px] text-muted-foreground">Avg rating</span>
           </div>
         </div>
 
         {/* AI Explanatory Narrative */}
-        <div className="mt-5 panel p-5 border border-border bg-muted/20">
+        <div className="mt-5 rounded-2xl bg-input p-5 border border-border/30 shadow-[var(--clay-inset)]">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-1.5 h-3.5 bg-foreground rounded" />
-            <p className="text-xs font-semibold uppercase tracking-wider text-foreground">
+            <div className="w-2 h-4 bg-primary rounded-full shadow-[var(--clay-btn-primary)]" />
+            <p className="text-xs font-bold uppercase tracking-wider text-foreground">
               AI Analysis Summary
             </p>
           </div>
-          <div className="space-y-1 text-muted-foreground leading-relaxed">
+          <div className="space-y-1 text-foreground leading-relaxed">
             {summaryLoading ? (
-              <p className="text-sm animate-pulse-glow">Twin is reading your logs...</p>
+              <p className="text-sm animate-pulse text-muted-foreground">Twin is reading your logs...</p>
             ) : (
               parseMarkdown(summary)
             )}
@@ -354,7 +354,7 @@ function AnalyticsPage() {
             <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
             <YAxis domain={[0, 10]} stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={26} />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
-            <Bar dataKey="Avg Focus" fill="var(--color-foreground)" radius={[4, 4, 0, 0]} barSize={40} />
+            <Bar dataKey="Avg Focus" fill="var(--color-foreground)" radius={[8, 8, 0, 0]} barSize={36} />
           </BarChart>
         </ChartCard>
 
@@ -364,27 +364,27 @@ function AnalyticsPage() {
             <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
             <YAxis domain={[0, 10]} stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={26} />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
-            <Bar dataKey="Avg Mood" fill="var(--color-muted-foreground)" radius={[4, 4, 0, 0]} barSize={40} />
+            <Bar dataKey="Avg Mood" fill="var(--color-muted-foreground)" radius={[8, 8, 0, 0]} barSize={36} />
           </BarChart>
         </ChartCard>
       </div>
 
       <div className="panel mt-5 p-6">
         <p className="label-xs">Weekly streak</p>
-        <div className="mt-4 grid grid-cols-7 gap-2">
+        <div className="mt-4 grid grid-cols-7 gap-2.5">
           {week.map((l) => {
             const hit = l.sleep >= 7 && l.study >= 1;
             return (
               <div
                 key={l.id}
-                className={`flex aspect-square flex-col items-center justify-center rounded-md border text-xs ${
+                className={`flex aspect-square flex-col items-center justify-center rounded-2xl border text-xs transition-all duration-150 ${
                   hit
-                    ? "border-foreground/40 bg-accent shadow-[0_0_18px_-8px_var(--color-foreground)]"
-                    : "border-dashed border-border text-muted-foreground"
+                    ? "border-emerald-500/40 bg-accent shadow-[var(--clay-shadow-sm)] text-foreground font-semibold"
+                    : "border-border/40 bg-input shadow-[var(--clay-inset)] text-muted-foreground"
                 }`}
               >
-                {hit ? <Check className="h-4 w-4" /> : <span>—</span>}
-                <span className="mt-1">{l.date.slice(5)}</span>
+                {hit ? <Check className="h-4 w-4 text-emerald-500 stroke-[3]" /> : <span>—</span>}
+                <span className="mt-1 font-mono text-[10px]">{l.date.slice(5)}</span>
               </div>
             );
           })}

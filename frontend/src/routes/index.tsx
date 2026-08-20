@@ -152,17 +152,19 @@ function AuthPage() {
         <p className="text-xs text-muted-foreground">Local demo — data stays in your browser.</p>
       </div>
 
-      <div className="flex items-center justify-center p-6">
-        <div className="w-full max-w-sm animate-rise">
-          <div className="mb-8 flex items-center justify-between">
-            <div className="flex items-center gap-2 lg:hidden">
-              <GaugeCircle className="h-5 w-5" />
-              <span className="font-display text-sm font-semibold">Digital Twin</span>
+      <div className="flex items-center justify-center p-6 sm:p-10">
+        <div className="panel w-full max-w-md p-8 animate-rise">
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[var(--clay-btn-primary)]">
+                <GaugeCircle className="h-4 w-4" />
+              </div>
+              <span className="font-display text-base font-bold">Digital Twin</span>
             </div>
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
-              className="ml-auto"
+              className="rounded-xl shadow-[var(--clay-shadow-sm)]"
               aria-label="Toggle theme"
               onClick={() => setTheme(state.theme === "dark" ? "light" : "dark")}
             >
@@ -183,16 +185,16 @@ function AuthPage() {
               </div>
               <Field id="email" label="Email" value={email} set={setEmail} type="email" />
               <Field id="password" label="Password" value={password} set={setPassword} type="password" />
-              <Button className="w-full" onClick={() => submit("signup")}>
+              <Button className="w-full mt-2" size="lg" onClick={() => submit("signup")}>
                 Create Twin Profile
               </Button>
             </TabsContent>
 
             <TabsContent value="login" className="mt-6 space-y-4">
-              <Field id="email2" label="Email" value={email} set={setEmail} type="email" />
-              <Field id="password2" label="Password" value={password} set={setPassword} type="password" />
-              <Button className="w-full" onClick={() => submit("login")}>
-                Log In
+              <Field id="login-email" label="Email" value={email} set={setEmail} type="email" />
+              <Field id="login-password" label="Password" value={password} set={setPassword} type="password" />
+              <Button className="w-full mt-2" size="lg" onClick={() => submit("login")}>
+                Log in to Twin
               </Button>
             </TabsContent>
           </Tabs>
@@ -201,16 +203,16 @@ function AuthPage() {
           <div className="mt-6">
             <div className="relative mb-4">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
+                <span className="w-full border-t border-border/60" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or explore demo personas</span>
+                <span className="bg-card px-2.5 text-muted-foreground font-semibold">Or explore demo personas</span>
               </div>
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full flex items-center justify-between" disabled={!!loadingRole}>
+                <Button variant="outline" size="lg" className="w-full flex items-center justify-between" disabled={!!loadingRole}>
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-foreground" />
                     <span>{loadingRole ? "Loading Demo..." : "Load Demo Twin"}</span>

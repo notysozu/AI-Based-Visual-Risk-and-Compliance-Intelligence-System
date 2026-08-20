@@ -217,17 +217,20 @@ function DashboardPage() {
 }
 
 export const tooltipStyle = {
-  background: "var(--color-popover)",
+  backgroundColor: "var(--color-card)",
   border: "1px solid var(--color-border)",
-  borderRadius: 8,
-  fontSize: 12,
-  color: "var(--color-popover-foreground)",
+  borderRadius: "1rem",
+  boxShadow: "var(--clay-shadow-lg)",
+  fontSize: "0.75rem",
+  padding: "10px 14px",
+  color: "var(--color-foreground)",
 };
 
 function FeedItem({ text }: { text: string }) {
   return (
-    <div className="border-l border-border pl-4">
-      <p className="text-sm leading-relaxed text-muted-foreground">{text}</p>
+    <div className="flex items-start gap-3 rounded-2xl p-3.5 bg-accent/35 border border-border/40 shadow-[var(--clay-shadow-sm)]">
+      <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
+      <p className="text-xs leading-relaxed text-foreground/90">{text}</p>
     </div>
   );
 }
@@ -242,13 +245,13 @@ function Stat({
   value: string;
 }) {
   return (
-    <div className="panel flex items-center gap-4 p-5 transition-shadow hover:shadow-[0_0_22px_-8px_var(--color-foreground)]">
-      <div className="rounded-md border border-border p-2">
-        <Icon className="h-4 w-4" />
+    <div className="panel flex items-center gap-4 p-5 hover:-translate-y-1 hover:shadow-[var(--clay-shadow-lg)] transition-all duration-200">
+      <div className="rounded-2xl bg-input p-3 shadow-[var(--clay-inset)] border border-border/30 shrink-0">
+        <Icon className="h-5 w-5 text-foreground" />
       </div>
       <div>
         <p className="label-xs">{label}</p>
-        <p className="font-display text-xl font-semibold">{value}</p>
+        <p className="font-display text-xl font-bold tracking-tight mt-0.5">{value}</p>
       </div>
     </div>
   );

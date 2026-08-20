@@ -73,31 +73,44 @@ function PlannerPage() {
       title="Today's Plan"
       subtitle={`${cfg.badge} · ${done} of ${todays.length} done · ${Math.round(planned / 60 * 10) / 10}h scheduled`}
     >
-      <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
-        <div className="panel divide-y divide-border">
+      <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
+        <div className="panel p-3 space-y-2">
           {todays.length === 0 && (
             <p className="p-8 text-center text-sm text-muted-foreground">
               Nothing planned yet. Add a task, or adopt a suggestion to drop it straight in here.
             </p>
           )}
           {todays.map((t) => (
-            <div key={t.id} className="flex items-center gap-4 p-4 transition-colors hover:bg-accent/40">
+            <div
+              key={t.id}
+              className="flex items-center gap-4 p-3.5 rounded-2xl border border-border/40 bg-card shadow-[var(--clay-shadow-sm)] hover:shadow-[var(--clay-shadow)] hover:-translate-y-0.5 transition-all duration-150"
+            >
               <Checkbox checked={t.done} onCheckedChange={() => toggleTask(t.id)} />
-              <div className="w-14 shrink-0 font-display text-sm font-semibold tabular-nums">
+              <div className="w-14 shrink-0 font-display text-sm font-bold tabular-nums">
                 {t.start}
               </div>
               <div className="min-w-0 flex-1">
-                <p className={`truncate text-sm ${t.done ? "text-muted-foreground line-through" : ""}`}>
+                <p className={`truncate text-sm font-medium ${t.done ? "text-muted-foreground line-through opacity-70" : "text-foreground"}`}>
                   {t.title}
                 </p>
-                <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="rounded border border-border px-1.5 py-px">{t.category}</span>
-                  <Clock className="h-3 w-3" />
-                  {t.minutes}m
-                  {t.fromSuggestion && <span className="italic">from suggestions</span>}
+                <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="rounded-full border border-border/40 bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground shadow-[var(--clay-shadow-sm)]">
+                    {t.category}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {t.minutes}m
+                  </span>
+                  {t.fromSuggestion && <span className="italic text-[11px]">from suggestions</span>}
                 </p>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => removeTask(t.id)} aria-label="Delete task">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-xl text-muted-foreground hover:text-destructive"
+                onClick={() => removeTask(t.id)}
+                aria-label="Delete task"
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -134,7 +147,7 @@ function PlannerPage() {
               <div className="grid gap-1.5">
                 <Label className="label-xs">Category</Label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-xl shadow-[var(--clay-shadow-sm)]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -146,7 +159,7 @@ function PlannerPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full" onClick={submit}>
+              <Button className="w-full mt-2" size="lg" onClick={submit}>
                 <Plus className="mr-2 h-4 w-4" /> Add Task
               </Button>
             </div>
@@ -154,22 +167,22 @@ function PlannerPage() {
 
           <div className="panel p-5">
             <p className="label-xs">Timetable</p>
-            <div className="mt-4 space-y-1">
+            <div className="mt-4 space-y-1.5">
               {Array.from({ length: 16 }, (_, i) => i + 6).map((hour) => {
                 const slot = todays.find((t) => Number(t.start.slice(0, 2)) === hour);
                 return (
                   <div key={hour} className="flex items-center gap-3 text-xs">
-                    <span className="w-8 text-muted-foreground tabular-nums">{`${hour}`.padStart(2, "0")}</span>
+                    <span className="w-8 text-muted-foreground font-mono tabular-nums">{`${hour}`.padStart(2, "0")}</span>
                     <div
-                      className={`h-6 flex-1 rounded border px-2 text-[11px] leading-6 ${
+                      className={`h-7 flex-1 rounded-xl px-3 text-[11px] leading-7 transition-all flex items-center justify-between ${
                         slot
-                          ? "border-foreground/30 bg-accent font-medium"
-                          : "border-dashed border-border text-muted-foreground"
+                          ? "bg-accent/80 border border-border/60 shadow-[var(--clay-shadow-sm)] font-medium text-foreground"
+                          : "bg-input/60 border border-border/20 shadow-[var(--clay-inset)] text-muted-foreground/60"
                       }`}
                     >
-                      {slot ? slot.title : ""}
+                      <span className="truncate">{slot ? slot.title : ""}</span>
+                      {slot?.done && <Check className="h-3 w-3 text-foreground shrink-0" />}
                     </div>
-                    {slot?.done && <Check className="h-3 w-3" />}
                   </div>
                 );
               })}

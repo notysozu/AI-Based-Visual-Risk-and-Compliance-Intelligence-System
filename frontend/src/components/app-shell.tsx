@@ -72,19 +72,22 @@ export function AppShell({
   return (
     <div className="flex min-h-screen w-full bg-background">
       <aside
-        className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-border bg-sidebar transition-[width] duration-300 md:flex ${
-          collapsed ? "w-[68px]" : "w-60"
+        className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-border/50 bg-sidebar/80 backdrop-blur transition-[width] duration-300 md:flex ${
+          collapsed ? "w-[72px]" : "w-64"
         }`}
       >
-        <div className="flex h-16 items-center gap-2 px-4">
-          <GaugeCircle className="h-5 w-5 shrink-0" />
+        <div className="flex h-16 items-center gap-2.5 px-5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[var(--clay-btn-primary)]">
+            <GaugeCircle className="h-5 w-5 shrink-0" />
+          </div>
           {!collapsed && (
-            <span className="font-display text-sm font-semibold tracking-tight">
+            <span className="font-display text-base font-bold tracking-tight">
               Digital Twin
             </span>
           )}
         </div>
-        <nav className="flex flex-1 flex-col gap-1 px-2">
+        
+        <nav className="flex flex-1 flex-col gap-1.5 px-3 py-2">
           {navItems.map((item) => {
             const active = pathname === item.to;
             return (
@@ -92,10 +95,10 @@ export function AppShell({
                 key={item.to}
                 to={item.to}
                 title={item.label}
-                className={`group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all ${
+                className={`group flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 ${
                   active
-                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_2px_0_0_0_var(--color-foreground)]"
-                    : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground"
+                    ? "bg-card text-foreground shadow-[var(--clay-shadow-sm)] border border-border/60"
+                    : "text-muted-foreground hover:bg-card/50 hover:text-foreground hover:shadow-[var(--clay-shadow-sm)]"
                 }`}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
@@ -104,11 +107,12 @@ export function AppShell({
             );
           })}
         </nav>
-        <div className="p-2">
+        
+        <div className="p-3">
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start gap-3 text-muted-foreground"
+            className="w-full justify-start gap-3 rounded-xl text-muted-foreground shadow-[var(--clay-shadow-sm)] bg-card/60"
             onClick={() => setCollapsed((v) => !v)}
           >
             <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
@@ -118,45 +122,47 @@ export function AppShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-8">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border/40 bg-background/85 px-4 backdrop-blur md:px-8">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 text-sm font-medium">
+            <div className="flex items-center gap-2 text-sm font-semibold">
               <span className="truncate">{state.profile.name || "Guest"}</span>
               <span className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
-                <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
-                Sync Status: Online
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                Live Sync
               </span>
             </div>
             <p className="truncate text-xs text-muted-foreground">{state.profile.email}</p>
           </div>
-          <Button variant="ghost" size="icon" aria-label="Notifications">
-            <Bell className="h-4 w-4" />
-          </Button>
+          
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             aria-label="Toggle theme"
             onClick={() => setTheme(state.theme === "dark" ? "light" : "dark")}
+            className="rounded-xl shadow-[var(--clay-shadow-sm)]"
           >
             {state.theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" aria-label="Account">
+              <Button variant="outline" size="icon" aria-label="Account" className="rounded-xl shadow-[var(--clay-shadow-sm)]">
                 <User className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{state.profile.name || "Guest"}</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-56 p-2">
+              <DropdownMenuLabel className="font-display font-semibold">{state.profile.name || "Guest"}</DropdownMenuLabel>
+              <p className="px-2 pb-2 text-xs text-muted-foreground truncate">{state.profile.email}</p>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => setSettingsOpen(true)}>
-                <Settings className="mr-2 h-4 w-4" /> Settings
+              <DropdownMenuItem onSelect={() => setSettingsOpen(true)} className="cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" /> Settings & Roles
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() => {
                   signOut();
                   navigate({ to: "/" });
                 }}
+                className="cursor-pointer text-destructive focus:text-destructive"
               >
                 <LogOut className="mr-2 h-4 w-4" /> Sign out
               </DropdownMenuItem>
@@ -168,44 +174,37 @@ export function AppShell({
           <div className="mx-auto w-full max-w-6xl animate-rise">
             <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
               <div>
-                <h1 className="font-display text-2xl font-semibold md:text-3xl">{title}</h1>
+                <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">{title}</h1>
                 {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
               </div>
-              {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+              {actions && <div className="flex flex-wrap gap-2.5">{actions}</div>}
             </div>
             {children}
           </div>
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-border bg-background/95 py-2 backdrop-blur md:hidden">
-        {navItems.slice(0, 5).map((item) => (
-          <Link
-            key={item.to}
-            to={item.to}
-            className={`flex flex-col items-center gap-1 px-2 text-[10px] ${
-              pathname === item.to ? "text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            <item.icon className="h-4 w-4" />
-            {item.label.split(" ")[0]}
-          </Link>
-        ))}
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-border/50 bg-background/95 py-2.5 backdrop-blur md:hidden shadow-[0_-8px_20px_rgba(0,0,0,0.06)]">
+        {navItems.slice(0, 5).map((item) => {
+          const active = pathname === item.to;
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`flex flex-col items-center gap-1 px-3 py-1 text-[10px] font-semibold transition-all ${
+                active
+                  ? "bg-card text-foreground shadow-[var(--clay-shadow-sm)] rounded-xl border border-border/50"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label.split(" ")[0]}
+            </Link>
+          );
+        })}
       </nav>
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
-  );
-}
-
-export function SettingsButton() {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <Settings className="mr-2 h-4 w-4" /> Settings
-      </Button>
-      <SettingsDialog open={open} onOpenChange={setOpen} />
-    </>
   );
 }

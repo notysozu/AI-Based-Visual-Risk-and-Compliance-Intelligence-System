@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { AppShell, SettingsButton } from "@/components/app-shell";
+import { AppShell } from "@/components/app-shell";
 import { useGuard } from "@/lib/use-guard";
 import { money, useTwin, type Profile } from "@/lib/twin-store";
 
@@ -31,17 +31,17 @@ function ProfilePage() {
   const p = state.profile;
 
   return (
-    <AppShell title="Profile & Goals" subtitle="Everything the twin knows about you." actions={<SettingsButton />}>
+    <AppShell title="Profile & Goals" subtitle="Everything your twin models about your daily routine.">
       <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
-        <div className="panel p-6">
-          <p className="label-xs">Goal</p>
+        <div className="panel p-6 sm:p-8">
+          <p className="label-xs">Active Goals & Focus</p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {(
               [
                 ["goalName", "Goal name", "text"],
-                ["goalCurrent", "Saved so far", "number"],
-                ["goalTarget", "Goal target", "number"],
-                ["focusArea", "Main focus", "text"],
+                ["goalCurrent", "Saved so far ($)", "number"],
+                ["goalTarget", "Goal target ($)", "number"],
+                ["focusArea", "Primary life / work focus", "text"],
               ] as const
             ).map(([key, label, type]) => (
               <div key={key} className="grid gap-1.5">
@@ -57,7 +57,8 @@ function ProfilePage() {
             ))}
           </div>
           <Button
-            className="mt-5"
+            className="mt-6"
+            size="lg"
             onClick={() => {
               updateProfile(draft);
               toast.success("Profile updated");
@@ -66,12 +67,12 @@ function ProfilePage() {
             Save changes
           </Button>
 
-          <div className="mt-8 grid gap-4 border-t border-border pt-6 sm:grid-cols-3">
+          <div className="mt-8 grid gap-3 border-t border-border/50 pt-6 sm:grid-cols-3">
             <Read label="Net worth" value={money(p.netWorth)} />
             <Read label="Target" value={`${money(p.targetNetWorth)} by ${p.targetAge}`} />
             <Read label="Savings rate" value={`${p.savingsRate}%`} />
             <Read label="Sleep" value={`${p.sleepHours}h`} />
-            <Read label="Study" value={`${p.studyHours}h / week`} />
+            <Read label="Study / Upskill" value={`${p.studyHours}h / week`} />
             <Read label="Screen time" value={`${p.screenTime}h / day`} />
           </div>
         </div>
@@ -80,7 +81,7 @@ function ProfilePage() {
           <div className="panel p-6">
             <p className="label-xs">Appearance</p>
             <div className="mt-4 flex items-center justify-between">
-              <span className="text-sm">Dark mode</span>
+              <span className="text-sm font-semibold">Dark mode</span>
               <Switch
                 checked={state.theme === "dark"}
                 onCheckedChange={(v) => setTheme(v ? "dark" : "light")}
@@ -89,30 +90,30 @@ function ProfilePage() {
           </div>
 
           <div className="panel space-y-3 p-6">
-            <p className="label-xs">Data</p>
-            <Button variant="outline" className="w-full" onClick={() => navigate({ to: "/setup" })}>
+            <p className="label-xs">Twin Data Management</p>
+            <Button variant="outline" className="w-full justify-center" onClick={() => navigate({ to: "/setup" })}>
               Re-run setup questions
             </Button>
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full justify-center"
               onClick={() => {
                 loadDemo();
                 toast.success("Demo twin reloaded");
               }}
             >
-              Load Demo Twin
+              Reload Default Demo Twin
             </Button>
             <Button
               variant="ghost"
-              className="w-full"
+              className="w-full justify-center text-destructive hover:text-destructive hover:bg-destructive/10"
               onClick={() => {
                 reset();
                 toast.success("All local data cleared");
                 navigate({ to: "/" });
               }}
             >
-              Erase everything
+              Erase all local data
             </Button>
           </div>
         </div>
@@ -123,9 +124,9 @@ function ProfilePage() {
 
 function Read({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="rounded-2xl bg-card p-3.5 border border-border/50 shadow-[var(--clay-shadow-sm)]">
       <p className="label-xs">{label}</p>
-      <p className="mt-1 font-display text-base font-semibold">{value}</p>
+      <p className="mt-1 font-display text-sm font-bold tracking-tight text-foreground">{value}</p>
     </div>
   );
 }

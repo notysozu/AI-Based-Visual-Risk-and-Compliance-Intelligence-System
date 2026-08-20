@@ -177,185 +177,68 @@ function SetupPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <div className="h-0.5 w-full bg-border">
-        <div
-          className="h-full bg-foreground transition-all duration-500"
-          style={{ width: `${progress}%` }}
-        />
+      <div className="px-6 pt-6">
+        <div className="mx-auto max-w-xl h-2.5 w-full rounded-full bg-input shadow-[var(--clay-inset)] overflow-hidden border border-border/30">
+          <div
+            className="h-full bg-primary rounded-full transition-all duration-500 ease-out shadow-[var(--clay-btn-primary)]"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
       </div>
 
-      <div className="flex flex-1 items-center justify-center overflow-hidden px-6 py-10">
+      <div className="flex flex-1 items-center justify-center overflow-hidden px-4 py-8 sm:px-6 sm:py-12">
         <div
           key={step}
-          className="w-full max-w-xl"
+          className="panel-lg w-full max-w-xl p-6 sm:p-10"
           style={{
-            animation: `slide-q 420ms cubic-bezier(.22,1,.36,1) both`,
-            ["--from" as string]: dir === 1 ? "56px" : "-56px",
+            animation: `slide-q 420ms cubic-bezier(.34,1.56,.64,1) both`,
+            ["--from" as string]: dir === 1 ? "40px" : "-40px",
           }}
         >
-          <p className="label-xs">
-            Step {step + 1} of {totalSteps}
-          </p>
+          <div className="flex items-center justify-between">
+            <span className="label-xs">Step {step + 1} of {totalSteps}</span>
+            <span className="text-xs font-mono font-semibold text-muted-foreground">{Math.round(progress)}% Complete</span>
+          </div>
 
           {isRoleStep ? (
             <div>
-              <h1 className="mt-3 font-display text-3xl font-semibold leading-tight md:text-4xl">
-                Who are you?
-              </h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Select your role. Your twin will adapt its questions, wealth vocabulary, task planner, and AI advice specifically for your journey.
-              </p>
-
-              <div className="mt-6 grid gap-3">
-                {/* Option 1: Student */}
-                <button
-                  type="button"
-                  onClick={() => handleSelectRole("student")}
-                  className={`flex items-start gap-4 rounded-xl border p-4 text-left transition-all ${
-                    draft.role === "student"
-                      ? "border-foreground bg-accent/60 shadow-[0_0_20px_-8px_var(--color-foreground)]"
-                      : "border-border bg-muted/20 hover:border-foreground/40 hover:bg-muted/40"
-                  }`}
-                >
-                  <div className="rounded-lg bg-background p-2.5 border border-border shrink-0">
-                    <GraduationCap className="h-5 w-5 text-foreground" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-display font-semibold text-base">Student</h3>
-                      {draft.role === "student" && <span className="text-xs bg-foreground text-background font-semibold px-2 py-0.5 rounded-full">Selected</span>}
+              <h1 className="mt-3 font-display text-2xl font-bold leading-tight sm:text-3xl">Who are you?</h1>
+              <p className="mt-2 text-xs sm:text-sm text-muted-foreground">Select your persona. Your twin will adapt its questions, wealth vocabulary, task planner, and AI advice specifically for your journey.</p>
+              <div className="mt-6 grid gap-3.5">
+                {[
+                  { id: "student", icon: GraduationCap, title: "Student", desc: "In school, college, or learning. Model study blocks, exam goals, habit streaks, and pocket money savings." },
+                  { id: "professional", icon: Briefcase, title: "Working Professional", desc: "Salaried career. Model monthly salary, 401(k) / retirement net worth, upskilling, and deep-work sprints." },
+                  { id: "freelancer", icon: Laptop, title: "Freelancer / Creator", desc: "Independent contractor or creator. Model variable client invoicing, emergency runway, and creative sprints." },
+                  { id: "entrepreneur", icon: Rocket, title: "Founder / Entrepreneur", desc: "Building a startup or business. Model founder runway, equity targets, intensive build cycles, and growth milestones." },
+                  { id: "retiree", icon: HeartHandshake, title: "Retiree / Senior", desc: "Preserve wealth, sustain pension drawdown, and protect daily health, hobbies, and peace of mind." },
+                ].map((role) => (
+                  <button key={role.id} type="button" onClick={() => handleSelectRole(role.id as UserRole)} className={`flex items-start gap-4 rounded-2xl border p-4 text-left cursor-pointer transition-all duration-150 ease-out active:scale-[0.98] ${draft.role === role.id ? "border-foreground bg-accent/70 shadow-[var(--clay-shadow)] translate-y-[-2px]" : "border-border/60 bg-card shadow-[var(--clay-shadow-sm)] hover:border-foreground/40 hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)]"}`}>
+                    <div className="rounded-xl bg-card p-2.5 border border-border/60 shadow-[var(--clay-shadow-sm)] shrink-0">
+                      <role.icon className="h-5 w-5 text-foreground" />
                     </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-                      In school, college, or learning. Model study blocks, exam goals, habit streaks, and pocket money savings.
-                    </p>
-                  </div>
-                </button>
-
-                {/* Option 2: Professional */}
-                <button
-                  type="button"
-                  onClick={() => handleSelectRole("professional")}
-                  className={`flex items-start gap-4 rounded-xl border p-4 text-left transition-all ${
-                    draft.role === "professional"
-                      ? "border-foreground bg-accent/60 shadow-[0_0_20px_-8px_var(--color-foreground)]"
-                      : "border-border bg-muted/20 hover:border-foreground/40 hover:bg-muted/40"
-                  }`}
-                >
-                  <div className="rounded-lg bg-background p-2.5 border border-border shrink-0">
-                    <Briefcase className="h-5 w-5 text-foreground" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-display font-semibold text-base">Working Professional</h3>
-                      {draft.role === "professional" && <span className="text-xs bg-foreground text-background font-semibold px-2 py-0.5 rounded-full">Selected</span>}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-display font-semibold text-sm sm:text-base">{role.title}</h3>
+                        {draft.role === role.id && <span className="text-[10px] bg-primary text-primary-foreground font-semibold px-2 py-0.5 rounded-full shadow-[var(--clay-btn-primary)]">Selected</span>}
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">{role.desc}</p>
                     </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-                      Salaried career. Model monthly salary, 401(k) / retirement net worth, upskilling, and deep-work sprints.
-                    </p>
-                  </div>
-                </button>
-
-                {/* Option 3: Freelancer */}
-                <button
-                  type="button"
-                  onClick={() => handleSelectRole("freelancer")}
-                  className={`flex items-start gap-4 rounded-xl border p-4 text-left transition-all ${
-                    draft.role === "freelancer"
-                      ? "border-foreground bg-accent/60 shadow-[0_0_20px_-8px_var(--color-foreground)]"
-                      : "border-border bg-muted/20 hover:border-foreground/40 hover:bg-muted/40"
-                  }`}
-                >
-                  <div className="rounded-lg bg-background p-2.5 border border-border shrink-0">
-                    <Laptop className="h-5 w-5 text-foreground" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-display font-semibold text-base">Freelancer / Creator</h3>
-                      {draft.role === "freelancer" && <span className="text-xs bg-foreground text-background font-semibold px-2 py-0.5 rounded-full">Selected</span>}
-                    </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-                      Independent contractor or creator. Model variable client invoicing, emergency runway, and creative sprints.
-                    </p>
-                  </div>
-                </button>
-
-                {/* Option 4: Entrepreneur */}
-                <button
-                  type="button"
-                  onClick={() => handleSelectRole("entrepreneur")}
-                  className={`flex items-start gap-4 rounded-xl border p-4 text-left transition-all ${
-                    draft.role === "entrepreneur"
-                      ? "border-foreground bg-accent/60 shadow-[0_0_20px_-8px_var(--color-foreground)]"
-                      : "border-border bg-muted/20 hover:border-foreground/40 hover:bg-muted/40"
-                  }`}
-                >
-                  <div className="rounded-lg bg-background p-2.5 border border-border shrink-0">
-                    <Rocket className="h-5 w-5 text-foreground" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-display font-semibold text-base">Founder / Entrepreneur</h3>
-                      {draft.role === "entrepreneur" && <span className="text-xs bg-foreground text-background font-semibold px-2 py-0.5 rounded-full">Selected</span>}
-                    </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-                      Building a startup or business. Model founder runway, equity targets, intensive build cycles, and growth milestones.
-                    </p>
-                  </div>
-                </button>
-
-                {/* Option 5: Retiree */}
-                <button
-                  type="button"
-                  onClick={() => handleSelectRole("retiree")}
-                  className={`flex items-start gap-4 rounded-xl border p-4 text-left transition-all ${
-                    draft.role === "retiree"
-                      ? "border-foreground bg-accent/60 shadow-[0_0_20px_-8px_var(--color-foreground)]"
-                      : "border-border bg-muted/20 hover:border-foreground/40 hover:bg-muted/40"
-                  }`}
-                >
-                  <div className="rounded-lg bg-background p-2.5 border border-border shrink-0">
-                    <HeartHandshake className="h-5 w-5 text-foreground" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-display font-semibold text-base">Retiree / Senior</h3>
-                      {draft.role === "retiree" && <span className="text-xs bg-foreground text-background font-semibold px-2 py-0.5 rounded-full">Selected</span>}
-                    </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-                      Retired or financially independent. Model pension drawdown, healthcare buffer, active walking, and legacy goals.
-                    </p>
-                  </div>
-                </button>
+                  </button>
+                ))}
               </div>
             </div>
           ) : (
             currentQ && (
               <div>
-                <h1 className="mt-3 font-display text-3xl font-semibold leading-tight md:text-4xl">
-                  {currentQ.question}
-                </h1>
-                <p className="mt-2 text-sm text-muted-foreground">{currentQ.hint}</p>
-
-                <div className="mt-10">
+                <h1 className="mt-3 font-display text-2xl font-bold leading-tight sm:text-3xl">{currentQ.question}</h1>
+                {currentQ.hint && <p className="mt-2 text-xs sm:text-sm text-muted-foreground">{currentQ.hint}</p>}
+                <div className="mt-8">
                   {currentQ.kind === "slider" ? (
                     <div>
-                      <div className="font-display text-5xl font-semibold tabular-nums">
-                        {currentQ.unit === "$" ? "$" : ""}
-                        {Number(value).toLocaleString()}
-                        {currentQ.unit && currentQ.unit !== "$" ? currentQ.unit : ""}
+                      <div className="mb-4 font-display text-3xl sm:text-4xl font-bold tabular-nums">
+                        {currentQ.unit === "$" ? money(Number(value)) : `${value}${currentQ.unit ?? ""}`}
                       </div>
-                      <Slider
-                        className="mt-8"
-                        min={currentQ.min}
-                        max={currentQ.max}
-                        step={currentQ.step}
-                        value={[Number(value)]}
-                        onValueChange={([v]) => setDraft({ ...draft, [currentQ.key]: v })}
-                      />
-                      <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                        <span>{currentQ.min}</span>
-                        <span>{currentQ.max}</span>
-                      </div>
+                      <Slider min={currentQ.min} max={currentQ.max} step={currentQ.step} value={[Number(value)]} onValueChange={([v]) => setDraft((p) => ({ ...p, [currentQ.key]: v }))} />
                     </div>
                   ) : (
                     <Input
@@ -369,7 +252,7 @@ function SetupPage() {
                         })
                       }
                       onKeyDown={(e) => e.key === "Enter" && next()}
-                      className="h-14 border-0 border-b border-border bg-transparent px-0 font-display !text-3xl shadow-none focus-visible:ring-0"
+                      className="h-14 font-display text-2xl sm:text-3xl"
                       placeholder="Type your answer"
                     />
                   )}

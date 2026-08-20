@@ -244,25 +244,30 @@ function WealthPage() {
           <div className="panel p-6 font-mono text-xs leading-relaxed">
             <p className="label-xs font-sans pb-3">AI prediction analysis</p>
             <div className="space-y-1 border-t border-border pt-3 text-muted-foreground font-sans">
+              <div className="mt-4 rounded-2xl bg-input p-4 shadow-[var(--clay-inset)] border border-border/30 text-sm text-muted-foreground">
               {adviceLoading && (
-                <p>Analyzing your projections…</p>
+                <div className="flex items-center gap-2 text-foreground animate-pulse">
+                  <Sparkles className="h-4 w-4 text-foreground" />
+                  <span>Twin AI is calculating your trajectory and success probability...</span>
+                </div>
               )}
               {!adviceLoading && !advice && !adviceError && (
                 <p>Click "Get Prediction" for a plain-language read on your trajectory.</p>
               )}
               {adviceError && (
-                <p className="text-destructive">Couldn't get prediction: {adviceError}</p>
+                <p className="text-destructive font-medium">Couldn't get prediction: {adviceError}</p>
               )}
               {advice && (
                 <div className="text-sm text-foreground leading-relaxed">
                   {parseMarkdown(advice)}
                   {adviceProbability !== null && (
-                    <p className="mt-4 text-xs text-muted-foreground border-t border-border/60 pt-2">
+                    <p className="mt-4 text-xs text-muted-foreground border-t border-border/40 pt-2 font-mono">
                       Backing probability of success: {Math.round(adviceProbability * 100)}%
                     </p>
                   )}
                 </div>
               )}
+              </div>
             </div>
           </div>
         </div>
@@ -302,7 +307,8 @@ function WealthPage() {
                 />
               </div>
               <Button
-                className="w-full"
+                className="w-full mt-2"
+                size="lg"
                 onClick={handleGetPrediction}
                 disabled={adviceLoading || running}
               >
@@ -315,16 +321,16 @@ function WealthPage() {
 
       <div className="mt-5 panel p-6">
         <p className="label-xs">Monthly budget & cashflow</p>
-        <div className="mt-4 grid gap-6 md:grid-cols-4">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
           <Figure label={cfg.incomeLabel} value={money(p.monthlyIncome)} />
           <Figure label="Fixed living costs" value={money(fixed)} />
           <Figure label="Discretionary & fun" value={money(discretionary)} />
           <Figure label={p.role === "student" ? "Saved / Extra" : p.role === "retiree" ? "Preserved / Saved" : "Invested & Saved"} value={money(monthly)} />
         </div>
-        <div className="mt-6 flex h-3 overflow-hidden rounded-full bg-muted">
-          <Bar w={(fixed / incomeSafe) * 100} className="bg-foreground" />
+        <div className="mt-6 flex h-3.5 overflow-hidden rounded-full bg-input shadow-[var(--clay-inset)] border border-border/30 p-0.5">
+          <Bar w={(fixed / incomeSafe) * 100} className="bg-foreground rounded-l-full" />
           <Bar w={(discretionary / incomeSafe) * 100} className="bg-muted-foreground" />
-          <Bar w={(monthly / incomeSafe) * 100} className="bg-foreground/30" />
+          <Bar w={(monthly / incomeSafe) * 100} className="bg-primary shadow-[var(--clay-btn-primary)] rounded-r-full" />
         </div>
       </div>
     </AppShell>
@@ -337,9 +343,9 @@ function Bar({ w, className }: { w: number; className: string }) {
 
 function Figure({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)]">
       <p className="label-xs">{label}</p>
-      <p className="mt-1 font-display text-2xl font-semibold">{value}</p>
+      <p className="mt-1 font-display text-xl font-bold tracking-tight">{value}</p>
     </div>
   );
 }
