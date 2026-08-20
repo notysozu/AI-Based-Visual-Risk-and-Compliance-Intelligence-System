@@ -2,6 +2,7 @@
 
 import os
 import re
+# JSON processing & sanitization utilities
 import json
 from dotenv import load_dotenv
 from groq import Groq
@@ -385,6 +386,7 @@ When you state the user's target net worth, target age, or any dollar figures fr
         return get_rule_based_wealth_advice(user_info, baseline, forecast_summary)
 
 
+# JSON processing & sanitization utilities
 import json
 
 # Generates dual sandbox slider presets
