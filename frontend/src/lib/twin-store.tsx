@@ -775,6 +775,7 @@ function mapProfileToBackend(profile: Profile) {
   };
 }
 
+/** Maps backend User response to frontend Profile interface */
 function mapBackendToProfile(user: any): Partial<Profile> {
   return {
     role: user.role ?? "professional",
