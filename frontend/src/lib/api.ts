@@ -74,6 +74,7 @@ export function getScenarioSuggestions(userId: string | number) {
   return request(`/simulations/suggest/${userId}`);
 }
 
+/** Fetch 12:00 PM cached habit overview narrative */
 export function getAnalyticsSummary(userId: string | number, payload: { logs: any[] }) {
   return request(`/simulations/analytics-summary/${userId}`, {
     method: "POST",
