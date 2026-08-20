@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ArrowUpRight, BookOpen, MoonStar, Plus, RefreshCw, Wallet } from "lucide-react";
+import { ArrowUpRight, BookOpen, BrainCircuit, HeartPulse, MoonStar, Plus, RefreshCw, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -113,30 +113,45 @@ function DashboardPage() {
       }
     >
       <div className="grid gap-5 lg:grid-cols-3">
-        <div className="panel flex flex-wrap items-center justify-around gap-4 p-6 lg:col-span-2">
-          <Gauge
-            size={gaugeSize}
-            value={health}
-            label="Health & Vitality"
-            sublabel={health < 5 ? "Burnout risk" : "Steady"}
-            warning={health < 5}
-            colorScheme="emerald"
-            animating={syncing}
-          />
-          <Gauge
-            size={gaugeSize}
-            value={focus}
-            label="Cognitive Focus"
-            sublabel={focus < 5 ? "Below target" : "On track"}
-            warning={focus < 5}
-            colorScheme="indigo"
-            animating={syncing}
-          />
+        <div className="panel p-6 lg:col-span-2 flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-border/50">
+            <div>
+              <p className="label-xs">Twin Core Health & Intelligence</p>
+              <h3 className="font-display font-bold text-base mt-0.5">Live Twin Vitality Engine</h3>
+            </div>
+            <span className="clay-badge-indigo text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+              Real-time Model
+            </span>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-around gap-6 py-2">
+            <Gauge
+              size={gaugeSize}
+              value={health}
+              label="Health & Vitality"
+              sublabel={health < 5 ? "Burnout Risk" : health >= 8 ? "Optimal State" : "Steady & Healthy"}
+              warning={health < 5}
+              colorScheme="emerald"
+              icon={HeartPulse}
+              animating={syncing}
+            />
+            <Gauge
+              size={gaugeSize}
+              value={focus}
+              label="Cognitive Focus"
+              sublabel={focus < 5 ? "Below Target" : focus >= 8 ? "Peak Flow" : "On Track"}
+              warning={focus < 5}
+              colorScheme="indigo"
+              icon={BrainCircuit}
+              animating={syncing}
+            />
+          </div>
         </div>
 
-        <div className="panel p-6">
-          <p className="label-xs">Twin Status Feed</p>
-          <div className="mt-4 space-y-4 text-sm">
+        <div className="panel p-6 flex flex-col justify-between">
+          <div>
+            <p className="label-xs">Twin Status Feed</p>
+            <div className="mt-4 space-y-3.5 text-sm">
             <FeedItem
               text={`Screen time is averaging ${base.screen || p.screenTime}h. Focus prediction moves ${
                 (base.screen || p.screenTime) > 4 ? "down 4%" : "up 3%"
@@ -150,6 +165,7 @@ function DashboardPage() {
                 (p.monthlyIncome - p.monthlyExpenses) * 12,
               )} per year toward ${p.goalName}.`}
             />
+            </div>
           </div>
         </div>
       </div>
