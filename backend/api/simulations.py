@@ -165,7 +165,8 @@ def get_wealth_advice(user_id: int, force: bool = False, db: Session = Depends(d
     }
 
 @router.get("/suggest/{user_id}")
-def get_scenario_suggestions(user_id: int, db: Session = Depends(database.get_db)):
+def get_scenario_suggestions(  # Returns AI suggestions
+user_id: int, db: Session = Depends(database.get_db)):
     """
     Get AI-generated suggestions for Scenario A and Scenario B sliders.
     """
