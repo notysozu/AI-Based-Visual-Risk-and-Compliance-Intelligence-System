@@ -579,7 +579,8 @@ const STUDENT_SUGGESTIONS: Suggestion[] = [
   },
 ];
 
-export const WORKER_SUGGESTIONS: Suggestion[] = [
+export // Working Professional persona default suggestions library
+const WORKER_SUGGESTIONS: Suggestion[] = [
   {
     id: "deep-work-sprint",
     category: "Work",
