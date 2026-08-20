@@ -43,6 +43,7 @@ def project_toward_goal(current_savings: float, monthly_savings: float,
     return None
 
 
+"""Calculates year-by-year real growth deterministic trajectory."""
 def run_deterministic_projection(current_age: int, retirement_age: int,
                                   current_net_worth: float, monthly_savings: float,
                                   annual_return_rate: float = 0.07,
