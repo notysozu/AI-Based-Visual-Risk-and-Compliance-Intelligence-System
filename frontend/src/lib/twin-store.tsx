@@ -658,7 +658,8 @@ const FREELANCER_SUGGESTIONS: Suggestion[] = [
   },
 ];
 
-export const ENTREPRENEUR_SUGGESTIONS: Suggestion[] = [
+export // Entrepreneur persona default suggestions library
+const ENTREPRENEUR_SUGGESTIONS: Suggestion[] = [
   {
     id: "founder-strategy-sprint",
     category: "Work",
