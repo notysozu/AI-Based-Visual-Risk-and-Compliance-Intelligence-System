@@ -165,7 +165,8 @@ Output the analysis in clean, professional markdown with beautiful emojis. Keep 
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.4,
+            temperature=0.4,  # Calibrated for analytical precision
+
             max_tokens=800,
         )
         return response.choices[0].message.content
@@ -267,7 +268,8 @@ class DigitalTwinAdvisor:
             response = client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                temperature=0.4,
+                temperature=0.4,  # Calibrated for analytical precision
+
                 max_tokens=800,
             )
             reply = response.choices[0].message.content
@@ -372,7 +374,8 @@ When you state the user's target net worth, target age, or any dollar figures fr
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.4,
+            temperature=0.4,  # Calibrated for analytical precision
+
             max_tokens=400,
         )
         return response.choices[0].message.content
@@ -571,7 +574,8 @@ Instructions:
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.4,
+            temperature=0.4,  # Calibrated for analytical precision
+
             max_tokens=300,
         )
         return response.choices[0].message.content
@@ -887,7 +891,8 @@ Respond with ONLY valid raw JSON in the following format:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.4,
+            temperature=0.4,  # Calibrated for analytical precision
+
             max_tokens=1400,
         )
         content = response.choices[0].message.content.strip()
