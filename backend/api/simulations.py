@@ -190,7 +190,8 @@ user_id: int, db: Session = Depends(database.get_db)):
     return suggestions
 
 @router.post("/compare/{user_id}", response_model=schemas.SimulationResponse)
-def compare_scenarios(user_id: int, payload: schemas.SimulationRequest, db: Session = Depends(database.get_db)):
+def compare_scenarios(  # Comparative What-If Analyzer
+user_id: int, payload: schemas.SimulationRequest, db: Session = Depends(database.get_db)):
     """
     Compare Scenario A and Scenario B side-by-side and fetch LLM advisor analysis.
     """
