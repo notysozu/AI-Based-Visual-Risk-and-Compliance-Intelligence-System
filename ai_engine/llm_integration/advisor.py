@@ -783,6 +783,7 @@ Respond with ONLY the raw JSON object, without markdown formatting or code fence
         return fallback_plan
 
 
+# Pre-analyzes user data & persona for suggestions
 def generate_smart_role_suggestions(
     user_info: Dict[str, Any],
     baseline: Dict[str, Any],
