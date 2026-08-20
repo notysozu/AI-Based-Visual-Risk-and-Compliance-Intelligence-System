@@ -580,6 +580,7 @@ Instructions:
         return fallback_summary
 
 
+# 7-day academic study plan generator
 def generate_optimized_study_plan(user_info: Dict[str, Any], study_summary: Dict[str, Any], target_milestone: Optional[str] = None) -> Dict[str, Any]:
     """
     Generates a structured, role-adapted 7-day study and learning plan.
