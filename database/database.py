@@ -18,7 +18,8 @@ if DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 
 try:
-    engine = create_engine(DATABASE_URL, connect_args=connect_args)
+    # SQLite engine configuration with thread check
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
     # Test connection
     with engine.connect() as conn:
         pass
@@ -26,7 +27,8 @@ except Exception as e:
     print(f"Database connection failed with URL: {DATABASE_URL}. Error: {e}")
     print("Falling back to SQLite...")
     DATABASE_URL = "sqlite:///./digital_twin.db"
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+    # SQLite engine configuration with thread check
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
