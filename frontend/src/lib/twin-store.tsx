@@ -618,7 +618,8 @@ export const WORKER_SUGGESTIONS: Suggestion[] = [
   },
 ];
 
-export const FREELANCER_SUGGESTIONS: Suggestion[] = [
+export // Freelancer persona default suggestions library
+const FREELANCER_SUGGESTIONS: Suggestion[] = [
   {
     id: "freelance-client-block",
     category: "Work",
