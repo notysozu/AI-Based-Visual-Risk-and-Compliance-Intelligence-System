@@ -62,3 +62,9 @@ Digital Twin AI is a decoupled, full-stack decision-support system designed to m
 ## 5. Database Indexing & Query Optimizations
 - Indexed `habit_records.created_at` and `study_records.user_id` for fast 30-day baseline retrievals.
 - Optimized categorical lookups across financial transactions and user suggestions.
+
+
+## 6. REST API Status Codes & Exception Standards
+- Standard HTTP 200/201 for successful mutations and query evaluations.
+- Standard HTTP 404 for missing entities with structured JSON details.
+- Graceful fallback degradation when optional upstream LLMs are unavailable.
