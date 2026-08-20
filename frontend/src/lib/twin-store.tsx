@@ -539,7 +539,8 @@ export function getRoleConfig(role?: string | null): RoleConfig {
 
 // --- Suggestions library by Role ---
 
-export const STUDENT_SUGGESTIONS: Suggestion[] = [
+export // Student persona default suggestions library
+const STUDENT_SUGGESTIONS: Suggestion[] = [
   {
     id: "student-study-sprint",
     category: "Study",
