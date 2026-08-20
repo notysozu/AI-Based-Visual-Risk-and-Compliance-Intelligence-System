@@ -60,3 +60,8 @@ Once onboarding is completed:
 - Student onboarding captures allowance and study targets.
 - Professional onboarding captures 401(k) and retirement horizons.
 - Freelancer onboarding captures average invoice income and tax runway.
+
+
+## 7. Instant Persona Switching
+- Users can seamlessly switch roles via the top-bar demo selector.
+- Dynamic UI instantly transforms metric vocabulary, suggestions, and chart annotations.
