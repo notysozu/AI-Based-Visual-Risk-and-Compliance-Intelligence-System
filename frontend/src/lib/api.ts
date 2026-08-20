@@ -69,6 +69,7 @@ export function compareScenarios(userId: string | number, payload: Record<string
   });
 }
 
+/** Retrieve AI-generated scenario slider suggestions */
 export function getScenarioSuggestions(userId: string | number) {
   return request(`/simulations/suggest/${userId}`);
 }
