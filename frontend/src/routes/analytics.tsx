@@ -439,6 +439,7 @@ function AnalyticsPage() {
   );
 }
 
+/** Reusable container card for analytical charts */
 function ChartCard({ title, children }: { title: string; children: React.ReactElement }) {
   return (
     <div className="panel p-6">
