@@ -26,7 +26,7 @@ def get_rule_based_advice(
     sa = sim_results["scenario_a"]
     sb = sim_results["scenario_b"]
 
-    advice = "### 🤖 Digital Twin Rule-Based Verdict\n\n"
+    advice = "### Digital Twin Rule-Based Verdict\n\n"
     advice += "*(Note: Run with a valid GROQ_API_KEY to enable full conversational intelligence.)*\n\n"
 
     advice += "#### **Analysis of Scenario A**\n"
@@ -34,7 +34,7 @@ def get_rule_based_advice(
     advice += f"- **Wellbeing & Performance:** Health Index: {sa['health_index']:.1f}/10, Focus Rating: {sa['focus_index']:.1f}/10.\n"
     advice += f"- **Financial Projection:** Net Worth in 5 years: ${sa['wealth_at_end']:,.2f}. "
     if sa["attained_retirement"]:
-        advice += "On track to reach retirement goals! 🎯\n"
+        advice += "On track to reach retirement goals.\n"
     else:
         advice += f"Projected retirement wealth of ${sa['retirement_wealth']:,.2f} falls short of target (${user_info['target_net_worth']:,.2f}).\n"
 
@@ -43,7 +43,7 @@ def get_rule_based_advice(
     advice += f"- **Wellbeing & Performance:** Health Index: {sb['health_index']:.1f}/10, Focus Rating: {sb['focus_index']:.1f}/10.\n"
     advice += f"- **Financial Projection:** Net Worth in 5 years: ${sb['wealth_at_end']:,.2f}. "
     if sb["attained_retirement"]:
-        advice += "On track to reach retirement goals! 🎯\n"
+        advice += "On track to reach retirement goals.\n"
     else:
         advice += f"Projected retirement wealth of ${sb['retirement_wealth']:,.2f} falls short of target (${user_info['target_net_worth']:,.2f}).\n"
 
@@ -71,13 +71,13 @@ def get_rule_based_advice(
 
     advice += "\n#### **Digital Twin's Choice**\n"
     if sa['health_index'] < 5.0 and sb['health_index'] >= 5.0:
-        advice += "💡 **Recommendation:** **Choose Scenario B.** Scenario A degrades your health index below a sustainable baseline. Short-term financial or study gains do not justify the cognitive toll of sleep deprivation.\n"
+        advice += "**Recommendation:** **Choose Scenario B.** Scenario A degrades your health index below a sustainable baseline. Short-term financial or study gains do not justify the cognitive toll of sleep deprivation.\n"
     elif sb['health_index'] < 5.0 and sa['health_index'] >= 5.0:
-        advice += "💡 **Recommendation:** **Choose Scenario A.** Scenario B degrades your health index below a sustainable baseline due to sleep or habits neglect.\n"
+        advice += "**Recommendation:** **Choose Scenario A.** Scenario B degrades your health index below a sustainable baseline due to sleep or habits neglect.\n"
     elif sb['wealth_at_end'] > sa['wealth_at_end'] and sb['health_index'] >= sa['health_index'] - 0.5:
-        advice += "💡 **Recommendation:** **Choose Scenario B.** It provides superior financial growth without significantly damaging your lifestyle and health parameters.\n"
+        advice += "**Recommendation:** **Choose Scenario B.** It provides superior financial growth without significantly damaging your lifestyle and health parameters.\n"
     else:
-        advice += "💡 **Recommendation:** **Choose Scenario A.** It balances financial safety and performance score with sustainable health metrics.\n"
+        advice += "**Recommendation:** **Choose Scenario A.** It balances financial safety and performance score with sustainable health metrics.\n"
 
     return advice
 
@@ -265,18 +265,18 @@ def get_rule_based_wealth_advice(
     Fallback rule-based wealth prediction when no Groq API key is configured.
     """
     prob = forecast_summary["probability_of_success"] * 100
-    advice = "### 🤖 Digital Twin Rule-Based Wealth Prediction\n\n"
+    advice = "### Digital Twin Rule-Based Wealth Prediction\n\n"
     advice += "*(Note: Run with a valid GROQ_API_KEY to enable full conversational intelligence.)*\n\n"
     advice += f"- **Current savings pace:** ${baseline['monthly_savings']:,.2f}/month\n"
     advice += f"- **Deterministic projection:** ${forecast_summary['deterministic_final']:,.2f} by target age\n"
     advice += f"- **Monte Carlo median outcome:** ${forecast_summary['monte_carlo_median_final']:,.2f}\n"
     advice += f"- **Probability of hitting your target:** {prob:.0f}%\n\n"
     if prob >= 70:
-        advice += "💡 **Prediction:** You're on a strong trajectory. Staying consistent with your current savings rate is likely enough to hit your goal.\n"
+        advice += "**Prediction:** You're on a strong trajectory. Staying consistent with your current savings rate is likely enough to hit your goal.\n"
     elif prob >= 40:
-        advice += "💡 **Prediction:** You're on a moderate trajectory. A modest increase in monthly savings would meaningfully improve your odds.\n"
+        advice += "**Prediction:** You're on a moderate trajectory. A modest increase in monthly savings would meaningfully improve your odds.\n"
     else:
-        advice += "💡 **Prediction:** Your current pace is unlikely to reach your target. Consider increasing monthly contributions or adjusting your target timeline.\n"
+        advice += "**Prediction:** Your current pace is unlikely to reach your target. Consider increasing monthly contributions or adjusting your target timeline.\n"
     return advice
 
 

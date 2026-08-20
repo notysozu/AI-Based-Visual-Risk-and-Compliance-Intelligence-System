@@ -167,12 +167,16 @@ export default function ScenarioComparison({ userId }: Props) {
             <div>
               <strong>Scenario A</strong> — wealth at end: $
               {result.scenario_a.wealth_at_end.toLocaleString()} |{" "}
-              {result.scenario_a.attained_retirement ? "✅ hits retirement goal" : "❌ falls short"}
+              <span style={{ color: result.scenario_a.attained_retirement ? "#10b981" : "#ef4444", fontWeight: 600 }}>
+                {result.scenario_a.attained_retirement ? "Hits retirement goal" : "Falls short"}
+              </span>
             </div>
             <div>
               <strong>Scenario B</strong> — wealth at end: $
               {result.scenario_b.wealth_at_end.toLocaleString()} |{" "}
-              {result.scenario_b.attained_retirement ? "✅ hits retirement goal" : "❌ falls short"}
+              <span style={{ color: result.scenario_b.attained_retirement ? "#10b981" : "#ef4444", fontWeight: 600 }}>
+                {result.scenario_b.attained_retirement ? "Hits retirement goal" : "Falls short"}
+              </span>
             </div>
           </div>
 

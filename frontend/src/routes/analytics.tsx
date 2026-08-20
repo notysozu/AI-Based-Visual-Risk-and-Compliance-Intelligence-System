@@ -22,7 +22,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Check } from "lucide-react";
+import { BookOpen, Check, Dumbbell, MoonStar, Smartphone, Smile } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { HabitDrawer, tooltipStyle } from "@/routes/dashboard";
@@ -303,27 +303,37 @@ function AnalyticsPage() {
         {/* Large Simplified Metric Cards */}
         <div className="grid gap-3 sm:grid-cols-5 mt-5">
           <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
-            <span className="clay-badge-indigo inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">Sleep 🛌</span>
+            <span className="clay-badge-indigo inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full">
+              <MoonStar className="h-3 w-3 shrink-0" /> Sleep
+            </span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.sleep}h</p>
             <span className="text-[10px] text-muted-foreground">Avg / night</span>
           </div>
           <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
-            <span className="clay-badge-amber inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">Screen 📱</span>
+            <span className="clay-badge-amber inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full">
+              <Smartphone className="h-3 w-3 shrink-0" /> Screen
+            </span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.screen}h</p>
             <span className="text-[10px] text-muted-foreground">Avg / day</span>
           </div>
           <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
-            <span className="clay-badge-purple inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">{cfg.studyLabel} 📚</span>
+            <span className="clay-badge-purple inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full">
+              <BookOpen className="h-3 w-3 shrink-0" /> {cfg.studyLabel}
+            </span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.study}h</p>
             <span className="text-[10px] text-muted-foreground">Avg / day</span>
           </div>
           <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
-            <span className="clay-badge-emerald inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">Exercise 🏃</span>
+            <span className="clay-badge-emerald inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full">
+              <Dumbbell className="h-3 w-3 shrink-0" /> Exercise
+            </span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.exercise}m</p>
             <span className="text-[10px] text-muted-foreground">Avg / day</span>
           </div>
           <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
-            <span className="clay-badge-rose inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">Mood 😊</span>
+            <span className="clay-badge-rose inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full">
+              <Smile className="h-3 w-3 shrink-0" /> Mood
+            </span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.mood}/10</p>
             <span className="text-[10px] text-muted-foreground">Avg rating</span>
           </div>

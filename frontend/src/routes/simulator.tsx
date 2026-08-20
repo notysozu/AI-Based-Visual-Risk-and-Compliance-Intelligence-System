@@ -372,8 +372,8 @@ function SimulatorPage() {
                       <TriangleAlert className="h-3.5 w-3.5 text-rose-500 animate-pulse" /> Burnout risk warning
                     </span>
                   ) : (
-                    <span className="clay-badge-emerald text-[11px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                      ✅ Safe health levels
+                    <span className="clay-badge-emerald text-[11px] px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Safe health levels
                     </span>
                   )}
                 </div>
