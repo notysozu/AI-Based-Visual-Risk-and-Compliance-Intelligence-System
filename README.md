@@ -175,3 +175,6 @@ Backend AI modules load `.env` credentials dynamically per request, eliminating 
 - **Suggest More & Expansion**: Generates non-overlapping recommendations.
 - **Database Persistence**: Persists all custom suggestions in `user_suggestions` table.
 - **Pagination & Search**: Full range navigation with newest-on-top ordering.
+
+---
+*Digital Twin AI — Comprehensive Multi-Persona Trajectory Engine.*
