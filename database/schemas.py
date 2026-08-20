@@ -146,6 +146,7 @@ class ScenarioInput(BaseModel):
     weekly_study_change: float = 0.0        # + or - hours
 
 class SimulationRequest(BaseModel):
+    """Dual scenario comparative simulation payload."""
     scenario_a: ScenarioInput
     scenario_b: ScenarioInput
     years: int = Field(5, ge=1, le=40)
