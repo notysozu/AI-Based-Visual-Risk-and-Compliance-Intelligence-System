@@ -6,7 +6,8 @@ from ai_engine.llm_integration.advisor import generate_smart_role_suggestions
 
 router = APIRouter(
     prefix="/suggestions",
-    tags=["suggestions"]
+    tags=["suggestions"],
+    responses={404: {"description": "Resource not found"}}
 )
 
 
