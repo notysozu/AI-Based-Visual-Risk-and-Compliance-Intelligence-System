@@ -14,6 +14,7 @@ if os.path.exists(_env_path):
     load_dotenv(_env_path, override=True)
 
 
+# Dynamic Groq client loader
 def get_groq_client() -> Optional[Groq]:
     """
     Dynamically retrieve and instantiate the Groq client from environment or .env file.
