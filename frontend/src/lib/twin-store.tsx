@@ -756,6 +756,7 @@ export const SUGGESTIONS = WORKER_SUGGESTIONS;
 // savingsRate, goalName, goalCurrent, goalTarget) stays localStorage-only
 // until the backend schema is extended to support them.
 
+/** Maps frontend profile state to backend schema payload */
 function mapProfileToBackend(profile: Profile) {
   return {
     role: profile.role,
