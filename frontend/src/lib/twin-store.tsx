@@ -1197,6 +1197,7 @@ export function focusIndex(sleepHours: number, studyHoursDaily: number, screenHo
   return +clamp(score, 0, 10).toFixed(1);
 }
 
+/** Format currency in USD */
 export function money(n: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
