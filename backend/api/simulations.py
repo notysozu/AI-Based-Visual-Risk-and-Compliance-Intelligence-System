@@ -80,7 +80,8 @@ def get_forecasts(user_id: int, db: Session = Depends(database.get_db)):
     }
 
 @router.get("/wealth-advice/{user_id}")
-def get_wealth_advice(user_id: int, force: bool = False, db: Session = Depends(database.get_db)):
+def get_wealth_advice(  # Monte Carlo Wealth Advisor
+user_id: int, force: bool = False, db: Session = Depends(database.get_db)):
     """
     Get an AI-generated prediction/narrative interpreting the Monte Carlo
     and deterministic forecasts for this user. The underlying numbers are
