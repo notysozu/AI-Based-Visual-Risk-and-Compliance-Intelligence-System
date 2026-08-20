@@ -505,6 +505,7 @@ Return ONLY a valid JSON object matching the following structure. No explanation
         return fallback
 
 
+# Daily habit analysis narrative
 def generate_analytics_summary(user_info: Dict[str, Any], logs: List[Dict[str, Any]]) -> str:
     """
     Generate a simple, universally understandable summary of habit logs tailored to the user's role.
