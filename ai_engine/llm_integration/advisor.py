@@ -3,16 +3,36 @@
 import os
 import re
 import json
+from dotenv import load_dotenv
 from groq import Groq
 from typing import Dict, Any, List, Optional
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-client = None
-if GROQ_API_KEY:
+# Load .env file from project root
+load_dotenv()
+_env_path = os.path.join(os.path.dirname(__file__), "../../.env")
+if os.path.exists(_env_path):
+    load_dotenv(_env_path, override=True)
+
+
+def get_groq_client() -> Optional[Groq]:
+    """
+    Dynamically retrieve and instantiate the Groq client from environment or .env file.
+    """
+    key = os.getenv("GROQ_API_KEY")
+    if not key or key.strip() in ("", "your_groq_api_key_here"):
+        load_dotenv(override=True)
+        if os.path.exists(_env_path):
+            load_dotenv(_env_path, override=True)
+        key = os.getenv("GROQ_API_KEY")
+
+    if not key or key.strip() in ("", "your_groq_api_key_here"):
+        return None
+
     try:
-        client = Groq(api_key=GROQ_API_KEY)
+        return Groq(api_key=key.strip())
     except Exception as e:
         print(f"Error initializing Groq client: {e}")
+        return None
 
 
 def get_rule_based_advice(
@@ -26,8 +46,7 @@ def get_rule_based_advice(
     sa = sim_results["scenario_a"]
     sb = sim_results["scenario_b"]
 
-    advice = "### Digital Twin Rule-Based Verdict\n\n"
-    advice += "*(Note: Run with a valid GROQ_API_KEY to enable full conversational intelligence.)*\n\n"
+    advice = "### Digital Twin Strategy Verdict\n\n"
 
     advice += "#### **Analysis of Scenario A**\n"
     advice += f"- **Lifestyle changes:** Sleep: {sa['details']['sleep']:.1f} hrs, Study: {sa['details']['study_week']:.1f} hrs/week, Monthly Savings: ${sa['details']['monthly_savings']:.2f}.\n"
@@ -212,37 +231,49 @@ class DigitalTwinAdvisor:
         self.system_prompt = None
         self.history = []  # [{"role": "user"/"assistant", "text": str}]
 
-    def set_context(self, user_profile: dict, financial_summary: dict,
-                     study_summary: dict, habits: list, goals: list):
-        """Call this once per session (or after data refresh) with data
-        gathered from forecasting/simulation modules + database layer."""
-        self.system_prompt = build_system_prompt(
-            user_profile, financial_summary, study_summary, habits, goals
+        self.history: List[Dict[str, str]] = []
+        self.system_prompt: Optional[str] = None
+
+    def set_context(self, user_info: dict, baseline_metrics: dict):
+        self.system_prompt = (
+            f"You are the conversational Digital Twin AI advisor for {user_info.get('username', 'User')}.\n"
+            f"Role: {user_info.get('role', 'professional')}\n"
+            f"Age: {user_info.get('age', 25)}\n"
+            f"Target Age: {user_info.get('retirement_goal_age', 60)}\n"
+            f"Target Net Worth: ${user_info.get('target_net_worth', 1000000):,.2f}\n"
+            f"Monthly Income: ${user_info.get('monthly_income', 5000):,.2f}\n"
+            f"Baseline Sleep: {baseline_metrics.get('sleep_hours', 7.5):.1f}h/night\n"
+            f"Baseline Savings: ${baseline_metrics.get('monthly_savings', 1000):,.2f}/mo\n"
+            f"Be concise, analytical, supportive, and clear."
         )
 
     def ask(self, user_message: str) -> str:
         if self.system_prompt is None:
             raise ValueError("Call set_context() before ask().")
 
+        client = get_groq_client()
         if client is None:
-            return "Groq AI Advisor is offline. Please configure a valid GROQ_API_KEY in your environment to enable conversational recommendations."
+            return "Groq AI Advisor is operating in offline mode. Configure a valid GROQ_API_KEY to enable live conversational intelligence."
 
         messages = [{"role": "system", "content": self.system_prompt}]
         for t in self.history:
             messages.append({"role": t["role"], "content": t["text"]})
         messages.append({"role": "user", "content": user_message})
 
-        response = client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=0.4,
-            max_tokens=800,
-        )
-
-        reply = response.choices[0].message.content
-        self.history.append({"role": "user", "text": user_message})
-        self.history.append({"role": "assistant", "text": reply})
-        return reply
+        try:
+            response = client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0.4,
+                max_tokens=800,
+            )
+            reply = response.choices[0].message.content
+            self.history.append({"role": "user", "text": user_message})
+            self.history.append({"role": "assistant", "text": reply})
+            return reply
+        except Exception as e:
+            print(f"Error calling Groq chat: {e}")
+            return "Unable to reach Groq API. Please check your network and API credentials."
 
     def ask_with_simulation(self, user_message: str, scenario_result: dict) -> str:
         """Use when the user asks about a specific simulated scenario
@@ -255,18 +286,16 @@ class DigitalTwinAdvisor:
         return self.ask(user_message + scenario_context)
 
 
-
 def get_rule_based_wealth_advice(
     user_info: Dict[str, Any],
     baseline: Dict[str, Any],
     forecast_summary: Dict[str, Any]
 ) -> str:
     """
-    Fallback rule-based wealth prediction when no Groq API key is configured.
+    Fallback rule-based wealth prediction when Groq API is unavailable.
     """
     prob = forecast_summary["probability_of_success"] * 100
-    advice = "### Digital Twin Rule-Based Wealth Prediction\n\n"
-    advice += "*(Note: Run with a valid GROQ_API_KEY to enable full conversational intelligence.)*\n\n"
+    advice = "### Digital Twin Wealth Projection & Strategy\n\n"
     advice += f"- **Current savings pace:** ${baseline['monthly_savings']:,.2f}/month\n"
     advice += f"- **Deterministic projection:** ${forecast_summary['deterministic_final']:,.2f} by target age\n"
     advice += f"- **Monte Carlo median outcome:** ${forecast_summary['monte_carlo_median_final']:,.2f}\n"
@@ -287,9 +316,8 @@ def generate_wealth_advice(
 ) -> str:
     """
     Generate a conversational wealth prediction using Groq, or fallback to rule-based logic.
-    forecast_summary expects: deterministic_final, monte_carlo_median_final,
-    monte_carlo_p10_final, monte_carlo_p90_final, probability_of_success, years.
     """
+    client = get_groq_client()
     if client is None:
         return get_rule_based_wealth_advice(user_info, baseline, forecast_summary)
 
@@ -363,6 +391,7 @@ def generate_scenario_suggestions(user_info: Dict[str, Any], baseline: Dict[str,
         "scenario_b": {"savings": 500 if role == "student" else 800 if role == "freelancer" else 1200 if role == "entrepreneur" else 1000, "sleep": -1.0, "study": 10}
     }
     
+    client = get_groq_client()
     if client is None:
         return fallback
 
@@ -528,6 +557,7 @@ Instructions:
         f"- **Overall Rating:** {avg_mood:.1f}/10."
     )
 
+    client = get_groq_client()
     if client is None:
         return fallback_summary
 
@@ -682,6 +712,7 @@ def generate_optimized_study_plan(user_info: Dict[str, Any], study_summary: Dict
         ]
     }
 
+    client = get_groq_client()
     if client is None:
         return fallback_plan
 
