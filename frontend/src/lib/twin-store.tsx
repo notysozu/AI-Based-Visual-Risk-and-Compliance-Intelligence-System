@@ -90,6 +90,7 @@ export type MonteCarloBand = {
   p90: number[];
 };
 
+/** 500-iteration Monte Carlo forecast response payload */
 export type ForecastResult = {
   deterministic: ForecastPoint[];
   monte_carlo: MonteCarloBand;
