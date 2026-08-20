@@ -109,6 +109,7 @@ export function generateStudyPlan(userId: string | number, payload: { target_mil
   });
 }
 
+/** Record completed study block with focus score */
 export function logStudySession(userId: string | number, payload: Record<string, unknown>) {
   return request(`/study/log/${userId}`, {
     method: "POST",
