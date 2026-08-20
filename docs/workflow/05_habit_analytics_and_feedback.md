@@ -61,3 +61,8 @@ The AI Digital Twin Habit Summary provides high-level coaching on user routine b
 - If current time is **after 12:00 PM** today: Cache must have been created after today's 12:00 PM.
 - If current time is **before 12:00 PM** today: Cache must have been created after yesterday's 12:00 PM.
 - If invalid or missing, a background request generates a fresh summary and updates the database timestamp.
+
+
+## 6. Pearson Correlation Calculation
+- Evaluates statistical correlation between nightly sleep hours and daily focus ratings.
+- Highlights actionable adjustments in the AI explanatory briefing.
