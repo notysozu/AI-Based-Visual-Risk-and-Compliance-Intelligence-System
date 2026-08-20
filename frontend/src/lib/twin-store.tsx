@@ -1208,6 +1208,7 @@ export function money(n: number): string {
   }).format(n);
 }
 
+/** Returns current date formatted as YYYY-MM-DD */
 export function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
