@@ -1,6 +1,7 @@
 import pytest
-from ai_engine.simulation.simulator import calculate_focus_index
+from ai_engine.forecasting.habits import predict_scenario_scores
 
 def test_focus_rating_bounds():
-    f = calculate_focus_index(8.0, 2.0, 4.0)
-    assert 0.0 <= f <= 10.0
+    res = predict_scenario_scores({}, 8.0, 1.0, 3.0, 1.5, 2.0)
+    assert res["focus_index"] >= 50.0
+    assert res["health_index"] >= 50.0

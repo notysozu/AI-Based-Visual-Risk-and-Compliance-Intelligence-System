@@ -19,7 +19,7 @@ if DATABASE_URL.startswith("sqlite"):
 
 try:
     # SQLite engine configuration with thread check
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+    engine = create_engine(DATABASE_URL, connect_args=connect_args)
     # Test connection
     with engine.connect() as conn:
         pass
@@ -28,7 +28,7 @@ except Exception as e:
     print("Falling back to SQLite...")
     DATABASE_URL = "sqlite:///./digital_twin.db"
     # SQLite engine configuration with thread check
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

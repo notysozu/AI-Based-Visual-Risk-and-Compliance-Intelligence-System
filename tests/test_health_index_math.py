@@ -1,6 +1,7 @@
 import pytest
-from ai_engine.simulation.simulator import calculate_health_index
+from ai_engine.forecasting.habits import predict_scenario_scores
 
 def test_health_index_bounds():
-    h = calculate_health_index(7.5, 30, 4.0)
-    assert 0.0 <= h <= 10.0
+    res = predict_scenario_scores({}, 7.5, 0.5, 4.0, 1.0, 1.5)
+    assert 0.0 <= res["health_index"] <= 100.0
+    assert 0.0 <= res["focus_index"] <= 100.0
