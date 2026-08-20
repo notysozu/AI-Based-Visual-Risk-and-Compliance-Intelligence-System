@@ -401,6 +401,7 @@ function SimulatorPage() {
   );
 }
 
+/** Interactive slider card for Scenario A / B */
 function ScenarioCard({
   name,
   s,
