@@ -739,6 +739,7 @@ const RETIREE_SUGGESTIONS: Suggestion[] = [
   },
 ];
 
+/** Resolves default suggestion library by persona role */
 export function getRoleSuggestions(role?: string | null): Suggestion[] {
   if (role === "student") return STUDENT_SUGGESTIONS;
   if (role === "freelancer") return FREELANCER_SUGGESTIONS;
