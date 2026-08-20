@@ -54,3 +54,9 @@ Once onboarding is completed:
 1. Profile state is saved to browser LocalStorage.
 2. The user profile is created/updated in the backend database via `PUT /users/{user_id}` or `POST /users/`.
 3. All subsequent pages (`/dashboard`, `/wealth`, `/planner`, `/suggestions`, `/simulator`, `/analytics`) reference `getRoleConfig(profile.role)` to display cohesive terminology.
+
+
+## 6. Dynamic Question Progression
+- Student onboarding captures allowance and study targets.
+- Professional onboarding captures 401(k) and retirement horizons.
+- Freelancer onboarding captures average invoice income and tax runway.
