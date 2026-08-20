@@ -58,3 +58,8 @@ The simulator displays comparison results through two layers:
 - **Formatted Callout Panels**: Scenario A, Scenario B, and Tradeoff dynamics rendered with distinct pastel badges.
 - **Inline Adoption**: Direct **"Adopt Scenario A"** and **"Adopt Scenario B"** buttons to immediately sync winning parameters into active profile metrics.
 - **One-Click Clipboard Copy**: Easy copying of the complete AI analysis.
+
+
+## 7. Tradeoff Matrix Analysis
+- Evaluates sleep vs wealth trade-offs to prevent aggressive savings that induce burnout.
+- Recommends balanced trajectories where focus ratings remain $\ge 6.5/10$.
