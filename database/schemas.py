@@ -4,6 +4,7 @@ from typing import Optional, List
 
 # User Schemas
 class UserBase(BaseModel):
+    """Core user profile data model."""
     username: str
     email: EmailStr
     role: Optional[str] = "professional"
