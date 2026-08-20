@@ -698,7 +698,8 @@ const ENTREPRENEUR_SUGGESTIONS: Suggestion[] = [
   },
 ];
 
-export const RETIREE_SUGGESTIONS: Suggestion[] = [
+export // Retiree persona default suggestions library
+const RETIREE_SUGGESTIONS: Suggestion[] = [
   {
     id: "retiree-morning-walk",
     category: "Health",
