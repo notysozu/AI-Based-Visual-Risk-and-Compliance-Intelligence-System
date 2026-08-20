@@ -19,6 +19,7 @@ import { Sparkles, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Gauge } from "@/components/gauge";
+import { AIIntelligenceCard } from "@/components/ai-intelligence-card";
 import { useGuard } from "@/lib/use-guard";
 import { money, useTwin, getRoleConfig } from "@/lib/twin-store";
 import { tooltipStyle } from "@/routes/dashboard";
@@ -257,30 +258,35 @@ function WealthPage() {
               </div>
             )}
 
-            <div className="mt-4 rounded-2xl bg-input p-4 shadow-[var(--clay-inset)] border border-border/30 text-sm text-muted-foreground">
-              {adviceLoading && (
-                <div className="flex items-center gap-2 text-foreground animate-pulse">
-                  <Sparkles className="h-4 w-4 text-indigo-500 animate-spin" />
-                  <span>Twin AI is calculating your trajectory and success probability...</span>
-                </div>
-              )}
-              {!adviceLoading && !advice && !adviceError && (
-                <p>Click "Get Prediction" for a plain-language read on your trajectory.</p>
-              )}
-              {adviceError && (
-                <p className="text-rose-500 font-medium">Couldn't get prediction: {adviceError}</p>
-              )}
-              {advice && (
-                <div className="text-sm text-foreground leading-relaxed">
-                  {parseMarkdown(advice)}
-                  {adviceProbability !== null && (
-                    <p className="mt-4 text-xs text-muted-foreground border-t border-border/40 pt-2 font-mono">
-                      Backing probability of success: <span className="font-bold text-emerald-600 dark:text-emerald-400">{Math.round(adviceProbability * 100)}%</span>
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+            {adviceLoading && (
+              <div className="mt-4 rounded-2xl bg-input p-5 shadow-[var(--clay-inset)] border border-border/30 text-sm text-muted-foreground flex items-center gap-2.5 text-foreground animate-pulse">
+                <Sparkles className="h-4 w-4 text-indigo-500 animate-spin" />
+                <span>Twin AI is calculating your trajectory and success probability...</span>
+              </div>
+            )}
+
+            {!adviceLoading && !advice && !adviceError && (
+              <div className="mt-4 rounded-2xl bg-input p-4 shadow-[var(--clay-inset)] border border-border/30 text-sm text-muted-foreground text-center">
+                <p>Click "Get Prediction" for a plain-language read on your trajectory and probability.</p>
+              </div>
+            )}
+
+            {adviceError && (
+              <div className="mt-4 rounded-2xl bg-rose-500/10 p-4 border border-rose-500/30 text-sm text-rose-500 font-medium">
+                <p>Couldn't get prediction: {adviceError}</p>
+              </div>
+            )}
+
+            {advice && !adviceLoading && (
+              <div className="mt-4">
+                <AIIntelligenceCard
+                  title="Wealth Trajectory & Asset Intelligence"
+                  badge="Monte Carlo Engine"
+                  content={advice}
+                  probability={adviceProbability}
+                />
+              </div>
+            )}
           </div>
         </div>
 

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
+import { AIIntelligenceCard } from "@/components/ai-intelligence-card";
 import { useGuard } from "@/lib/use-guard";
 import { focusIndex, healthIndex, money, projectNetWorth, useTwin } from "@/lib/twin-store";
 import { tooltipStyle } from "@/routes/dashboard";
@@ -393,17 +394,16 @@ function SimulatorPage() {
               </div>
             </div>
 
-            {/* Rich text compatible AI Advice Narrative Card */}
+            {/* Interactive Claymorphic AI Advice Narrative Card */}
             {backendResult && (
-              <div className="panel p-5 mt-4 border border-border bg-muted/20">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-1.5 h-3.5 bg-foreground rounded" />
-                  <p className="text-xs font-semibold uppercase tracking-wider text-foreground">AI Narrative & Recommendations</p>
-                </div>
-                <div className="space-y-1 text-muted-foreground leading-relaxed">
-                  {parseMarkdown(backendResult.recommendation)}
-                </div>
-              </div>
+              <AIIntelligenceCard
+                title="Twin Strategy & Tradeoff Analysis"
+                badge="Neural Engine"
+                content={backendResult.recommendation}
+                recommendedScenario={better}
+                onAdoptA={() => adopt(a, "A")}
+                onAdoptB={() => adopt(b, "B")}
+              />
             )}
           </div>
         </div>

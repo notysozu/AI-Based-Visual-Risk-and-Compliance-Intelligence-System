@@ -25,6 +25,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { BookOpen, Check, Dumbbell, MoonStar, Smartphone, Smile } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
+import { AIIntelligenceCard } from "@/components/ai-intelligence-card";
 import { HabitDrawer, tooltipStyle } from "@/routes/dashboard";
 import { useGuard } from "@/lib/use-guard";
 import { baseline, focusIndex, useTwin, getRoleConfig } from "@/lib/twin-store";
@@ -340,21 +341,19 @@ function AnalyticsPage() {
         </div>
 
         {/* AI Explanatory Narrative */}
-        <div className="mt-5 rounded-2xl bg-input p-5 border border-border/30 shadow-[var(--clay-inset)]">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-2 h-4 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
-            <p className="text-xs font-bold uppercase tracking-wider text-foreground">
-              AI Analysis Summary
-            </p>
+        {summaryLoading ? (
+          <div className="mt-5 rounded-2xl bg-input p-5 border border-border/30 shadow-[var(--clay-inset)] text-sm text-muted-foreground animate-pulse">
+            Twin is synthesizing habit logs and computing focus-vitality correlations...
           </div>
-          <div className="space-y-1 text-foreground leading-relaxed">
-            {summaryLoading ? (
-              <p className="text-sm animate-pulse text-muted-foreground">Twin is reading your logs...</p>
-            ) : (
-              parseMarkdown(summary)
-            )}
+        ) : summary ? (
+          <div className="mt-5">
+            <AIIntelligenceCard
+              title="Habit Dynamics & Vitality Narrative"
+              badge="Twin Analytics"
+              content={summary}
+            />
           </div>
-        </div>
+        ) : null}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
