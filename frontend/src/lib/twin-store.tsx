@@ -1193,6 +1193,7 @@ export function healthIndex(sleepHours: number, exerciseMinutes: number, screenH
   return +clamp(score, 0, 10).toFixed(1);
 }
 
+/** Calculate 0-10 Focus Index from daily focus and sleep */
 export function focusIndex(sleepHours: number, studyHoursDaily: number, screenHours: number): number {
   const score = (sleepHours / 8) * 3 + (studyHoursDaily / 2) * 5 - (screenHours / 4) * 2 + 2;
   return +clamp(score, 0, 10).toFixed(1);
