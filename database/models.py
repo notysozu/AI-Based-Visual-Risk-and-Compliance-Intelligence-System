@@ -52,7 +52,8 @@ class FinancialRecord(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    category = Column(String, index=True, nullable=False)  # Income, Investment, Fixed Expense, Discretionary Expense
+    category = Column(String, index=True, nullable=False)
+    # Indexed category for grouped financial reporting  # Income, Investment, Fixed Expense, Discretionary Expense
     description = Column(String, nullable=True)
     amount = Column(Float, nullable=False)
     record_date = Column(DateTime, default=datetime.utcnow)
