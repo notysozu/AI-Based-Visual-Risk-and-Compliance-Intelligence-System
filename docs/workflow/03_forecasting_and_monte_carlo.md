@@ -52,3 +52,9 @@ To ensure fast UI responses and prevent redundant LLM inference calls:
 ## 6. Percentile Ranking Algorithms
 - P10, P50, and P90 confidence curves sort 500 simulated paths at each milestone year.
 - Outliers are normalized to generate continuous smooth confidence bands.
+
+
+## 7. Return Distribution Assumptions
+- Mean annual return: $\mu = 7.0\%$.
+- Annual return volatility: $\sigma = 15.0\%$.
+- Box-Muller transform generates standard normal random variations.
