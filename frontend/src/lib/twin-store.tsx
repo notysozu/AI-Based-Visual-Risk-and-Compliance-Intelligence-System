@@ -796,6 +796,7 @@ function mapBackendToProfile(user: any): Partial<Profile> {
   };
 }
 
+/** Safely deserializes stored JSON scenario presets */
 function parsePreset(raw: string | null | undefined): ScenarioPreset | null {
   if (!raw) return null;
   try {
