@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from database import models
 
 
+"""Fits linear regression on historical study performance scores."""
 def predict_performance_trend(records: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     Analyzes historical study scores to calculate slope, trend direction,
