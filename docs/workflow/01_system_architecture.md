@@ -68,3 +68,8 @@ Digital Twin AI is a decoupled, full-stack decision-support system designed to m
 - Standard HTTP 200/201 for successful mutations and query evaluations.
 - Standard HTTP 404 for missing entities with structured JSON details.
 - Graceful fallback degradation when optional upstream LLMs are unavailable.
+
+
+## 9. State Synchronization Diagram
+- Client state transitions broadcast changes to local store instantly.
+- Background persistence jobs sync state to SQLite/PostgreSQL with retry resilience.
