@@ -96,6 +96,7 @@ export function getStudyAnalytics(userId: string | number) {
   return request(`/study/analytics/${userId}`);
 }
 
+/** Fetch academic performance trend and exam readiness */
 export function getStudyForecast(userId: string | number, targetScore: number = 85) {
   return request(`/study/forecast/${userId}?target_score=${targetScore}`);
 }
