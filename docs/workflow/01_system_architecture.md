@@ -73,3 +73,8 @@ Digital Twin AI is a decoupled, full-stack decision-support system designed to m
 ## 9. State Synchronization Diagram
 - Client state transitions broadcast changes to local store instantly.
 - Background persistence jobs sync state to SQLite/PostgreSQL with retry resilience.
+
+
+## 10. CORS & Network Sandbox Isolation
+- Outbound LLM calls fall back to deterministic algorithms when executing in isolated sandboxes.
+- All database sessions are bound with automatic teardown and rollback handlers.
