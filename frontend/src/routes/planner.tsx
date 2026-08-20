@@ -11,6 +11,7 @@ import { AppShell } from "@/components/app-shell";
 import { useGuard } from "@/lib/use-guard";
 import { today, useTwin, type Task, getRoleConfig } from "@/lib/twin-store";
 
+/** Daily task planning board route */
 export const Route = createFileRoute("/planner")({
   head: () => ({
     meta: [
