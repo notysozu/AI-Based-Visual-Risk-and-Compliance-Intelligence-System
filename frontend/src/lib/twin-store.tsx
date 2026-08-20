@@ -1212,6 +1212,7 @@ export function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+/** Multi-year compound wealth projection */
 export function projectNetWorth(
   current: number,
   monthlyContribution: number,
