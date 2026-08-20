@@ -47,3 +47,8 @@ To ensure fast UI responses and prevent redundant LLM inference calls:
 ## 4. LLM Narrative Generation & Token Limits
 - Wealth narratives run on LLaMA 3.3 (70B) with temperature set to 0.4 for consistent financial projections.
 - Fallback algorithms calculate deterministic trajectory and success percentage when offline.
+
+
+## 6. Percentile Ranking Algorithms
+- P10, P50, and P90 confidence curves sort 500 simulated paths at each milestone year.
+- Outliers are normalized to generate continuous smooth confidence bands.
