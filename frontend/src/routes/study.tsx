@@ -51,6 +51,7 @@ import {
 } from "@/lib/api";
 import { tooltipStyle } from "@/routes/dashboard";
 
+/** Academic study intelligence and 7-day schedule route */
 export const Route = createFileRoute("/study")({
   head: () => ({
     meta: [
