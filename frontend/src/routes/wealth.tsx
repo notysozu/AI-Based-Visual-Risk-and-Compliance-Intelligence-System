@@ -213,8 +213,8 @@ function WealthPage() {
                   <AreaChart data={mcData}>
                     <defs>
                       <linearGradient id="band" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--color-foreground)" stopOpacity={0.18} />
-                        <stop offset="100%" stopColor="var(--color-foreground)" stopOpacity={0.02} />
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.22} />
+                        <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid stroke="var(--color-border)" vertical={false} />
@@ -232,22 +232,18 @@ function WealthPage() {
                       }}
                     />
                     <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => money(v)} />
-                    <Area type="monotone" dataKey="p90" name="90th percentile" stroke="var(--color-foreground)" strokeWidth={1.5} fill="url(#band)" />
-                    <Area type="monotone" dataKey="p50" name="Median" stroke="var(--color-foreground)" strokeWidth={2.5} fill="none" />
-                    <Area type="monotone" dataKey="p10" name="10th percentile" stroke="var(--color-muted-foreground)" strokeWidth={1.5} strokeDasharray="4 4" fill="none" />
+                    <Area type="monotone" dataKey="p90" name="90th percentile (Optimistic)" stroke="#34d399" strokeWidth={1.5} fill="url(#band)" />
+                    <Area type="monotone" dataKey="p50" name="Median Forecast" stroke="#10b981" strokeWidth={2.5} fill="none" />
+                    <Area type="monotone" dataKey="p10" name="10th percentile (Conservative)" stroke="var(--color-muted-foreground)" strokeWidth={1.5} strokeDasharray="4 4" fill="none" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             )}
-          </div>
 
-          <div className="panel p-6 font-mono text-xs leading-relaxed">
-            <p className="label-xs font-sans pb-3">AI prediction analysis</p>
-            <div className="space-y-1 border-t border-border pt-3 text-muted-foreground font-sans">
-              <div className="mt-4 rounded-2xl bg-input p-4 shadow-[var(--clay-inset)] border border-border/30 text-sm text-muted-foreground">
+            <div className="mt-4 rounded-2xl bg-input p-4 shadow-[var(--clay-inset)] border border-border/30 text-sm text-muted-foreground">
               {adviceLoading && (
                 <div className="flex items-center gap-2 text-foreground animate-pulse">
-                  <Sparkles className="h-4 w-4 text-foreground" />
+                  <Sparkles className="h-4 w-4 text-indigo-500 animate-spin" />
                   <span>Twin AI is calculating your trajectory and success probability...</span>
                 </div>
               )}
@@ -255,19 +251,18 @@ function WealthPage() {
                 <p>Click "Get Prediction" for a plain-language read on your trajectory.</p>
               )}
               {adviceError && (
-                <p className="text-destructive font-medium">Couldn't get prediction: {adviceError}</p>
+                <p className="text-rose-500 font-medium">Couldn't get prediction: {adviceError}</p>
               )}
               {advice && (
                 <div className="text-sm text-foreground leading-relaxed">
                   {parseMarkdown(advice)}
                   {adviceProbability !== null && (
                     <p className="mt-4 text-xs text-muted-foreground border-t border-border/40 pt-2 font-mono">
-                      Backing probability of success: {Math.round(adviceProbability * 100)}%
+                      Backing probability of success: <span className="font-bold text-emerald-600 dark:text-emerald-400">{Math.round(adviceProbability * 100)}%</span>
                     </p>
                   )}
                 </div>
               )}
-              </div>
             </div>
           </div>
         </div>
@@ -281,6 +276,7 @@ function WealthPage() {
               label="Success odds"
               sublabel="from backend simulation"
               warning={forecast ? success < 50 : false}
+              colorScheme="emerald"
               animating={running}
             />
           </div>
@@ -320,17 +316,24 @@ function WealthPage() {
       </div>
 
       <div className="mt-5 panel p-6">
-        <p className="label-xs">Monthly budget & cashflow</p>
+        <div className="flex items-center justify-between">
+          <p className="label-xs">Monthly budget & cashflow</p>
+          <div className="flex items-center gap-3 text-xs">
+            <span className="flex items-center gap-1 text-muted-foreground"><span className="h-2 w-2 rounded-full bg-slate-400" /> Fixed</span>
+            <span className="flex items-center gap-1 text-muted-foreground"><span className="h-2 w-2 rounded-full bg-amber-500" /> Discretionary</span>
+            <span className="flex items-center gap-1 text-muted-foreground"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Saved</span>
+          </div>
+        </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-          <Figure label={cfg.incomeLabel} value={money(p.monthlyIncome)} />
-          <Figure label="Fixed living costs" value={money(fixed)} />
-          <Figure label="Discretionary & fun" value={money(discretionary)} />
-          <Figure label={p.role === "student" ? "Saved / Extra" : p.role === "retiree" ? "Preserved / Saved" : "Invested & Saved"} value={money(monthly)} />
+          <Figure label={cfg.incomeLabel} value={money(p.monthlyIncome)} dotColor="bg-indigo-500" />
+          <Figure label="Fixed living costs" value={money(fixed)} dotColor="bg-slate-400" />
+          <Figure label="Discretionary & fun" value={money(discretionary)} dotColor="bg-amber-500" />
+          <Figure label={p.role === "student" ? "Saved / Extra" : p.role === "retiree" ? "Preserved / Saved" : "Invested & Saved"} value={money(monthly)} dotColor="bg-emerald-500" />
         </div>
         <div className="mt-6 flex h-3.5 overflow-hidden rounded-full bg-input shadow-[var(--clay-inset)] border border-border/30 p-0.5">
-          <Bar w={(fixed / incomeSafe) * 100} className="bg-foreground rounded-l-full" />
-          <Bar w={(discretionary / incomeSafe) * 100} className="bg-muted-foreground" />
-          <Bar w={(monthly / incomeSafe) * 100} className="bg-primary shadow-[var(--clay-btn-primary)] rounded-r-full" />
+          <Bar w={(fixed / incomeSafe) * 100} className="bg-slate-500/70 rounded-l-full" />
+          <Bar w={(discretionary / incomeSafe) * 100} className="bg-amber-500/90" />
+          <Bar w={(monthly / incomeSafe) * 100} className="bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] rounded-r-full" />
         </div>
       </div>
     </AppShell>
@@ -341,10 +344,13 @@ function Bar({ w, className }: { w: number; className: string }) {
   return <div className={className} style={{ width: `${Math.max(0, Math.min(100, w))}%` }} />;
 }
 
-function Figure({ label, value }: { label: string; value: string }) {
+function Figure({ label, value, dotColor = "bg-foreground" }: { label: string; value: string; dotColor?: string }) {
   return (
     <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)]">
-      <p className="label-xs">{label}</p>
+      <div className="flex items-center gap-1.5">
+        <span className={`h-2 w-2 rounded-full ${dotColor}`} />
+        <p className="label-xs">{label}</p>
+      </div>
       <p className="mt-1 font-display text-xl font-bold tracking-tight">{value}</p>
     </div>
   );

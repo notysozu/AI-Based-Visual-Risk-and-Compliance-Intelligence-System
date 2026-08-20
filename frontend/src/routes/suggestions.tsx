@@ -44,6 +44,16 @@ function SuggestionsPage() {
       <div className="grid gap-5 md:grid-cols-2">
         {suggestions.map((s) => {
           const taken = state.adopted.includes(s.id);
+          const cat = s.category.toLowerCase();
+          const catClass =
+            cat.includes("study") || cat.includes("academic")
+              ? "clay-badge-purple"
+              : cat.includes("work") || cat.includes("focus")
+              ? "clay-badge-indigo"
+              : cat.includes("health") || cat.includes("sleep") || cat.includes("fitness")
+              ? "clay-badge-emerald"
+              : "clay-badge-amber";
+
           return (
             <div
               key={s.id}
@@ -51,8 +61,8 @@ function SuggestionsPage() {
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="label-xs">{s.category}</span>
-                  <span className="rounded-full border border-border/40 bg-accent px-2.5 py-0.5 text-xs font-semibold text-foreground shadow-[var(--clay-shadow-sm)]">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${catClass}`}>{s.category}</span>
+                  <span className="clay-badge-emerald rounded-full px-2.5 py-0.5 text-xs font-bold">
                     {s.impact}
                   </span>
                 </div>

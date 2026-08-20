@@ -126,7 +126,20 @@ export function AppShell({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-sm font-semibold">
               <span className="truncate">{state.profile.name || "Guest"}</span>
-              <span className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
+              <span className={`hidden sm:inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize ${
+                state.profile.role === "student"
+                  ? "clay-badge-purple"
+                  : state.profile.role === "professional"
+                  ? "clay-badge-indigo"
+                  : state.profile.role === "freelancer"
+                  ? "clay-badge-amber"
+                  : state.profile.role === "entrepreneur"
+                  ? "clay-badge-rose"
+                  : "clay-badge-emerald"
+              }`}>
+                {state.profile.role}
+              </span>
+              <span className="hidden items-center gap-1.5 text-xs text-muted-foreground md:flex">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
                 Live Sync
               </span>

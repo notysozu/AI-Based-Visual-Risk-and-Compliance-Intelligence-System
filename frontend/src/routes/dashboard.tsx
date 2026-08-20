@@ -120,6 +120,7 @@ function DashboardPage() {
             label="Health & Vitality"
             sublabel={health < 5 ? "Burnout risk" : "Steady"}
             warning={health < 5}
+            colorScheme="emerald"
             animating={syncing}
           />
           <Gauge
@@ -128,6 +129,7 @@ function DashboardPage() {
             label="Cognitive Focus"
             sublabel={focus < 5 ? "Below target" : "On track"}
             warning={focus < 5}
+            colorScheme="indigo"
             animating={syncing}
           />
         </div>
@@ -153,33 +155,46 @@ function DashboardPage() {
       </div>
 
       <div className="mt-5 grid gap-5 sm:grid-cols-3">
-        <Stat icon={Wallet} label={cfg.savingsLabel} value={money(p.netWorth)} />
-        <Stat icon={MoonStar} label="Daily sleep" value={`${base.sleep || p.sleepHours}h`} />
+        <Stat icon={Wallet} label={cfg.savingsLabel} value={money(p.netWorth)} variant="emerald" />
+        <Stat icon={MoonStar} label="Daily sleep" value={`${base.sleep || p.sleepHours}h`} variant="indigo" />
         <Stat
           icon={BookOpen}
           label={`${cfg.studyLabel} (weekly)`}
           value={`${base.days ? (base.study * 7).toFixed(1) : p.studyHours}h`}
+          variant="purple"
         />
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-3">
         <div className="panel p-6 lg:col-span-2">
-          <p className="label-xs">Index trend — last 14 days</p>
+          <div className="flex items-center justify-between">
+            <p className="label-xs">Index trend — last 14 days</p>
+            <div className="flex items-center gap-3 text-xs">
+              <span className="flex items-center gap-1.5 font-medium">
+                <span className="h-2 w-2 rounded-full bg-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.6)]" />
+                Focus
+              </span>
+              <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-emerald-500/70" />
+                Health
+              </span>
+            </div>
+          </div>
           <div className="mt-4 h-56">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trend}>
                 <defs>
-                  <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--color-foreground)" stopOpacity={0.28} />
-                    <stop offset="100%" stopColor="var(--color-foreground)" stopOpacity={0} />
+                  <linearGradient id="gFocus" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.25} />
+                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="var(--color-border)" vertical={false} />
                 <XAxis dataKey="date" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis domain={[0, 10]} stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={24} />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Area type="monotone" dataKey="focus" stroke="var(--color-foreground)" fill="url(#g1)" strokeWidth={2} />
-                <Area type="monotone" dataKey="health" stroke="var(--color-muted-foreground)" fill="none" strokeWidth={1.5} strokeDasharray="4 4" />
+                <Area type="monotone" dataKey="focus" stroke="#6366f1" fill="url(#gFocus)" strokeWidth={2.5} />
+                <Area type="monotone" dataKey="health" stroke="#10b981" fill="none" strokeWidth={2} strokeDasharray="4 4" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -187,23 +202,26 @@ function DashboardPage() {
 
         <div className="panel flex flex-col justify-between p-6">
           <div>
-            <p className="label-xs">{cfg.goalLabel}</p>
-            <h3 className="mt-2 font-display text-xl font-semibold">{p.goalName}</h3>
+            <div className="flex items-center justify-between">
+              <p className="label-xs">{cfg.goalLabel}</p>
+              <span className="clay-badge-emerald rounded-full px-2 py-0.5 text-[10px] font-semibold">Active Goal</span>
+            </div>
+            <h3 className="mt-2 font-display text-xl font-bold tracking-tight">{p.goalName}</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               {money(p.goalCurrent)} of {money(p.goalTarget)}
             </p>
           </div>
           <div className="mt-6">
-            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-input shadow-[var(--clay-inset)] border border-border/30">
               <div
-                className="h-full rounded-full bg-foreground transition-all duration-700"
+                className="h-full rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-700"
                 style={{ width: `${goalPct}%` }}
               />
             </div>
             <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-              <span>{goalPct}% complete</span>
-              <span className="flex items-center gap-1">
-                <ArrowUpRight className="h-3 w-3" /> on track
+              <span className="font-semibold text-foreground">{goalPct}% complete</span>
+              <span className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400">
+                <ArrowUpRight className="h-3.5 w-3.5" /> on track
               </span>
             </div>
           </div>
@@ -229,7 +247,9 @@ export const tooltipStyle = {
 function FeedItem({ text }: { text: string }) {
   return (
     <div className="flex items-start gap-3 rounded-2xl p-3.5 bg-accent/35 border border-border/40 shadow-[var(--clay-shadow-sm)]">
-      <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
+      <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
+        <ArrowUpRight className="h-3 w-3" />
+      </div>
       <p className="text-xs leading-relaxed text-foreground/90">{text}</p>
     </div>
   );
@@ -239,15 +259,30 @@ function Stat({
   icon: Icon,
   label,
   value,
+  variant = "emerald",
 }: {
   icon: typeof Wallet;
   label: string;
   value: string;
+  variant?: "emerald" | "indigo" | "purple" | "amber" | "rose" | "cyan";
 }) {
+  const iconClass =
+    variant === "emerald"
+      ? "clay-icon-emerald"
+      : variant === "indigo"
+      ? "clay-icon-indigo"
+      : variant === "purple"
+      ? "clay-icon-purple"
+      : variant === "amber"
+      ? "clay-icon-amber"
+      : variant === "rose"
+      ? "clay-icon-rose"
+      : "clay-icon-cyan";
+
   return (
     <div className="panel flex items-center gap-4 p-5 hover:-translate-y-1 hover:shadow-[var(--clay-shadow-lg)] transition-all duration-200">
-      <div className="rounded-2xl bg-input p-3 shadow-[var(--clay-inset)] border border-border/30 shrink-0">
-        <Icon className="h-5 w-5 text-foreground" />
+      <div className={`rounded-2xl p-3 shrink-0 ${iconClass}`}>
+        <Icon className="h-5 w-5" />
       </div>
       <div>
         <p className="label-xs">{label}</p>

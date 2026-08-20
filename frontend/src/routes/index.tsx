@@ -229,7 +229,9 @@ function AuthPage() {
                     className="flex items-center gap-2.5 py-2 cursor-pointer"
                     onClick={() => handleLoadDemoRole("student", false)}
                   >
-                    <GraduationCap className="h-4 w-4 text-foreground shrink-0" />
+                    <div className="clay-icon-purple p-1.5 rounded-xl shrink-0">
+                      <GraduationCap className="h-4 w-4" />
+                    </div>
                     <div>
                       <p className="text-sm font-medium">Student</p>
                       <p className="text-xs text-muted-foreground">Study blocks, exams & allowance savings</p>
@@ -239,7 +241,9 @@ function AuthPage() {
                     className="flex items-center gap-2.5 py-2 cursor-pointer"
                     onClick={() => handleLoadDemoRole("professional", false)}
                   >
-                    <Briefcase className="h-4 w-4 text-foreground shrink-0" />
+                    <div className="clay-icon-indigo p-1.5 rounded-xl shrink-0">
+                      <Briefcase className="h-4 w-4" />
+                    </div>
                     <div>
                       <p className="text-sm font-medium">Working Professional</p>
                       <p className="text-xs text-muted-foreground">Monthly salary, 401(k) & deep work</p>
@@ -249,7 +253,9 @@ function AuthPage() {
                     className="flex items-center gap-2.5 py-2 cursor-pointer"
                     onClick={() => handleLoadDemoRole("freelancer", false)}
                   >
-                    <Laptop className="h-4 w-4 text-foreground shrink-0" />
+                    <div className="clay-icon-amber p-1.5 rounded-xl shrink-0">
+                      <Laptop className="h-4 w-4" />
+                    </div>
                     <div>
                       <p className="text-sm font-medium">Freelancer / Creator</p>
                       <p className="text-xs text-muted-foreground">Client billings, tax buffer & runway</p>
@@ -259,7 +265,9 @@ function AuthPage() {
                     className="flex items-center gap-2.5 py-2 cursor-pointer"
                     onClick={() => handleLoadDemoRole("entrepreneur", false)}
                   >
-                    <Rocket className="h-4 w-4 text-foreground shrink-0" />
+                    <div className="clay-icon-rose p-1.5 rounded-xl shrink-0">
+                      <Rocket className="h-4 w-4" />
+                    </div>
                     <div>
                       <p className="text-sm font-medium">Founder / Entrepreneur</p>
                       <p className="text-xs text-muted-foreground">Venture equity, runway & build sprints</p>
@@ -269,7 +277,9 @@ function AuthPage() {
                     className="flex items-center gap-2.5 py-2 cursor-pointer"
                     onClick={() => handleLoadDemoRole("retiree", false)}
                   >
-                    <HeartHandshake className="h-4 w-4 text-foreground shrink-0" />
+                    <div className="clay-icon-emerald p-1.5 rounded-xl shrink-0">
+                      <HeartHandshake className="h-4 w-4" />
+                    </div>
                     <div>
                       <p className="text-sm font-medium">Retiree / Senior</p>
                       <p className="text-xs text-muted-foreground">Pension, longevity & wellness buffer</p>
@@ -287,35 +297,35 @@ function AuthPage() {
                     className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
                     onClick={() => handleLoadDemoRole("student", true)}
                   >
-                    <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+                    <GraduationCap className="h-3.5 w-3.5 text-purple-500 shrink-0" />
                     <span>Random Student (Varied Age & Allowance)</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
                     onClick={() => handleLoadDemoRole("professional", true)}
                   >
-                    <Briefcase className="h-3.5 w-3.5 shrink-0" />
+                    <Briefcase className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
                     <span>Random Professional (Varied Salary & Net Worth)</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
                     onClick={() => handleLoadDemoRole("freelancer", true)}
                   >
-                    <Laptop className="h-3.5 w-3.5 shrink-0" />
+                    <Laptop className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                     <span>Random Freelancer (Varied Invoicing & Runway)</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
                     onClick={() => handleLoadDemoRole("entrepreneur", true)}
                   >
-                    <Rocket className="h-3.5 w-3.5 shrink-0" />
+                    <Rocket className="h-3.5 w-3.5 text-rose-500 shrink-0" />
                     <span>Random Founder (Varied Valuation & Burn)</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
                     onClick={() => handleLoadDemoRole("retiree", true)}
                   >
-                    <HeartHandshake className="h-3.5 w-3.5 shrink-0" />
+                    <HeartHandshake className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                     <span>Random Retiree (Varied Nest Egg & Routine)</span>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
@@ -326,7 +336,9 @@ function AuthPage() {
                   className="flex items-center gap-2.5 py-2 cursor-pointer font-medium bg-accent/40 hover:bg-accent"
                   onClick={handleLoadFullyRandom}
                 >
-                  <Dices className="h-4 w-4 text-foreground shrink-0" />
+                  <div className="clay-icon-cyan p-1.5 rounded-xl shrink-0">
+                    <Dices className="h-4 w-4" />
+                  </div>
                   <div>
                     <p className="text-sm font-semibold">Fully Random Twin</p>
                     <p className="text-xs text-muted-foreground">Surprise me with any role & random habits</p>

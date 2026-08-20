@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Digital Twin — Claymorphism Design System.
+ * Digital Twin — Claymorphism Design System with Minimal Subtle Accents.
  * Tactile 3D pillowy surfaces, dual inner highlights/shadows, sunken inset wells,
  * generous rounded geometry, and squishy micro-interactions.
  */
@@ -62,7 +62,7 @@
 :root {
   --radius: 1rem;
   
-  /* Palette: Soft Matte Clay */
+  /* Monochrome Foundation: Soft Matte Clay */
   --background: oklch(0.965 0.004 250);
   --foreground: oklch(0.18 0.01 250);
   --card: oklch(0.985 0.003 250);
@@ -77,19 +77,19 @@
   --muted-foreground: oklch(0.48 0.01 250);
   --accent: oklch(0.925 0.008 250);
   --accent-foreground: oklch(0.18 0.01 250);
-  --destructive: oklch(0.48 0.15 25);
+  --destructive: oklch(0.52 0.19 25);
   --destructive-foreground: oklch(1 0 0);
-  --success: oklch(0.45 0.12 145);
-  --warning: oklch(0.55 0.14 70);
+  --success: oklch(0.52 0.15 150);
+  --warning: oklch(0.65 0.16 65);
   --border: oklch(1 0 0 / 70%);
   --input: oklch(0.93 0.006 250);
   --ring: oklch(0.2 0.01 250);
   
-  --chart-1: oklch(0.22 0.01 250);
-  --chart-2: oklch(0.46 0.01 250);
-  --chart-3: oklch(0.62 0.01 250);
-  --chart-4: oklch(0.76 0.01 250);
-  --chart-5: oklch(0.88 0.01 250);
+  --chart-1: oklch(0.55 0.18 275);
+  --chart-2: oklch(0.52 0.15 150);
+  --chart-3: oklch(0.65 0.16 65);
+  --chart-4: oklch(0.56 0.19 305);
+  --chart-5: oklch(0.60 0.15 215);
   
   --sidebar: oklch(0.955 0.005 250);
   --sidebar-foreground: oklch(0.18 0.01 250);
@@ -99,6 +99,31 @@
   --sidebar-accent-foreground: oklch(0.18 0.01 250);
   --sidebar-border: oklch(1 0 0 / 60%);
   --sidebar-ring: oklch(0.2 0.01 250);
+
+  /* Minimal Accent Tokens (Light) */
+  --clay-emerald: #059669;
+  --clay-emerald-bg: rgba(16, 185, 129, 0.12);
+  --clay-emerald-border: rgba(16, 185, 129, 0.25);
+  
+  --clay-indigo: #4f46e5;
+  --clay-indigo-bg: rgba(99, 102, 241, 0.12);
+  --clay-indigo-border: rgba(99, 102, 241, 0.25);
+
+  --clay-amber: #d97706;
+  --clay-amber-bg: rgba(245, 158, 11, 0.12);
+  --clay-amber-border: rgba(245, 158, 11, 0.25);
+
+  --clay-purple: #9333ea;
+  --clay-purple-bg: rgba(168, 85, 247, 0.12);
+  --clay-purple-border: rgba(168, 85, 247, 0.25);
+
+  --clay-rose: #e11d48;
+  --clay-rose-bg: rgba(244, 63, 94, 0.12);
+  --clay-rose-border: rgba(244, 63, 94, 0.25);
+
+  --clay-cyan: #0891b2;
+  --clay-cyan-bg: rgba(6, 182, 212, 0.12);
+  --clay-cyan-border: rgba(6, 182, 212, 0.25);
   
   /* Clay Shadows: Soft floating elevation + 3D dual rim inflation */
   --clay-shadow: 
@@ -131,7 +156,7 @@
 }
 
 .dark {
-  /* Dark Slate Matte Clay */
+  /* Monochrome Foundation: Dark Slate Matte Clay */
   --background: oklch(0.12 0.01 250);
   --foreground: oklch(0.98 0 0);
   --card: oklch(0.16 0.01 250);
@@ -146,19 +171,19 @@
   --muted-foreground: oklch(0.68 0.01 250);
   --accent: oklch(0.22 0.01 250);
   --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.72 0.15 25);
-  --destructive-foreground: oklch(0.12 0.01 250);
-  --success: oklch(0.85 0.12 145);
-  --warning: oklch(0.82 0.14 70);
+  --destructive: oklch(0.68 0.20 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --success: oklch(0.75 0.16 150);
+  --warning: oklch(0.80 0.16 65);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(0.1 0.01 250);
   --ring: oklch(0.92 0 0);
   
-  --chart-1: oklch(0.98 0 0);
-  --chart-2: oklch(0.78 0.01 250);
-  --chart-3: oklch(0.62 0.01 250);
-  --chart-4: oklch(0.45 0.01 250);
-  --chart-5: oklch(0.32 0.01 250);
+  --chart-1: oklch(0.72 0.17 275);
+  --chart-2: oklch(0.75 0.16 150);
+  --chart-3: oklch(0.80 0.16 65);
+  --chart-4: oklch(0.75 0.18 305);
+  --chart-5: oklch(0.76 0.14 215);
   
   --sidebar: oklch(0.14 0.01 250);
   --sidebar-foreground: oklch(0.98 0 0);
@@ -168,6 +193,31 @@
   --sidebar-accent-foreground: oklch(0.98 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.92 0 0);
+
+  /* Minimal Accent Tokens (Dark) */
+  --clay-emerald: #34d399;
+  --clay-emerald-bg: rgba(16, 185, 129, 0.18);
+  --clay-emerald-border: rgba(52, 211, 153, 0.3);
+  
+  --clay-indigo: #818cf8;
+  --clay-indigo-bg: rgba(99, 102, 241, 0.18);
+  --clay-indigo-border: rgba(129, 140, 248, 0.3);
+
+  --clay-amber: #fbbf24;
+  --clay-amber-bg: rgba(245, 158, 11, 0.18);
+  --clay-amber-border: rgba(251, 191, 36, 0.3);
+
+  --clay-purple: #c084fc;
+  --clay-purple-bg: rgba(168, 85, 247, 0.18);
+  --clay-purple-border: rgba(192, 132, 252, 0.3);
+
+  --clay-rose: #fb7185;
+  --clay-rose-bg: rgba(244, 63, 94, 0.18);
+  --clay-rose-border: rgba(251, 113, 133, 0.3);
+
+  --clay-cyan: #38bdf8;
+  --clay-cyan-bg: rgba(6, 182, 212, 0.18);
+  --clay-cyan-border: rgba(56, 189, 248, 0.3);
   
   /* Dark Clay Shadows */
   --clay-shadow: 
@@ -283,6 +333,92 @@
 
 .clay-btn:active {
   transform: translateY(1px) scale(0.98);
+  box-shadow: var(--clay-inset);
+}
+
+/* Minimal Pastel Clay Badge Utilities */
+.clay-badge-emerald {
+  color: var(--clay-emerald);
+  background-color: var(--clay-emerald-bg);
+  border: 1px solid var(--clay-emerald-border);
+  box-shadow: var(--clay-shadow-sm);
+}
+
+.clay-badge-indigo {
+  color: var(--clay-indigo);
+  background-color: var(--clay-indigo-bg);
+  border: 1px solid var(--clay-indigo-border);
+  box-shadow: var(--clay-shadow-sm);
+}
+
+.clay-badge-amber {
+  color: var(--clay-amber);
+  background-color: var(--clay-amber-bg);
+  border: 1px solid var(--clay-amber-border);
+  box-shadow: var(--clay-shadow-sm);
+}
+
+.clay-badge-purple {
+  color: var(--clay-purple);
+  background-color: var(--clay-purple-bg);
+  border: 1px solid var(--clay-purple-border);
+  box-shadow: var(--clay-shadow-sm);
+}
+
+.clay-badge-rose {
+  color: var(--clay-rose);
+  background-color: var(--clay-rose-bg);
+  border: 1px solid var(--clay-rose-border);
+  box-shadow: var(--clay-shadow-sm);
+}
+
+.clay-badge-cyan {
+  color: var(--clay-cyan);
+  background-color: var(--clay-cyan-bg);
+  border: 1px solid var(--clay-cyan-border);
+  box-shadow: var(--clay-shadow-sm);
+}
+
+/* Minimal Clay Icon Wells */
+.clay-icon-emerald {
+  color: var(--clay-emerald);
+  background-color: var(--clay-emerald-bg);
+  border: 1px solid var(--clay-emerald-border);
+  box-shadow: var(--clay-inset);
+}
+
+.clay-icon-indigo {
+  color: var(--clay-indigo);
+  background-color: var(--clay-indigo-bg);
+  border: 1px solid var(--clay-indigo-border);
+  box-shadow: var(--clay-inset);
+}
+
+.clay-icon-amber {
+  color: var(--clay-amber);
+  background-color: var(--clay-amber-bg);
+  border: 1px solid var(--clay-amber-border);
+  box-shadow: var(--clay-inset);
+}
+
+.clay-icon-purple {
+  color: var(--clay-purple);
+  background-color: var(--clay-purple-bg);
+  border: 1px solid var(--clay-purple-border);
+  box-shadow: var(--clay-inset);
+}
+
+.clay-icon-rose {
+  color: var(--clay-rose);
+  background-color: var(--clay-rose-bg);
+  border: 1px solid var(--clay-rose-border);
+  box-shadow: var(--clay-inset);
+}
+
+.clay-icon-cyan {
+  color: var(--clay-cyan);
+  background-color: var(--clay-cyan-bg);
+  border: 1px solid var(--clay-cyan-border);
   box-shadow: var(--clay-inset);
 }
 

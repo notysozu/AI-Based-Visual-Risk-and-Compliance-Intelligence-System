@@ -206,15 +206,15 @@ function SetupPage() {
               <p className="mt-2 text-xs sm:text-sm text-muted-foreground">Select your persona. Your twin will adapt its questions, wealth vocabulary, task planner, and AI advice specifically for your journey.</p>
               <div className="mt-6 grid gap-3.5">
                 {[
-                  { id: "student", icon: GraduationCap, title: "Student", desc: "In school, college, or learning. Model study blocks, exam goals, habit streaks, and pocket money savings." },
-                  { id: "professional", icon: Briefcase, title: "Working Professional", desc: "Salaried career. Model monthly salary, 401(k) / retirement net worth, upskilling, and deep-work sprints." },
-                  { id: "freelancer", icon: Laptop, title: "Freelancer / Creator", desc: "Independent contractor or creator. Model variable client invoicing, emergency runway, and creative sprints." },
-                  { id: "entrepreneur", icon: Rocket, title: "Founder / Entrepreneur", desc: "Building a startup or business. Model founder runway, equity targets, intensive build cycles, and growth milestones." },
-                  { id: "retiree", icon: HeartHandshake, title: "Retiree / Senior", desc: "Preserve wealth, sustain pension drawdown, and protect daily health, hobbies, and peace of mind." },
+                  { id: "student", icon: GraduationCap, iconClass: "clay-icon-purple", title: "Student", desc: "In school, college, or learning. Model study blocks, exam goals, habit streaks, and pocket money savings." },
+                  { id: "professional", icon: Briefcase, iconClass: "clay-icon-indigo", title: "Working Professional", desc: "Salaried career. Model monthly salary, 401(k) / retirement net worth, upskilling, and deep-work sprints." },
+                  { id: "freelancer", icon: Laptop, iconClass: "clay-icon-amber", title: "Freelancer / Creator", desc: "Independent contractor or creator. Model variable client invoicing, emergency runway, and creative sprints." },
+                  { id: "entrepreneur", icon: Rocket, iconClass: "clay-icon-rose", title: "Founder / Entrepreneur", desc: "Building a startup or business. Model founder runway, equity targets, intensive build cycles, and growth milestones." },
+                  { id: "retiree", icon: HeartHandshake, iconClass: "clay-icon-emerald", title: "Retiree / Senior", desc: "Preserve wealth, sustain pension drawdown, and protect daily health, hobbies, and peace of mind." },
                 ].map((role) => (
                   <button key={role.id} type="button" onClick={() => handleSelectRole(role.id as UserRole)} className={`flex items-start gap-4 rounded-2xl border p-4 text-left cursor-pointer transition-all duration-150 ease-out active:scale-[0.98] ${draft.role === role.id ? "border-foreground bg-accent/70 shadow-[var(--clay-shadow)] translate-y-[-2px]" : "border-border/60 bg-card shadow-[var(--clay-shadow-sm)] hover:border-foreground/40 hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)]"}`}>
-                    <div className="rounded-xl bg-card p-2.5 border border-border/60 shadow-[var(--clay-shadow-sm)] shrink-0">
-                      <role.icon className="h-5 w-5 text-foreground" />
+                    <div className={`rounded-xl p-2.5 shrink-0 ${role.iconClass}`}>
+                      <role.icon className="h-5 w-5" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">

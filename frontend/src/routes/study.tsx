@@ -328,7 +328,7 @@ function StudyIntelligencePage() {
                     <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
                     <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}h`} />
                     <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v} hours`, "Study Duration"]} />
-                    <Bar dataKey="hours" fill="var(--color-foreground)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="hours" fill="#a855f7" radius={[8, 8, 0, 0]} barSize={34} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -346,13 +346,13 @@ function StudyIntelligencePage() {
                   { subject: "Database Systems", total_hours: 7.5, avg_focus: 8.1, sessions_count: 5 },
                   { subject: "Web Engineering", total_hours: 6.0, avg_focus: 8.5, sessions_count: 4 },
                 ]).map((subj: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between border-b border-border/60 pb-2.5 last:border-0">
+                  <div key={i} className="flex items-center justify-between border-b border-border/40 pb-2.5 last:border-0">
                     <div>
-                      <p className="text-sm font-medium">{subj.subject}</p>
-                      <p className="text-xs text-muted-foreground">{subj.sessions_count} sessions · {subj.avg_focus}/10 focus</p>
+                      <p className="text-sm font-bold text-foreground">{subj.subject}</p>
+                      <p className="text-xs text-muted-foreground">{subj.sessions_count} sessions · <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{subj.avg_focus}/10 focus</span></p>
                     </div>
                     <div className="text-right">
-                      <span className="font-mono text-sm font-semibold">{subj.total_hours}h</span>
+                      <span className="clay-badge-purple px-2 py-0.5 rounded-full font-mono text-xs font-bold">{subj.total_hours}h</span>
                     </div>
                   </div>
                 ))}
@@ -373,7 +373,7 @@ function StudyIntelligencePage() {
                     <p className="text-xs text-muted-foreground">Historical test/focus scores & 4-week forecast</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-accent font-medium capitalize">
+                    <span className="clay-badge-purple text-xs px-2.5 py-1 rounded-full font-bold capitalize">
                       Trend: {trendData.trend}
                     </span>
                   </div>
@@ -386,8 +386,8 @@ function StudyIntelligencePage() {
                       <XAxis dataKey="period" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
                       <YAxis domain={[50, 100]} stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
                       <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v}%`, "Performance Score"]} />
-                      <Line type="monotone" dataKey="score" stroke="var(--color-foreground)" strokeWidth={2} dot={{ r: 4 }} name="Historical Score" />
-                      <Line type="monotone" dataKey="projected" stroke="var(--color-muted-foreground)" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 4 }} name="Projected Trajectory" />
+                      <Line type="monotone" dataKey="score" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 4, fill: "#6366f1" }} name="Historical Score" />
+                      <Line type="monotone" dataKey="projected" stroke="#c084fc" strokeWidth={2.5} strokeDasharray="5 5" dot={{ r: 4, fill: "#c084fc" }} name="Projected Trajectory" />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -397,19 +397,19 @@ function StudyIntelligencePage() {
               <div className="panel p-6 space-y-4">
                 <h3 className="font-display text-sm font-semibold">Coursework & Exam Readiness Diagnosis</h3>
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="p-3.5 rounded-lg bg-accent/40 border border-border/60">
+                  <div className="p-3.5 rounded-2xl bg-input/80 border border-border/40 shadow-[var(--clay-inset)]">
                     <p className="label-xs">Target Exam Score</p>
-                    <p className="text-xl font-bold font-display mt-1">{targetScore}%</p>
+                    <p className="text-xl font-bold font-display mt-1 text-purple-600 dark:text-purple-400">{targetScore}%</p>
                     <p className="text-xs text-muted-foreground mt-0.5">Milestone target</p>
                   </div>
-                  <div className="p-3.5 rounded-lg bg-accent/40 border border-border/60">
+                  <div className="p-3.5 rounded-2xl bg-input/80 border border-border/40 shadow-[var(--clay-inset)]">
                     <p className="label-xs">Projected Exam Score</p>
-                    <p className="text-xl font-bold font-display mt-1">{projectedScore}%</p>
+                    <p className="text-xl font-bold font-display mt-1 text-indigo-600 dark:text-indigo-400">{projectedScore}%</p>
                     <p className="text-xs text-muted-foreground mt-0.5">Based on study pace</p>
                   </div>
-                  <div className="p-3.5 rounded-lg bg-accent/40 border border-border/60">
+                  <div className="p-3.5 rounded-2xl bg-input/80 border border-border/40 shadow-[var(--clay-inset)]">
                     <p className="label-xs">Recommended Daily Pace</p>
-                    <p className="text-xl font-bold font-display mt-1">{forecast?.readiness_analysis?.recommended_daily_minutes ?? 120} min</p>
+                    <p className="text-xl font-bold font-display mt-1 text-emerald-600 dark:text-emerald-400">{forecast?.readiness_analysis?.recommended_daily_minutes ?? 120} min</p>
                     <p className="text-xs text-muted-foreground mt-0.5">High-focus sprints</p>
                   </div>
                 </div>
@@ -426,6 +426,7 @@ function StudyIntelligencePage() {
                   label="Exam Readiness"
                   sublabel="Probability of hitting target"
                   warning={readinessPercent < 70}
+                  colorScheme="purple"
                   animating={forecastLoading}
                 />
               </div>

@@ -305,10 +305,10 @@ function SimulatorPage() {
                   <YAxis yAxisId="left" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={58} tickFormatter={(v) => `$${Math.round(v / 1000)}k`} />
                   <YAxis yAxisId="right" orientation="right" domain={[0, 10]} stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={26} />
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Line yAxisId="left" type="monotone" dataKey="netA" name="Net worth A" stroke="var(--color-foreground)" strokeWidth={2} dot={false} />
-                  <Line yAxisId="left" type="monotone" dataKey="netB" name="Net worth B" stroke="var(--color-muted-foreground)" strokeWidth={2} dot={false} />
-                  <Line yAxisId="right" type="monotone" dataKey="focusA" name="Focus A" stroke="var(--color-foreground)" strokeDasharray="3 3" strokeWidth={1.5} dot={false} />
-                  <Line yAxisId="right" type="monotone" dataKey="focusB" name="Focus B" stroke="var(--color-muted-foreground)" strokeDasharray="3 3" strokeWidth={1.5} dot={false} />
+                  <Line yAxisId="left" type="monotone" dataKey="netA" name="Scenario A (Net Worth)" stroke="#6366f1" strokeWidth={2.5} dot={false} />
+                  <Line yAxisId="left" type="monotone" dataKey="netB" name="Scenario B (Net Worth)" stroke="#10b981" strokeWidth={2.5} dot={false} />
+                  <Line yAxisId="right" type="monotone" dataKey="focusA" name="Scenario A (Focus)" stroke="#818cf8" strokeDasharray="3 3" strokeWidth={1.5} dot={false} />
+                  <Line yAxisId="right" type="monotone" dataKey="focusB" name="Scenario B (Focus)" stroke="#34d399" strokeDasharray="3 3" strokeWidth={1.5} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -318,7 +318,7 @@ function SimulatorPage() {
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <p className="label-xs">Twin advisor verdict</p>
               {burst && (
-                <span className="flex items-center gap-1 text-xs text-foreground animate-pulse-glow rounded-full px-2">
+                <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-bold animate-pulse-glow rounded-full px-2">
                   <CheckCircle2 className="h-4 w-4" /> adopted
                 </span>
               )}
@@ -334,17 +334,17 @@ function SimulatorPage() {
                   <div className="mt-2 space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">Scenario A:</span>
-                      <span className="font-semibold">{money(A.terminal)}</span>
+                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">{money(A.terminal)}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">Scenario B:</span>
-                      <span className="font-semibold">{money(B.terminal)}</span>
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">{money(B.terminal)}</span>
                     </div>
                   </div>
                 </div>
                 <div className="mt-3 pt-2 border-t border-border flex items-center justify-between">
                   <span className="text-xs text-muted-foreground font-semibold">Advantage:</span>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-muted text-foreground">
+                  <span className="clay-badge-emerald text-xs font-bold px-2.5 py-0.5 rounded-full">
                     Scenario {better} (+{money(gap)})
                   </span>
                 </div>
@@ -368,11 +368,11 @@ function SimulatorPage() {
                 </div>
                 <div className="mt-3 pt-2 border-t border-border flex items-center">
                   {worse.health < 5 ? (
-                    <span className="text-xs text-foreground flex items-center gap-1 font-semibold">
-                      <TriangleAlert className="h-3.5 w-3.5 text-foreground animate-pulse" /> Burnout risk warning
+                    <span className="text-xs text-rose-500 dark:text-rose-400 flex items-center gap-1 font-semibold">
+                      <TriangleAlert className="h-3.5 w-3.5 text-rose-500 animate-pulse" /> Burnout risk warning
                     </span>
                   ) : (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span className="clay-badge-emerald text-[11px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                       ✅ Safe health levels
                     </span>
                   )}
@@ -455,9 +455,11 @@ function ScenarioCard({
       }`}
     >
       <div className="flex items-center justify-between">
-        <p className="label-xs font-bold">Scenario {name}</p>
+        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${name === "A" ? "clay-badge-indigo" : "clay-badge-emerald"}`}>
+          Scenario {name}
+        </span>
         {warn && (
-          <span className="flex items-center gap-1 text-xs text-destructive font-semibold">
+          <span className="flex items-center gap-1 text-xs text-rose-500 dark:text-rose-400 font-semibold">
             <TriangleAlert className="h-3.5 w-3.5" /> Burnout risk
           </span>
         )}

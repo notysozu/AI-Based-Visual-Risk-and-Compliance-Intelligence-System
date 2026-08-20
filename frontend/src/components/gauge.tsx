@@ -9,6 +9,7 @@ type Props = {
   warning?: boolean;
   animating?: boolean;
   display?: string;
+  colorScheme?: "default" | "emerald" | "indigo" | "amber" | "purple" | "cyan";
 };
 
 export function Gauge({
@@ -20,11 +21,26 @@ export function Gauge({
   warning = false,
   animating = false,
   display,
+  colorScheme = "default",
 }: Props) {
   const pct = Math.max(0, Math.min(1, value / max));
   const r = size / 2 - 16;
   const c = 2 * Math.PI * r;
   const dash = useMemo(() => `${(c * pct * 0.75).toFixed(2)} ${c}`, [c, pct]);
+
+  const strokeColor = warning
+    ? "text-rose-500 dark:text-rose-400"
+    : colorScheme === "emerald"
+    ? "text-emerald-600 dark:text-emerald-400"
+    : colorScheme === "indigo"
+    ? "text-indigo-600 dark:text-indigo-400"
+    : colorScheme === "amber"
+    ? "text-amber-500 dark:text-amber-400"
+    : colorScheme === "purple"
+    ? "text-purple-600 dark:text-purple-400"
+    : colorScheme === "cyan"
+    ? "text-cyan-600 dark:text-cyan-400"
+    : "text-foreground";
 
   return (
     <div className="flex max-w-full flex-col items-center">
@@ -52,7 +68,7 @@ export function Gauge({
             r={r}
             fill="none"
             stroke="currentColor"
-            className={warning ? "text-amber-500" : "text-foreground"}
+            className={strokeColor}
             strokeWidth={12}
             strokeDasharray={dash}
             strokeLinecap="round"

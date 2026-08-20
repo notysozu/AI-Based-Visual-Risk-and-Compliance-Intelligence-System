@@ -303,27 +303,27 @@ function AnalyticsPage() {
         {/* Large Simplified Metric Cards */}
         <div className="grid gap-3 sm:grid-cols-5 mt-5">
           <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Sleep 🛌</span>
+            <span className="clay-badge-indigo inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">Sleep 🛌</span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.sleep}h</p>
             <span className="text-[10px] text-muted-foreground">Avg / night</span>
           </div>
           <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Screen 📱</span>
+            <span className="clay-badge-amber inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">Screen 📱</span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.screen}h</p>
             <span className="text-[10px] text-muted-foreground">Avg / day</span>
           </div>
           <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">{cfg.studyLabel} 📚</span>
+            <span className="clay-badge-purple inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">{cfg.studyLabel} 📚</span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.study}h</p>
             <span className="text-[10px] text-muted-foreground">Avg / day</span>
           </div>
           <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Exercise 🏃</span>
+            <span className="clay-badge-emerald inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">Exercise 🏃</span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.exercise}m</p>
             <span className="text-[10px] text-muted-foreground">Avg / day</span>
           </div>
           <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] text-center hover:-translate-y-0.5 hover:shadow-[var(--clay-shadow)] transition-all">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Mood 😊</span>
+            <span className="clay-badge-rose inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">Mood 😊</span>
             <p className="text-xl font-bold mt-1 font-display">{avgStats.mood}/10</p>
             <span className="text-[10px] text-muted-foreground">Avg rating</span>
           </div>
@@ -332,7 +332,7 @@ function AnalyticsPage() {
         {/* AI Explanatory Narrative */}
         <div className="mt-5 rounded-2xl bg-input p-5 border border-border/30 shadow-[var(--clay-inset)]">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-2 h-4 bg-primary rounded-full shadow-[var(--clay-btn-primary)]" />
+            <div className="w-2 h-4 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
             <p className="text-xs font-bold uppercase tracking-wider text-foreground">
               AI Analysis Summary
             </p>
@@ -354,7 +354,7 @@ function AnalyticsPage() {
             <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
             <YAxis domain={[0, 10]} stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={26} />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
-            <Bar dataKey="Avg Focus" fill="var(--color-foreground)" radius={[8, 8, 0, 0]} barSize={36} />
+            <Bar dataKey="Avg Focus" fill="#6366f1" radius={[8, 8, 0, 0]} barSize={36} />
           </BarChart>
         </ChartCard>
 
@@ -364,7 +364,7 @@ function AnalyticsPage() {
             <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
             <YAxis domain={[0, 10]} stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={26} />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
-            <Bar dataKey="Avg Mood" fill="var(--color-muted-foreground)" radius={[8, 8, 0, 0]} barSize={36} />
+            <Bar dataKey="Avg Mood" fill="#f59e0b" radius={[8, 8, 0, 0]} barSize={36} />
           </BarChart>
         </ChartCard>
       </div>
@@ -379,11 +379,11 @@ function AnalyticsPage() {
                 key={l.id}
                 className={`flex aspect-square flex-col items-center justify-center rounded-2xl border text-xs transition-all duration-150 ${
                   hit
-                    ? "border-emerald-500/40 bg-accent shadow-[var(--clay-shadow-sm)] text-foreground font-semibold"
+                    ? "clay-badge-emerald font-bold"
                     : "border-border/40 bg-input shadow-[var(--clay-inset)] text-muted-foreground"
                 }`}
               >
-                {hit ? <Check className="h-4 w-4 text-emerald-500 stroke-[3]" /> : <span>—</span>}
+                {hit ? <Check className="h-4 w-4 stroke-[3]" /> : <span>—</span>}
                 <span className="mt-1 font-mono text-[10px]">{l.date.slice(5)}</span>
               </div>
             );

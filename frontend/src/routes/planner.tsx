@@ -68,6 +68,16 @@ function PlannerPage() {
     toast.success("Task added to today's plan");
   };
 
+  function getCategoryBadgeClass(category: string) {
+    const c = category.toLowerCase();
+    if (c.includes("study") || c.includes("exam") || c.includes("reading") || c.includes("coursework")) return "clay-badge-purple";
+    if (c.includes("deep") || c.includes("work") || c.includes("build") || c.includes("pitch")) return "clay-badge-indigo";
+    if (c.includes("health") || c.includes("gym") || c.includes("walk") || c.includes("exercise") || c.includes("wellness")) return "clay-badge-emerald";
+    if (c.includes("finance") || c.includes("invoice") || c.includes("budget") || c.includes("invest")) return "clay-badge-amber";
+    if (c.includes("admin") || c.includes("chores")) return "clay-badge-amber";
+    return "clay-badge-cyan";
+  }
+
   return (
     <AppShell
       title="Today's Plan"
@@ -80,41 +90,44 @@ function PlannerPage() {
               Nothing planned yet. Add a task, or adopt a suggestion to drop it straight in here.
             </p>
           )}
-          {todays.map((t) => (
-            <div
-              key={t.id}
-              className="flex items-center gap-4 p-3.5 rounded-2xl border border-border/40 bg-card shadow-[var(--clay-shadow-sm)] hover:shadow-[var(--clay-shadow)] hover:-translate-y-0.5 transition-all duration-150"
-            >
-              <Checkbox checked={t.done} onCheckedChange={() => toggleTask(t.id)} />
-              <div className="w-14 shrink-0 font-display text-sm font-bold tabular-nums">
-                {t.start}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className={`truncate text-sm font-medium ${t.done ? "text-muted-foreground line-through opacity-70" : "text-foreground"}`}>
-                  {t.title}
-                </p>
-                <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="rounded-full border border-border/40 bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground shadow-[var(--clay-shadow-sm)]">
-                    {t.category}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {t.minutes}m
-                  </span>
-                  {t.fromSuggestion && <span className="italic text-[11px]">from suggestions</span>}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-xl text-muted-foreground hover:text-destructive"
-                onClick={() => removeTask(t.id)}
-                aria-label="Delete task"
+          {todays.map((t) => {
+            const badgeClass = getCategoryBadgeClass(t.category);
+            return (
+              <div
+                key={t.id}
+                className="flex items-center gap-4 p-3.5 rounded-2xl border border-border/40 bg-card shadow-[var(--clay-shadow-sm)] hover:shadow-[var(--clay-shadow)] hover:-translate-y-0.5 transition-all duration-150"
               >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
+                <Checkbox checked={t.done} onCheckedChange={() => toggleTask(t.id)} />
+                <div className="w-14 shrink-0 font-display text-sm font-bold tabular-nums">
+                  {t.start}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={`truncate text-sm font-medium ${t.done ? "text-muted-foreground line-through opacity-70" : "text-foreground"}`}>
+                    {t.title}
+                  </p>
+                  <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${badgeClass}`}>
+                      {t.category}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {t.minutes}m
+                    </span>
+                    {t.fromSuggestion && <span className="italic text-[11px] text-indigo-500 dark:text-indigo-400">from suggestions</span>}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-xl text-muted-foreground hover:text-destructive"
+                  onClick={() => removeTask(t.id)}
+                  aria-label="Delete task"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            );
+          })}
         </div>
 
         <div className="space-y-5">
@@ -170,18 +183,19 @@ function PlannerPage() {
             <div className="mt-4 space-y-1.5">
               {Array.from({ length: 16 }, (_, i) => i + 6).map((hour) => {
                 const slot = todays.find((t) => Number(t.start.slice(0, 2)) === hour);
+                const slotBadge = slot ? getCategoryBadgeClass(slot.category) : "";
                 return (
                   <div key={hour} className="flex items-center gap-3 text-xs">
                     <span className="w-8 text-muted-foreground font-mono tabular-nums">{`${hour}`.padStart(2, "0")}</span>
                     <div
                       className={`h-7 flex-1 rounded-xl px-3 text-[11px] leading-7 transition-all flex items-center justify-between ${
                         slot
-                          ? "bg-accent/80 border border-border/60 shadow-[var(--clay-shadow-sm)] font-medium text-foreground"
+                          ? `${slotBadge} font-semibold text-foreground`
                           : "bg-input/60 border border-border/20 shadow-[var(--clay-inset)] text-muted-foreground/60"
                       }`}
                     >
                       <span className="truncate">{slot ? slot.title : ""}</span>
-                      {slot?.done && <Check className="h-3 w-3 text-foreground shrink-0" />}
+                      {slot?.done && <Check className="h-3 w-3 stroke-[3] shrink-0" />}
                     </div>
                   </div>
                 );
