@@ -101,6 +101,7 @@ export function getStudyForecast(userId: string | number, targetScore: number = 
   return request(`/study/forecast/${userId}?target_score=${targetScore}`);
 }
 
+/** Generate AI 7-day optimized study plan */
 export function generateStudyPlan(userId: string | number, payload: { target_milestone?: string; force_refresh?: boolean }) {
   return request(`/study/generate-plan/${userId}`, {
     method: "POST",
