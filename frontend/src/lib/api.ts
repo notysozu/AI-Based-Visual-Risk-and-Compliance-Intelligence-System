@@ -78,8 +78,8 @@ export function getAnalyticsSummary(userId: string | number, payload: { logs: an
   });
 }
 
-export function getWealthAdvice(userId: string | number) {
-  return request(`/simulations/wealth-advice/${userId}`);
+export function getWealthAdvice(userId: string | number, force: boolean = false) {
+  return request(`/simulations/wealth-advice/${userId}${force ? "?force=true" : ""}`);
 }
 
 export function getUser(userId: string | number) {

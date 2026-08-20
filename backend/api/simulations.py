@@ -80,13 +80,13 @@ def get_forecasts(user_id: int, db: Session = Depends(database.get_db)):
     }
 
 @router.get("/wealth-advice/{user_id}")
-def get_wealth_advice(user_id: int, db: Session = Depends(database.get_db)):
+def get_wealth_advice(user_id: int, force: bool = False, db: Session = Depends(database.get_db)):
     """
     Get an AI-generated prediction/narrative interpreting the Monte Carlo
     and deterministic forecasts for this user. The underlying numbers are
     still computed statistically (same as /forecast) — Groq is used only
     to interpret and explain them in plain language, not to generate them.
-    If the success probability remains the same, cached advice is returned immediately.
+    If the success probability remains the same and force is False, cached advice is returned immediately.
     """
     user = crud.get_user(db, user_id)
     if not user:
@@ -119,8 +119,16 @@ def get_wealth_advice(user_id: int, db: Session = Depends(database.get_db)):
     prob_success = float(hits) / len(final_values)
     rounded_odds = round(prob_success, 2)
 
-    # Check if success odds are the same and we have cached advice
-    if user.last_success_odds is not None and abs(user.last_success_odds - rounded_odds) < 0.001 and user.last_wealth_prediction:
+    # Check if success odds are the same and we have cached advice (unless force is requested)
+    has_valid_cache = (
+        not force
+        and user.last_success_odds is not None
+        and abs(user.last_success_odds - rounded_odds) < 0.001
+        and user.last_wealth_prediction
+        and "🤖" not in user.last_wealth_prediction
+    )
+
+    if has_valid_cache:
         return {
             "advice": user.last_wealth_prediction,
             "probability_of_success": prob_success,

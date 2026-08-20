@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Sparkles, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Gauge } from "@/components/gauge";
@@ -147,25 +148,41 @@ function WealthPage() {
   const success = forecast ? Math.round(forecast.probability_of_success * 100) : 0;
 
   const handleGetPrediction = async () => {
-    if (p.id === null || p.id === undefined) {
-      toast.error("Sign in first");
-      return;
-    }
+    const userId = p.id ?? 1;
     setAdviceLoading(true);
     setAdviceError(null);
     try {
-      // 1. Save targets to settings (which runs database update automatically)
+      // 1. Direct DB target update for backend computation
+      try {
+        await updateUser(userId, {
+          retirement_goal_age: targets.targetAge,
+          target_net_worth: targets.targetNetWorth,
+        });
+      } catch (err) {
+        console.warn("Direct DB user update fallback:", err);
+      }
+
+      // 2. Save targets to local twin state
       await updateProfile({
         targetAge: targets.targetAge,
         targetNetWorth: targets.targetNetWorth,
       });
-      // 2. Load forecast (refreshes chart data in background)
+
+      // 3. Re-run forecast Monte Carlo projection
       await loadForecast();
-      // 3. Get AI prediction (cache-checked in backend)
-      const result = await getWealthAdvice(p.id);
+
+      // 4. Get fresh AI prediction (with force=true)
+      const result = await getWealthAdvice(userId, true);
       setAdvice(result.advice);
       setAdviceProbability(result.probability_of_success);
-      toast.success("Prediction updated");
+
+      // 5. Store prediction into profile cache
+      await updateProfile({
+        lastWealthPrediction: result.advice,
+        lastSuccessOdds: result.probability_of_success,
+      });
+
+      toast.success("Wealth prediction generated");
     } catch (e: any) {
       const msg = e.message || "Failed to get prediction";
       setAdviceError(msg);
