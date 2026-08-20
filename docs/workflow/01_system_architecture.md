@@ -57,3 +57,8 @@ Digital Twin AI is a decoupled, full-stack decision-support system designed to m
 - **Forecasting Module** (`ai_engine/forecasting/`): Deterministic compound interest modeling and 500-iteration Monte Carlo stochastic simulations.
 - **Simulation Module** (`ai_engine/simulation/`): Multi-scenario lifestyle modification engine computing biological tradeoffs (Sleep vs Health Index vs Focus Rating).
 - **LLM Advisor** (`ai_engine/llm_integration/advisor.py`): Groq-integrated LLaMA 3.1 inference engine with fallback rule-based decision trees.
+
+
+## 5. Database Indexing & Query Optimizations
+- Indexed `habit_records.created_at` and `study_records.user_id` for fast 30-day baseline retrievals.
+- Optimized categorical lookups across financial transactions and user suggestions.
