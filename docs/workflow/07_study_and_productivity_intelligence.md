@@ -65,3 +65,8 @@ where $\bar{G}$ is average day gap and $G_{\text{max}}$ is maximum day gap betwe
 | `POST` | `/study/generate-plan/{user_id}` | AI-generated 7-day optimized study plan with caching |
 | `POST` | `/study/log/{user_id}` | Log a completed study session with focus and optional test score |
 | `GET` | `/study/logs/{user_id}` | Fetch historical study log records |
+
+
+## 7. Exam Score Readiness Model
+- Weights recent practice exam scores ($60\%$) with weekly study consistency ($40\%$).
+- Accurately projects milestone target attainment.
