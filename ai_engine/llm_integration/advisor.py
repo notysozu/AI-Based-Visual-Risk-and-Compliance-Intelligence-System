@@ -289,6 +289,7 @@ class DigitalTwinAdvisor:
         return self.ask(user_message + scenario_context)
 
 
+# Fallback wealth rule engine
 def get_rule_based_wealth_advice(
     user_info: Dict[str, Any],
     baseline: Dict[str, Any],
