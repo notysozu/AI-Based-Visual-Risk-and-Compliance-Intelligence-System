@@ -24,6 +24,7 @@ import {
   Flame,
   Clock,
   Award,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +43,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Gauge } from "@/components/gauge";
 import { useGuard } from "@/lib/use-guard";
-import { useTwin, getRoleConfig } from "@/lib/twin-store";
+import { useTwin, getRoleConfig, today } from "@/lib/twin-store";
 import {
   getStudyAnalytics,
   getStudyForecast,
@@ -87,6 +88,7 @@ function StudyIntelligencePage() {
   const [plan, setPlan] = useState<any>(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [targetMilestone, setTargetMilestone] = useState<string>("Upcoming Midterms & Finals");
+  const [adoptedBlockKeys, setAdoptedBlockKeys] = useState<string[]>([]);
 
   // Log session modal
   const [logModalOpen, setLogModalOpen] = useState(false);
@@ -164,16 +166,41 @@ function StudyIntelligencePage() {
     }
   };
 
-  // Adopt a study block into Today's Planner
-  const handleAdoptBlock = (block: any) => {
+  // Adopt a single study block into Today's Planner
+  const handleAdoptBlock = (block: any, key: string) => {
     addTask({
       title: block.task_title || `${block.subject} Study Sprint`,
       start: block.start_time || "08:30",
       minutes: block.duration_minutes || 60,
       category: "Study",
       done: false,
+      date: today(),
     });
-    toast.success(`"${block.task_title}" added to Today's Plan!`);
+    setAdoptedBlockKeys((prev) => [...prev, key]);
+    toast.success(`"${block.task_title || block.subject}" added to Today's Plan!`);
+  };
+
+  // Adopt all study blocks for a day into Today's Planner
+  const handleAdoptAllDayBlocks = (dayPlan: any, dayIndex: number) => {
+    if (!dayPlan.blocks || dayPlan.blocks.length === 0) return;
+    dayPlan.blocks.forEach((block: any, j: number) => {
+      const key = `${dayIndex}-${j}`;
+      if (!adoptedBlockKeys.includes(key)) {
+        addTask({
+          title: block.task_title || `${block.subject} Study Sprint`,
+          start: block.start_time || "08:30",
+          minutes: block.duration_minutes || 60,
+          category: "Study",
+          done: false,
+          date: today(),
+        });
+      }
+    });
+    setAdoptedBlockKeys((prev) => [
+      ...prev,
+      ...dayPlan.blocks.map((_: any, j: number) => `${dayIndex}-${j}`),
+    ]);
+    toast.success(`All ${dayPlan.day} sprints added to Today's Plan!`);
   };
 
   if (!ok) return null;
@@ -537,10 +564,20 @@ function StudyIntelligencePage() {
                       return (
                         <div key={i} className="panel p-4 space-y-3 shadow-[var(--clay-shadow-sm)] hover:shadow-[var(--clay-shadow)] hover:-translate-y-1 transition-all duration-150">
                           <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${dayColorClass}`}>{dayPlan.day}</span>
-                            <span className="text-xs font-mono text-muted-foreground">
-                              {dayPlan.blocks?.reduce((acc: number, b: any) => acc + (b.duration_minutes || 0), 0)} min
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${dayColorClass}`}>{dayPlan.day}</span>
+                              <span className="text-xs font-mono text-muted-foreground">
+                                {dayPlan.blocks?.reduce((acc: number, b: any) => acc + (b.duration_minutes || 0), 0)}m
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleAdoptAllDayBlocks(dayPlan, i)}
+                              className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold hover:underline cursor-pointer"
+                              title="Add all blocks for this day to today's task planner"
+                            >
+                              + Add Day
+                            </button>
                           </div>
 
                           <div className="space-y-2.5">
@@ -552,6 +589,7 @@ function StudyIntelligencePage() {
                                   : typeLower.includes("recall") || typeLower.includes("flash")
                                   ? "clay-badge-purple"
                                   : "clay-badge-emerald";
+                              const isAdopted = adoptedBlockKeys.includes(`${i}-${j}`);
 
                               return (
                                 <div key={j} className="p-3 rounded-2xl bg-input/70 border border-border/40 shadow-[var(--clay-inset)] text-xs space-y-2">
@@ -565,12 +603,24 @@ function StudyIntelligencePage() {
                                       {block.focus_type}
                                     </span>
                                     <Button
-                                      variant="outline"
+                                      variant={isAdopted ? "secondary" : "outline"}
                                       size="sm"
-                                      className="h-7 text-[11px] px-2.5 rounded-xl text-foreground font-semibold hover:border-foreground/60"
-                                      onClick={() => handleAdoptBlock(block)}
+                                      disabled={isAdopted}
+                                      className={`h-7 text-[11px] px-2.5 rounded-xl font-semibold transition-all ${
+                                        isAdopted
+                                          ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                                          : "text-foreground hover:border-foreground/60 shadow-[var(--clay-shadow-sm)]"
+                                      }`}
+                                      onClick={() => handleAdoptBlock(block, `${i}-${j}`)}
                                     >
-                                      <span>+ Add to Tasks</span>
+                                      {isAdopted ? (
+                                        <span className="flex items-center gap-1">
+                                          <Check className="h-3 w-3 text-emerald-500" />
+                                          <span>In Plan</span>
+                                        </span>
+                                      ) : (
+                                        <span>+ Add to Tasks</span>
+                                      )}
                                     </Button>
                                   </div>
                                 </div>

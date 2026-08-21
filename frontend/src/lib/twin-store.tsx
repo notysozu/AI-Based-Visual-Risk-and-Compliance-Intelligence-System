@@ -913,7 +913,12 @@ export function TwinProvider({ children }: { children: ReactNode }) {
   };
 
   const addTask = (task: Omit<Task, "id">) => {
-    const withId: Task = { ...task, id: `${task.date}-${Date.now()}` };
+    const taskDate = task.date || today();
+    const withId: Task = {
+      ...task,
+      date: taskDate,
+      id: `${taskDate}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    };
     setState((s) => ({ ...s, tasks: [...s.tasks, withId] }));
   };
 
