@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { createUser, getUserByUsername, getForecast, getUser, updateUser, adoptSuggestionApi } from "@/lib/api";
+import { createUser, getUserByUsername, getDefaultUser, getForecast, getUser, updateUser, adoptSuggestionApi } from "@/lib/api";
 
 // --- Types ---
 
@@ -995,9 +995,8 @@ export function TwinProvider({ children }: { children: ReactNode }) {
   const loadDemo = async (role: UserRole = "professional", randomize = false) => {
     let demoUserId: number = 1;
     try {
-      const res = await fetch("http://localhost:8000/users/default");
-      if (res.ok) {
-        const user = await res.json();
+      const user = await getDefaultUser();
+      if (user?.id) {
         demoUserId = user.id;
       }
     } catch (err) {
@@ -1006,13 +1005,16 @@ export function TwinProvider({ children }: { children: ReactNode }) {
 
     const demoProfile = buildDemoProfile(role, randomize);
     demoProfile.id = demoUserId;
+    demoProfile.onboarded = true;
 
-    // Sync demo profile to backend
+    // Sync demo profile to backend asynchronously without blocking UI navigation
     try {
       const payload = mapProfileToBackend(demoProfile);
-      await updateUser(demoUserId, payload);
+      updateUser(demoUserId, payload).catch((e) =>
+        console.warn("Failed to sync demo profile to backend:", e)
+      );
     } catch (e) {
-      console.warn("Failed to sync demo profile to backend:", e);
+      console.warn("Failed to map demo profile for backend:", e);
     }
 
     const demoLogs = generateDemoLogs(30, role);
@@ -1026,13 +1028,14 @@ export function TwinProvider({ children }: { children: ReactNode }) {
       forecastError: null,
     }));
 
-    // Immediately fetch updated forecast for this demo role
-    try {
-      const data: ForecastResult = await getForecast(demoUserId);
-      setState((s) => ({ ...s, forecast: data, forecastLoading: false }));
-    } catch (err) {
-      console.warn("Failed to load initial forecast for demo twin:", err);
-    }
+    // Load updated forecast in the background
+    getForecast(demoUserId)
+      .then((data) => {
+        setState((s) => ({ ...s, forecast: data, forecastLoading: false }));
+      })
+      .catch((err) => {
+        console.warn("Failed to load initial forecast for demo twin:", err);
+      });
   };
 
   const loadForecast = async () => {

@@ -212,24 +212,65 @@ function AuthPage() {
           </Tabs>
 
           {/* Dedicated Demo Twin Multi-Role Dropdown Selector */}
+          {/* Dedicated Demo Twin Multi-Role Dropdown & Direct Grid */}
           <div className="mt-6">
             <div className="relative mb-4">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-border/60" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2.5 text-muted-foreground font-semibold">Or explore demo personas</span>
+                <span className="bg-card px-2.5 text-muted-foreground font-semibold">Or explore 1-click demo twins</span>
               </div>
+            </div>
+
+            {/* Direct 1-Click Quick Demo Badges */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+              {[
+                { role: "student", label: "Student", icon: GraduationCap, color: "clay-icon-purple" },
+                { role: "professional", label: "Professional", icon: Briefcase, color: "clay-icon-indigo" },
+                { role: "freelancer", label: "Freelancer", icon: Laptop, color: "clay-icon-amber" },
+                { role: "entrepreneur", label: "Founder", icon: Rocket, color: "clay-icon-rose" },
+                { role: "retiree", label: "Retiree", icon: HeartHandshake, color: "clay-icon-emerald" },
+              ].map((item) => (
+                <Button
+                  key={item.role}
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  disabled={!!loadingRole}
+                  onClick={() => handleLoadDemoRole(item.role as UserRole, false)}
+                  className="h-10 text-xs rounded-xl shadow-[var(--clay-shadow-sm)] hover:border-foreground/40 hover:-translate-y-0.5 transition-all flex items-center justify-start gap-2 px-2.5"
+                >
+                  <div className={`p-1 rounded-lg shrink-0 ${item.color}`}>
+                    <item.icon className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="font-semibold truncate">{item.label}</span>
+                </Button>
+              ))}
+
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                disabled={!!loadingRole}
+                onClick={handleLoadFullyRandom}
+                className="h-10 text-xs rounded-xl shadow-[var(--clay-shadow-sm)] bg-accent/40 hover:bg-accent hover:-translate-y-0.5 transition-all flex items-center justify-start gap-2 px-2.5"
+              >
+                <div className="p-1 rounded-lg shrink-0 clay-icon-cyan">
+                  <Dices className="h-3.5 w-3.5" />
+                </div>
+                <span className="font-semibold truncate">Random Twin</span>
+              </Button>
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="lg" className="w-full flex items-center justify-between" disabled={!!loadingRole}>
+                <Button variant="outline" size="sm" className="w-full h-8 text-xs flex items-center justify-between text-muted-foreground hover:text-foreground" disabled={!!loadingRole}>
                   <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-foreground" />
-                    <span>{loadingRole ? "Loading Demo..." : "Load Demo Twin"}</span>
+                    <Sparkles className="h-3.5 w-3.5 text-foreground" />
+                    <span>{loadingRole ? "Loading Demo..." : "More Demo Options & Randomizers"}</span>
                   </div>
-                  <ChevronDown className="h-4 w-4 opacity-60" />
+                  <ChevronDown className="h-3.5 w-3.5 opacity-60" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-80 p-1.5" align="center">
@@ -239,6 +280,7 @@ function AuthPage() {
                 <DropdownMenuGroup>
                   <DropdownMenuItem
                     className="flex items-center gap-2.5 py-2 cursor-pointer"
+                    onSelect={() => handleLoadDemoRole("student", false)}
                     onClick={() => handleLoadDemoRole("student", false)}
                   >
                     <div className="clay-icon-purple p-1.5 rounded-xl shrink-0">
@@ -251,6 +293,7 @@ function AuthPage() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex items-center gap-2.5 py-2 cursor-pointer"
+                    onSelect={() => handleLoadDemoRole("professional", false)}
                     onClick={() => handleLoadDemoRole("professional", false)}
                   >
                     <div className="clay-icon-indigo p-1.5 rounded-xl shrink-0">
@@ -263,6 +306,7 @@ function AuthPage() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex items-center gap-2.5 py-2 cursor-pointer"
+                    onSelect={() => handleLoadDemoRole("freelancer", false)}
                     onClick={() => handleLoadDemoRole("freelancer", false)}
                   >
                     <div className="clay-icon-amber p-1.5 rounded-xl shrink-0">
@@ -275,6 +319,7 @@ function AuthPage() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex items-center gap-2.5 py-2 cursor-pointer"
+                    onSelect={() => handleLoadDemoRole("entrepreneur", false)}
                     onClick={() => handleLoadDemoRole("entrepreneur", false)}
                   >
                     <div className="clay-icon-rose p-1.5 rounded-xl shrink-0">
@@ -287,6 +332,7 @@ function AuthPage() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex items-center gap-2.5 py-2 cursor-pointer"
+                    onSelect={() => handleLoadDemoRole("retiree", false)}
                     onClick={() => handleLoadDemoRole("retiree", false)}
                   >
                     <div className="clay-icon-emerald p-1.5 rounded-xl shrink-0">
@@ -307,6 +353,7 @@ function AuthPage() {
                 <DropdownMenuGroup>
                   <DropdownMenuItem
                     className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+                    onSelect={() => handleLoadDemoRole("student", true)}
                     onClick={() => handleLoadDemoRole("student", true)}
                   >
                     <GraduationCap className="h-3.5 w-3.5 text-purple-500 shrink-0" />
@@ -314,6 +361,7 @@ function AuthPage() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+                    onSelect={() => handleLoadDemoRole("professional", true)}
                     onClick={() => handleLoadDemoRole("professional", true)}
                   >
                     <Briefcase className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
@@ -321,6 +369,7 @@ function AuthPage() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+                    onSelect={() => handleLoadDemoRole("freelancer", true)}
                     onClick={() => handleLoadDemoRole("freelancer", true)}
                   >
                     <Laptop className="h-3.5 w-3.5 text-amber-500 shrink-0" />
@@ -328,6 +377,7 @@ function AuthPage() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+                    onSelect={() => handleLoadDemoRole("entrepreneur", true)}
                     onClick={() => handleLoadDemoRole("entrepreneur", true)}
                   >
                     <Rocket className="h-3.5 w-3.5 text-rose-500 shrink-0" />
@@ -335,6 +385,7 @@ function AuthPage() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex items-center gap-2 py-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+                    onSelect={() => handleLoadDemoRole("retiree", true)}
                     onClick={() => handleLoadDemoRole("retiree", true)}
                   >
                     <HeartHandshake className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
@@ -346,6 +397,7 @@ function AuthPage() {
 
                 <DropdownMenuItem
                   className="flex items-center gap-2.5 py-2 cursor-pointer font-medium bg-accent/40 hover:bg-accent"
+                  onSelect={handleLoadFullyRandom}
                   onClick={handleLoadFullyRandom}
                 >
                   <div className="clay-icon-cyan p-1.5 rounded-xl shrink-0">

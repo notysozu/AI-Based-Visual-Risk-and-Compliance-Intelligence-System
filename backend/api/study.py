@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from fastapi import APIRouter # Academic & Study Intelligence API, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import database, crud, schemas, models
 from ai_engine.forecasting import study

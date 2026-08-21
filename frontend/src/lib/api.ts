@@ -20,6 +20,10 @@ export function getUserByUsername(username: string) {
   return request(`/users/username/${encodeURIComponent(username)}`);
 }
 
+export function getDefaultUser() {
+  return request("/users/default");
+}
+
 export function getUserByEmail(email: string) {
   return request(`/users/email/${encodeURIComponent(email)}`);
 }
