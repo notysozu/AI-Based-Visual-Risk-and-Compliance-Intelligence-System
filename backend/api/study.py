@@ -63,6 +63,25 @@ def get_study_forecast(
     }
 
 
+@router.get("/plan/{user_id}")
+def get_study_plan_endpoint(user_id: int, db: Session = Depends(database.get_db)):
+    """
+    Retrieve the current saved/persisted 7-day study plan for the user.
+    """
+    user = crud.get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.last_study_plan:
+        try:
+            cached = json.loads(user.last_study_plan)
+            if "daily_plans" in cached and "weekly_goal" in cached:
+                return cached
+        except Exception:
+            pass
+    return None
+
+
 @router.post("/generate-plan/{user_id}", response_model=schemas.StudyPlanResponse)
 def generate_study_plan_endpoint(
     user_id: int, 

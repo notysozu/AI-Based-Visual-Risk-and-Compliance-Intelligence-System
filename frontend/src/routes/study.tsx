@@ -47,6 +47,7 @@ import { useTwin, getRoleConfig, today } from "@/lib/twin-store";
 import {
   getStudyAnalytics,
   getStudyForecast,
+  getSavedStudyPlan,
   generateStudyPlan,
   logStudySession,
 } from "@/lib/api";
@@ -84,8 +85,16 @@ function StudyIntelligencePage() {
   const [forecast, setForecast] = useState<any>(null);
   const [forecastLoading, setForecastLoading] = useState(false);
 
-  // AI Plan data
-  const [plan, setPlan] = useState<any>(null);
+  // AI Plan data - initialize from localStorage if available
+  const [plan, setPlan] = useState<any>(() => {
+    if (typeof window === "undefined" || !p.id) return null;
+    try {
+      const cached = localStorage.getItem(`study_plan_${p.id}`);
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [planLoading, setPlanLoading] = useState(false);
   const [targetMilestone, setTargetMilestone] = useState<string>("Upcoming Midterms & Finals");
   const [adoptedBlockKeys, setAdoptedBlockKeys] = useState<string[]>([]);
@@ -99,7 +108,7 @@ function StudyIntelligencePage() {
   const [logNotes, setLogNotes] = useState("");
   const [logging, setLogging] = useState(false);
 
-  // Fetch analytics and forecast on mount
+  // Fetch analytics, forecast, and saved study plan on mount
   useEffect(() => {
     if (!p.id) return;
     
@@ -114,6 +123,18 @@ function StudyIntelligencePage() {
       .then((data) => setForecast(data))
       .catch((err) => console.warn("Failed to load study forecast:", err))
       .finally(() => setForecastLoading(false));
+
+    // Automatically load persisted study plan from backend database or cache
+    getSavedStudyPlan(p.id)
+      .then((saved) => {
+        if (saved && (saved.daily_plans || saved.weekly_goal)) {
+          setPlan(saved);
+          try {
+            localStorage.setItem(`study_plan_${p.id}`, JSON.stringify(saved));
+          } catch {}
+        }
+      })
+      .catch((err) => console.warn("Failed to load saved study plan:", err));
   }, [p.id, targetScore]);
 
   // Load or generate initial study plan
@@ -125,8 +146,14 @@ function StudyIntelligencePage() {
         target_milestone: targetMilestone,
         force_refresh: force,
       });
-      setPlan(result);
-      toast.success(force ? "Fresh study plan generated" : "Study plan loaded");
+      if (result) {
+        setPlan(result);
+        try {
+          localStorage.setItem(`study_plan_${p.id}`, JSON.stringify(result));
+        } catch {}
+        if (force) setAdoptedBlockKeys([]);
+        toast.success(force ? "Fresh study plan generated & saved" : "Study plan loaded");
+      }
     } catch (e: any) {
       toast.error(e.message || "Failed to generate study plan");
     } finally {

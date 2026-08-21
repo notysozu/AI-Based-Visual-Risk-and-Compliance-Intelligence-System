@@ -1,4 +1,4 @@
-import { useState, useMemo, type ReactNode } from "react";
+import { useState, useEffect, useMemo, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Activity,
@@ -16,6 +16,8 @@ import {
   Sun,
   User,
   Wallet,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,6 +47,24 @@ export function AppShell({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Real-time network connection detector
+  const [isOnline, setIsOnline] = useState<boolean>(() => {
+    return typeof navigator !== "undefined" ? navigator.onLine : true;
+  });
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   const cfg = getRoleConfig(state.profile.role);
 
@@ -124,28 +144,32 @@ export function AppShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border/40 bg-background/85 px-4 backdrop-blur md:px-8">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <span className="truncate">{state.profile.name || "Guest"}</span>
-              <span className={`hidden sm:inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize ${
-                state.profile.role === "student"
-                  ? "clay-badge-purple"
-                  : state.profile.role === "professional"
-                  ? "clay-badge-indigo"
-                  : state.profile.role === "freelancer"
-                  ? "clay-badge-amber"
-                  : state.profile.role === "entrepreneur"
-                  ? "clay-badge-rose"
-                  : "clay-badge-emerald"
-              }`}>
-                {state.profile.role}
+          <div className="min-w-0 flex-1 flex items-center gap-2.5">
+            <span className="truncate text-sm font-semibold">{state.profile.name || "Guest"}</span>
+            <span className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize ${
+              state.profile.role === "student"
+                ? "clay-badge-purple"
+                : state.profile.role === "professional"
+                ? "clay-badge-indigo"
+                : state.profile.role === "freelancer"
+                ? "clay-badge-amber"
+                : state.profile.role === "entrepreneur"
+                ? "clay-badge-rose"
+                : "clay-badge-emerald"
+            }`}>
+              {state.profile.role}
+            </span>
+            {isOnline ? (
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
+                Live
               </span>
-              <span className="hidden items-center gap-1.5 text-xs text-muted-foreground md:flex">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                Live Sync
+            ) : (
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]" />
+                Offline
               </span>
-            </div>
-            <p className="truncate text-xs text-muted-foreground">{state.profile.email}</p>
+            )}
           </div>
           
           <Button
