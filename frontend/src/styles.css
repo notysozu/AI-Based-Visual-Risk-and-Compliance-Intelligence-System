@@ -555,6 +555,85 @@
   }
 }
 
+/* --- Apple macOS Minimal Design System --- */
+
+.macos-window {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(30px) saturate(190%);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 
+    0 24px 60px -12px rgba(0, 0, 0, 0.12),
+    0 8px 24px -4px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  border-radius: 1.25rem;
+}
+
+.dark .macos-window {
+  background: rgba(24, 24, 28, 0.75);
+  backdrop-filter: blur(30px) saturate(190%);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 30px 70px -15px rgba(0, 0, 0, 0.65),
+    0 10px 25px -5px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border-radius: 1.25rem;
+}
+
+.macos-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 1rem;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .macos-card {
+  background: rgba(30, 30, 36, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 6px 20px -3px rgba(0, 0, 0, 0.4);
+}
+
+.macos-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.08);
+}
+
+.dark .macos-card:hover {
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.55);
+}
+
+.macos-traffic-dot-close {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background-color: #ff5f56;
+  border: 0.5px solid rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.macos-traffic-dot-min {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background-color: #ffbd2e;
+  border: 0.5px solid rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.macos-traffic-dot-max {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background-color: #27c93f;
+  border: 0.5px solid rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
@@ -563,7 +642,7 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-sans);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -571,7 +650,7 @@
   h2,
   h3,
   h4 {
-    font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Outfit", ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.025em;
   }
 }
