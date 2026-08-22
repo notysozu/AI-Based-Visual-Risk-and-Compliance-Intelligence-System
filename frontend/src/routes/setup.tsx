@@ -283,11 +283,6 @@ function SetupPage() {
                         onValueChange={([v]) => setDraft((p) => ({ ...p, [currentQ.key]: v }))}
                         className="py-2"
                       />
-
-                      <div className="flex justify-between text-[11px] font-mono text-muted-foreground">
-                        <span>Min: {currentQ.unit === "$" ? `$${currentQ.min}` : `${currentQ.min}${currentQ.unit ?? ""}`}</span>
-                        <span>Max: {currentQ.unit === "$" ? `$${currentQ.max}` : `${currentQ.max}${currentQ.unit ?? ""}`}</span>
-                      </div>
                     </div>
                   ) : (
                     <Input
