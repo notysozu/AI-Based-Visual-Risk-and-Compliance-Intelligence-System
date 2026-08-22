@@ -904,17 +904,12 @@ function LandingPage() {
               <p className="text-xs text-muted-foreground leading-relaxed max-w-sm font-normal">
                 Autonomous predictive intelligence modeling wealth, habits, study velocity, and decision compounding 5 years ahead.
               </p>
-              <div className="flex items-center gap-2 pt-2 text-[11px] text-muted-foreground">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-mono">Local-First Engine • 100% Client-Side Privacy</span>
-              </div>
             </div>
 
             {/* Intelligence Suites */}
             <div className="space-y-2.5">
               <span className="text-[11px] font-semibold text-foreground tracking-wider uppercase font-mono">Platform</span>
               <ul className="space-y-2">
-                <li><Link to="/wealth" className="hover:text-foreground transition-colors">Monte Carlo Wealth</Link></li>
                 <li><Link to="/study" className="hover:text-foreground transition-colors">Study Intelligence</Link></li>
                 <li><Link to="/simulator" className="hover:text-foreground transition-colors">What-If Simulator</Link></li>
                 <li><Link to="/suggestions" className="hover:text-foreground transition-colors">Recommendations</Link></li>
@@ -927,7 +922,6 @@ function LandingPage() {
             <div className="space-y-2.5">
               <span className="text-[11px] font-semibold text-foreground tracking-wider uppercase font-mono">Archetypes</span>
               <ul className="space-y-2">
-                <li><button type="button" onClick={() => handleLaunchDemo("student")} className="hover:text-foreground transition-colors text-left">Student Persona</button></li>
                 <li><button type="button" onClick={() => handleLaunchDemo("professional")} className="hover:text-foreground transition-colors text-left">Professional</button></li>
                 <li><button type="button" onClick={() => handleLaunchDemo("freelancer")} className="hover:text-foreground transition-colors text-left">Freelancer</button></li>
                 <li><button type="button" onClick={() => handleLaunchDemo("entrepreneur")} className="hover:text-foreground transition-colors text-left">Startup Founder</button></li>
@@ -940,7 +934,6 @@ function LandingPage() {
             <div className="space-y-2.5">
               <span className="text-[11px] font-semibold text-foreground tracking-wider uppercase font-mono">Project</span>
               <ul className="space-y-2">
-                <li><a href="#team" className="hover:text-foreground transition-colors">Meet the Builders</a></li>
                 <li><a href="https://github.com/notysozu/Digital-Twin-AI" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1">GitHub Repo <ArrowUpRight className="h-3 w-3" /></a></li>
                 <li><Link to="/pages/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
                 <li><Link to="/pages/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
@@ -953,7 +946,7 @@ function LandingPage() {
           {/* Bottom Colophon Bar */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-[11px] text-muted-foreground text-center sm:text-left">
-              © {new Date().getFullYear()} Digital Twin AI. Built by Sonu Kumar Suman, Hasini Pericharla, Piyush Srivastava & Krishna Prasad Kurmi.
+              © {new Date().getFullYear()} Digital Twin AI. All rights reserved.
             </div>
 
             <div className="flex items-center gap-2">
