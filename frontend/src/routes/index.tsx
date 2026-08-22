@@ -142,22 +142,8 @@ function AuthPage() {
             Log the day, plan the day, and watch how small changes to money, sleep, and focus
             reshape the next five years.
           </p>
-          <div className="mt-10 grid grid-cols-3 gap-6 border-t border-border pt-6">
-            <div>
-              <div className="font-display text-2xl font-bold text-purple-600 dark:text-purple-400">30d</div>
-              <div className="label-xs mt-1">history modelled</div>
-            </div>
-            <div>
-              <div className="font-display text-2xl font-bold text-indigo-600 dark:text-indigo-400">500</div>
-              <div className="label-xs mt-1">Monte Carlo runs</div>
-            </div>
-            <div>
-              <div className="font-display text-2xl font-bold text-emerald-600 dark:text-emerald-400">5y</div>
-              <div className="label-xs mt-1">forward horizon</div>
-            </div>
-          </div>
         </div>
-        <p className="text-xs text-muted-foreground z-10">Local demo — data stays in your browser.</p>
+        <div className="z-10" />
       </div>
 
       <div className="relative flex items-center justify-center p-6 sm:p-10 overflow-hidden">
