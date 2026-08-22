@@ -20,6 +20,10 @@ import {
   Activity,
   Layers,
   ChevronRight,
+  Github,
+  Linkedin,
+  Instagram,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -89,7 +93,7 @@ function LandingPage() {
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#personas" className="hover:text-foreground transition-colors">Personas</a>
             <a href="#simulation" className="hover:text-foreground transition-colors">Interactive Demo</a>
-            <a href="#architecture" className="hover:text-foreground transition-colors">Technology</a>
+            <a href="#team" className="hover:text-foreground transition-colors">Team</a>
           </nav>
 
           <div className="flex items-center gap-3">
@@ -528,6 +532,247 @@ function LandingPage() {
                     Save This Scenario in Your Twin <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Meet the Team Section */}
+      <section id="team" className="py-20 border-t border-border/50">
+        <div className="mx-auto max-w-7xl px-4 sm:px-8">
+          <div className="text-center max-w-3xl mx-auto">
+            <span className="label-xs text-indigo-500 font-bold tracking-widest">Engineering & Product</span>
+            <h2 className="mt-2 font-display text-3xl font-bold sm:text-5xl tracking-tight">
+              Meet the Team
+            </h2>
+            <p className="mt-4 text-muted-foreground text-sm sm:text-base leading-relaxed">
+              The engineers and architects building autonomous life modeling, Monte Carlo simulation engines, and intelligent dashboards.
+            </p>
+          </div>
+
+          <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Sonu Kumar Suman */}
+            <div className="panel p-6 rounded-3xl flex flex-col items-center text-center hover:border-indigo-500/40 transition-all hover:scale-[1.02] shadow-[var(--clay-shadow)] group">
+              {/* Picture Frame */}
+              <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-emerald-500/20 border-2 border-indigo-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-indigo-500/60 transition-colors">
+                <img
+                  src="/avatars/sonu.png"
+                  alt="Sonu Kumar Suman"
+                  className="w-full h-full object-cover rounded-2xl hidden"
+                  onLoad={(e) => e.currentTarget.classList.remove("hidden")}
+                />
+                <div className="flex flex-col items-center justify-center w-full h-full font-display font-bold text-xl text-indigo-600 dark:text-indigo-400">
+                  <span>SK</span>
+                  <span className="text-[9px] font-mono text-muted-foreground mt-0.5">Photo</span>
+                </div>
+              </div>
+
+              <h3 className="font-display text-lg font-bold">Sonu Kumar Suman</h3>
+              <div className="clay-badge-indigo mt-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold">
+                Lead Full-Stack Developer
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
+                Core system architecture, predictive life engines, and interactive full-stack experience.
+              </p>
+
+              {/* Social Buttons */}
+              <div className="mt-6 flex items-center justify-center gap-2 pt-4 border-t border-border/60 w-full">
+                <a
+                  href="https://github.com/notysozu"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Sonu Kumar Suman GitHub"
+                  className="clay-btn p-2 rounded-xl text-muted-foreground hover:text-foreground hover:text-indigo-500 transition-colors"
+                >
+                  <Github className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Sonu Kumar Suman LinkedIn"
+                  className="clay-btn p-2 rounded-xl text-muted-foreground hover:text-foreground hover:text-blue-500 transition-colors"
+                >
+                  <Linkedin className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Sonu Kumar Suman Instagram"
+                  className="clay-btn p-2 rounded-xl text-muted-foreground hover:text-foreground hover:text-rose-500 transition-colors"
+                >
+                  <Instagram className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+
+            {/* Hasini Pericharla */}
+            <div className="panel p-6 rounded-3xl flex flex-col items-center text-center hover:border-purple-500/40 transition-all hover:scale-[1.02] shadow-[var(--clay-shadow)] group">
+              {/* Picture Frame */}
+              <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-purple-500/20 via-rose-500/20 to-amber-500/20 border-2 border-purple-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-purple-500/60 transition-colors">
+                <img
+                  src="/avatars/hasini.png"
+                  alt="Hasini Pericharla"
+                  className="w-full h-full object-cover rounded-2xl hidden"
+                  onLoad={(e) => e.currentTarget.classList.remove("hidden")}
+                />
+                <div className="flex flex-col items-center justify-center w-full h-full font-display font-bold text-xl text-purple-600 dark:text-purple-400">
+                  <span>HP</span>
+                  <span className="text-[9px] font-mono text-muted-foreground mt-0.5">Photo</span>
+                </div>
+              </div>
+
+              <h3 className="font-display text-lg font-bold">Hasini Pericharla</h3>
+              <div className="clay-badge-purple mt-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold">
+                AI, ML & Simulation
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
+                Monte Carlo stochastic algorithms, probabilistic life forecasting, and recommendation modeling.
+              </p>
+
+              {/* Social Buttons */}
+              <div className="mt-6 flex items-center justify-center gap-2 pt-4 border-t border-border/60 w-full">
+                <a
+                  href="https://github.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Hasini Pericharla GitHub"
+                  className="clay-btn p-2 rounded-xl text-muted-foreground hover:text-foreground hover:text-purple-500 transition-colors"
+                >
+                  <Github className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Hasini Pericharla LinkedIn"
+                  className="clay-btn p-2 rounded-xl text-muted-foreground hover:text-foreground hover:text-blue-500 transition-colors"
+                >
+                  <Linkedin className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Hasini Pericharla Instagram"
+                  className="clay-btn p-2 rounded-xl text-muted-foreground hover:text-foreground hover:text-rose-500 transition-colors"
+                >
+                  <Instagram className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+
+            {/* Piyush Srivastava */}
+            <div className="panel p-6 rounded-3xl flex flex-col items-center text-center hover:border-emerald-500/40 transition-all hover:scale-[1.02] shadow-[var(--clay-shadow)] group">
+              {/* Picture Frame */}
+              <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-emerald-500/20 via-cyan-500/20 to-blue-500/20 border-2 border-emerald-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-emerald-500/60 transition-colors">
+                <img
+                  src="/avatars/piyush.png"
+                  alt="Piyush Srivastava"
+                  className="w-full h-full object-cover rounded-2xl hidden"
+                  onLoad={(e) => e.currentTarget.classList.remove("hidden")}
+                />
+                <div className="flex flex-col items-center justify-center w-full h-full font-display font-bold text-xl text-emerald-600 dark:text-emerald-400">
+                  <span>PS</span>
+                  <span className="text-[9px] font-mono text-muted-foreground mt-0.5">Photo</span>
+                </div>
+              </div>
+
+              <h3 className="font-display text-lg font-bold">Piyush Srivastava</h3>
+              <div className="clay-badge-emerald mt-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold">
+                Backend Architecture
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
+                FastAPI high-throughput endpoints, SQLite engine, study persistence, and financial math pipelines.
+              </p>
+
+              {/* Social Buttons */}
+              <div className="mt-6 flex items-center justify-center gap-2 pt-4 border-t border-border/60 w-full">
+                <a
+                  href="https://github.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Piyush Srivastava GitHub"
+                  className="clay-btn p-2 rounded-xl text-muted-foreground hover:text-foreground hover:text-emerald-500 transition-colors"
+                >
+                  <Github className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Piyush Srivastava LinkedIn"
+                  className="clay-btn p-2 rounded-xl text-muted-foreground hover:text-foreground hover:text-blue-500 transition-colors"
+                >
+                  <Linkedin className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Piyush Srivastava Instagram"
+                  className="clay-btn p-2 rounded-xl text-muted-foreground hover:text-foreground hover:text-rose-500 transition-colors"
+                >
+                  <Instagram className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+
+            {/* Krishna Prasad Kurmi */}
+            <div className="panel p-6 rounded-3xl flex flex-col items-center text-center hover:border-cyan-500/40 transition-all hover:scale-[1.02] shadow-[var(--clay-shadow)] group">
+              {/* Picture Frame */}
+              <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-cyan-500/20 via-indigo-500/20 to-purple-500/20 border-2 border-cyan-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-cyan-500/60 transition-colors">
+                <img
+                  src="/avatars/krishna.png"
+                  alt="Krishna Prasad Kurmi"
+                  className="w-full h-full object-cover rounded-2xl hidden"
+                  onLoad={(e) => e.currentTarget.classList.remove("hidden")}
+                />
+                <div className="flex flex-col items-center justify-center w-full h-full font-display font-bold text-xl text-cyan-600 dark:text-cyan-400">
+                  <span>KP</span>
+                  <span className="text-[9px] font-mono text-muted-foreground mt-0.5">Photo</span>
+                </div>
+              </div>
+
+              <h3 className="font-display text-lg font-bold">Krishna Prasad Kurmi</h3>
+              <div className="clay-badge-cyan mt-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold">
+                Frontend Dashboard
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
+                Responsive UI components, interactive charts, tactile claymorphic aesthetics, and planner widgets.
+              </p>
+
+              {/* Social Buttons */}
+              <div className="mt-6 flex items-center justify-center gap-2 pt-4 border-t border-border/60 w-full">
+                <a
+                  href="https://github.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Krishna Prasad Kurmi GitHub"
+                  className="clay-btn p-2 rounded-xl text-muted-foreground hover:text-foreground hover:text-cyan-500 transition-colors"
+                >
+                  <Github className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Krishna Prasad Kurmi LinkedIn"
+                  className="clay-btn p-2 rounded-xl text-muted-foreground hover:text-foreground hover:text-blue-500 transition-colors"
+                >
+                  <Linkedin className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Krishna Prasad Kurmi Instagram"
+                  className="clay-btn p-2 rounded-xl text-muted-foreground hover:text-foreground hover:text-rose-500 transition-colors"
+                >
+                  <Instagram className="h-4 w-4" />
+                </a>
               </div>
             </div>
           </div>
