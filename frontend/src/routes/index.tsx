@@ -183,13 +183,6 @@ function LandingPage() {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-muted-foreground">
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#personas" className="hover:text-foreground transition-colors">Personas</a>
-            <a href="#simulation" className="hover:text-foreground transition-colors">Interactive Demo</a>
-            <a href="#team" className="hover:text-foreground transition-colors">Team</a>
-          </nav>
-
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
