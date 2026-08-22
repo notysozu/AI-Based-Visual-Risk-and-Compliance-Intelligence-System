@@ -126,11 +126,6 @@ function LandingPage() {
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[600px] rounded-full bg-gradient-to-tr from-indigo-500/10 via-purple-500/10 to-emerald-500/10 blur-3xl pointer-events-none" />
 
         <div className="mx-auto max-w-7xl px-4 sm:px-8 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-6 shadow-[var(--clay-shadow-sm)] animate-rise">
-            <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-            <span>Autonomous Multi-Persona Life Simulator 2.0</span>
-          </div>
-
           <h1 className="mx-auto max-w-4xl font-display text-4xl font-extrabold tracking-tight sm:text-6xl md:text-7xl leading-[1.1]">
             Model Your Life <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 bg-clip-text text-transparent">5 Years Ahead</span> with AI.
           </h1>
