@@ -280,6 +280,21 @@ function LandingPage() {
                   <p className="mt-1 text-xs text-muted-foreground">Pomodoro study sprint efficiency</p>
                 </div>
               </div>
+
+              {/* Stitch 3D Spatial Trajectory Visualization */}
+              <div className="relative mt-6 rounded-2xl overflow-hidden border border-border/60 bg-black/20 shadow-[var(--clay-shadow-sm)]">
+                <img
+                  src="/images/hero-3d-dashboard.png"
+                  alt="3D Spatial Life Simulation Dashboard"
+                  className="w-full h-48 sm:h-64 object-cover object-center opacity-90 hover:scale-[1.02] transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent flex items-end p-4">
+                  <span className="text-xs text-muted-foreground font-mono flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
+                    Spatial 3D Monte Carlo Trajectory Projection Engine
+                  </span>
+                </div>
+              </div>
             </TiltCard>
           </div>
         </div>
