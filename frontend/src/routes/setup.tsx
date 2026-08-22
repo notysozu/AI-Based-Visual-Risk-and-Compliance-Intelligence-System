@@ -240,11 +240,54 @@ function SetupPage() {
                 {currentQ.hint && <p className="mt-2 text-xs sm:text-sm text-muted-foreground">{currentQ.hint}</p>}
                 <div className="mt-8">
                   {currentQ.kind === "slider" ? (
-                    <div>
-                      <div className="mb-4 font-display text-3xl sm:text-4xl font-bold tabular-nums">
-                        {currentQ.unit === "$" ? money(Number(value)) : `${value}${currentQ.unit ?? ""}`}
+                    <div className="space-y-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="font-display text-3xl sm:text-4xl font-bold tabular-nums">
+                          {currentQ.unit === "$" ? money(Number(value)) : `${value}${currentQ.unit ?? ""}`}
+                        </div>
+
+                        {/* Direct Number Typing Input */}
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex items-center">
+                            {currentQ.unit === "$" && (
+                              <span className="absolute left-3 text-sm font-semibold text-muted-foreground">$</span>
+                            )}
+                            <Input
+                              type="number"
+                              min={currentQ.min}
+                              max={currentQ.max}
+                              step={currentQ.step ?? 1}
+                              value={Number.isNaN(Number(value)) ? "" : Number(value)}
+                              onChange={(e) => {
+                                const val = e.target.value === "" ? 0 : Number(e.target.value);
+                                setDraft((p) => ({ ...p, [currentQ.key]: val }));
+                              }}
+                              onKeyDown={(e) => e.key === "Enter" && next()}
+                              className={`w-32 h-11 text-base font-bold font-display rounded-xl text-right pr-3 shadow-[var(--clay-shadow-sm)] ${
+                                currentQ.unit === "$" ? "pl-7" : "pl-3"
+                              }`}
+                              placeholder="Type value"
+                            />
+                            {currentQ.unit && currentQ.unit !== "$" && (
+                              <span className="ml-2 text-xs font-semibold text-muted-foreground font-mono">{currentQ.unit}</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <Slider min={currentQ.min} max={currentQ.max} step={currentQ.step} value={[Number(value)]} onValueChange={([v]) => setDraft((p) => ({ ...p, [currentQ.key]: v }))} />
+
+                      <Slider
+                        min={currentQ.min}
+                        max={currentQ.max}
+                        step={currentQ.step ?? 1}
+                        value={[Number(value) || currentQ.min || 0]}
+                        onValueChange={([v]) => setDraft((p) => ({ ...p, [currentQ.key]: v }))}
+                        className="py-2"
+                      />
+
+                      <div className="flex justify-between text-[11px] font-mono text-muted-foreground">
+                        <span>Min: {currentQ.unit === "$" ? `$${currentQ.min}` : `${currentQ.min}${currentQ.unit ?? ""}`}</span>
+                        <span>Max: {currentQ.unit === "$" ? `$${currentQ.max}` : `${currentQ.max}${currentQ.unit ?? ""}`}</span>
+                      </div>
                     </div>
                   ) : (
                     <Input
@@ -254,11 +297,11 @@ function SetupPage() {
                       onChange={(e) =>
                         setDraft({
                           ...draft,
-                          [currentQ.key]: currentQ.kind === "number" ? Number(e.target.value) : e.target.value,
+                          [currentQ.key]: currentQ.kind === "number" ? (e.target.value === "" ? 0 : Number(e.target.value)) : e.target.value,
                         })
                       }
                       onKeyDown={(e) => e.key === "Enter" && next()}
-                      className="h-14 font-display text-2xl sm:text-3xl"
+                      className="h-14 font-display text-2xl sm:text-3xl rounded-2xl shadow-[var(--clay-shadow-sm)]"
                       placeholder="Type your answer"
                     />
                   )}
