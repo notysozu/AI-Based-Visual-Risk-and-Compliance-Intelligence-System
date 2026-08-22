@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Check, GraduationCap, Briefcase, Laptop, Rocket,
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { useTwin, type Profile, type UserRole, ROLE_CONFIGS } from "@/lib/twin-store";
+import { useTwin, type Profile, type UserRole, ROLE_CONFIGS, money } from "@/lib/twin-store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/setup")({
