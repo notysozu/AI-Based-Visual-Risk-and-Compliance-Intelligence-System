@@ -881,8 +881,6 @@ function LandingPage() {
               <GaugeCircle className="h-3.5 w-3.5" />
             </div>
             <span className="font-display font-bold text-foreground">Digital Twin AI</span>
-            <span>•</span>
-            <span>Autonomous Predictive Intelligence</span>
           </div>
 
           <div className="flex items-center gap-6">
