@@ -883,14 +883,19 @@ export function TwinProvider({ children }: { children: ReactNode }) {
   };
 
   const updateProfile = async (partial: Partial<Profile>) => {
-    setState((s) => ({ ...s, profile: { ...s.profile, ...partial } }));
+    const isAuthed = partial.onboarded ? true : state.authed;
+    const nextProfile = { ...state.profile, ...partial };
+    setState((s) => ({
+      ...s,
+      authed: isAuthed || s.authed,
+      profile: nextProfile,
+    }));
     
     // Auto-save settings in the background to backend database
-    const userId = state.profile.id;
+    const userId = partial.id ?? state.profile.id ?? 1;
     if (userId !== null && userId !== undefined) {
       try {
-        const fullProfile = { ...state.profile, ...partial };
-        const payload = mapProfileToBackend(fullProfile);
+        const payload = mapProfileToBackend(nextProfile);
         await updateUser(userId, payload);
       } catch (err) {
         console.error("Failed to auto-save profile settings to backend:", err);

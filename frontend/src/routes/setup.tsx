@@ -154,7 +154,7 @@ function SetupPage() {
     }));
   };
 
-  const next = () => {
+  const next = async () => {
     if (step === totalSteps - 1) {
       const savingsRate = Math.max(
         0,
@@ -162,9 +162,15 @@ function SetupPage() {
           ((draft.monthlyIncome - draft.monthlyExpenses) / Math.max(1, draft.monthlyIncome)) * 100,
         ),
       );
-      updateProfile({ ...draft, savingsRate, onboarded: true });
+      const finalProfile: Profile = {
+        ...draft,
+        id: draft.id ?? state.profile.id ?? 1,
+        savingsRate,
+        onboarded: true,
+      };
+      await updateProfile(finalProfile);
       toast.success("Twin initialized with your personalized persona!");
-      navigate({ to: "/" });
+      navigate({ to: "/dashboard" });
       return;
     }
     setDir(1);

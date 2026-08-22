@@ -6,7 +6,7 @@ import { useTwin } from "@/lib/twin-store";
 export function useGuard(): boolean {
   const { state, ready } = useTwin();
   const navigate = useNavigate();
-  const signedIn = Boolean(state.profile.id) && state.profile.onboarded;
+  const signedIn = (Boolean(state.profile.id) || state.authed) && state.profile.onboarded;
 
   useEffect(() => {
     if (ready && !signedIn) {
