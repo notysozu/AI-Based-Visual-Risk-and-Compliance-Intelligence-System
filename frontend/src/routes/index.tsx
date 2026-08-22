@@ -25,6 +25,7 @@ import {
   Compass,
   Sliders,
   Layers,
+  ArrowUpRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -884,28 +885,106 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="mt-auto border-t border-border/40 bg-sidebar/20 py-8 text-xs text-muted-foreground">
-        <div className="mx-auto max-w-5xl px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#0071E3] text-white">
-              <GaugeCircle className="h-3 w-3" />
+      {/* Reconstructed Apple-Style Minimal Footer */}
+      <footer className="mt-auto border-t border-border/40 bg-sidebar/15 pt-16 pb-12 text-xs text-muted-foreground">
+        <div className="mx-auto max-w-5xl px-4 sm:px-8">
+          {/* Main Footer Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 pb-12 border-b border-border/40">
+            {/* Brand Column */}
+            <div className="col-span-2 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0071E3] text-white">
+                  <GaugeCircle className="h-3.5 w-3.5" />
+                </div>
+                <span className="font-semibold text-foreground text-sm tracking-tight">Digital Twin AI</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/10 text-[#0071E3] dark:text-blue-400 font-medium">
+                  v2.0
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed max-w-sm font-normal">
+                Autonomous predictive intelligence modeling wealth, habits, study velocity, and decision compounding 5 years ahead.
+              </p>
+              <div className="flex items-center gap-2 pt-2 text-[11px] text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-mono">Local-First Engine • 100% Client-Side Privacy</span>
+              </div>
             </div>
-            <span className="font-semibold text-foreground">Digital Twin AI</span>
+
+            {/* Intelligence Suites */}
+            <div className="space-y-2.5">
+              <span className="text-[11px] font-semibold text-foreground tracking-wider uppercase font-mono">Platform</span>
+              <ul className="space-y-2">
+                <li><Link to="/wealth" className="hover:text-foreground transition-colors">Monte Carlo Wealth</Link></li>
+                <li><Link to="/study" className="hover:text-foreground transition-colors">Study Intelligence</Link></li>
+                <li><Link to="/simulator" className="hover:text-foreground transition-colors">What-If Simulator</Link></li>
+                <li><Link to="/suggestions" className="hover:text-foreground transition-colors">Recommendations</Link></li>
+                <li><Link to="/planner" className="hover:text-foreground transition-colors">Habit Planner</Link></li>
+                <li><Link to="/dashboard" className="hover:text-foreground transition-colors">Live Dashboard</Link></li>
+              </ul>
+            </div>
+
+            {/* Archetypes */}
+            <div className="space-y-2.5">
+              <span className="text-[11px] font-semibold text-foreground tracking-wider uppercase font-mono">Archetypes</span>
+              <ul className="space-y-2">
+                <li><button type="button" onClick={() => handleLaunchDemo("student")} className="hover:text-foreground transition-colors text-left">Student Persona</button></li>
+                <li><button type="button" onClick={() => handleLaunchDemo("professional")} className="hover:text-foreground transition-colors text-left">Professional</button></li>
+                <li><button type="button" onClick={() => handleLaunchDemo("freelancer")} className="hover:text-foreground transition-colors text-left">Freelancer</button></li>
+                <li><button type="button" onClick={() => handleLaunchDemo("entrepreneur")} className="hover:text-foreground transition-colors text-left">Startup Founder</button></li>
+                <li><button type="button" onClick={() => handleLaunchDemo("retiree")} className="hover:text-foreground transition-colors text-left">Retiree Persona</button></li>
+                <li><Link to="/signup" className="hover:text-[#0071E3] transition-colors font-medium">Build Custom →</Link></li>
+              </ul>
+            </div>
+
+            {/* Project & Legal */}
+            <div className="space-y-2.5">
+              <span className="text-[11px] font-semibold text-foreground tracking-wider uppercase font-mono">Project</span>
+              <ul className="space-y-2">
+                <li><a href="#team" className="hover:text-foreground transition-colors">Meet the Builders</a></li>
+                <li><a href="https://github.com/notysozu/Digital-Twin-AI" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1">GitHub Repo <ArrowUpRight className="h-3 w-3" /></a></li>
+                <li><Link to="/pages/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/pages/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
+                <li><Link to="/login" className="hover:text-foreground transition-colors">Log In</Link></li>
+                <li><Link to="/signup" className="hover:text-foreground transition-colors">Sign Up</Link></li>
+              </ul>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6">
-            <Link to="/pages/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-            <Link to="/pages/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
-            <Link to="/login" className="hover:text-foreground transition-colors">Log In</Link>
-            <Link to="/signup" className="hover:text-foreground transition-colors">Sign Up</Link>
-            <a href="https://github.com/notysozu/Digital-Twin-AI" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
-              GitHub
-            </a>
-          </div>
+          {/* Bottom Colophon Bar */}
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-[11px] text-muted-foreground text-center sm:text-left">
+              © {new Date().getFullYear()} Digital Twin AI. Built by Sonu Kumar Suman, Hasini Pericharla, Piyush Srivastava & Krishna Prasad Kurmi.
+            </div>
 
-          <div>
-            © {new Date().getFullYear()} Digital Twin AI.
+            <div className="flex items-center gap-2">
+              <a
+                href="https://github.com/notysozu/Digital-Twin-AI"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Digital Twin AI GitHub"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              >
+                <Github className="h-4 w-4" />
+              </a>
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-[#0A66C2] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              >
+                <Linkedin className="h-4 w-4" />
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-[#E4405F] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              >
+                <Instagram className="h-4 w-4" />
+              </a>
+            </div>
           </div>
         </div>
       </footer>
