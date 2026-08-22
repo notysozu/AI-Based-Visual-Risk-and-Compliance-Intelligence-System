@@ -421,6 +421,140 @@
   color: var(--color-muted-foreground);
 }
 
+/* --- Antigravity Spatial & Motion System --- */
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(0.8deg);
+  }
+}
+
+@keyframes float-delayed {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-9px) rotate(-0.8deg);
+  }
+}
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(10px) rotate(0.6deg);
+  }
+}
+
+@keyframes spatial-shimmer {
+  0% {
+    transform: translateX(-100%) rotate(25deg);
+  }
+  100% {
+    transform: translateX(250%) rotate(25deg);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.06);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 7s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  will-change: transform;
+}
+
+.animate-float-delayed {
+  animation: float-delayed 8.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1.5s infinite;
+  will-change: transform;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 6s cubic-bezier(0.45, 0.05, 0.55, 0.95) 0.5s infinite;
+  will-change: transform;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 6s ease-in-out infinite;
+}
+
+/* Glassmorphism Surface with Specular Micro-Border */
+.antigravity-glass {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 
+    0 20px 45px -10px rgba(15, 23, 42, 0.07),
+    0 8px 16px -4px rgba(15, 23, 42, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.dark .antigravity-glass {
+  background: rgba(22, 27, 34, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 24px 50px -12px rgba(0, 0, 0, 0.55),
+    0 10px 20px -6px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* 3D Isometric Card Snapping & Spatial Tilt */
+.spatial-container {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.spatial-card {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease;
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+.spatial-card:hover {
+  transform: translateY(-8px) scale(1.015);
+  box-shadow: 
+    0 30px 60px -12px rgba(15, 23, 42, 0.12),
+    0 12px 24px -6px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.dark .spatial-card:hover {
+  box-shadow: 
+    0 35px 70px -15px rgba(0, 0, 0, 0.7),
+    0 16px 30px -8px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Accessibility: Respect Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-slow,
+  .animate-float-delayed,
+  .animate-float-reverse,
+  .animate-glow-pulse,
+  .animate-rise {
+    animation: none !important;
+  }
+  .spatial-card,
+  .clay-btn,
+  .panel {
+    transition: none !important;
+  }
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

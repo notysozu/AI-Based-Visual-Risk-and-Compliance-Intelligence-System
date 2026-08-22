@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type ReactNode, type MouseEvent } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import gsap from "gsap";
 import {
   GaugeCircle,
   Moon,
@@ -14,16 +15,16 @@ import {
   Rocket,
   HeartHandshake,
   CheckCircle2,
-  Sliders,
   ShieldCheck,
   Zap,
   Activity,
-  Layers,
   ChevronRight,
   Github,
   Linkedin,
   Instagram,
-  User,
+  Compass,
+  Flame,
+  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -33,13 +34,13 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Digital Twin AI — Model Your Life Years Ahead" },
+      { title: "Digital Twin AI — Spatial Life Modeling & Monte Carlo Forecasting" },
       {
         name: "description",
         content:
           "Autonomous digital twin intelligence that models your wealth, habits, study momentum, and life decisions 5 years ahead with Monte Carlo simulations.",
       },
-      { property: "og:title", content: "Digital Twin AI — Model Your Life Years Ahead" },
+      { property: "og:title", content: "Digital Twin AI — Spatial Life Modeling" },
       {
         property: "og:description",
         content:
@@ -50,10 +51,78 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
+/** Interactive 3D Spatial Tilt Card following cursor physics */
+function TiltCard({
+  children,
+  className = "",
+  maxTilt = 8,
+  glare = true,
+}: {
+  children: ReactNode;
+  className?: string;
+  maxTilt?: number;
+  glare?: boolean;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [transform, setTransform] = useState("perspective(1000px) rotateX(0deg) rotateY(0deg)");
+  const [glarePos, setGlarePos] = useState({ x: 50, y: 50, opacity: 0 });
+
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const rotateX = ((y - centerY) / centerY) * -maxTilt;
+    const rotateY = ((x - centerX) / centerX) * maxTilt;
+
+    setTransform(`perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.015, 1.015, 1.015)`);
+    setGlarePos({
+      x: (x / rect.width) * 100,
+      y: (y / rect.height) * 100,
+      opacity: 0.2,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTransform("perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)");
+    setGlarePos((prev) => ({ ...prev, opacity: 0 }));
+  };
+
+  return (
+    <div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        transform,
+        transformStyle: "preserve-3d",
+        transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+      className={`relative overflow-hidden ${className}`}
+    >
+      {glare && (
+        <div
+          className="pointer-events-none absolute inset-0 z-20 transition-opacity duration-300 rounded-3xl"
+          style={{
+            opacity: glarePos.opacity,
+            background: `radial-gradient(circle 260px at ${glarePos.x}% ${glarePos.y}%, rgba(255, 255, 255, 0.35), transparent 80%)`,
+          }}
+        />
+      )}
+      {children}
+    </div>
+  );
+}
+
 function LandingPage() {
   const { state, setTheme, loadDemo } = useTwin();
   const navigate = useNavigate();
   const [loadingRole, setLoadingRole] = useState<string | null>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const featuresRef = useRef<HTMLDivElement>(null);
 
   // Interactive Live Simulator Sandbox state on Landing Page
   const [simSavings, setSimSavings] = useState(1200);
@@ -63,6 +132,29 @@ function LandingPage() {
   // Computed 5-year interactive projection
   const sim5YearWealth = Math.round(simSavings * 12 * 5 * 1.28 + 25000);
   const simFocusScore = Math.min(100, Math.round((simSleep / 8) * 45 + (simStudy / 15) * 55));
+
+  // GSAP Staggered Entrance
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.from(".gsap-hero-item", {
+        opacity: 0,
+        y: 28,
+        stagger: 0.1,
+        duration: 0.9,
+        ease: "power3.out",
+      });
+      gsap.from(".gsap-card-stagger", {
+        opacity: 0,
+        y: 35,
+        stagger: 0.08,
+        duration: 0.8,
+        ease: "power3.out",
+        delay: 0.2,
+      });
+    }, heroRef);
+
+    return () => ctx.revert();
+  }, []);
 
   const handleLaunchDemo = async (role: UserRole) => {
     setLoadingRole(role);
@@ -78,18 +170,20 @@ function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-indigo-500/20">
-      {/* Navigation Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-8">
+    <div ref={heroRef} className="min-h-screen bg-background text-foreground flex flex-col selection:bg-indigo-500/20 overflow-x-hidden">
+      {/* Floating Spatial Antigravity Header */}
+      <header className="sticky top-4 z-50 mx-auto w-[94%] max-w-7xl">
+        <div className="antigravity-glass rounded-2xl px-5 py-3 flex items-center justify-between border border-border/60 shadow-[var(--clay-shadow-sm)]">
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 text-white shadow-[0_4px_14px_rgba(99,102,241,0.4)] group-hover:scale-105 transition-transform">
               <GaugeCircle className="h-5 w-5" />
             </div>
-            <span className="font-display text-lg font-bold tracking-tight">Digital Twin <span className="text-indigo-500 font-mono text-xs px-1.5 py-0.5 rounded-md bg-indigo-500/10">AI</span></span>
+            <span className="font-display text-lg font-bold tracking-tight">
+              Digital Twin <span className="text-indigo-500 font-mono text-xs px-1.5 py-0.5 rounded-md bg-indigo-500/10">AI</span>
+            </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
+          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#personas" className="hover:text-foreground transition-colors">Personas</a>
             <a href="#simulation" className="hover:text-foreground transition-colors">Interactive Demo</a>
@@ -120,82 +214,86 @@ function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-32">
-        {/* Soft Ambient Background Glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[600px] rounded-full bg-gradient-to-tr from-indigo-500/10 via-purple-500/10 to-emerald-500/10 blur-3xl pointer-events-none" />
+      {/* Spatial Hero Section */}
+      <section className="relative overflow-hidden pt-12 pb-20 md:pt-20 md:pb-28">
+        {/* Levitation Floating Background Orbs */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[550px] w-[650px] rounded-full bg-gradient-to-tr from-indigo-500/15 via-purple-500/15 to-emerald-500/15 blur-3xl pointer-events-none animate-glow-pulse" />
+        <div className="absolute -top-12 -left-12 h-72 w-72 rounded-full bg-purple-500/10 blur-2xl pointer-events-none animate-float-slow" />
+        <div className="absolute top-1/2 -right-12 h-80 w-80 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none animate-float-delayed" />
 
         <div className="mx-auto max-w-7xl px-4 sm:px-8 text-center relative z-10">
-          <h1 className="mx-auto max-w-4xl font-display text-4xl font-extrabold tracking-tight sm:text-6xl md:text-7xl leading-[1.1]">
+          <h1 className="gsap-hero-item mx-auto max-w-4xl font-display text-4xl font-extrabold tracking-tight sm:text-6xl md:text-7xl leading-[1.1]">
             Model Your Life <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 bg-clip-text text-transparent">5 Years Ahead</span> with AI.
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground leading-relaxed">
+          <p className="gsap-hero-item mx-auto mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground leading-relaxed">
             Digital Twin AI runs 500-iteration Monte Carlo simulations, optimizes daily study sprints, predicts financial independence velocity, and stress-tests life choices before you make them.
           </p>
 
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Button size="lg" asChild className="h-12 px-7 rounded-2xl font-bold shadow-[var(--clay-shadow)] text-base">
+          <div className="gsap-hero-item mt-10 flex flex-wrap items-center justify-center gap-4">
+            <Button size="lg" asChild className="h-12 px-8 rounded-2xl font-bold shadow-[var(--clay-shadow)] text-base hover:scale-105 transition-transform">
               <Link to="/signup">
                 Launch Your Twin Free <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild className="h-12 px-7 rounded-2xl font-bold shadow-[var(--clay-shadow-sm)] text-base">
+            <Button size="lg" variant="outline" asChild className="h-12 px-8 rounded-2xl font-bold shadow-[var(--clay-shadow-sm)] text-base hover:scale-105 transition-transform">
               <Link to="/login">
                 Explore Demo Twins
               </Link>
             </Button>
           </div>
 
-          {/* Hero Live Mock Dashboard Preview */}
-          <div className="mt-16 mx-auto max-w-5xl panel-lg p-4 sm:p-6 shadow-[var(--clay-shadow-lg)] border border-border/80 text-left">
-            <div className="flex flex-wrap items-center justify-between border-b border-border/60 pb-4 mb-6 gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-display font-bold text-sm sm:text-base">Alex Rivera — Student Persona Simulation</span>
-                <span className="clay-badge-emerald px-2 py-0.5 rounded-md text-[11px] font-bold">Live Calibrated</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="font-mono">500 Monte Carlo Iterations</span>
-                <span>•</span>
-                <span className="font-mono">99.4% Statistical Confidence</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="clay-card p-4 rounded-2xl">
-                <div className="flex items-center justify-between">
-                  <span className="label-xs">Focus & Momentum</span>
-                  <Activity className="h-4 w-4 text-purple-500" />
+          {/* Spatial 3D Weightless Preview Card */}
+          <div className="gsap-hero-item mt-16 mx-auto max-w-5xl spatial-container">
+            <TiltCard className="antigravity-glass rounded-3xl p-6 sm:p-8 text-left border border-border/80 shadow-[var(--clay-shadow-lg)] animate-float-slow">
+              <div className="flex flex-wrap items-center justify-between border-b border-border/60 pb-4 mb-6 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="font-display font-bold text-base sm:text-lg">Alex Rivera — Student Persona Simulation</span>
+                  <span className="clay-badge-emerald px-2.5 py-0.5 rounded-full text-[11px] font-bold">Live Calibrated</span>
                 </div>
-                <div className="mt-2 text-3xl font-display font-bold text-purple-600 dark:text-purple-400 tabular-nums">94.2%</div>
-                <p className="mt-1 text-xs text-muted-foreground">+6.8% above baseline target</p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="font-mono">500 Monte Carlo Iterations</span>
+                  <span>•</span>
+                  <span className="font-mono">99.4% Statistical Confidence</span>
+                </div>
               </div>
 
-              <div className="clay-card p-4 rounded-2xl">
-                <div className="flex items-center justify-between">
-                  <span className="label-xs">5-Year Projected Net Worth</span>
-                  <TrendingUp className="h-4 w-4 text-emerald-500" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="clay-card p-5 rounded-2xl spatial-card">
+                  <div className="flex items-center justify-between">
+                    <span className="label-xs">Focus & Momentum</span>
+                    <Activity className="h-4 w-4 text-purple-500" />
+                  </div>
+                  <div className="mt-2 text-3xl font-display font-bold text-purple-600 dark:text-purple-400 tabular-nums">94.2%</div>
+                  <p className="mt-1 text-xs text-muted-foreground">+6.8% above baseline target</p>
                 </div>
-                <div className="mt-2 text-3xl font-display font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">$94,500</div>
-                <p className="mt-1 text-xs text-muted-foreground">P90 Bull Market: $132,000</p>
-              </div>
 
-              <div className="clay-card p-4 rounded-2xl">
-                <div className="flex items-center justify-between">
-                  <span className="label-xs">Academic Retention</span>
-                  <GraduationCap className="h-4 w-4 text-indigo-500" />
+                <div className="clay-card p-5 rounded-2xl spatial-card">
+                  <div className="flex items-center justify-between">
+                    <span className="label-xs">5-Year Projected Net Worth</span>
+                    <TrendingUp className="h-4 w-4 text-emerald-500" />
+                  </div>
+                  <div className="mt-2 text-3xl font-display font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">$94,500</div>
+                  <p className="mt-1 text-xs text-muted-foreground">P90 Bull Market: $132,000</p>
                 </div>
-                <div className="mt-2 text-3xl font-display font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">88.5%</div>
-                <p className="mt-1 text-xs text-muted-foreground">Pomodoro study sprint efficiency</p>
+
+                <div className="clay-card p-5 rounded-2xl spatial-card">
+                  <div className="flex items-center justify-between">
+                    <span className="label-xs">Academic Retention</span>
+                    <GraduationCap className="h-4 w-4 text-indigo-500" />
+                  </div>
+                  <div className="mt-2 text-3xl font-display font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">88.5%</div>
+                  <p className="mt-1 text-xs text-muted-foreground">Pomodoro study sprint efficiency</p>
+                </div>
               </div>
-            </div>
+            </TiltCard>
           </div>
         </div>
       </section>
 
-      {/* Core Pillars / Features Section */}
-      <section id="features" className="py-20 border-t border-border/50 bg-sidebar/30">
+      {/* Core Intelligence Pillars Section */}
+      <section id="features" ref={featuresRef} className="py-20 border-t border-border/50 bg-sidebar/20 relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">
           <div className="text-center max-w-3xl mx-auto">
             <span className="label-xs text-indigo-500 font-bold tracking-widest">Built for Holistic Growth</span>
@@ -208,7 +306,7 @@ function LandingPage() {
           </div>
 
           <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="panel p-6 rounded-3xl">
+            <TiltCard className="antigravity-glass p-6 rounded-3xl spatial-card">
               <div className="clay-icon-indigo w-12 h-12 rounded-2xl flex items-center justify-center mb-5">
                 <TrendingUp className="h-6 w-6" />
               </div>
@@ -216,9 +314,9 @@ function LandingPage() {
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                 Run 500 stochastic market runs modeling median, P10 bear, and P90 bull horizons. Track the exact age you hit financial freedom.
               </p>
-            </div>
+            </TiltCard>
 
-            <div className="panel p-6 rounded-3xl">
+            <TiltCard className="antigravity-glass p-6 rounded-3xl spatial-card">
               <div className="clay-icon-purple w-12 h-12 rounded-2xl flex items-center justify-center mb-5">
                 <GraduationCap className="h-6 w-6" />
               </div>
@@ -226,9 +324,9 @@ function LandingPage() {
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                 Tailored for students and continuous learners. Generate full syllabus schedules, schedule multi-day sprints, and retain knowledge effortlessly.
               </p>
-            </div>
+            </TiltCard>
 
-            <div className="panel p-6 rounded-3xl">
+            <TiltCard className="antigravity-glass p-6 rounded-3xl spatial-card">
               <div className="clay-icon-rose w-12 h-12 rounded-2xl flex items-center justify-center mb-5">
                 <BrainCircuit className="h-6 w-6" />
               </div>
@@ -236,9 +334,9 @@ function LandingPage() {
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                 Test the long-term impact of life adjustments. What if you save $300 more per month? What if you sleep 1 extra hour? See results across 5 years.
               </p>
-            </div>
+            </TiltCard>
 
-            <div className="panel p-6 rounded-3xl">
+            <TiltCard className="antigravity-glass p-6 rounded-3xl spatial-card">
               <div className="clay-icon-amber w-12 h-12 rounded-2xl flex items-center justify-center mb-5">
                 <Sparkles className="h-6 w-6" />
               </div>
@@ -246,9 +344,9 @@ function LandingPage() {
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                 Calibrated AI recommendations that monitor your sleep debt, study volume, and savings rates with instant 1-click plan adoption.
               </p>
-            </div>
+            </TiltCard>
 
-            <div className="panel p-6 rounded-3xl">
+            <TiltCard className="antigravity-glass p-6 rounded-3xl spatial-card">
               <div className="clay-icon-emerald w-12 h-12 rounded-2xl flex items-center justify-center mb-5">
                 <Zap className="h-6 w-6" />
               </div>
@@ -256,9 +354,9 @@ function LandingPage() {
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                 Work uninterrupted with automatic browser offline detection and instant state recovery. Never lose a plan or tracked habit.
               </p>
-            </div>
+            </TiltCard>
 
-            <div className="panel p-6 rounded-3xl">
+            <TiltCard className="antigravity-glass p-6 rounded-3xl spatial-card">
               <div className="clay-icon-cyan w-12 h-12 rounded-2xl flex items-center justify-center mb-5">
                 <ShieldCheck className="h-6 w-6" />
               </div>
@@ -266,7 +364,7 @@ function LandingPage() {
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                 Your life data is private and secure. Fully customizable parameters with lightweight, high-performance SQLite backing.
               </p>
-            </div>
+            </TiltCard>
           </div>
         </div>
       </section>
@@ -286,7 +384,7 @@ function LandingPage() {
 
           <div className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Student */}
-            <div className="panel p-6 rounded-3xl flex flex-col justify-between hover:border-purple-500/40 transition-colors">
+            <TiltCard className="panel p-6 rounded-3xl flex flex-col justify-between hover:border-purple-500/40 transition-colors spatial-card">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="clay-badge-purple px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
@@ -304,14 +402,14 @@ function LandingPage() {
                 size="sm"
                 disabled={loadingRole === "student"}
                 onClick={() => handleLaunchDemo("student")}
-                className="mt-6 w-full rounded-xl font-semibold shadow-[var(--clay-shadow-sm)]"
+                className="mt-6 w-full rounded-xl font-semibold shadow-[var(--clay-shadow-sm)] hover:bg-purple-500/10"
               >
                 Launch Student Demo <ChevronRight className="ml-1 h-3.5 w-3.5" />
               </Button>
-            </div>
+            </TiltCard>
 
             {/* Working Professional */}
-            <div className="panel p-6 rounded-3xl flex flex-col justify-between hover:border-indigo-500/40 transition-colors">
+            <TiltCard className="panel p-6 rounded-3xl flex flex-col justify-between hover:border-indigo-500/40 transition-colors spatial-card">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="clay-badge-indigo px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
@@ -329,14 +427,14 @@ function LandingPage() {
                 size="sm"
                 disabled={loadingRole === "professional"}
                 onClick={() => handleLaunchDemo("professional")}
-                className="mt-6 w-full rounded-xl font-semibold shadow-[var(--clay-shadow-sm)]"
+                className="mt-6 w-full rounded-xl font-semibold shadow-[var(--clay-shadow-sm)] hover:bg-indigo-500/10"
               >
                 Launch Professional Demo <ChevronRight className="ml-1 h-3.5 w-3.5" />
               </Button>
-            </div>
+            </TiltCard>
 
             {/* Freelancer */}
-            <div className="panel p-6 rounded-3xl flex flex-col justify-between hover:border-cyan-500/40 transition-colors">
+            <TiltCard className="panel p-6 rounded-3xl flex flex-col justify-between hover:border-cyan-500/40 transition-colors spatial-card">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="clay-badge-cyan px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
@@ -354,14 +452,14 @@ function LandingPage() {
                 size="sm"
                 disabled={loadingRole === "freelancer"}
                 onClick={() => handleLaunchDemo("freelancer")}
-                className="mt-6 w-full rounded-xl font-semibold shadow-[var(--clay-shadow-sm)]"
+                className="mt-6 w-full rounded-xl font-semibold shadow-[var(--clay-shadow-sm)] hover:bg-cyan-500/10"
               >
                 Launch Freelancer Demo <ChevronRight className="ml-1 h-3.5 w-3.5" />
               </Button>
-            </div>
+            </TiltCard>
 
             {/* Founder */}
-            <div className="panel p-6 rounded-3xl flex flex-col justify-between hover:border-rose-500/40 transition-colors">
+            <TiltCard className="panel p-6 rounded-3xl flex flex-col justify-between hover:border-rose-500/40 transition-colors spatial-card">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="clay-badge-rose px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
@@ -379,14 +477,14 @@ function LandingPage() {
                 size="sm"
                 disabled={loadingRole === "entrepreneur"}
                 onClick={() => handleLaunchDemo("entrepreneur")}
-                className="mt-6 w-full rounded-xl font-semibold shadow-[var(--clay-shadow-sm)]"
+                className="mt-6 w-full rounded-xl font-semibold shadow-[var(--clay-shadow-sm)] hover:bg-rose-500/10"
               >
                 Launch Founder Demo <ChevronRight className="ml-1 h-3.5 w-3.5" />
               </Button>
-            </div>
+            </TiltCard>
 
             {/* Retiree */}
-            <div className="panel p-6 rounded-3xl flex flex-col justify-between hover:border-emerald-500/40 transition-colors">
+            <TiltCard className="panel p-6 rounded-3xl flex flex-col justify-between hover:border-emerald-500/40 transition-colors spatial-card">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="clay-badge-emerald px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
@@ -404,14 +502,14 @@ function LandingPage() {
                 size="sm"
                 disabled={loadingRole === "retiree"}
                 onClick={() => handleLaunchDemo("retiree")}
-                className="mt-6 w-full rounded-xl font-semibold shadow-[var(--clay-shadow-sm)]"
+                className="mt-6 w-full rounded-xl font-semibold shadow-[var(--clay-shadow-sm)] hover:bg-emerald-500/10"
               >
                 Launch Retiree Demo <ChevronRight className="ml-1 h-3.5 w-3.5" />
               </Button>
-            </div>
+            </TiltCard>
 
             {/* Custom Twin */}
-            <div className="panel p-6 rounded-3xl flex flex-col justify-between border-dashed border-2 hover:border-primary/50 transition-colors">
+            <TiltCard className="panel p-6 rounded-3xl flex flex-col justify-between border-dashed border-2 hover:border-primary/50 transition-colors spatial-card">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="clay-badge-indigo px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
@@ -433,13 +531,13 @@ function LandingPage() {
                   Build Custom Twin <ArrowRight className="ml-1 h-3.5 w-3.5" />
                 </Link>
               </Button>
-            </div>
+            </TiltCard>
           </div>
         </div>
       </section>
 
-      {/* Interactive Simulator Sandbox Section */}
-      <section id="simulation" className="py-20 border-t border-border/50 bg-sidebar/20">
+      {/* Interactive 3D Simulator Sandbox Section */}
+      <section id="simulation" className="py-20 border-t border-border/50 bg-sidebar/20 relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -496,45 +594,47 @@ function LandingPage() {
               </div>
             </div>
 
-            <div className="panel-lg p-8 rounded-3xl shadow-[var(--clay-shadow-lg)] border border-border">
-              <span className="label-xs text-muted-foreground">Simulated 5-Year Trajectory</span>
+            <div className="spatial-container">
+              <TiltCard className="antigravity-glass p-8 rounded-3xl shadow-[var(--clay-shadow-lg)] border border-border">
+                <span className="label-xs text-muted-foreground">Simulated 5-Year Trajectory</span>
 
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <div className="clay-card p-5 rounded-2xl">
-                  <span className="text-xs text-muted-foreground font-medium">5-Year Net Worth</span>
-                  <div className="mt-2 text-3xl font-display font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                    {money(sim5YearWealth)}
+                <div className="mt-6 grid grid-cols-2 gap-4">
+                  <div className="clay-card p-5 rounded-2xl">
+                    <span className="text-xs text-muted-foreground font-medium">5-Year Net Worth</span>
+                    <div className="mt-2 text-3xl font-display font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                      {money(sim5YearWealth)}
+                    </div>
+                    <p className="mt-1 text-[11px] text-muted-foreground">+28% market compounding</p>
                   </div>
-                  <p className="mt-1 text-[11px] text-muted-foreground">+28% market compounding</p>
-                </div>
 
-                <div className="clay-card p-5 rounded-2xl">
-                  <span className="text-xs text-muted-foreground font-medium">Momentum Index</span>
-                  <div className="mt-2 text-3xl font-display font-extrabold text-indigo-600 dark:text-indigo-400 tabular-nums">
-                    {simFocusScore}/100
+                  <div className="clay-card p-5 rounded-2xl">
+                    <span className="text-xs text-muted-foreground font-medium">Momentum Index</span>
+                    <div className="mt-2 text-3xl font-display font-extrabold text-indigo-600 dark:text-indigo-400 tabular-nums">
+                      {simFocusScore}/100
+                    </div>
+                    <p className="mt-1 text-[11px] text-muted-foreground">High cognitive recovery</p>
                   </div>
-                  <p className="mt-1 text-[11px] text-muted-foreground">High cognitive recovery</p>
                 </div>
-              </div>
 
-              <div className="mt-6 pt-6 border-t border-border/60">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <span>Real-time Monte Carlo forecast with calibrated baseline distributions</span>
+                <div className="mt-6 pt-6 border-t border-border/60">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>Real-time Monte Carlo forecast with calibrated baseline distributions</span>
+                  </div>
+                  <Button asChild className="w-full h-11 rounded-xl font-bold shadow-[var(--clay-shadow-sm)]">
+                    <Link to="/signup">
+                      Save This Scenario in Your Twin <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
                 </div>
-                <Button asChild className="w-full h-11 rounded-xl font-bold shadow-[var(--clay-shadow-sm)]">
-                  <Link to="/signup">
-                    Save This Scenario in Your Twin <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
+              </TiltCard>
             </div>
           </div>
         </div>
       </section>
 
       {/* Meet the Team Section */}
-      <section id="team" className="py-20 border-t border-border/50">
+      <section id="team" className="py-20 border-t border-border/50 relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">
           <div className="text-center max-w-3xl mx-auto">
             <span className="label-xs text-indigo-500 font-bold tracking-widest">Engineering & Product</span>
@@ -548,7 +648,7 @@ function LandingPage() {
 
           <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Sonu Kumar Suman */}
-            <div className="panel p-6 rounded-3xl flex flex-col items-center text-center hover:border-indigo-500/40 transition-all hover:scale-[1.02] shadow-[var(--clay-shadow)] group">
+            <TiltCard className="antigravity-glass p-6 rounded-3xl flex flex-col items-center text-center hover:border-indigo-500/40 transition-all shadow-[var(--clay-shadow)] group spatial-card">
               {/* Picture Frame */}
               <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-emerald-500/20 border-2 border-indigo-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-indigo-500/60 transition-colors">
                 <img
@@ -596,10 +696,10 @@ function LandingPage() {
                   <Instagram className="h-4 w-4" />
                 </a>
               </div>
-            </div>
+            </TiltCard>
 
             {/* Hasini Pericharla */}
-            <div className="panel p-6 rounded-3xl flex flex-col items-center text-center hover:border-purple-500/40 transition-all hover:scale-[1.02] shadow-[var(--clay-shadow)] group">
+            <TiltCard className="antigravity-glass p-6 rounded-3xl flex flex-col items-center text-center hover:border-purple-500/40 transition-all shadow-[var(--clay-shadow)] group spatial-card">
               {/* Picture Frame */}
               <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-purple-500/20 via-rose-500/20 to-amber-500/20 border-2 border-purple-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-purple-500/60 transition-colors">
                 <img
@@ -647,10 +747,10 @@ function LandingPage() {
                   <Instagram className="h-4 w-4" />
                 </a>
               </div>
-            </div>
+            </TiltCard>
 
             {/* Piyush Srivastava */}
-            <div className="panel p-6 rounded-3xl flex flex-col items-center text-center hover:border-emerald-500/40 transition-all hover:scale-[1.02] shadow-[var(--clay-shadow)] group">
+            <TiltCard className="antigravity-glass p-6 rounded-3xl flex flex-col items-center text-center hover:border-emerald-500/40 transition-all shadow-[var(--clay-shadow)] group spatial-card">
               {/* Picture Frame */}
               <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-emerald-500/20 via-cyan-500/20 to-blue-500/20 border-2 border-emerald-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-emerald-500/60 transition-colors">
                 <img
@@ -698,10 +798,10 @@ function LandingPage() {
                   <Instagram className="h-4 w-4" />
                 </a>
               </div>
-            </div>
+            </TiltCard>
 
             {/* Krishna Prasad Kurmi */}
-            <div className="panel p-6 rounded-3xl flex flex-col items-center text-center hover:border-cyan-500/40 transition-all hover:scale-[1.02] shadow-[var(--clay-shadow)] group">
+            <TiltCard className="antigravity-glass p-6 rounded-3xl flex flex-col items-center text-center hover:border-cyan-500/40 transition-all shadow-[var(--clay-shadow)] group spatial-card">
               {/* Picture Frame */}
               <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-cyan-500/20 via-indigo-500/20 to-purple-500/20 border-2 border-cyan-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-cyan-500/60 transition-colors">
                 <img
@@ -749,7 +849,7 @@ function LandingPage() {
                   <Instagram className="h-4 w-4" />
                 </a>
               </div>
-            </div>
+            </TiltCard>
           </div>
         </div>
       </section>
@@ -757,7 +857,7 @@ function LandingPage() {
       {/* Bottom CTA Banner */}
       <section className="py-20 border-t border-border/50 relative overflow-hidden">
         <div className="mx-auto max-w-5xl px-4 sm:px-8 text-center relative z-10">
-          <div className="panel-lg p-10 sm:p-14 rounded-3xl shadow-[var(--clay-shadow-lg)] border border-border/80">
+          <TiltCard className="antigravity-glass p-10 sm:p-14 rounded-3xl shadow-[var(--clay-shadow-lg)] border border-border/80 spatial-card">
             <h2 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight">
               Ready to meet your digital future?
             </h2>
@@ -765,18 +865,18 @@ function LandingPage() {
               Create your profile in under 60 seconds. Test scenarios, calibrate habits, and stay years ahead of your goals.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <Button size="lg" asChild className="h-12 px-8 rounded-2xl font-bold shadow-[var(--clay-shadow)] text-base">
+              <Button size="lg" asChild className="h-12 px-8 rounded-2xl font-bold shadow-[var(--clay-shadow)] text-base hover:scale-105 transition-transform">
                 <Link to="/signup">
                   Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="h-12 px-8 rounded-2xl font-bold shadow-[var(--clay-shadow-sm)] text-base">
+              <Button size="lg" variant="outline" asChild className="h-12 px-8 rounded-2xl font-bold shadow-[var(--clay-shadow-sm)] text-base hover:scale-105 transition-transform">
                 <Link to="/login">
                   Log In to Existing Twin
                 </Link>
               </Button>
             </div>
-          </div>
+          </TiltCard>
         </div>
       </section>
 
