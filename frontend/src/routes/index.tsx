@@ -552,15 +552,10 @@ function LandingPage() {
               {/* Picture Frame */}
               <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-emerald-500/20 border-2 border-indigo-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-indigo-500/60 transition-colors">
                 <img
-                  src="/avatars/sonu.png"
+                  src="/avatars/sonu-kumar_suman.png"
                   alt="Sonu Kumar Suman"
-                  className="w-full h-full object-cover rounded-2xl hidden"
-                  onLoad={(e) => e.currentTarget.classList.remove("hidden")}
+                  className="w-full h-full object-cover rounded-2xl"
                 />
-                <div className="flex flex-col items-center justify-center w-full h-full font-display font-bold text-xl text-indigo-600 dark:text-indigo-400">
-                  <span>SK</span>
-                  <span className="text-[9px] font-mono text-muted-foreground mt-0.5">Photo</span>
-                </div>
               </div>
 
               <h3 className="font-display text-lg font-bold">Sonu Kumar Suman</h3>
@@ -608,15 +603,10 @@ function LandingPage() {
               {/* Picture Frame */}
               <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-purple-500/20 via-rose-500/20 to-amber-500/20 border-2 border-purple-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-purple-500/60 transition-colors">
                 <img
-                  src="/avatars/hasini.png"
+                  src="/avatars/hasini-pericharla.png"
                   alt="Hasini Pericharla"
-                  className="w-full h-full object-cover rounded-2xl hidden"
-                  onLoad={(e) => e.currentTarget.classList.remove("hidden")}
+                  className="w-full h-full object-cover rounded-2xl"
                 />
-                <div className="flex flex-col items-center justify-center w-full h-full font-display font-bold text-xl text-purple-600 dark:text-purple-400">
-                  <span>HP</span>
-                  <span className="text-[9px] font-mono text-muted-foreground mt-0.5">Photo</span>
-                </div>
               </div>
 
               <h3 className="font-display text-lg font-bold">Hasini Pericharla</h3>
@@ -664,15 +654,10 @@ function LandingPage() {
               {/* Picture Frame */}
               <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-emerald-500/20 via-cyan-500/20 to-blue-500/20 border-2 border-emerald-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-emerald-500/60 transition-colors">
                 <img
-                  src="/avatars/piyush.png"
+                  src="/avatars/piyush-srivastava.png"
                   alt="Piyush Srivastava"
-                  className="w-full h-full object-cover rounded-2xl hidden"
-                  onLoad={(e) => e.currentTarget.classList.remove("hidden")}
+                  className="w-full h-full object-cover rounded-2xl"
                 />
-                <div className="flex flex-col items-center justify-center w-full h-full font-display font-bold text-xl text-emerald-600 dark:text-emerald-400">
-                  <span>PS</span>
-                  <span className="text-[9px] font-mono text-muted-foreground mt-0.5">Photo</span>
-                </div>
               </div>
 
               <h3 className="font-display text-lg font-bold">Piyush Srivastava</h3>
@@ -720,15 +705,10 @@ function LandingPage() {
               {/* Picture Frame */}
               <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-cyan-500/20 via-indigo-500/20 to-purple-500/20 border-2 border-cyan-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-cyan-500/60 transition-colors">
                 <img
-                  src="/avatars/krishna.png"
+                  src="/avatars/krishna-prasad-kurmi.png"
                   alt="Krishna Prasad Kurmi"
-                  className="w-full h-full object-cover rounded-2xl hidden"
-                  onLoad={(e) => e.currentTarget.classList.remove("hidden")}
+                  className="w-full h-full object-cover rounded-2xl"
                 />
-                <div className="flex flex-col items-center justify-center w-full h-full font-display font-bold text-xl text-cyan-600 dark:text-cyan-400">
-                  <span>KP</span>
-                  <span className="text-[9px] font-mono text-muted-foreground mt-0.5">Photo</span>
-                </div>
               </div>
 
               <h3 className="font-display text-lg font-bold">Krishna Prasad Kurmi</h3>
