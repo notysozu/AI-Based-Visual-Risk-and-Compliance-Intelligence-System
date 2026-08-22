@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
@@ -52,6 +53,7 @@ function SignUpPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [activeTab, setActiveTab] = useState<"signup" | "login">("signup");
   const [loadingRole, setLoadingRole] = useState<string | null>(null);
 
@@ -64,6 +66,10 @@ function SignUpPage() {
   const submit = async (mode: "signup" | "login") => {
     if (!email || !password || (mode === "signup" && !name)) {
       toast.error("Fill in every field to continue");
+      return;
+    }
+    if (mode === "signup" && !agreeTerms) {
+      toast.error("Please agree to the Terms of Service and Privacy Policy to continue");
       return;
     }
     const isLogin = mode === "login";
@@ -185,6 +191,26 @@ function SignUpPage() {
               </div>
               <Field id="signup-email" label="Email" value={email} set={setEmail} type="email" />
               <Field id="signup-password" label="Password" value={password} set={setPassword} type="password" />
+
+              <div className="flex items-start space-x-2.5 pt-1">
+                <Checkbox
+                  id="agree-terms"
+                  checked={agreeTerms}
+                  onCheckedChange={(checked) => setAgreeTerms(Boolean(checked))}
+                />
+                <Label htmlFor="agree-terms" className="text-xs text-muted-foreground leading-snug cursor-pointer select-none">
+                  I agree to the{" "}
+                  <Link to="/pages/terms" target="_blank" className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/pages/privacy" target="_blank" className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">
+                    Privacy Policy
+                  </Link>
+                  .
+                </Label>
+              </div>
+
               <Button className="w-full mt-2" size="lg" onClick={() => submit("signup")}>
                 Create Twin Profile
               </Button>

@@ -21,6 +21,8 @@ import { Route as SimulatorRouteImport } from './routes/simulator'
 import { Route as StudyRouteImport } from './routes/study'
 import { Route as SuggestionsRouteImport } from './routes/suggestions'
 import { Route as WealthRouteImport } from './routes/wealth'
+import { Route as PagesPrivacyRouteImport } from './routes/pages/privacy'
+import { Route as PagesTermsRouteImport } from './routes/pages/terms'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -82,6 +84,16 @@ const WealthRoute = WealthRouteImport.update({
   path: '/wealth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PagesPrivacyRoute = PagesPrivacyRouteImport.update({
+  id: '/pages/privacy',
+  path: '/pages/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PagesTermsRoute = PagesTermsRouteImport.update({
+  id: '/pages/terms',
+  path: '/pages/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,6 +108,8 @@ export interface FileRoutesByFullPath {
   '/study': typeof StudyRoute
   '/suggestions': typeof SuggestionsRoute
   '/wealth': typeof WealthRoute
+  '/pages/privacy': typeof PagesPrivacyRoute
+  '/pages/terms': typeof PagesTermsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,6 +124,8 @@ export interface FileRoutesByTo {
   '/study': typeof StudyRoute
   '/suggestions': typeof SuggestionsRoute
   '/wealth': typeof WealthRoute
+  '/pages/privacy': typeof PagesPrivacyRoute
+  '/pages/terms': typeof PagesTermsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +141,8 @@ export interface FileRoutesById {
   '/study': typeof StudyRoute
   '/suggestions': typeof SuggestionsRoute
   '/wealth': typeof WealthRoute
+  '/pages/privacy': typeof PagesPrivacyRoute
+  '/pages/terms': typeof PagesTermsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +159,8 @@ export interface FileRouteTypes {
     | '/study'
     | '/suggestions'
     | '/wealth'
+    | '/pages/privacy'
+    | '/pages/terms'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +175,8 @@ export interface FileRouteTypes {
     | '/study'
     | '/suggestions'
     | '/wealth'
+    | '/pages/privacy'
+    | '/pages/terms'
   id:
     | '__root__'
     | '/'
@@ -169,6 +191,8 @@ export interface FileRouteTypes {
     | '/study'
     | '/suggestions'
     | '/wealth'
+    | '/pages/privacy'
+    | '/pages/terms'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +208,8 @@ export interface RootRouteChildren {
   StudyRoute: typeof StudyRoute
   SuggestionsRoute: typeof SuggestionsRoute
   WealthRoute: typeof WealthRoute
+  PagesPrivacyRoute: typeof PagesPrivacyRoute
+  PagesTermsRoute: typeof PagesTermsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -272,6 +298,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pages/privacy': {
+      id: '/pages/privacy'
+      path: '/pages/privacy'
+      fullPath: '/pages/privacy'
+      preLoaderRoute: typeof PagesPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pages/terms': {
+      id: '/pages/terms'
+      path: '/pages/terms'
+      fullPath: '/pages/terms'
+      preLoaderRoute: typeof PagesTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -288,6 +328,8 @@ const rootRouteChildren: RootRouteChildren = {
   StudyRoute: StudyRoute,
   SuggestionsRoute: SuggestionsRoute,
   WealthRoute: WealthRoute,
+  PagesPrivacyRoute: PagesPrivacyRoute,
+  PagesTermsRoute: PagesTermsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

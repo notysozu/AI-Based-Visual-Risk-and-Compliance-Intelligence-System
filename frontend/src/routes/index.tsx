@@ -883,7 +883,9 @@ function LandingPage() {
             <span className="font-display font-bold text-foreground">Digital Twin AI</span>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-6">
+            <Link to="/pages/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+            <Link to="/pages/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
             <Link to="/login" className="hover:text-foreground transition-colors">Log In</Link>
             <Link to="/signup" className="hover:text-foreground transition-colors">Sign Up</Link>
             <a href="https://github.com/notysozu/Digital-Twin-AI" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
