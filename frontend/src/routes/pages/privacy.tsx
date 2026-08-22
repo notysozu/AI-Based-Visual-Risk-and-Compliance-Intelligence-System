@@ -163,11 +163,16 @@ function PrivacyPage() {
 
           {/* Section 5 */}
           <div className="antigravity-glass p-8 rounded-3xl border border-border/80 shadow-[var(--clay-shadow)]">
-            <h2 className="font-display text-2xl font-bold mb-3">5. Contact Information</h2>
+            <h2 className="font-display text-2xl font-bold mb-3">5. Contact & Repository</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              If you have any questions regarding this Privacy Policy or your data, reach out to our engineering team at{" "}
-              <a href="mailto:lifegamer2050@gmail.com" className="text-primary font-semibold underline underline-offset-4">
-                lifegamer2050@gmail.com
+              If you have any questions regarding this Privacy Policy, your data, or wish to audit our open-source codebase, visit our official repository at{" "}
+              <a
+                href="https://github.com/notysozu/Digital-Twin-AI"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary font-semibold underline underline-offset-4 hover:text-primary/80"
+              >
+                github.com/notysozu/Digital-Twin-AI
               </a>.
             </p>
           </div>
@@ -184,11 +189,14 @@ function PrivacyPage() {
             <span className="font-display font-bold text-foreground">Digital Twin AI</span>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-6">
             <Link to="/pages/privacy" className="font-semibold text-foreground">Privacy Policy</Link>
             <Link to="/pages/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
             <Link to="/login" className="hover:text-foreground transition-colors">Log In</Link>
             <Link to="/signup" className="hover:text-foreground transition-colors">Sign Up</Link>
+            <a href="https://github.com/notysozu/Digital-Twin-AI" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+              GitHub
+            </a>
           </div>
 
           <div>
