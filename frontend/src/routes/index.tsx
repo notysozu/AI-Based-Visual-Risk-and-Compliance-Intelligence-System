@@ -301,12 +301,6 @@ function LandingPage() {
                     alt="3D Spatial Life Simulation Dashboard"
                     className="w-full h-44 sm:h-56 object-cover object-center opacity-90 hover:opacity-100 transition-opacity"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent flex items-end p-4">
-                    <span className="text-[11px] text-muted-foreground font-mono flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
-                      500 Monte Carlo stochastic trajectories processed
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>
