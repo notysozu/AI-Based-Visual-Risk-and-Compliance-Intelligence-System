@@ -12,9 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SimulatorRouteImport } from './routes/simulator'
 import { Route as StudyRouteImport } from './routes/study'
 import { Route as SuggestionsRouteImport } from './routes/suggestions'
@@ -35,6 +37,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlannerRoute = PlannerRouteImport.update({
   id: '/planner',
   path: '/planner',
@@ -48,6 +55,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
   path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SimulatorRoute = SimulatorRouteImport.update({
@@ -75,9 +87,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
+  '/login': typeof LoginRoute
   '/planner': typeof PlannerRoute
   '/profile': typeof ProfileRoute
   '/setup': typeof SetupRoute
+  '/signup': typeof SignupRoute
   '/simulator': typeof SimulatorRoute
   '/study': typeof StudyRoute
   '/suggestions': typeof SuggestionsRoute
@@ -87,9 +101,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
+  '/login': typeof LoginRoute
   '/planner': typeof PlannerRoute
   '/profile': typeof ProfileRoute
   '/setup': typeof SetupRoute
+  '/signup': typeof SignupRoute
   '/simulator': typeof SimulatorRoute
   '/study': typeof StudyRoute
   '/suggestions': typeof SuggestionsRoute
@@ -100,9 +116,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
+  '/login': typeof LoginRoute
   '/planner': typeof PlannerRoute
   '/profile': typeof ProfileRoute
   '/setup': typeof SetupRoute
+  '/signup': typeof SignupRoute
   '/simulator': typeof SimulatorRoute
   '/study': typeof StudyRoute
   '/suggestions': typeof SuggestionsRoute
@@ -114,9 +132,11 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/dashboard'
+    | '/login'
     | '/planner'
     | '/profile'
     | '/setup'
+    | '/signup'
     | '/simulator'
     | '/study'
     | '/suggestions'
@@ -126,9 +146,11 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/dashboard'
+    | '/login'
     | '/planner'
     | '/profile'
     | '/setup'
+    | '/signup'
     | '/simulator'
     | '/study'
     | '/suggestions'
@@ -138,9 +160,11 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/dashboard'
+    | '/login'
     | '/planner'
     | '/profile'
     | '/setup'
+    | '/signup'
     | '/simulator'
     | '/study'
     | '/suggestions'
@@ -151,9 +175,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyticsRoute: typeof AnalyticsRoute
   DashboardRoute: typeof DashboardRoute
+  LoginRoute: typeof LoginRoute
   PlannerRoute: typeof PlannerRoute
   ProfileRoute: typeof ProfileRoute
   SetupRoute: typeof SetupRoute
+  SignupRoute: typeof SignupRoute
   SimulatorRoute: typeof SimulatorRoute
   StudyRoute: typeof StudyRoute
   SuggestionsRoute: typeof SuggestionsRoute
@@ -183,6 +209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/planner': {
       id: '/planner'
       path: '/planner'
@@ -202,6 +235,13 @@ declare module '@tanstack/react-router' {
       path: '/setup'
       fullPath: '/setup'
       preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/simulator': {
@@ -239,9 +279,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
   DashboardRoute: DashboardRoute,
+  LoginRoute: LoginRoute,
   PlannerRoute: PlannerRoute,
   ProfileRoute: ProfileRoute,
   SetupRoute: SetupRoute,
+  SignupRoute: SignupRoute,
   SimulatorRoute: SimulatorRoute,
   StudyRoute: StudyRoute,
   SuggestionsRoute: SuggestionsRoute,

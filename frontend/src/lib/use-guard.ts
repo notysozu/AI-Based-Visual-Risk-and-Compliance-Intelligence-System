@@ -10,7 +10,7 @@ export function useGuard(): boolean {
 
   useEffect(() => {
     if (ready && !signedIn) {
-      navigate({ to: "/" });
+      navigate({ to: "/login" });
     }
   }, [ready, signedIn, navigate]);
 
