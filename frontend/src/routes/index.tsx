@@ -23,8 +23,12 @@ import {
   Linkedin,
   Instagram,
   Compass,
-  Flame,
+  Sliders,
+  Target,
+  BarChart3,
+  Clock,
   Layers,
+  ArrowUpRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -34,13 +38,13 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Digital Twin AI — Spatial Life Modeling & Monte Carlo Forecasting" },
+      { title: "Digital Twin AI — Model Your Life 5 Years Ahead" },
       {
         name: "description",
         content:
           "Autonomous digital twin intelligence that models your wealth, habits, study momentum, and life decisions 5 years ahead with Monte Carlo simulations.",
       },
-      { property: "og:title", content: "Digital Twin AI — Spatial Life Modeling" },
+      { property: "og:title", content: "Digital Twin AI — Celestial Life Modeling" },
       {
         property: "og:description",
         content:
@@ -51,11 +55,11 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
-/** Interactive 3D Spatial Tilt Card following cursor physics */
+/** Interactive 3D Spatial Tilt Container with Dynamic Glare */
 function TiltCard({
   children,
   className = "",
-  maxTilt = 8,
+  maxTilt = 7,
   glare = true,
 }: {
   children: ReactNode;
@@ -64,7 +68,7 @@ function TiltCard({
   glare?: boolean;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [transform, setTransform] = useState("perspective(1000px) rotateX(0deg) rotateY(0deg)");
+  const [transform, setTransform] = useState("perspective(1200px) rotateX(0deg) rotateY(0deg)");
   const [glarePos, setGlarePos] = useState({ x: 50, y: 50, opacity: 0 });
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
@@ -78,16 +82,16 @@ function TiltCard({
     const rotateX = ((y - centerY) / centerY) * -maxTilt;
     const rotateY = ((x - centerX) / centerX) * maxTilt;
 
-    setTransform(`perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.015, 1.015, 1.015)`);
+    setTransform(`perspective(1200px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.01, 1.01, 1.01)`);
     setGlarePos({
       x: (x / rect.width) * 100,
       y: (y / rect.height) * 100,
-      opacity: 0.2,
+      opacity: 0.18,
     });
   };
 
   const handleMouseLeave = () => {
-    setTransform("perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)");
+    setTransform("perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)");
     setGlarePos((prev) => ({ ...prev, opacity: 0 }));
   };
 
@@ -108,7 +112,7 @@ function TiltCard({
           className="pointer-events-none absolute inset-0 z-20 transition-opacity duration-300 rounded-3xl"
           style={{
             opacity: glarePos.opacity,
-            background: `radial-gradient(circle 260px at ${glarePos.x}% ${glarePos.y}%, rgba(255, 255, 255, 0.35), transparent 80%)`,
+            background: `radial-gradient(circle 280px at ${glarePos.x}% ${glarePos.y}%, rgba(255, 255, 255, 0.25), transparent 80%)`,
           }}
         />
       )}
@@ -122,34 +126,58 @@ function LandingPage() {
   const navigate = useNavigate();
   const [loadingRole, setLoadingRole] = useState<string | null>(null);
   const heroRef = useRef<HTMLDivElement>(null);
-  const featuresRef = useRef<HTMLDivElement>(null);
 
-  // Interactive Live Simulator Sandbox state on Landing Page
+  // Horizon Raycaster Scrubber State (Year 0 to Year 5)
+  const [horizonYear, setHorizonYear] = useState(3);
+  const [activePath, setActivePath] = useState<"proactive" | "drift">("proactive");
+
+  // Sandbox sliders
   const [simSavings, setSimSavings] = useState(1200);
   const [simSleep, setSimSleep] = useState(7.5);
   const [simStudy, setSimStudy] = useState(12);
 
-  // Computed 5-year interactive projection
+  // Dynamic calculations for Horizon Raycaster
+  const baseWealth = 15000;
+  const isProactive = activePath === "proactive";
+  const yearlyRate = isProactive ? 0.09 : 0.02;
+  const annualSavings = isProactive ? 14400 : 1800;
+
+  // Compound formula across selected year
+  const projectedMedian = Math.round(
+    baseWealth * Math.pow(1 + yearlyRate, horizonYear) +
+      annualSavings * ((Math.pow(1 + yearlyRate, horizonYear) - 1) / (yearlyRate || 1))
+  );
+  const p90Bull = Math.round(projectedMedian * (1 + 0.12 * horizonYear));
+  const p10Bear = Math.round(projectedMedian * (1 - 0.08 * horizonYear));
+  const focusScore = isProactive ? Math.min(99, 82 + horizonYear * 3) : Math.max(45, 75 - horizonYear * 6);
+  const deepWorkHours = isProactive ? Math.round(14 * 52 * horizonYear) : Math.round(3 * 52 * horizonYear);
+
+  // Sandbox calculations
   const sim5YearWealth = Math.round(simSavings * 12 * 5 * 1.28 + 25000);
   const simFocusScore = Math.min(100, Math.round((simSleep / 8) * 45 + (simStudy / 15) * 55));
 
-  // GSAP Staggered Entrance
+  // GSAP mounting choreography
   useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.from(".gsap-hero-item", {
+      gsap.from(".gsap-hero-title", {
         opacity: 0,
-        y: 28,
-        stagger: 0.1,
-        duration: 0.9,
+        y: 32,
+        duration: 1,
         ease: "power3.out",
       });
-      gsap.from(".gsap-card-stagger", {
+      gsap.from(".gsap-hero-sub", {
         opacity: 0,
-        y: 35,
-        stagger: 0.08,
-        duration: 0.8,
+        y: 24,
+        duration: 0.9,
+        delay: 0.15,
         ease: "power3.out",
-        delay: 0.2,
+      });
+      gsap.from(".gsap-hero-instrument", {
+        opacity: 0,
+        y: 40,
+        duration: 1.1,
+        delay: 0.3,
+        ease: "power3.out",
       });
     }, heroRef);
 
@@ -170,8 +198,8 @@ function LandingPage() {
   };
 
   return (
-    <div ref={heroRef} className="min-h-screen bg-background text-foreground flex flex-col selection:bg-indigo-500/20 overflow-x-hidden">
-      {/* Floating Spatial Antigravity Header */}
+    <div ref={heroRef} className="min-h-screen bg-background text-foreground flex flex-col selection:bg-indigo-500/25 overflow-x-hidden">
+      {/* Floating Glassmorphic Header */}
       <header className="sticky top-4 z-50 mx-auto w-[94%] max-w-7xl">
         <div className="antigravity-glass rounded-2xl px-5 py-3 flex items-center justify-between border border-border/60 shadow-[var(--clay-shadow-sm)]">
           <Link to="/" className="flex items-center gap-2.5 group">
@@ -207,91 +235,162 @@ function LandingPage() {
         </div>
       </header>
 
-      {/* Spatial Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-20 md:pt-20 md:pb-28">
-        {/* Levitation Floating Background Orbs */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[550px] w-[650px] rounded-full bg-gradient-to-tr from-indigo-500/15 via-purple-500/15 to-emerald-500/15 blur-3xl pointer-events-none animate-glow-pulse" />
-        <div className="absolute -top-12 -left-12 h-72 w-72 rounded-full bg-purple-500/10 blur-2xl pointer-events-none animate-float-slow" />
-        <div className="absolute top-1/2 -right-12 h-80 w-80 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none animate-float-delayed" />
+      {/* Hero Section: The Thesis & Raycaster Instrument */}
+      <section className="relative overflow-hidden pt-14 pb-20 md:pt-20 md:pb-28">
+        {/* Subtle Ambient Light Emitting Cavities */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[700px] rounded-full bg-gradient-to-tr from-indigo-500/15 via-purple-500/15 to-emerald-500/10 blur-3xl pointer-events-none animate-glow-pulse" />
+        <div className="absolute top-10 left-10 h-72 w-72 rounded-full bg-indigo-500/8 blur-3xl pointer-events-none animate-float-slow" />
+        <div className="absolute bottom-10 right-10 h-80 w-80 rounded-full bg-purple-500/8 blur-3xl pointer-events-none animate-float-delayed" />
 
         <div className="mx-auto max-w-7xl px-4 sm:px-8 text-center relative z-10">
-          <h1 className="gsap-hero-item mx-auto max-w-4xl font-display text-4xl font-extrabold tracking-tight sm:text-6xl md:text-7xl leading-[1.1]">
-            Model Your Life <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 bg-clip-text text-transparent">5 Years Ahead</span> with AI.
+          <h1 className="gsap-hero-title mx-auto max-w-4xl font-display text-4xl font-extrabold tracking-tight sm:text-6xl md:text-7xl leading-[1.08]">
+            See the <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 bg-clip-text text-transparent">5-Year Compounding</span> of Your Habits Before You Live Them.
           </h1>
 
-          <p className="gsap-hero-item mx-auto mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground leading-relaxed">
-            Digital Twin AI runs 500-iteration Monte Carlo simulations, optimizes daily study sprints, predicts financial independence velocity, and stress-tests life choices before you make them.
+          <p className="gsap-hero-sub mx-auto mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground leading-relaxed">
+            Digital Twin AI runs 500-iteration Monte Carlo algorithms to stress-test your wealth, learning velocity, and life decisions across probabilistic future horizons.
           </p>
 
-          <div className="gsap-hero-item mt-10 flex flex-wrap items-center justify-center gap-4">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Button size="lg" asChild className="h-12 px-8 rounded-2xl font-bold shadow-[var(--clay-shadow)] text-base hover:scale-105 transition-transform">
               <Link to="/signup">
-                Launch Your Twin Free <ArrowRight className="ml-2 h-4 w-4" />
+                Calibrate Your Twin <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild className="h-12 px-8 rounded-2xl font-bold shadow-[var(--clay-shadow-sm)] text-base hover:scale-105 transition-transform">
               <Link to="/login">
-                Explore Demo Twins
+                Explore Demo Personas
               </Link>
             </Button>
           </div>
 
-          {/* Spatial 3D Weightless Preview Card */}
-          <div className="gsap-hero-item mt-16 mx-auto max-w-5xl spatial-container">
-            <TiltCard className="antigravity-glass rounded-3xl p-6 sm:p-8 text-left border border-border/80 shadow-[var(--clay-shadow-lg)] animate-float-slow">
-              <div className="flex flex-wrap items-center justify-between border-b border-border/60 pb-4 mb-6 gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="font-display font-bold text-base sm:text-lg">Alex Rivera — Student Persona Simulation</span>
-                  <span className="clay-badge-emerald px-2.5 py-0.5 rounded-full text-[11px] font-bold">Live Calibrated</span>
+          {/* SIGNATURE ELEMENT: 5-Year Life Horizon Raycaster Instrument */}
+          <div className="gsap-hero-instrument mt-14 mx-auto max-w-5xl spatial-container">
+            <TiltCard className="antigravity-glass rounded-3xl p-6 sm:p-8 text-left border border-border/80 shadow-[var(--clay-shadow-lg)]">
+              {/* Instrument Top Toolbar */}
+              <div className="flex flex-wrap items-center justify-between border-b border-border/60 pb-5 mb-6 gap-4">
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="font-display font-bold text-base sm:text-lg">5-Year Horizon Raycaster</span>
+                    <span className="clay-badge-indigo px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase">
+                      Interactive Instrument
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Drag the timeline scrubber to project compounding across 500 Monte Carlo iterations.
+                  </p>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="font-mono">500 Monte Carlo Iterations</span>
-                  <span>•</span>
-                  <span className="font-mono">99.4% Statistical Confidence</span>
+
+                {/* Path Mode Selector */}
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-background/60 border border-border/80">
+                  <button
+                    type="button"
+                    onClick={() => setActivePath("proactive")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      isProactive
+                        ? "bg-indigo-600 text-white shadow-[0_2px_8px_rgba(99,102,241,0.4)]"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Proactive Path
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActivePath("drift")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      !isProactive
+                        ? "bg-amber-600 text-white shadow-[0_2px_8px_rgba(217,119,6,0.4)]"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Drift Path
+                  </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="clay-card p-5 rounded-2xl spatial-card">
-                  <div className="flex items-center justify-between">
-                    <span className="label-xs">Focus & Momentum</span>
-                    <Activity className="h-4 w-4 text-purple-500" />
-                  </div>
-                  <div className="mt-2 text-3xl font-display font-bold text-purple-600 dark:text-purple-400 tabular-nums">94.2%</div>
-                  <p className="mt-1 text-xs text-muted-foreground">+6.8% above baseline target</p>
+              {/* Scrubber Range Control */}
+              <div className="mb-6 p-4 rounded-2xl bg-sidebar/40 border border-border/60">
+                <div className="flex items-center justify-between text-xs font-mono mb-2">
+                  <span className="text-muted-foreground">Scrub Projection Horizon:</span>
+                  <span className="font-bold text-foreground bg-primary/10 px-2 py-0.5 rounded-md">
+                    {horizonYear === 0 ? "Year 0 (Today)" : `+${horizonYear} Year${horizonYear > 1 ? "s" : ""} Horizon`}
+                  </span>
                 </div>
+                <Slider
+                  min={0}
+                  max={5}
+                  step={1}
+                  value={[horizonYear]}
+                  onValueChange={([v]) => setHorizonYear(v)}
+                />
+                <div className="flex justify-between text-[10px] font-mono text-muted-foreground mt-2">
+                  <span>Year 0</span>
+                  <span>Year 1</span>
+                  <span>Year 2</span>
+                  <span>Year 3</span>
+                  <span>Year 4</span>
+                  <span>Year 5 (Future)</span>
+                </div>
+              </div>
 
+              {/* Computed Live Metrics */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Wealth Trajectory */}
                 <div className="clay-card p-5 rounded-2xl spatial-card">
                   <div className="flex items-center justify-between">
-                    <span className="label-xs">5-Year Projected Net Worth</span>
+                    <span className="label-xs">Projected Net Worth (P50)</span>
                     <TrendingUp className="h-4 w-4 text-emerald-500" />
                   </div>
-                  <div className="mt-2 text-3xl font-display font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">$94,500</div>
-                  <p className="mt-1 text-xs text-muted-foreground">P90 Bull Market: $132,000</p>
+                  <div className="mt-2 text-3xl font-display font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                    {money(projectedMedian)}
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground font-mono">
+                    <span>P10: {money(p10Bear)}</span>
+                    <span>P90: {money(p90Bull)}</span>
+                  </div>
                 </div>
 
+                {/* Focus Momentum */}
                 <div className="clay-card p-5 rounded-2xl spatial-card">
                   <div className="flex items-center justify-between">
-                    <span className="label-xs">Academic Retention</span>
+                    <span className="label-xs">Cognitive Momentum</span>
+                    <Activity className="h-4 w-4 text-purple-500" />
+                  </div>
+                  <div className="mt-2 text-3xl font-display font-extrabold text-purple-600 dark:text-purple-400 tabular-nums">
+                    {focusScore}/100
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {isProactive ? "+18.4% above drift baseline" : "-22.5% below proactive potential"}
+                  </p>
+                </div>
+
+                {/* Deep Work Cumulative */}
+                <div className="clay-card p-5 rounded-2xl spatial-card">
+                  <div className="flex items-center justify-between">
+                    <span className="label-xs">Deep Work Compounding</span>
                     <GraduationCap className="h-4 w-4 text-indigo-500" />
                   </div>
-                  <div className="mt-2 text-3xl font-display font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">88.5%</div>
-                  <p className="mt-1 text-xs text-muted-foreground">Pomodoro study sprint efficiency</p>
+                  <div className="mt-2 text-3xl font-display font-extrabold text-indigo-600 dark:text-indigo-400 tabular-nums">
+                    {deepWorkHours.toLocaleString()} hrs
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {isProactive ? "Expert mastery accumulation" : "Low retention trajectory"}
+                  </p>
                 </div>
               </div>
 
-              {/* Stitch 3D Spatial Trajectory Visualization */}
-              <div className="relative mt-6 rounded-2xl overflow-hidden border border-border/60 bg-black/20 shadow-[var(--clay-shadow-sm)]">
+              {/* Visual Horizon Raycaster Hologram */}
+              <div className="relative mt-6 rounded-2xl overflow-hidden border border-border/60 bg-black/30 shadow-[var(--clay-shadow-sm)]">
                 <img
                   src="/images/hero-3d-dashboard.png"
                   alt="3D Spatial Life Simulation Dashboard"
-                  className="w-full h-48 sm:h-64 object-cover object-center opacity-90 hover:scale-[1.02] transition-transform duration-500"
+                  className="w-full h-48 sm:h-60 object-cover object-center opacity-85 hover:scale-[1.01] transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent flex items-end p-4">
-                  <span className="text-xs text-muted-foreground font-mono flex items-center gap-1.5">
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/25 to-transparent flex items-end p-4">
+                  <span className="text-xs text-muted-foreground font-mono flex items-center gap-2">
                     <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
-                    Spatial 3D Monte Carlo Trajectory Projection Engine
+                    <span>Monte Carlo probability fan: 500 stochastic paths analyzed in 12ms</span>
                   </span>
                 </div>
               </div>
@@ -300,13 +399,13 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Core Intelligence Pillars Section */}
-      <section id="features" ref={featuresRef} className="py-20 border-t border-border/50 bg-sidebar/20 relative">
+      {/* The 6 Systematic Pillars Section */}
+      <section id="pillars" className="py-20 border-t border-border/50 bg-sidebar/20 relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">
           <div className="text-center max-w-3xl mx-auto">
-            <span className="label-xs text-indigo-500 font-bold tracking-widest">Built for Holistic Growth</span>
+            <span className="label-xs text-indigo-500 font-bold tracking-widest">Architectural Pillars</span>
             <h2 className="mt-2 font-display text-3xl font-bold sm:text-5xl tracking-tight">
-              A Complete Intelligence Operating System
+              An Engine Built for Life's High-Stakes Decisions
             </h2>
             <p className="mt-4 text-muted-foreground text-sm sm:text-base leading-relaxed">
               Every decision you make compounds. Digital Twin AI connects your finances, daily habits, deep work, and learning goals into a unified predictive feedback loop.
@@ -318,7 +417,7 @@ function LandingPage() {
               <div className="clay-icon-indigo w-12 h-12 rounded-2xl flex items-center justify-center mb-5">
                 <TrendingUp className="h-6 w-6" />
               </div>
-              <h3 className="font-display text-xl font-bold">Monte Carlo Wealth Forecaster</h3>
+              <h3 className="font-display text-xl font-bold">Monte Carlo Wealth Engine</h3>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                 Run 500 stochastic market runs modeling median, P10 bear, and P90 bull horizons. Track the exact age you hit financial freedom.
               </p>
@@ -328,7 +427,7 @@ function LandingPage() {
               <div className="clay-icon-purple w-12 h-12 rounded-2xl flex items-center justify-center mb-5">
                 <GraduationCap className="h-6 w-6" />
               </div>
-              <h3 className="font-display text-xl font-bold">Study & Academic Intelligence</h3>
+              <h3 className="font-display text-xl font-bold">Academic Syllabus & Spaced Repetition</h3>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                 Tailored for students and continuous learners. Generate full syllabus schedules, schedule multi-day sprints, and retain knowledge effortlessly.
               </p>
@@ -377,7 +476,7 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Persona Showcase Section */}
+      {/* Pre-Calibrated Persona Archetypes */}
       <section id="personas" className="py-20 border-t border-border/50">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">
           <div className="text-center max-w-3xl mx-auto">
@@ -386,7 +485,7 @@ function LandingPage() {
               Pre-Calibrated Role Archetypes
             </h2>
             <p className="mt-4 text-muted-foreground text-sm sm:text-base leading-relaxed">
-              Whether you are balancing exams, growing salary equity, managing freelance invoices, scaling a startup, or enjoying retirement.
+              Explore calibrated twin configurations designed for different career and life priorities.
             </p>
           </div>
 
@@ -459,7 +558,7 @@ function LandingPage() {
                 variant="outline"
                 size="sm"
                 disabled={loadingRole === "freelancer"}
-                onClick={() => handleLaunchDemo("freelancer")}
+                onClick={() => handleLoadDemoRole("freelancer")}
                 className="mt-6 w-full rounded-xl font-semibold shadow-[var(--clay-shadow-sm)] hover:bg-cyan-500/10"
               >
                 Launch Freelancer Demo <ChevronRight className="ml-1 h-3.5 w-3.5" />
@@ -545,16 +644,16 @@ function LandingPage() {
       </section>
 
       {/* Interactive 3D Simulator Sandbox Section */}
-      <section id="simulation" className="py-20 border-t border-border/50 bg-sidebar/20 relative">
+      <section id="sandbox" className="py-20 border-t border-border/50 bg-sidebar/20 relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <span className="label-xs text-emerald-500 font-bold tracking-widest">Test The Engine Live</span>
+              <span className="label-xs text-emerald-500 font-bold tracking-widest">Tactile Calibration</span>
               <h2 className="mt-2 font-display text-3xl font-bold sm:text-4xl tracking-tight">
-                Try the Interactive Life Projection Sandbox
+                Live Life Projection Sandbox
               </h2>
               <p className="mt-4 text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Adjust the sliders to experience how minor weekly habits create staggering compound divergence over a 5-year horizon.
+                Adjust baseline variables in real time to observe the direct divergence on your 5-year financial and momentum horizon.
               </p>
 
               <div className="mt-8 space-y-6">
@@ -641,23 +740,22 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Meet the Team Section */}
+      {/* The Builders / Engineering Team Section */}
       <section id="team" className="py-20 border-t border-border/50 relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">
           <div className="text-center max-w-3xl mx-auto">
-            <span className="label-xs text-indigo-500 font-bold tracking-widest">Engineering & Product</span>
+            <span className="label-xs text-indigo-500 font-bold tracking-widest">Engineering & Architecture</span>
             <h2 className="mt-2 font-display text-3xl font-bold sm:text-5xl tracking-tight">
-              Meet the Team
+              Meet the Builders
             </h2>
             <p className="mt-4 text-muted-foreground text-sm sm:text-base leading-relaxed">
-              The engineers and architects building autonomous life modeling, Monte Carlo simulation engines, and intelligent dashboards.
+              The engineers and researchers building autonomous life modeling, stochastic simulation engines, and intelligent dashboards.
             </p>
           </div>
 
           <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Sonu Kumar Suman */}
             <TiltCard className="antigravity-glass p-6 rounded-3xl flex flex-col items-center text-center hover:border-indigo-500/40 transition-all shadow-[var(--clay-shadow)] group spatial-card">
-              {/* Picture Frame */}
               <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-emerald-500/20 border-2 border-indigo-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-indigo-500/60 transition-colors">
                 <img
                   src="/avatars/sonu-kumar_suman.png"
@@ -674,7 +772,6 @@ function LandingPage() {
                 Core system architecture, predictive life engines, and interactive full-stack experience.
               </p>
 
-              {/* Social Buttons */}
               <div className="mt-6 flex items-center justify-center gap-2 pt-4 border-t border-border/60 w-full">
                 <a
                   href="https://github.com/notysozu"
@@ -708,7 +805,6 @@ function LandingPage() {
 
             {/* Hasini Pericharla */}
             <TiltCard className="antigravity-glass p-6 rounded-3xl flex flex-col items-center text-center hover:border-purple-500/40 transition-all shadow-[var(--clay-shadow)] group spatial-card">
-              {/* Picture Frame */}
               <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-purple-500/20 via-rose-500/20 to-amber-500/20 border-2 border-purple-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-purple-500/60 transition-colors">
                 <img
                   src="/avatars/hasini-pericharla.png"
@@ -725,7 +821,6 @@ function LandingPage() {
                 Monte Carlo stochastic algorithms, probabilistic life forecasting, and recommendation modeling.
               </p>
 
-              {/* Social Buttons */}
               <div className="mt-6 flex items-center justify-center gap-2 pt-4 border-t border-border/60 w-full">
                 <a
                   href="https://github.com"
@@ -759,7 +854,6 @@ function LandingPage() {
 
             {/* Piyush Srivastava */}
             <TiltCard className="antigravity-glass p-6 rounded-3xl flex flex-col items-center text-center hover:border-emerald-500/40 transition-all shadow-[var(--clay-shadow)] group spatial-card">
-              {/* Picture Frame */}
               <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-emerald-500/20 via-cyan-500/20 to-blue-500/20 border-2 border-emerald-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-emerald-500/60 transition-colors">
                 <img
                   src="/avatars/piyush-srivastava.png"
@@ -776,7 +870,6 @@ function LandingPage() {
                 FastAPI high-throughput endpoints, SQLite engine, study persistence, and financial math pipelines.
               </p>
 
-              {/* Social Buttons */}
               <div className="mt-6 flex items-center justify-center gap-2 pt-4 border-t border-border/60 w-full">
                 <a
                   href="https://github.com"
@@ -810,7 +903,6 @@ function LandingPage() {
 
             {/* Krishna Prasad Kurmi */}
             <TiltCard className="antigravity-glass p-6 rounded-3xl flex flex-col items-center text-center hover:border-cyan-500/40 transition-all shadow-[var(--clay-shadow)] group spatial-card">
-              {/* Picture Frame */}
               <div className="relative mb-5 w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-tr from-cyan-500/20 via-indigo-500/20 to-purple-500/20 border-2 border-cyan-500/30 flex items-center justify-center shadow-[var(--clay-shadow-sm)] group-hover:border-cyan-500/60 transition-colors">
                 <img
                   src="/avatars/krishna-prasad-kurmi.png"
@@ -827,7 +919,6 @@ function LandingPage() {
                 Responsive UI components, interactive charts, tactile claymorphic aesthetics, and planner widgets.
               </p>
 
-              {/* Social Buttons */}
               <div className="mt-6 flex items-center justify-center gap-2 pt-4 border-t border-border/60 w-full">
                 <a
                   href="https://github.com"
