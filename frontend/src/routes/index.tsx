@@ -15,8 +15,6 @@ import {
   Rocket,
   HeartHandshake,
   CheckCircle2,
-  ShieldCheck,
-  Zap,
   Activity,
   ChevronRight,
   Github,
@@ -322,17 +320,7 @@ function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <MacCard>
-              <div className="h-9 w-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4">
-                <TrendingUp className="h-4.5 w-4.5" />
-              </div>
-              <h3 className="text-base font-semibold">Monte Carlo Wealth Engine</h3>
-              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                500 stochastic runs modeling median, P10 bear, and P90 bull horizons to forecast financial independence.
-              </p>
-            </MacCard>
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <MacCard>
               <div className="h-9 w-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4">
                 <GraduationCap className="h-4.5 w-4.5" />
@@ -360,26 +348,6 @@ function LandingPage() {
               <h3 className="text-base font-semibold">Calibrated Recommendations</h3>
               <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
                 AI recommendations monitoring sleep debt, deep work volume, and savings velocity with 1-click plan adoption.
-              </p>
-            </MacCard>
-
-            <MacCard>
-              <div className="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
-                <Zap className="h-4.5 w-4.5" />
-              </div>
-              <h3 className="text-base font-semibold">Live & Offline Sync</h3>
-              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                Work uninterrupted with instant browser offline detection and automatic cloud state synchronization.
-              </p>
-            </MacCard>
-
-            <MacCard>
-              <div className="h-9 w-9 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-4">
-                <ShieldCheck className="h-4.5 w-4.5" />
-              </div>
-              <h3 className="text-base font-semibold">Local-First Privacy</h3>
-              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                Zero data monetization. Encrypted parameters backed by high-speed SQLite and local-first architecture.
               </p>
             </MacCard>
           </div>
