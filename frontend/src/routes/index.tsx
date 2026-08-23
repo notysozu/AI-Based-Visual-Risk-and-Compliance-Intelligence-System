@@ -648,7 +648,7 @@ function LandingPage() {
 
               <div className="mt-5 flex items-center justify-center gap-2 pt-3 border-t border-border/50 w-full">
                 <a
-                  href="https://github.com/notysozu"
+                  href="https://github.com/notysozu/"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Sonu Kumar Suman GitHub"
@@ -657,7 +657,7 @@ function LandingPage() {
                   <Github className="h-3.5 w-3.5" />
                 </a>
                 <a
-                  href="https://linkedin.com"
+                  href="https://www.linkedin.com/in/notysozu/"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Sonu Kumar Suman LinkedIn"
@@ -666,7 +666,7 @@ function LandingPage() {
                   <Linkedin className="h-3.5 w-3.5" />
                 </a>
                 <a
-                  href="https://instagram.com"
+                  href="https://www.instagram.com/notysozu/"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Sonu Kumar Suman Instagram"
