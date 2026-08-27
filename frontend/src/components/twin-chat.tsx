@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  Send,
   Plus,
   Trash2,
   Sparkles,
@@ -20,10 +19,14 @@ import {
   MessageSquare,
   ChevronDown,
   Copy,
-  Check
+  Check,
+  Mic,
+  Brain,
+  Search,
+  AudioWaveform,
+  Send
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -59,7 +62,9 @@ export function TwinChat() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [showSessionsDropdown, setShowSessionsDropdown] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [isThinkMode, setIsThinkMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Load sessions on mount or user change
   useEffect(() => {
@@ -88,12 +93,11 @@ export function TwinChat() {
           setActiveSessionId(data[0].id);
         }
       } else {
-        // Automatically initiate a new thread if no sessions exist
+        // Automatically initiate a new thread if none exist
         await handleAutoInitiateThread();
       }
     } catch (err) {
       console.error("Failed to load chat sessions:", err);
-      // Fallback: auto-create if error/empty
       await handleAutoInitiateThread();
     } finally {
       setInitialLoading(false);
@@ -141,7 +145,6 @@ export function TwinChat() {
         if (updated.length > 0) {
           setActiveSessionId(updated[0].id);
         } else {
-          // If all deleted, automatically initiate a fresh one
           await handleAutoInitiateThread();
         }
       }
@@ -280,27 +283,24 @@ export function TwinChat() {
   };
 
   const activeSession = sessions.find((s) => s.id === activeSessionId);
+  const isConversationEmpty = messages.length === 0 || (messages.length === 1 && messages[0].role === "assistant" && messages[0].content.includes("New conversation thread started"));
 
   return (
-    <div className="panel flex flex-col h-[660px] overflow-hidden border border-border/70 shadow-xl bg-card/70 backdrop-blur-2xl rounded-2xl">
-      {/* ChatGPT Style Top Navigation Bar */}
-      <div className="px-5 py-3.5 border-b border-border/50 flex items-center justify-between bg-sidebar/40">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0071E3] to-indigo-600 text-white shadow-xs">
-            <Sparkles className="h-4 w-4" />
+    <div className="flex flex-col h-[650px] overflow-hidden rounded-3xl border border-white/10 dark:border-white/10 bg-[#171717]/95 dark:bg-[#171717]/95 text-white shadow-2xl backdrop-blur-2xl transition-all">
+      {/* Top Subtle Header Bar */}
+      <div className="px-5 py-3 border-b border-white/5 flex items-center justify-between bg-black/20">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white shadow-xs">
+            <Sparkles className="h-3.5 w-3.5 text-[#0071E3]" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-sm tracking-tight text-foreground">
-                Conversational Digital Twin
-              </h3>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                Active Copilot
-              </span>
-            </div>
-            <p className="text-[11px] text-muted-foreground truncate max-w-[220px] sm:max-w-xs">
-              {activeSession ? activeSession.title : "Live Simulation Brain"}
-            </p>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-xs tracking-tight text-white/90">
+              Digital Twin AI
+            </span>
+            <span className="text-white/30 text-xs">•</span>
+            <span className="text-[11px] text-white/60 truncate max-w-[200px] sm:max-w-xs">
+              {activeSession ? activeSession.title : "New Thread"}
+            </span>
           </div>
         </div>
 
@@ -308,21 +308,20 @@ export function TwinChat() {
         <div className="flex items-center gap-2">
           {/* Thread Switcher Dropdown */}
           <div className="relative">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs gap-1.5 bg-background/80 hover:bg-background"
+            <button
+              type="button"
+              className="h-7 px-2.5 rounded-lg text-xs flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-white/80 border border-white/5 transition-colors"
               onClick={() => setShowSessionsDropdown(!showSessionsDropdown)}
             >
-              <MessageSquare className="h-3.5 w-3.5" />
+              <MessageSquare className="h-3 w-3 opacity-70" />
               <span className="hidden sm:inline">Threads ({sessions.length})</span>
-              <ChevronDown className="h-3 w-3 opacity-60" />
-            </Button>
+              <ChevronDown className="h-3 w-3 opacity-50" />
+            </button>
 
             {showSessionsDropdown && (
-              <div className="absolute right-0 mt-1.5 w-64 rounded-xl border border-border bg-card/95 backdrop-blur-md shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
-                <div className="px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/40 flex items-center justify-between">
-                  <span>Past Conversations</span>
+              <div className="absolute right-0 mt-1.5 w-64 rounded-2xl border border-white/10 bg-[#212121] shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95">
+                <div className="px-3.5 py-1 text-[10px] font-semibold text-white/40 uppercase tracking-wider border-b border-white/5 flex items-center justify-between">
+                  <span>Conversations</span>
                   <span className="font-mono">{sessions.length} saved</span>
                 </div>
                 <div className="max-h-56 overflow-y-auto py-1 space-y-0.5">
@@ -333,112 +332,128 @@ export function TwinChat() {
                         setActiveSessionId(s.id);
                         setShowSessionsDropdown(false);
                       }}
-                      className={`px-3 py-2 text-xs flex items-center justify-between cursor-pointer hover:bg-muted/60 transition-colors ${
-                        s.id === activeSessionId ? "bg-[#0071E3]/10 text-[#0071E3] dark:text-blue-400 font-medium" : "text-foreground"
+                      className={`px-3.5 py-2 text-xs flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors ${
+                        s.id === activeSessionId ? "bg-white/10 text-white font-medium" : "text-white/70"
                       }`}
                     >
-                      <span className="truncate max-w-[180px]">{s.title}</span>
+                      <span className="truncate max-w-[170px]">{s.title}</span>
                       <button
                         type="button"
                         onClick={(e) => handleDeleteSession(s.id, e)}
-                        className="opacity-40 hover:opacity-100 hover:text-rose-500 p-1 transition-opacity"
-                        title="Delete conversation"
+                        className="opacity-40 hover:opacity-100 hover:text-rose-400 p-1 transition-opacity"
+                        title="Delete thread"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3 w-3" />
                       </button>
                     </div>
                   ))}
                 </div>
-                <div className="p-1.5 border-t border-border/40">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="w-full justify-start text-xs h-7 text-[#0071E3] dark:text-blue-400"
+                <div className="p-1.5 border-t border-white/5">
+                  <button
+                    type="button"
+                    className="w-full py-1.5 px-3 rounded-lg text-xs flex items-center text-[#0071E3] hover:bg-white/5 transition-colors"
                     onClick={handleCreateSession}
                   >
                     <Plus className="h-3.5 w-3.5 mr-1.5" />
-                    New Conversation Thread
-                  </Button>
+                    New Conversation
+                  </button>
                 </div>
               </div>
             )}
           </div>
 
-          <Button
-            size="sm"
-            variant="default"
-            className="h-8 text-xs gap-1.5 bg-[#0071E3] hover:bg-[#0071E3]/90 text-white shadow-xs"
+          <button
+            type="button"
+            className="h-7 px-2.5 rounded-lg text-xs flex items-center gap-1 bg-white/5 hover:bg-white/10 text-white/80 border border-white/5 transition-colors"
             onClick={handleCreateSession}
+            title="Start new thread"
           >
             <Plus className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">New Thread</span>
-          </Button>
+            <span className="hidden sm:inline">New</span>
+          </button>
         </div>
       </div>
 
-      {/* ChatGPT-Style Messages Feed */}
+      {/* Main Messages & Empty State Body */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
         {initialLoading ? (
-          <div className="h-full flex flex-col items-center justify-center text-center space-y-3 text-muted-foreground">
+          <div className="h-full flex flex-col items-center justify-center text-center space-y-3 text-white/50">
             <RefreshCw className="h-6 w-6 animate-spin text-[#0071E3]" />
-            <p className="text-xs">Initializing Digital Twin Intelligence...</p>
+            <p className="text-xs">Connecting to Digital Twin...</p>
           </div>
-        ) : messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center space-y-3 text-muted-foreground p-6">
-            <Bot className="h-10 w-10 text-[#0071E3]/50" />
-            <div>
-              <p className="text-sm font-semibold text-foreground">Digital Twin Ready</p>
-              <p className="text-xs mt-1 max-w-sm">
-                Ask how financial purchases affect your goals, stress-test lifestyle routines, or schedule tasks with automatic approval.
+        ) : isConversationEmpty ? (
+          /* ChatGPT Style Centered Hero / Greeting */
+          <div className="h-full flex flex-col items-center justify-center text-center space-y-6 px-4">
+            <div className="space-y-2">
+              <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-white/95">
+                What’s on the agenda today?
+              </h2>
+              <p className="text-xs text-white/50 max-w-md mx-auto">
+                Ask about financial decisions, run life simulations, or optimize your daily routine.
               </p>
+            </div>
+
+            {/* Quick Prompt Pills in Center */}
+            <div className="flex flex-wrap items-center justify-center gap-2 max-w-xl">
+              {QUICK_PROMPTS.map((qp, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSend(qp)}
+                  disabled={loading}
+                  className="text-xs px-3.5 py-2 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white transition-all text-left max-w-xs shadow-xs"
+                >
+                  {qp}
+                </button>
+              ))}
             </div>
           </div>
         ) : (
           messages.map((m) => (
             <div
               key={m.id}
-              className={`flex gap-3 text-xs sm:text-sm group ${
+              className={`flex gap-3.5 text-xs sm:text-sm group ${
                 m.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              {/* Assistant Avatar */}
+              {/* Assistant Minimalist Sparkle Avatar */}
               {m.role !== "user" && (
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-tr from-[#0071E3] to-indigo-600 text-white flex items-center justify-center mt-0.5 shadow-xs">
-                  <Sparkles className="h-4 w-4" />
+                <div className="flex-shrink-0 h-7 w-7 rounded-full bg-white/10 border border-white/10 text-[#0071E3] flex items-center justify-center mt-0.5">
+                  <Sparkles className="h-3.5 w-3.5" />
                 </div>
               )}
 
-              {/* Message Content Container */}
+              {/* Message Bubble Container */}
               <div
                 className={`max-w-[90%] sm:max-w-[82%] relative ${
                   m.role === "user"
-                    ? "bg-[#0071E3] text-white px-4 py-2.5 rounded-2xl rounded-tr-xs shadow-xs font-normal"
-                    : "bg-transparent text-foreground pr-2"
+                    ? "bg-[#2f2f2f] text-white px-4 py-2.5 rounded-3xl rounded-tr-xs shadow-xs text-sm"
+                    : "bg-transparent text-white/90 pr-2"
                 }`}
               >
                 {/* Assistant Markdown Formatter (ChatGPT Style) */}
                 {m.role !== "user" ? (
-                  <div className="prose-chat text-foreground">
+                  <div className="prose-chat leading-relaxed space-y-2">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        h1: ({ node, ...props }) => <h1 className="text-base font-bold text-foreground mt-3 mb-1.5" {...props} />,
-                        h2: ({ node, ...props }) => <h2 className="text-sm font-bold text-foreground mt-3 mb-1.5" {...props} />,
-                        h3: ({ node, ...props }) => <h3 className="text-sm font-semibold text-foreground mt-2.5 mb-1 tracking-tight" {...props} />,
-                        h4: ({ node, ...props }) => <h4 className="text-xs font-semibold text-foreground mt-2 mb-1 uppercase tracking-wider font-mono text-muted-foreground" {...props} />,
-                        p: ({ node, ...props }) => <p className="leading-relaxed my-1.5 text-xs sm:text-sm" {...props} />,
-                        ul: ({ node, ...props }) => <ul className="list-disc list-outside ml-4 my-2 space-y-1 text-xs sm:text-sm" {...props} />,
-                        ol: ({ node, ...props }) => <ol className="list-decimal list-outside ml-4 my-2 space-y-1 text-xs sm:text-sm" {...props} />,
+                        h1: ({ node, ...props }) => <h1 className="text-base font-semibold text-white mt-3 mb-1.5" {...props} />,
+                        h2: ({ node, ...props }) => <h2 className="text-sm font-semibold text-white mt-3 mb-1.5" {...props} />,
+                        h3: ({ node, ...props }) => <h3 className="text-sm font-semibold text-white mt-2.5 mb-1 tracking-tight" {...props} />,
+                        h4: ({ node, ...props }) => <h4 className="text-xs font-semibold text-white/70 mt-2 mb-1 uppercase tracking-wider font-mono" {...props} />,
+                        p: ({ node, ...props }) => <p className="leading-relaxed my-1 text-xs sm:text-sm text-white/90" {...props} />,
+                        ul: ({ node, ...props }) => <ul className="list-disc list-outside ml-4 my-2 space-y-1 text-xs sm:text-sm text-white/90" {...props} />,
+                        ol: ({ node, ...props }) => <ol className="list-decimal list-outside ml-4 my-2 space-y-1 text-xs sm:text-sm text-white/90" {...props} />,
                         li: ({ node, ...props }) => <li className="leading-relaxed pl-1" {...props} />,
-                        strong: ({ node, ...props }) => <strong className="font-semibold text-foreground" {...props} />,
+                        strong: ({ node, ...props }) => <strong className="font-semibold text-white" {...props} />,
                         blockquote: ({ node, ...props }) => (
-                          <blockquote className="border-l-2 border-[#0071E3] bg-[#0071E3]/5 dark:bg-blue-500/10 pl-3 py-1.5 my-2.5 rounded-r-md text-xs sm:text-sm text-foreground/90 font-normal" {...props} />
+                          <blockquote className="border-l-2 border-[#0071E3] bg-white/5 pl-3 py-1.5 my-2.5 rounded-r text-xs sm:text-sm text-white/80 font-normal italic" {...props} />
                         ),
                         code: ({ node, inline, ...props }: any) =>
                           inline ? (
-                            <code className="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded text-[11px] text-[#0071E3] dark:text-blue-400" {...props} />
+                            <code className="font-mono bg-white/10 px-1.5 py-0.5 rounded text-[11px] text-[#0071E3]" {...props} />
                           ) : (
-                            <pre className="font-mono bg-black/5 dark:bg-white/5 p-2.5 rounded-lg text-xs overflow-x-auto my-2 border border-border/40"><code {...props} /></pre>
+                            <pre className="font-mono bg-black/40 p-3 rounded-xl text-xs overflow-x-auto my-2 border border-white/10 text-white/90"><code {...props} /></pre>
                           )
                       }}
                     >
@@ -446,17 +461,17 @@ export function TwinChat() {
                     </ReactMarkdown>
 
                     {/* Copy message button on hover */}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 mt-2 text-[11px] text-muted-foreground">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 mt-2 text-[11px] text-white/40">
                       <button
                         type="button"
                         onClick={() => handleCopyMessage(m.id, m.content)}
-                        className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1"
+                        className="p-1 rounded hover:bg-white/10 transition-colors flex items-center gap-1"
                         title="Copy response"
                       >
                         {copiedId === m.id ? (
                           <>
-                            <Check className="h-3 w-3 text-emerald-500" />
-                            <span className="text-emerald-500">Copied</span>
+                            <Check className="h-3 w-3 text-emerald-400" />
+                            <span className="text-emerald-400">Copied</span>
                           </>
                         ) : (
                           <>
@@ -484,8 +499,8 @@ export function TwinChat() {
 
               {/* User Avatar */}
               {m.role === "user" && (
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-[#0071E3]/20 text-[#0071E3] dark:text-blue-400 flex items-center justify-center mt-0.5 shadow-xs">
-                  <User className="h-4 w-4" />
+                <div className="flex-shrink-0 h-7 w-7 rounded-full bg-white/10 text-white/80 flex items-center justify-center mt-0.5">
+                  <User className="h-3.5 w-3.5" />
                 </div>
               )}
             </div>
@@ -493,60 +508,94 @@ export function TwinChat() {
         )}
 
         {loading && (
-          <div className="flex gap-3 justify-start items-center text-xs text-muted-foreground animate-pulse">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-[#0071E3] to-indigo-600 text-white flex items-center justify-center">
-              <RefreshCw className="h-4 w-4 animate-spin" />
+          <div className="flex gap-3.5 justify-start items-center text-xs text-white/60 animate-pulse">
+            <div className="h-7 w-7 rounded-full bg-white/10 text-[#0071E3] flex items-center justify-center">
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
             </div>
-            <span>Running Monte Carlo simulation & computing impact...</span>
+            <span>Analyzing Digital Twin & computing simulation...</span>
           </div>
         )}
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Suggestion Pills */}
-      <div className="px-4 py-2.5 border-t border-border/30 bg-sidebar/20 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 shrink-0">
-          <Sparkles className="h-3 w-3 text-amber-500" /> Prompts:
-        </span>
-        {QUICK_PROMPTS.map((qp, idx) => (
-          <button
-            key={idx}
-            type="button"
-            onClick={() => handleSend(qp)}
-            disabled={loading}
-            className="text-[11px] px-3 py-1 rounded-full bg-background/80 hover:bg-black/5 dark:hover:bg-white/10 border border-border/50 transition-colors whitespace-nowrap text-muted-foreground hover:text-foreground shrink-0 shadow-2xs"
-          >
-            {qp}
-          </button>
-        ))}
-      </div>
-
-      {/* ChatGPT-Style Input Box */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSend();
-        }}
-        className="p-3.5 border-t border-border/50 bg-sidebar/40 flex items-center gap-2"
-      >
-        <Input
-          value={inputPrompt}
-          onChange={(e) => setInputPrompt(e.target.value)}
-          placeholder="Ask anything: 'If I buy a $1,200 laptop...', 'Add a 45 min deep work sprint', 'Run wealth forecast'..."
-          className="bg-background/90 h-10 text-xs sm:text-sm border-border/60 focus-visible:ring-1 focus-visible:ring-[#0071E3] rounded-xl shadow-2xs"
-          disabled={loading}
-        />
-        <Button
-          type="submit"
-          disabled={!inputPrompt.trim() || loading}
-          size="sm"
-          className="h-10 px-4 bg-[#0071E3] hover:bg-[#0071E3]/90 text-white shrink-0 gap-1.5 rounded-xl shadow-xs"
+      {/* ChatGPT Style Floating Input Pill Bar */}
+      <div className="p-4 sm:p-5 pt-0">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSend();
+          }}
+          className="relative rounded-full bg-[#212121] border border-white/15 px-3 py-2 flex items-center gap-2 shadow-2xl hover:border-white/25 transition-all focus-within:border-white/40 focus-within:ring-1 focus-within:ring-white/10"
         >
-          <Send className="h-4 w-4" />
-          <span className="hidden sm:inline">Send</span>
-        </Button>
-      </form>
+          {/* Plus icon on the left */}
+          <button
+            type="button"
+            onClick={handleCreateSession}
+            className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white flex items-center justify-center transition-colors shrink-0"
+            title="New Conversation"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+
+          {/* Clean Input */}
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputPrompt}
+            onChange={(e) => setInputPrompt(e.target.value)}
+            placeholder="Ask anything"
+            disabled={loading}
+            className="flex-1 bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none px-1"
+          />
+
+          {/* Right Tools: Think Pill + Mic + Signature Blue Action Button */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Think toggle button */}
+            <button
+              type="button"
+              onClick={() => setIsThinkMode(!isThinkMode)}
+              className={`h-7 px-2.5 rounded-full text-[11px] font-medium flex items-center gap-1 transition-colors ${
+                isThinkMode
+                  ? "bg-[#0071E3]/20 text-[#0071E3] border border-[#0071E3]/40"
+                  : "text-white/50 hover:text-white/80 hover:bg-white/5"
+              }`}
+              title="Reasoning Simulation Mode"
+            >
+              <Brain className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Think</span>
+            </button>
+
+            {/* Mic / Voice icon */}
+            <button
+              type="button"
+              onClick={() => toast.info("Voice input ready on supported browsers")}
+              className="h-7 w-7 rounded-full text-white/50 hover:text-white/80 hover:bg-white/5 flex items-center justify-center transition-colors"
+              title="Voice Input"
+            >
+              <Mic className="h-4 w-4" />
+            </button>
+
+            {/* Blue Circular Waveform / Send Button */}
+            <button
+              type="submit"
+              disabled={!inputPrompt.trim() || loading}
+              className={`h-8 w-8 rounded-full flex items-center justify-center transition-all ${
+                inputPrompt.trim() && !loading
+                  ? "bg-[#0071E3] hover:bg-[#0071E3]/90 text-white shadow-md cursor-pointer active:scale-95"
+                  : "bg-white/10 text-white/30 cursor-not-allowed"
+              }`}
+              title="Send message"
+            >
+              {inputPrompt.trim() ? (
+                <Send className="h-3.5 w-3.5" />
+              ) : (
+                <AudioWaveform className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
@@ -582,67 +631,66 @@ function InteractiveActionCard({
   // 1. PURCHASE IMPACT CARD
   if (action_type === "purchase_impact") {
     return (
-      <div className="mt-3 p-4 rounded-xl border border-blue-500/30 bg-blue-500/5 space-y-3 text-xs shadow-xs">
-        <div className="flex items-center justify-between border-b border-blue-500/20 pb-2">
-          <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
-            <DollarSign className="h-4 w-4 text-emerald-500" />
+      <div className="mt-3.5 p-4 rounded-2xl border border-white/10 bg-white/5 space-y-3 text-xs shadow-lg">
+        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+          <span className="font-medium text-white flex items-center gap-1.5 text-xs sm:text-sm">
+            <DollarSign className="h-4 w-4 text-emerald-400" />
             Purchase Analysis: {data.item_name} (${Number(data.cost).toLocaleString()})
           </span>
           {isExecuted ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
               <CheckCircle2 className="h-3 w-3" /> Approved & Logged
             </span>
           ) : isRejected ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-500/15 text-zinc-500 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-white/10 text-white/40 flex items-center gap-1">
               <XCircle className="h-3 w-3" /> Dismissed
             </span>
           ) : (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
               Pending Approval
             </span>
           )}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">Goal Delay</span>
-            <span className="font-semibold text-rose-500 font-mono">+{data.delay_months} months</span>
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">Goal Delay</span>
+            <span className="font-semibold text-rose-400 font-mono">+{data.delay_months} months</span>
           </div>
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">Post-Buy Progress</span>
-            <span className="font-semibold text-foreground font-mono">
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">Post-Buy Progress</span>
+            <span className="font-semibold text-white font-mono">
               ${Number(data.new_progress).toLocaleString()}
             </span>
           </div>
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">5Y Foregone Growth</span>
-            <span className="font-semibold text-amber-500 font-mono">
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">5Y Foregone Growth</span>
+            <span className="font-semibold text-amber-400 font-mono">
               -${Number(data.foregone_growth).toLocaleString()}
             </span>
           </div>
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">Success Odds</span>
-            <span className="font-semibold text-emerald-500 font-mono">{data.prob_after}%</span>
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">Success Odds</span>
+            <span className="font-semibold text-emerald-400 font-mono">{data.prob_after}%</span>
           </div>
         </div>
 
         {!isExecuted && !isRejected && (
           <div className="flex items-center gap-2 pt-1">
-            <Button
-              size="sm"
+            <button
+              type="button"
               onClick={onApprove}
-              className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-xs"
+              className="h-8 px-3 rounded-xl text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5 shadow-md transition-all active:scale-95"
             >
               <CheckCircle2 className="h-3.5 w-3.5" /> Approve & Record Expense
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
+            </button>
+            <button
+              type="button"
               onClick={onReject}
-              className="h-8 text-xs text-muted-foreground hover:text-foreground"
+              className="h-8 px-3 rounded-xl text-xs text-white/60 hover:text-white hover:bg-white/10 transition-colors"
             >
               Dismiss
-            </Button>
+            </button>
           </div>
         )}
       </div>
@@ -652,63 +700,62 @@ function InteractiveActionCard({
   // 2. TASK CREATION CARD
   if (action_type === "add_task") {
     return (
-      <div className="mt-3 p-4 rounded-xl border border-indigo-500/30 bg-indigo-500/5 space-y-3 text-xs shadow-xs">
-        <div className="flex items-center justify-between border-b border-indigo-500/20 pb-2">
-          <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
-            <Clock className="h-4 w-4 text-indigo-500" />
+      <div className="mt-3.5 p-4 rounded-2xl border border-white/10 bg-white/5 space-y-3 text-xs shadow-lg">
+        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+          <span className="font-medium text-white flex items-center gap-1.5 text-xs sm:text-sm">
+            <Clock className="h-4 w-4 text-[#0071E3]" />
             Schedule Addition: {data.title}
           </span>
           {isExecuted ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
               <CheckCircle2 className="h-3 w-3" /> Added to Planner
             </span>
           ) : isRejected ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-500/15 text-zinc-500 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-white/10 text-white/40 flex items-center gap-1">
               <XCircle className="h-3 w-3" /> Dismissed
             </span>
           ) : (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
               Needs Approval
             </span>
           )}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">Scheduled Time</span>
-            <span className="font-semibold text-foreground font-mono">{data.start}</span>
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">Scheduled Time</span>
+            <span className="font-semibold text-white font-mono">{data.start}</span>
           </div>
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">Duration</span>
-            <span className="font-semibold text-foreground font-mono">{data.minutes} mins</span>
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">Duration</span>
+            <span className="font-semibold text-white font-mono">{data.minutes} mins</span>
           </div>
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">Category</span>
-            <span className="font-semibold text-indigo-500">{data.category}</span>
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">Category</span>
+            <span className="font-semibold text-[#0071E3]">{data.category}</span>
           </div>
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">Impact</span>
-            <span className="font-semibold text-emerald-500">{data.impact}</span>
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">Impact</span>
+            <span className="font-semibold text-emerald-400">{data.impact}</span>
           </div>
         </div>
 
         {!isExecuted && !isRejected && (
           <div className="flex items-center gap-2 pt-1">
-            <Button
-              size="sm"
+            <button
+              type="button"
               onClick={onApprove}
-              className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 shadow-xs"
+              className="h-8 px-3 rounded-xl text-xs bg-[#0071E3] hover:bg-[#0071E3]/90 text-white font-medium flex items-center gap-1.5 shadow-md transition-all active:scale-95"
             >
               <CheckCircle2 className="h-3.5 w-3.5" /> Approve & Add Task
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
+            </button>
+            <button
+              type="button"
               onClick={onReject}
-              className="h-8 text-xs text-muted-foreground hover:text-foreground"
+              className="h-8 px-3 rounded-xl text-xs text-white/60 hover:text-white hover:bg-white/10 transition-colors"
             >
               Dismiss
-            </Button>
+            </button>
           </div>
         )}
       </div>
@@ -718,49 +765,49 @@ function InteractiveActionCard({
   // 3. WHAT-IF SIMULATOR CARD
   if (action_type === "simulate_what_if") {
     return (
-      <div className="mt-3 p-4 rounded-xl border border-purple-500/30 bg-purple-500/5 space-y-3 text-xs shadow-xs">
-        <div className="flex items-center justify-between border-b border-purple-500/20 pb-2">
-          <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
-            <BrainCircuit className="h-4 w-4 text-purple-500" />
+      <div className="mt-3.5 p-4 rounded-2xl border border-white/10 bg-white/5 space-y-3 text-xs shadow-lg">
+        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+          <span className="font-medium text-white flex items-center gap-1.5 text-xs sm:text-sm">
+            <BrainCircuit className="h-4 w-4 text-purple-400" />
             What-If Scenario Simulation
           </span>
           {isExecuted ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
               <CheckCircle2 className="h-3 w-3" /> Applied to Simulator
             </span>
           ) : isRejected ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-500/15 text-zinc-500 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-white/10 text-white/40 flex items-center gap-1">
               <XCircle className="h-3 w-3" /> Dismissed
             </span>
           ) : (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-600 dark:text-purple-400">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
               Ready to Apply
             </span>
           )}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">Health Index</span>
-            <span className="font-semibold font-mono">
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">Health Index</span>
+            <span className="font-semibold font-mono text-white">
               {data.baseline_health} ➔ {data.proposed_health}/10
             </span>
           </div>
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">Focus Rating</span>
-            <span className="font-semibold font-mono">
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">Focus Rating</span>
+            <span className="font-semibold font-mono text-white">
               {data.baseline_focus} ➔ {data.proposed_focus}/10
             </span>
           </div>
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">5Y Wealth Delta</span>
-            <span className={`font-semibold font-mono ${data.wealth_5y_diff >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">5Y Wealth Delta</span>
+            <span className={`font-semibold font-mono ${data.wealth_5y_diff >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
               {data.wealth_5y_diff >= 0 ? "+" : ""}${Number(data.wealth_5y_diff).toLocaleString()}
             </span>
           </div>
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">Retirement</span>
-            <span className="font-semibold font-mono text-emerald-500">
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">Retirement</span>
+            <span className="font-semibold font-mono text-emerald-400">
               {data.attained_retirement ? "On Track" : "Adjust Pace"}
             </span>
           </div>
@@ -768,22 +815,21 @@ function InteractiveActionCard({
 
         <div className="flex items-center gap-2 pt-1">
           {!isExecuted && !isRejected && (
-            <Button
-              size="sm"
+            <button
+              type="button"
               onClick={onApprove}
-              className="h-8 text-xs bg-purple-600 hover:bg-purple-700 text-white gap-1.5 shadow-xs"
+              className="h-8 px-3 rounded-xl text-xs bg-purple-600 hover:bg-purple-500 text-white font-medium flex items-center gap-1.5 shadow-md transition-all active:scale-95"
             >
               <CheckCircle2 className="h-3.5 w-3.5" /> Approve & Apply to Simulator
-            </Button>
+            </button>
           )}
-          <Button
-            size="sm"
-            variant="outline"
+          <button
+            type="button"
             onClick={() => onNavigate("/simulator")}
-            className="h-8 text-xs gap-1"
+            className="h-8 px-3 rounded-xl text-xs bg-white/10 hover:bg-white/15 text-white/80 hover:text-white flex items-center gap-1 transition-colors"
           >
             View in Simulator <ArrowRight className="h-3 w-3" />
-          </Button>
+          </button>
         </div>
       </div>
     );
@@ -792,41 +838,40 @@ function InteractiveActionCard({
   // 4. WEALTH FORECAST CARD
   if (action_type === "wealth_forecast") {
     return (
-      <div className="mt-3 p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-3 text-xs shadow-xs">
-        <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
-          <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
-            <TrendingUp className="h-4 w-4 text-emerald-500" />
+      <div className="mt-3.5 p-4 rounded-2xl border border-white/10 bg-white/5 space-y-3 text-xs shadow-lg">
+        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+          <span className="font-medium text-white flex items-center gap-1.5 text-xs sm:text-sm">
+            <TrendingUp className="h-4 w-4 text-emerald-400" />
             Monte Carlo Wealth Projection
           </span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono">
             {data.prob}% Success Odds
           </span>
         </div>
 
         <div className="grid grid-cols-3 gap-2 pt-1">
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">P10 Bear Floor</span>
-            <span className="font-semibold font-mono text-rose-500">${Number(data.p10_final).toLocaleString()}</span>
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">P10 Bear Floor</span>
+            <span className="font-semibold font-mono text-rose-400">${Number(data.p10_final).toLocaleString()}</span>
           </div>
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">Median Outcome</span>
-            <span className="font-semibold font-mono text-emerald-500">${Number(data.median_final).toLocaleString()}</span>
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">Median Outcome</span>
+            <span className="font-semibold font-mono text-emerald-400">${Number(data.median_final).toLocaleString()}</span>
           </div>
-          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
-            <span className="text-[10px] text-muted-foreground block">P90 Bull Ceiling</span>
-            <span className="font-semibold font-mono text-indigo-500">${Number(data.p90_final).toLocaleString()}</span>
+          <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+            <span className="text-[10px] text-white/50 block">P90 Bull Ceiling</span>
+            <span className="font-semibold font-mono text-indigo-400">${Number(data.p90_final).toLocaleString()}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2 pt-1">
-          <Button
-            size="sm"
-            variant="outline"
+          <button
+            type="button"
             onClick={() => onNavigate("/wealth")}
-            className="h-8 text-xs gap-1"
+            className="h-8 px-3 rounded-xl text-xs bg-white/10 hover:bg-white/15 text-white/80 hover:text-white flex items-center gap-1 transition-colors"
           >
             Open Wealth Engine <ArrowRight className="h-3 w-3" />
-          </Button>
+          </button>
         </div>
       </div>
     );
@@ -835,53 +880,52 @@ function InteractiveActionCard({
   // 5. SETTINGS UPDATE CARD
   if (action_type === "update_settings") {
     return (
-      <div className="mt-3 p-4 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-3 text-xs shadow-xs">
-        <div className="flex items-center justify-between border-b border-cyan-500/20 pb-2">
-          <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
-            <Sliders className="h-4 w-4 text-cyan-500" />
+      <div className="mt-3.5 p-4 rounded-2xl border border-white/10 bg-white/5 space-y-3 text-xs shadow-lg">
+        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+          <span className="font-medium text-white flex items-center gap-1.5 text-xs sm:text-sm">
+            <Sliders className="h-4 w-4 text-cyan-400" />
             Profile & Parameter Updates
           </span>
           {isExecuted ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
               <CheckCircle2 className="h-3 w-3" /> Applied
             </span>
           ) : isRejected ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-500/15 text-zinc-500 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-white/10 text-white/40 flex items-center gap-1">
               <XCircle className="h-3 w-3" /> Dismissed
             </span>
           ) : (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
               Needs Approval
             </span>
           )}
         </div>
 
-        <div className="space-y-1.5 text-muted-foreground">
+        <div className="space-y-1.5 text-white/70">
           {Object.entries(data).map(([key, val]) => (
-            <div key={key} className="flex items-center justify-between p-2 rounded bg-background/60 border border-border/40">
+            <div key={key} className="flex items-center justify-between p-2 rounded-xl bg-black/30 border border-white/5">
               <span className="font-mono text-[11px]">{key.replace(/_/g, " ").toUpperCase()}</span>
-              <strong className="text-foreground font-mono">{String(val)}</strong>
+              <strong className="text-white font-mono">{String(val)}</strong>
             </div>
           ))}
         </div>
 
         {!isExecuted && !isRejected && (
           <div className="flex items-center gap-2 pt-1">
-            <Button
-              size="sm"
+            <button
+              type="button"
               onClick={onApprove}
-              className="h-8 text-xs bg-cyan-600 hover:bg-cyan-700 text-white gap-1.5 shadow-xs"
+              className="h-8 px-3 rounded-xl text-xs bg-cyan-600 hover:bg-cyan-500 text-white font-medium flex items-center gap-1.5 shadow-md transition-all active:scale-95"
             >
               <CheckCircle2 className="h-3.5 w-3.5" /> Approve Changes
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
+            </button>
+            <button
+              type="button"
               onClick={onReject}
-              className="h-8 text-xs text-muted-foreground hover:text-foreground"
+              className="h-8 px-3 rounded-xl text-xs text-white/60 hover:text-white hover:bg-white/10 transition-colors"
             >
               Dismiss
-            </Button>
+            </button>
           </div>
         )}
       </div>

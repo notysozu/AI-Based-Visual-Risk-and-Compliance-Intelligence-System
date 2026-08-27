@@ -1333,55 +1333,74 @@ Click **Approve Changes** below to apply these modifications to your profile and
                 "action_status": "proposed"
             }
 
-    # 6. GENERAL CONVERSATIONAL INTELLIGENCE VIA GROQ (OR HIGH-QUALITY FALLBACK)
+    # 6. GENERAL CONVERSATIONAL INTELLIGENCE VIA GROQ (OR NATURAL CONVERSATIONAL FALLBACK)
     client = get_groq_client()
     if client is not None:
         try:
             system_msg = f"""You are the Digital Twin AI Copilot for {user_info.get('username', 'User')}.
-Role: {user_info.get('role', 'professional')} | Age: {user_info.get('age', 25)} -> Target Age: {user_info.get('retirement_goal_age', 60)}
-Monthly Income: ${user_info.get('monthly_income', 5000):,.2f} | Monthly Expenses: ${user_info.get('monthly_expenses', 2900):,.2f} | Net Worth: ${user_info.get('net_worth', 15000):,.2f}
-Baseline Sleep: {baseline.get('sleep_hours', 7.5):.1f}h | Study: {baseline.get('study_hours_week', 10.0):.1f}h/week | Savings: ${baseline.get('monthly_savings', 1000):,.2f}/mo
-Active Goal: {client_ctx.get('goalName', 'Emergency Fund')} (${client_ctx.get('goalCurrent', 15000):,.2f} / ${client_ctx.get('goalTarget', 20000):,.2f})
+You are a helpful, intelligent personal AI with access to the user's financial and lifestyle telemetry:
+- Role: {user_info.get('role', 'professional')} | Age: {user_info.get('age', 25)}
+- Monthly Income: ${user_info.get('monthly_income', 5000):,.2f} | Expenses: ${user_info.get('monthly_expenses', 2900):,.2f} | Net Worth: ${user_info.get('net_worth', 15000):,.2f}
+- Baseline Sleep: {baseline.get('sleep_hours', 7.5):.1f}h/day | Focus: {baseline.get('study_hours_week', 10.0):.1f}h/week
+- Active Goal: {client_ctx.get('goalName', 'Emergency Fund')}
 
-RULES:
-- Answer with analytical depth, clarity, actionable breakdown, and structured markdown.
-- Ground advice in the user's specific financial, habit, and study metrics.
-- Keep responses concise, supportive, and mathematically grounded."""
+GUIDELINES:
+- Answer the user's prompt directly, naturally, and conversationally in clean Markdown.
+- If the user greets you or asks a general question, reply warmly and naturally as ChatGPT would.
+- Only provide specific metric breakdowns when relevant to the user's inquiry.
+- Keep answers clear, insightful, and concise."""
 
             messages = [{"role": "system", "content": system_msg}]
-            for h in history[-8:]:  # Include last 8 conversational turns
+            for h in history[-6:]:  # Include recent conversational context
                 messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
             messages.append({"role": "user", "content": prompt})
 
-            resp = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=messages,
-                temperature=0.5,
-                max_tokens=800
-            )
-            reply = resp.choices[0].message.content.strip()
-            return {
-                "content": reply,
-                "action_type": "none",
-                "action_payload": None,
-                "action_status": "none"
-            }
+            # Try primary available models
+            reply = ""
+            for model_candidate in ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"]:
+                try:
+                    resp = client.chat.completions.create(
+                        model=model_candidate,
+                        messages=messages,
+                        temperature=0.6,
+                        max_tokens=600,
+                        timeout=8.0
+                    )
+                    raw_content = resp.choices[0].message.content or ""
+                    # Strip any reasoning thoughts
+                    reply = re.sub(r"<think>[\s\S]*?</think>", "", raw_content).strip()
+                    if reply:
+                        break
+                except Exception:
+                    continue
+
+            if reply:
+                return {
+                    "content": reply,
+                    "action_type": "none",
+                    "action_payload": None,
+                    "action_status": "none"
+                }
         except Exception as e:
             print(f"Error invoking Groq Copilot chat: {e}")
 
-    # Fallback contextual response
-    fallback_reply = f"""### 🤖 Digital Twin Strategic Analysis
+    # Natural Conversational Fallback if offline
+    if any(g in p_lower for g in ["hi", "hello", "hey", "who are you", "what can you do", "help"]):
+        fallback_reply = f"""Hello {user_info.get('username', 'there')}! 👋 
 
-Based on your current profile (**{user_info.get('role', 'professional').title()}**, Age {user_info.get('age', 25)}):
+I'm your **Digital Twin AI Copilot**. I analyze your routines, productivity, and finances to help you optimize your daily performance and simulate future scenarios.
 
-- **Monthly Cash Flow:** ${user_info.get('monthly_income', 5000):,.2f} income - ${user_info.get('monthly_expenses', 2900):,.2f} expenses = **${max(0, user_info.get('monthly_income', 5000) - user_info.get('monthly_expenses', 2900)):,.2f} monthly savings pace**.
-- **Habit Balance:** Averaging {baseline.get('sleep_hours', 7.5):.1f}h sleep and {baseline.get('study_hours_week', 10.0):.1f}h/week of dedicated focus.
-- **Active Goal:** {client_ctx.get('goalName', 'Emergency Fund')} is currently on track.
+**Things you can ask me anytime:**
+- *\"If I buy a $1,200 laptop today, how does that affect my emergency fund goal?\"*
+- *\"What if I study 5 more hours a week and sleep 30 mins less?\"*
+- *\"Add a 45 min deep work sprint at 10:00 AM\"*
+- *\"Run Monte Carlo wealth simulation\"*
 
-**Suggested Next Steps:**
-1. Try typing: *"What if I study 5 more hours a week and sleep 30 mins less?"* to stress-test your cognitive velocity.
-2. Ask: *"If I buy a $1,200 laptop today, how does that affect my emergency fund goal?"* to evaluate capital tradeoffs.
-3. Type: *"Add a 45 min deep work sprint"* to directly schedule focus blocks into your planner."""
+How can I help you today?"""
+    else:
+        fallback_reply = f"""Based on your current setup as a **{user_info.get('role', 'professional').title()}**, you have a monthly cash flow surplus of **${max(0, user_info.get('monthly_income', 5000) - user_info.get('monthly_expenses', 2900)):,.2f}** and an average sleep baseline of **{baseline.get('sleep_hours', 7.5):.1f}h**.
+
+To simulate specific lifestyle adjustments or financial tradeoffs, feel free to ask questions like *"What if I study 5 more hours?"* or *"Add a 45 min focus block"*."""
 
     return {
         "content": fallback_reply,
