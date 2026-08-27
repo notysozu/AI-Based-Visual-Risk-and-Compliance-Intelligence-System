@@ -937,3 +937,455 @@ Respond with ONLY valid raw JSON in the following format:
         "diagnostic": diagnostic_summary,
         "suggestions": [dict(s, is_ai_generated=True) for s in base_defaults]
     }
+
+
+# ==============================================================================
+# CONVERSATIONAL DIGITAL TWIN COPILOT ENGINE WITH MULTI-ACTION EXECUTION
+# ==============================================================================
+
+def process_twin_copilot_turn(
+    user_id: int,
+    prompt: str,
+    history: List[Dict[str, Any]],
+    user_info: Dict[str, Any],
+    baseline: Dict[str, Any],
+    client_context: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Process a conversational turn with the Digital Twin Copilot.
+    Extracts user intent (e.g. purchase simulation, what-if scenario, task creation,
+    wealth forecasting, settings update) and computes exact deterministic and
+    probabilistic simulation results. Produces an informative markdown answer
+    along with a structured interactive action proposal (if applicable) that
+    requires explicit user approval before execution.
+    """
+    client_ctx = client_context or {}
+    p_lower = prompt.lower().strip()
+
+    # 1. DETECT MAJOR PURCHASE / MILESTONE QUERY
+    # e.g., "If I buy a $1,200 laptop today, how does that affect my emergency fund goal?"
+    price_match = re.search(r"[$]\s*([0-9][0-9,.]*)|([0-9][0-9,.]*)\s*(?:dollars?|usd)\b", prompt, re.IGNORECASE)
+    purchase_keywords = ["buy", "purchase", "spend", "cost", "afford", "get a ", "buying", "invest in a "]
+    is_purchase_query = any(k in p_lower for k in purchase_keywords) and price_match is not None
+
+    if is_purchase_query:
+        val_raw = price_match.group(1) if price_match.group(1) else (price_match.group(2) or "1200")
+        raw_amount_str = val_raw.replace(",", "")
+        try:
+            purchase_cost = float(raw_amount_str)
+        except ValueError:
+            purchase_cost = 1200.0
+
+        # Extract item name cleanly by removing price tokens first
+        clean_item_str = re.sub(r"[$]\s*[0-9][0-9,.]*|[0-9][0-9,.]*\s*(?:dollars?|usd)\b", "", prompt, flags=re.IGNORECASE)
+        item_match = re.search(r"(?:buy|purchase|buying|spend on|get|afford)\s+(?:a|an|the)?\s*([a-zA-Z0-9\s\-]+?)(?:\s+today|\s+now|\s+this|\s*\?|\s*\,|\s*\.|\s+how|\s+will|\s+if|\s+for|\s+afford|$)", clean_item_str, re.IGNORECASE)
+        item_name = item_match.group(1).strip() if item_match and len(item_match.group(1).strip()) > 1 else "Item"
+        if len(item_name) > 30:
+            item_name = "Major Purchase"
+
+        # Baseline metrics
+        monthly_income = float(user_info.get("monthly_income", 5000.0))
+        monthly_expenses = float(user_info.get("monthly_expenses", 2900.0))
+        monthly_savings = max(100.0, monthly_income - monthly_expenses)
+        current_net_worth = float(user_info.get("net_worth", 15000.0))
+        
+        goal_name = client_ctx.get("goalName") or "Emergency Fund"
+        goal_target = float(client_ctx.get("goalTarget") or 20000.0)
+        goal_current = float(client_ctx.get("goalCurrent") or min(current_net_worth, goal_target))
+
+        # Calculate impact
+        new_progress = max(0.0, goal_current - purchase_cost)
+        old_gap = max(0.0, goal_target - goal_current)
+        new_gap = max(0.0, goal_target - new_progress)
+        
+        old_time_months = round(old_gap / monthly_savings, 1)
+        new_time_months = round(new_gap / monthly_savings, 1)
+        delay_months = round(new_time_months - old_time_months, 1)
+        delay_days = int(delay_months * 30.4)
+
+        # 5-Year Opportunity cost at 8% annual compounded return
+        annual_rate = 0.08
+        compounded_5y = purchase_cost * ((1.0 + annual_rate) ** 5)
+        foregone_growth = compounded_5y - purchase_cost
+
+        # Monte Carlo success odds impact
+        from ai_engine.forecasting import financial
+        mc_before = financial.run_monte_carlo_simulation(
+            current_age=user_info.get("age", 25),
+            retirement_age=user_info.get("retirement_goal_age", 60),
+            current_net_worth=current_net_worth,
+            monthly_savings=monthly_savings,
+            num_simulations=300
+        )
+        hits_before = sum(1 for v in mc_before["final_values"] if v >= user_info.get("target_net_worth", 1000000.0))
+        prob_before = round((hits_before / len(mc_before["final_values"])) * 100)
+
+        mc_after = financial.run_monte_carlo_simulation(
+            current_age=user_info.get("age", 25),
+            retirement_age=user_info.get("retirement_goal_age", 60),
+            current_net_worth=max(0.0, current_net_worth - purchase_cost),
+            monthly_savings=monthly_savings,
+            num_simulations=300
+        )
+        hits_after = sum(1 for v in mc_after["final_values"] if v >= user_info.get("target_net_worth", 1000000.0))
+        prob_after = round((hits_after / len(mc_after["final_values"])) * 100)
+
+        advice_text = f"""### 🎯 Digital Twin Impact Analysis: {item_name.title()} (${purchase_cost:,.2f})
+
+Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impact your **{goal_name}** and 5-year capital compounding. Here is the exact simulation breakdown:
+
+#### 1. **Goal Milestone & Timeline Delay**
+- **Current Progress:** ${goal_current:,.2f} / ${goal_target:,.2f} ({round((goal_current/goal_target)*100)}% complete)
+- **Post-Purchase Progress:** ${new_progress:,.2f} / ${goal_target:,.2f} ({round((new_progress/goal_target)*100)}% complete)
+- **Timeline Impact:** Reaching your {goal_name} target will be delayed by **~{delay_months} months (~{delay_days} days)** at your current savings pace of **${monthly_savings:,.2f}/month**.
+
+#### 2. **5-Year Compounding Opportunity Cost**
+- If kept invested at an 8% annual return, ${purchase_cost:,.2f} would grow into **${compounded_5y:,.2f}** over 5 years (**+${foregone_growth:,.2f} in foregone investment returns**).
+
+#### 3. **Long-Term Retirement Probability**
+- **Baseline Monte Carlo Success Odds:** **{prob_before}%**
+- **Adjusted Odds:** **{prob_after}%** ({prob_after - prob_before:+d}% variance)
+
+> **Twin Verdict:** If this {item_name} enhances your daily productivity or health, the {delay_months}-month delay is manageable. To neutralize the delay, consider increasing monthly savings by **+${round(purchase_cost / 6, 2):,.2f}/mo** for the next 6 months."""
+
+        action_payload = {
+            "item_name": item_name.title(),
+            "cost": purchase_cost,
+            "goal_name": goal_name,
+            "goal_target": goal_target,
+            "goal_current": goal_current,
+            "new_progress": new_progress,
+            "delay_months": delay_months,
+            "delay_days": delay_days,
+            "compounded_5y": round(compounded_5y, 2),
+            "foregone_growth": round(foregone_growth, 2),
+            "prob_before": prob_before,
+            "prob_after": prob_after,
+            "monthly_savings": monthly_savings
+        }
+
+        return {
+            "content": advice_text,
+            "action_type": "purchase_impact",
+            "action_payload": json.dumps(action_payload),
+            "action_status": "proposed"
+        }
+
+    # 2. DETECT WHAT-IF SIMULATOR SCENARIO INTENT
+    # e.g., "What if I sleep 6 hours, study 15 hours, and save $500 more?"
+    what_if_keywords = ["what if", "simulate", "if i sleep", "if i study", "cut sleep", "more savings", "less sleep", "routine", "scenario"]
+    is_what_if = any(k in p_lower for k in what_if_keywords) and not is_purchase_query
+
+    if is_what_if:
+        # Extract adjustments or use calibrated intelligent delta
+        sleep_delta = 0.0
+        study_delta = 0.0
+        savings_delta = 0.0
+
+        # Detect sleep adjustment
+        sleep_m = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*(?:hours?|hrs?)\s*(?:of\s*)?sleep", p_lower)
+        if sleep_m:
+            target_sleep = float(sleep_m.group(1))
+            sleep_delta = target_sleep - float(baseline.get("sleep_hours", 7.5))
+        elif "cut sleep" in p_lower or "less sleep" in p_lower:
+            sleep_delta = -1.0
+        elif "more sleep" in p_lower:
+            sleep_delta = +1.0
+
+        # Detect study adjustment
+        study_m = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*(?:hours?|hrs?)\s*(?:of\s*)?(?:study|learning|work)", p_lower)
+        if study_m:
+            target_study = float(study_m.group(1))
+            study_delta = target_study - float(baseline.get("study_hours_week", 10.0))
+        elif "more study" in p_lower or "study more" in p_lower:
+            study_delta = +5.0
+
+        # Detect savings adjustment
+        sav_m = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*(?:dollars?|\$)\s*(?:more\s*)?savings?", p_lower)
+        if sav_m:
+            savings_delta = float(sav_m.group(1))
+        elif "save more" in p_lower or "increase savings" in p_lower:
+            savings_delta = +300.0
+
+        if sleep_delta == 0.0 and study_delta == 0.0 and savings_delta == 0.0:
+            # Default sensible what-if test
+            sleep_delta = -0.5
+            study_delta = +4.0
+            savings_delta = +250.0
+
+        # Execute simulation comparison
+        from ai_engine.simulation import simulator
+        from database.database import SessionLocal
+        with SessionLocal() as db_session:
+            sim_results = simulator.run_what_if_comparison(
+                db=db_session,
+                user_id=user_id,
+                change_a={"monthly_investment_change": 0.0, "sleep_hours_change": 0.0, "weekly_study_change": 0.0},
+                change_b={"monthly_investment_change": savings_delta, "sleep_hours_change": sleep_delta, "weekly_study_change": study_delta}
+            )
+
+        sb = sim_results["scenario_b"]
+        sa = sim_results["scenario_a"]
+        advice_text = generate_digital_twin_advice(user_info, baseline, sim_results)
+
+        action_payload = {
+            "savings_delta": savings_delta,
+            "sleep_delta": sleep_delta,
+            "study_delta": study_delta,
+            "proposed_sleep": round(sb["details"]["sleep"], 1),
+            "proposed_study": round(sb["details"]["study_week"], 1),
+            "proposed_savings": round(sb["details"]["monthly_savings"], 2),
+            "baseline_health": round(sa["health_index"], 1),
+            "proposed_health": round(sb["health_index"], 1),
+            "baseline_focus": round(sa["focus_index"], 1),
+            "proposed_focus": round(sb["focus_index"], 1),
+            "wealth_5y_diff": round(sb["wealth_at_end"] - sa["wealth_at_end"], 2),
+            "attained_retirement": sb["attained_retirement"]
+        }
+
+        return {
+            "content": advice_text,
+            "action_type": "simulate_what_if",
+            "action_payload": json.dumps(action_payload),
+            "action_status": "proposed"
+        }
+
+    # 3. DETECT TASK / HABIT CREATION INTENT
+    # e.g., "Add a 45 min deep work sprint to my tasks at 9:00 AM"
+    task_keywords = ["add task", "add a task", "schedule a task", "create task", "add habit", "schedule habit", "block time", "add deep work", "add study sprint", "remind me to"]
+    is_task_intent = any(k in p_lower for k in task_keywords) or (("add" in p_lower or "schedule" in p_lower) and ("min" in p_lower or "minute" in p_lower or "hour" in p_lower or "am" in p_lower or "pm" in p_lower))
+
+    if is_task_intent:
+        # Extract minutes
+        min_m = re.search(r"(\d+)\s*(?:min|minute|minutes|m\b)", p_lower)
+        hrs_m = re.search(r"(\d+(?:\.\d+)?)\s*(?:hour|hours|hr|hrs|h\b)", p_lower)
+        if min_m:
+            duration = int(min_m.group(1))
+        elif hrs_m:
+            duration = int(float(hrs_m.group(1)) * 60)
+        else:
+            duration = 45
+
+        # Extract time
+        time_m = re.search(r"(\d{1,2}(?::\d{2})?\s*(?:am|pm)|\d{1,2}:\d{2})", p_lower)
+        if time_m:
+            raw_time = time_m.group(1).upper()
+            start_time = raw_time
+        else:
+            start_time = "09:00"
+
+        # Determine Category
+        category = "Work"
+        if any(w in p_lower for w in ["study", "syllabus", "exam", "reading", "learn", "course", "lecture"]):
+            category = "Study"
+        elif any(w in p_lower for w in ["gym", "workout", "sleep", "cardio", "walk", "meditat", "health", "water"]):
+            category = "Health"
+        elif any(w in p_lower for w in ["budget", "invest", "crypto", "tax", "finance", "money", "savings"]):
+            category = "Money"
+        elif any(w in p_lower for w in ["family", "hobby", "social", "clean", "personal"]):
+            category = "Personal"
+
+        # Extract Title
+        clean_title = re.sub(r"^(?:please\s+)?(?:can\s+you\s+)?(?:add\s+a?\s*|create\s+a?\s*|schedule\s+a?\s*)", "", prompt, flags=re.IGNORECASE).strip()
+        clean_title = re.sub(r"(?:at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?|\b\d+\s*min(?:ute)?s?|\b\d+\s*hours?|\bto\s+my\s+(?:tasks?|planner|schedule))", "", clean_title, flags=re.IGNORECASE).strip()
+        if not clean_title or len(clean_title) < 3:
+            clean_title = f"{category} Sprint Session"
+
+        clean_title = clean_title.strip(" .?!,")
+        if len(clean_title) > 50:
+            clean_title = clean_title[:47] + "..."
+
+        impact_desc = "+0.8 Focus & Cognitive Output" if category in ["Work", "Study"] else ("+0.6 Vitality Index" if category == "Health" else "+2% Capital Control")
+
+        advice_text = f"""### 📋 Proposed Schedule Addition: **{clean_title}**
+
+I have structured a new time-block calibrated for your **{user_info.get('role', 'professional').title()}** routine:
+
+- **Task Title:** {clean_title}
+- **Scheduled Time:** {start_time}
+- **Duration:** {duration} minutes
+- **Category:** {category}
+- **Predicted Impact:** {impact_desc}
+
+Click **Approve & Add Task** below to append this directly to your Daily Planner."""
+
+        action_payload = {
+            "title": clean_title,
+            "start": start_time,
+            "minutes": duration,
+            "category": category,
+            "impact": impact_desc
+        }
+
+        return {
+            "content": advice_text,
+            "action_type": "add_task",
+            "action_payload": json.dumps(action_payload),
+            "action_status": "proposed"
+        }
+
+    # 4. DETECT WEALTH PLANNER FORECAST INTENT
+    # e.g., "Run my wealth planner" or "Show Monte Carlo forecast"
+    wealth_keywords = ["wealth planner", "monte carlo", "forecast net worth", "run wealth", "wealth projection", "simulate wealth", "retire at"]
+    is_wealth_intent = any(k in p_lower for k in wealth_keywords)
+
+    if is_wealth_intent:
+        from ai_engine.forecasting import financial
+        monthly_income = float(user_info.get("monthly_income", 5000.0))
+        monthly_expenses = float(user_info.get("monthly_expenses", 2900.0))
+        monthly_savings = max(100.0, monthly_income - monthly_expenses)
+        current_net_worth = float(user_info.get("net_worth", 15000.0))
+
+        mc_res = financial.run_monte_carlo_simulation(
+            current_age=user_info.get("age", 25),
+            retirement_age=user_info.get("retirement_goal_age", 60),
+            current_net_worth=current_net_worth,
+            monthly_savings=monthly_savings,
+            num_simulations=500
+        )
+        final_values = mc_res["final_values"]
+        target = float(user_info.get("target_net_worth", 1000000.0))
+        hits = sum(1 for val in final_values if val >= target)
+        prob = round((hits / len(final_values)) * 100)
+        median_final = mc_res["median"][-1]
+        p10_final = mc_res["p10"][-1]
+        p90_final = mc_res["p90"][-1]
+
+        advice_text = f"""### 📊 Monte Carlo 500-Run Wealth Projection
+
+I executed a **500-stochastic-run simulation** of your financial trajectory:
+
+- **Probability of Hitting ${target:,.2f}:** **{prob}%**
+- **Median Projected Net Worth:** **${median_final:,.2f}**
+- **P90 Bull Market Ceiling:** **${p90_final:,.2f}**
+- **P10 Bear Market Floor:** **${p10_final:,.2f}**
+- **Current Monthly Savings:** ${monthly_savings:,.2f}/month
+
+**Strategic Verdict:** """ + (
+            "You are in the top tier of financial readiness. Maintaining your discipline will achieve independence ahead of schedule."
+            if prob >= 75 else
+            "You are on a steady baseline. Increasing monthly contributions by $250 will boost your odds by +14%."
+        )
+
+        action_payload = {
+            "target": target,
+            "prob": prob,
+            "median_final": round(median_final, 2),
+            "p10_final": round(p10_final, 2),
+            "p90_final": round(p90_final, 2),
+            "monthly_savings": monthly_savings,
+            "current_net_worth": current_net_worth
+        }
+
+        return {
+            "content": advice_text,
+            "action_type": "wealth_forecast",
+            "action_payload": json.dumps(action_payload),
+            "action_status": "proposed"
+        }
+
+    # 5. DETECT SETTINGS / PROFILE CHANGE INTENT
+    # e.g., "Change my monthly income to 6000" or "Set sleep target to 8 hours"
+    settings_keywords = ["change my", "update my", "set my", "change monthly income", "change savings", "update sleep target", "change retirement age", "set budget"]
+    is_settings_intent = any(k in p_lower for k in settings_keywords)
+
+    if is_settings_intent:
+        diff_fields = {}
+        # Monthly Income
+        inc_m = re.search(r"(?:income|salary)\s+(?:to|=|\:)?\s*\$?([0-9]+(?:\.[0-9]+)?)", p_lower)
+        if inc_m:
+            diff_fields["monthly_income"] = float(inc_m.group(1))
+
+        # Monthly Expenses
+        exp_m = re.search(r"(?:expenses?|spending|budget)\s+(?:to|=|\:)?\s*\$?([0-9]+(?:\.[0-9]+)?)", p_lower)
+        if exp_m:
+            diff_fields["monthly_expenses"] = float(exp_m.group(1))
+
+        # Sleep target
+        slp_m = re.search(r"(?:sleep target|sleep)\s+(?:to|=|\:)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:hours?|hrs?)?", p_lower)
+        if slp_m:
+            diff_fields["sleep_target_hours"] = float(slp_m.group(1))
+
+        # Study target
+        std_m = re.search(r"(?:study target|study hours)\s+(?:to|=|\:)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:hours?|hrs?)?", p_lower)
+        if std_m:
+            diff_fields["study_target_hours_week"] = float(std_m.group(1))
+
+        # Retirement Age
+        ret_m = re.search(r"(?:retirement age|target age)\s+(?:to|=|\:)?\s*([0-9]+)", p_lower)
+        if ret_m:
+            diff_fields["retirement_goal_age"] = int(ret_m.group(1))
+
+        if diff_fields:
+            diff_text = "\n".join(f"- **{k.replace('_', ' ').title()}:** {user_info.get(k, 'N/A')} ➔ **{v}**" for k, v in diff_fields.items())
+            advice_text = f"""### ⚙️ Proposed Profile & Settings Update
+
+I detected parameter adjustments for your Digital Twin:
+
+{diff_text}
+
+Click **Approve Changes** below to apply these modifications to your profile and recalculate all baseline models."""
+
+            return {
+                "content": advice_text,
+                "action_type": "update_settings",
+                "action_payload": json.dumps(diff_fields),
+                "action_status": "proposed"
+            }
+
+    # 6. GENERAL CONVERSATIONAL INTELLIGENCE VIA GROQ (OR HIGH-QUALITY FALLBACK)
+    client = get_groq_client()
+    if client is not None:
+        try:
+            system_msg = f"""You are the Digital Twin AI Copilot for {user_info.get('username', 'User')}.
+Role: {user_info.get('role', 'professional')} | Age: {user_info.get('age', 25)} -> Target Age: {user_info.get('retirement_goal_age', 60)}
+Monthly Income: ${user_info.get('monthly_income', 5000):,.2f} | Monthly Expenses: ${user_info.get('monthly_expenses', 2900):,.2f} | Net Worth: ${user_info.get('net_worth', 15000):,.2f}
+Baseline Sleep: {baseline.get('sleep_hours', 7.5):.1f}h | Study: {baseline.get('study_hours_week', 10.0):.1f}h/week | Savings: ${baseline.get('monthly_savings', 1000):,.2f}/mo
+Active Goal: {client_ctx.get('goalName', 'Emergency Fund')} (${client_ctx.get('goalCurrent', 15000):,.2f} / ${client_ctx.get('goalTarget', 20000):,.2f})
+
+RULES:
+- Answer with analytical depth, clarity, actionable breakdown, and structured markdown.
+- Ground advice in the user's specific financial, habit, and study metrics.
+- Keep responses concise, supportive, and mathematically grounded."""
+
+            messages = [{"role": "system", "content": system_msg}]
+            for h in history[-8:]:  # Include last 8 conversational turns
+                messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
+            messages.append({"role": "user", "content": prompt})
+
+            resp = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=messages,
+                temperature=0.5,
+                max_tokens=800
+            )
+            reply = resp.choices[0].message.content.strip()
+            return {
+                "content": reply,
+                "action_type": "none",
+                "action_payload": None,
+                "action_status": "none"
+            }
+        except Exception as e:
+            print(f"Error invoking Groq Copilot chat: {e}")
+
+    # Fallback contextual response
+    fallback_reply = f"""### 🤖 Digital Twin Strategic Analysis
+
+Based on your current profile (**{user_info.get('role', 'professional').title()}**, Age {user_info.get('age', 25)}):
+
+- **Monthly Cash Flow:** ${user_info.get('monthly_income', 5000):,.2f} income - ${user_info.get('monthly_expenses', 2900):,.2f} expenses = **${max(0, user_info.get('monthly_income', 5000) - user_info.get('monthly_expenses', 2900)):,.2f} monthly savings pace**.
+- **Habit Balance:** Averaging {baseline.get('sleep_hours', 7.5):.1f}h sleep and {baseline.get('study_hours_week', 10.0):.1f}h/week of dedicated focus.
+- **Active Goal:** {client_ctx.get('goalName', 'Emergency Fund')} is currently on track.
+
+**Suggested Next Steps:**
+1. Try typing: *"What if I study 5 more hours a week and sleep 30 mins less?"* to stress-test your cognitive velocity.
+2. Ask: *"If I buy a $1,200 laptop today, how does that affect my emergency fund goal?"* to evaluate capital tradeoffs.
+3. Type: *"Add a 45 min deep work sprint"* to directly schedule focus blocks into your planner."""
+
+    return {
+        "content": fallback_reply,
+        "action_type": "none",
+        "action_payload": None,
+        "action_status": "none"
+    }

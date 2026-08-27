@@ -208,3 +208,53 @@ class SuggestionsListResponse(BaseModel):
     lifestyle_diagnostic: Optional[str] = None
     suggestions: List[SuggestionItem]
 
+
+# Conversational Twin Chat Schemas
+class ChatMessageBase(BaseModel):
+    role: str = Field(..., description="'user' | 'assistant' | 'system'")
+    content: str
+    action_type: Optional[str] = "none"
+    action_payload: Optional[str] = None
+    action_status: Optional[str] = "none"
+
+class ChatMessageCreate(ChatMessageBase):
+    session_id: int
+
+class ChatMessageResponse(ChatMessageBase):
+    id: int
+    session_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ChatSessionBase(BaseModel):
+    title: Optional[str] = "New Conversation"
+
+class ChatSessionCreate(ChatSessionBase):
+    user_id: int
+
+class ChatSessionResponse(ChatSessionBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+    message_count: Optional[int] = 0
+    last_message_preview: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class ChatPromptRequest(BaseModel):
+    user_id: int
+    prompt: str
+    client_context: Optional[dict] = None  # Optional live twin state from client (tasks, active presets, custom notes)
+
+class ChatActionExecuteRequest(BaseModel):
+    user_id: int
+    action_type: str
+    action_payload: dict
+
+class ChatActionRejectRequest(BaseModel):
+    user_id: int
+

@@ -606,3 +606,118 @@ def reset_user_suggestions(db: Session, user_id: int, role: str = "professional"
     return save_user_suggestions(db, user_id, defaults, overwrite=True)
 
 
+# --- Chat & Conversational Twin Operations ---
+
+def get_chat_sessions(db: Session, user_id: int):
+    """Retrieve all chat sessions for a user, sorted by most recently updated."""
+    sessions = db.query(models.ChatSession)\
+        .filter(models.ChatSession.user_id == user_id)\
+        .order_by(models.ChatSession.updated_at.desc())\
+        .all()
+    
+    result = []
+    for s in sessions:
+        msgs = s.messages
+        count = len(msgs)
+        last_preview = msgs[-1].content[:60] + "..." if count > 0 and len(msgs[-1].content) > 60 else (msgs[-1].content if count > 0 else "No messages")
+        result.append({
+            "id": s.id,
+            "user_id": s.user_id,
+            "title": s.title,
+            "created_at": s.created_at,
+            "updated_at": s.updated_at,
+            "message_count": count,
+            "last_message_preview": last_preview
+        })
+    return result
+
+
+def get_chat_session(db: Session, session_id: int):
+    """Retrieve single chat session by ID."""
+    return db.query(models.ChatSession).filter(models.ChatSession.id == session_id).first()
+
+
+def create_chat_session(db: Session, user_id: int, title: str = "New Conversation"):
+    """Create a new chat session."""
+    session = models.ChatSession(
+        user_id=user_id,
+        title=title or "New Conversation",
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow()
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+def update_chat_session_title(db: Session, session_id: int, title: str):
+    """Update title of a chat session."""
+    session = get_chat_session(db, session_id)
+    if session:
+        session.title = title
+        session.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(session)
+    return session
+
+
+def delete_chat_session(db: Session, session_id: int):
+    """Delete a chat session and all its messages."""
+    session = get_chat_session(db, session_id)
+    if session:
+        db.delete(session)
+        db.commit()
+        return True
+    return False
+
+
+def get_chat_messages(db: Session, session_id: int):
+    """Retrieve full chronological conversation history for a session."""
+    return db.query(models.ChatMessage)\
+        .filter(models.ChatMessage.session_id == session_id)\
+        .order_by(models.ChatMessage.created_at.asc())\
+        .all()
+
+
+def create_chat_message(
+    db: Session,
+    session_id: int,
+    role: str,
+    content: str,
+    action_type: str = "none",
+    action_payload: str = None,
+    action_status: str = "none"
+):
+    """Save a user or assistant message, updating session timestamp."""
+    session = get_chat_session(db, session_id)
+    if not session:
+        return None
+
+    msg = models.ChatMessage(
+        session_id=session_id,
+        role=role,
+        content=content,
+        action_type=action_type or "none",
+        action_payload=action_payload,
+        action_status=action_status or "none",
+        created_at=datetime.utcnow()
+    )
+    db.add(msg)
+    session.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(msg)
+    return msg
+
+
+def update_chat_action_status(db: Session, message_id: int, status: str):
+    """Update status of an interactive action proposal (e.g. approved / rejected / executed)."""
+    msg = db.query(models.ChatMessage).filter(models.ChatMessage.id == message_id).first()
+    if msg:
+        msg.action_status = status
+        db.commit()
+        db.refresh(msg)
+    return msg
+
+
+

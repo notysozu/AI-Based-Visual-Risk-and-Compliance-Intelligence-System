@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database.database import engine
 from database.models import Base
 from database.crud import seed_mock_data
-from backend.api import users, records, simulations, finance, habits, study, suggestions
+from backend.api import users, records, simulations, finance, habits, study, suggestions, chat
 from database.database import SessionLocal
 
 Base.metadata.create_all(bind=engine)
@@ -41,6 +41,7 @@ app.include_router(finance.router)
 app.include_router(habits.router)
 app.include_router(study.router)
 app.include_router(suggestions.router)
+app.include_router(chat.router)
 
 @app.get("/")
 def read_root():

@@ -75,6 +75,12 @@ def run_migrations():
         except Exception as e:
             print(f"Error migrating study_records table: {e}")
 
+    try:
+        from .models import Base
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"Error creating tables: {e}")
+
 run_migrations()
 
 def get_db():

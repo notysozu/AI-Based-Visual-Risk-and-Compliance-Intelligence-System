@@ -28,6 +28,7 @@ import { Gauge } from "@/components/gauge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useGuard } from "@/lib/use-guard";
 import { baseline, focusIndex, healthIndex, money, today, useTwin, getRoleConfig } from "@/lib/twin-store";
+import { TwinChat } from "@/components/twin-chat";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -242,6 +243,17 @@ function DashboardPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Conversational Digital Twin Copilot */}
+      <div className="mt-5 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="label-xs">Interactive Life Simulation</p>
+            <h3 className="font-display font-bold text-base mt-0.5">Conversational Digital Twin</h3>
+          </div>
+        </div>
+        <TwinChat />
       </div>
 
       <HabitDrawer open={drawer} onOpenChange={setDrawer} onSave={addLog} />

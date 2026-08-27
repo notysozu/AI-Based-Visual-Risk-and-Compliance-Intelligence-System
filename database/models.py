@@ -46,6 +46,7 @@ class User(Base):
     habit_records = relationship("HabitRecord", back_populates="user", cascade="all, delete-orphan")
     study_records = relationship("StudyRecord", back_populates="user", cascade="all, delete-orphan")
     suggestions = relationship("UserSuggestion", back_populates="user", cascade="all, delete-orphan")
+    chat_sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
 
 class FinancialRecord(Base):
     __tablename__ = "financial_records"
@@ -102,6 +103,32 @@ class UserSuggestion(Base):
     duration_minutes = Column(Integer, default=30)
     is_adopted = Column(Integer, default=0)  # 0: false, 1: true (compatible with all SQLite/PostgreSQL setups)
     is_ai_generated = Column(Integer, default=1)
+    user = relationship("User", back_populates="suggestions")
+
+
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String, default="New Conversation")
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="chat_sessions")
+    messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan", order_by="ChatMessage.created_at")
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("chat_sessions.id"), nullable=False, index=True)
+    role = Column(String, nullable=False)  # "user" | "assistant" | "system"
+    content = Column(String, nullable=False)
+    action_type = Column(String, default="none")  # "none" | "add_task" | "simulate_what_if" | "wealth_forecast" | "update_settings" | "purchase_impact"
+    action_payload = Column(String, nullable=True)  # JSON-encoded payload representing structured action/simulation details
+    action_status = Column(String, default="none")  # "none" | "proposed" | "approved" | "rejected" | "executed"
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
-    user = relationship("User", back_populates="suggestions")
+    session = relationship("ChatSession", back_populates="messages")
