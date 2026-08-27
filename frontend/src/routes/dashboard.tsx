@@ -113,6 +113,11 @@ function DashboardPage() {
         </>
       }
     >
+      {/* Conversational Digital Twin Copilot (Positioned at the Top) */}
+      <div className="mb-6 space-y-2.5">
+        <TwinChat />
+      </div>
+
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="panel p-6 lg:col-span-2 flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-border/50">
@@ -243,17 +248,6 @@ function DashboardPage() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Conversational Digital Twin Copilot */}
-      <div className="mt-5 space-y-2.5">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="label-xs">Interactive Life Simulation</p>
-            <h3 className="font-display font-bold text-base mt-0.5">Conversational Digital Twin</h3>
-          </div>
-        </div>
-        <TwinChat />
       </div>
 
       <HabitDrawer open={drawer} onOpenChange={setDrawer} onSave={addLog} />

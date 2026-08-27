@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Send,
   Plus,
@@ -16,9 +18,9 @@ import {
   ArrowRight,
   RefreshCw,
   MessageSquare,
-  AlertCircle,
-  Layers,
-  ChevronDown
+  ChevronDown,
+  Copy,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +37,7 @@ import {
   type ChatSessionData,
   type ChatMessageData
 } from "@/lib/api";
-import { useTwin, money, today } from "@/lib/twin-store";
+import { useTwin, today } from "@/lib/twin-store";
 
 const QUICK_PROMPTS = [
   "If I buy a $1,200 laptop today, how does that affect my emergency fund goal?",
@@ -56,6 +58,7 @@ export function TwinChat() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [showSessionsDropdown, setShowSessionsDropdown] = useState(false);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load sessions on mount or user change
@@ -79,16 +82,31 @@ export function TwinChat() {
     try {
       setInitialLoading(true);
       const data = await getChatSessions(userId);
-      setSessions(data);
-      if (data.length > 0) {
+      if (data && data.length > 0) {
+        setSessions(data);
         if (!activeSessionId || !data.some((s) => s.id === activeSessionId)) {
           setActiveSessionId(data[0].id);
         }
+      } else {
+        // Automatically initiate a new thread if no sessions exist
+        await handleAutoInitiateThread();
       }
     } catch (err) {
       console.error("Failed to load chat sessions:", err);
+      // Fallback: auto-create if error/empty
+      await handleAutoInitiateThread();
     } finally {
       setInitialLoading(false);
+    }
+  };
+
+  const handleAutoInitiateThread = async () => {
+    try {
+      const newSession = await createChatSession(userId, { title: "Twin Core Dialogue" });
+      setSessions([newSession]);
+      setActiveSessionId(newSession.id);
+    } catch (e) {
+      console.error("Failed to auto-initiate thread:", e);
     }
   };
 
@@ -123,14 +141,21 @@ export function TwinChat() {
         if (updated.length > 0) {
           setActiveSessionId(updated[0].id);
         } else {
-          // If all deleted, create fresh one
-          handleCreateSession();
+          // If all deleted, automatically initiate a fresh one
+          await handleAutoInitiateThread();
         }
       }
       toast.success("Thread deleted");
     } catch (err) {
       toast.error("Failed to delete conversation");
     }
+  };
+
+  const handleCopyMessage = (id: number, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    toast.success("Copied to clipboard");
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handleSend = async (customPrompt?: string) => {
@@ -257,24 +282,24 @@ export function TwinChat() {
   const activeSession = sessions.find((s) => s.id === activeSessionId);
 
   return (
-    <div className="panel flex flex-col h-[640px] overflow-hidden border border-border/60 shadow-lg bg-card/60 backdrop-blur-xl">
-      {/* Header Bar */}
-      <div className="px-5 py-3.5 border-b border-border/50 flex items-center justify-between bg-sidebar/30">
+    <div className="panel flex flex-col h-[660px] overflow-hidden border border-border/70 shadow-xl bg-card/70 backdrop-blur-2xl rounded-2xl">
+      {/* ChatGPT Style Top Navigation Bar */}
+      <div className="px-5 py-3.5 border-b border-border/50 flex items-center justify-between bg-sidebar/40">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 text-white shadow-xs">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0071E3] to-indigo-600 text-white shadow-xs">
             <Sparkles className="h-4 w-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-sm tracking-tight text-foreground">
-                Digital Twin Copilot
+                Conversational Digital Twin
               </h3>
               <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                Live Simulation
+                Active Copilot
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground truncate max-w-[220px] sm:max-w-xs">
-              {activeSession ? activeSession.title : "Conversational Predictive Intelligence"}
+              {activeSession ? activeSession.title : "Live Simulation Brain"}
             </p>
           </div>
         </div>
@@ -286,7 +311,7 @@ export function TwinChat() {
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs gap-1.5 bg-background/80"
+              className="h-8 text-xs gap-1.5 bg-background/80 hover:bg-background"
               onClick={() => setShowSessionsDropdown(!showSessionsDropdown)}
             >
               <MessageSquare className="h-3.5 w-3.5" />
@@ -309,7 +334,7 @@ export function TwinChat() {
                         setShowSessionsDropdown(false);
                       }}
                       className={`px-3 py-2 text-xs flex items-center justify-between cursor-pointer hover:bg-muted/60 transition-colors ${
-                        s.id === activeSessionId ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium" : "text-foreground"
+                        s.id === activeSessionId ? "bg-[#0071E3]/10 text-[#0071E3] dark:text-blue-400 font-medium" : "text-foreground"
                       }`}
                     >
                       <span className="truncate max-w-[180px]">{s.title}</span>
@@ -328,7 +353,7 @@ export function TwinChat() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="w-full justify-start text-xs h-7 text-indigo-600 dark:text-indigo-400"
+                    className="w-full justify-start text-xs h-7 text-[#0071E3] dark:text-blue-400"
                     onClick={handleCreateSession}
                   >
                     <Plus className="h-3.5 w-3.5 mr-1.5" />
@@ -342,7 +367,7 @@ export function TwinChat() {
           <Button
             size="sm"
             variant="default"
-            className="h-8 text-xs gap-1.5 bg-[#0071E3] hover:bg-[#0071E3]/90 text-white"
+            className="h-8 text-xs gap-1.5 bg-[#0071E3] hover:bg-[#0071E3]/90 text-white shadow-xs"
             onClick={handleCreateSession}
           >
             <Plus className="h-3.5 w-3.5" />
@@ -351,20 +376,20 @@ export function TwinChat() {
         </div>
       </div>
 
-      {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+      {/* ChatGPT-Style Messages Feed */}
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
         {initialLoading ? (
           <div className="h-full flex flex-col items-center justify-center text-center space-y-3 text-muted-foreground">
-            <RefreshCw className="h-6 w-6 animate-spin text-indigo-500" />
-            <p className="text-xs">Connecting to Twin Simulation Brain...</p>
+            <RefreshCw className="h-6 w-6 animate-spin text-[#0071E3]" />
+            <p className="text-xs">Initializing Digital Twin Intelligence...</p>
           </div>
         ) : messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center space-y-3 text-muted-foreground p-6">
-            <Bot className="h-10 w-10 text-indigo-500/50" />
+            <Bot className="h-10 w-10 text-[#0071E3]/50" />
             <div>
               <p className="text-sm font-semibold text-foreground">Digital Twin Ready</p>
               <p className="text-xs mt-1 max-w-sm">
-                Ask how financial purchases affect your emergency fund, simulate lifestyle routine shifts, or create tasks.
+                Ask how financial purchases affect your goals, stress-test lifestyle routines, or schedule tasks with automatic approval.
               </p>
             </div>
           </div>
@@ -372,27 +397,79 @@ export function TwinChat() {
           messages.map((m) => (
             <div
               key={m.id}
-              className={`flex gap-3 text-xs sm:text-sm ${
+              className={`flex gap-3 text-xs sm:text-sm group ${
                 m.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
+              {/* Assistant Avatar */}
               {m.role !== "user" && (
-                <div className="flex-shrink-0 h-7 w-7 rounded-lg bg-indigo-600/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mt-0.5">
-                  <Bot className="h-4 w-4" />
+                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-tr from-[#0071E3] to-indigo-600 text-white flex items-center justify-center mt-0.5 shadow-xs">
+                  <Sparkles className="h-4 w-4" />
                 </div>
               )}
 
+              {/* Message Content Container */}
               <div
-                className={`max-w-[85%] sm:max-w-[78%] rounded-2xl p-4 shadow-xs space-y-2.5 ${
+                className={`max-w-[90%] sm:max-w-[82%] relative ${
                   m.role === "user"
-                    ? "bg-[#0071E3] text-white rounded-tr-xs"
-                    : "bg-sidebar/50 border border-border/50 text-foreground rounded-tl-xs"
+                    ? "bg-[#0071E3] text-white px-4 py-2.5 rounded-2xl rounded-tr-xs shadow-xs font-normal"
+                    : "bg-transparent text-foreground pr-2"
                 }`}
               >
-                {/* Formatted Markdown Content */}
-                <div className="leading-relaxed whitespace-pre-line space-y-2 text-xs sm:text-sm">
-                  {m.content}
-                </div>
+                {/* Assistant Markdown Formatter (ChatGPT Style) */}
+                {m.role !== "user" ? (
+                  <div className="prose-chat text-foreground">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({ node, ...props }) => <h1 className="text-base font-bold text-foreground mt-3 mb-1.5" {...props} />,
+                        h2: ({ node, ...props }) => <h2 className="text-sm font-bold text-foreground mt-3 mb-1.5" {...props} />,
+                        h3: ({ node, ...props }) => <h3 className="text-sm font-semibold text-foreground mt-2.5 mb-1 tracking-tight" {...props} />,
+                        h4: ({ node, ...props }) => <h4 className="text-xs font-semibold text-foreground mt-2 mb-1 uppercase tracking-wider font-mono text-muted-foreground" {...props} />,
+                        p: ({ node, ...props }) => <p className="leading-relaxed my-1.5 text-xs sm:text-sm" {...props} />,
+                        ul: ({ node, ...props }) => <ul className="list-disc list-outside ml-4 my-2 space-y-1 text-xs sm:text-sm" {...props} />,
+                        ol: ({ node, ...props }) => <ol className="list-decimal list-outside ml-4 my-2 space-y-1 text-xs sm:text-sm" {...props} />,
+                        li: ({ node, ...props }) => <li className="leading-relaxed pl-1" {...props} />,
+                        strong: ({ node, ...props }) => <strong className="font-semibold text-foreground" {...props} />,
+                        blockquote: ({ node, ...props }) => (
+                          <blockquote className="border-l-2 border-[#0071E3] bg-[#0071E3]/5 dark:bg-blue-500/10 pl-3 py-1.5 my-2.5 rounded-r-md text-xs sm:text-sm text-foreground/90 font-normal" {...props} />
+                        ),
+                        code: ({ node, inline, ...props }: any) =>
+                          inline ? (
+                            <code className="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded text-[11px] text-[#0071E3] dark:text-blue-400" {...props} />
+                          ) : (
+                            <pre className="font-mono bg-black/5 dark:bg-white/5 p-2.5 rounded-lg text-xs overflow-x-auto my-2 border border-border/40"><code {...props} /></pre>
+                          )
+                      }}
+                    >
+                      {m.content}
+                    </ReactMarkdown>
+
+                    {/* Copy message button on hover */}
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 mt-2 text-[11px] text-muted-foreground">
+                      <button
+                        type="button"
+                        onClick={() => handleCopyMessage(m.id, m.content)}
+                        className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1"
+                        title="Copy response"
+                      >
+                        {copiedId === m.id ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-500" />
+                            <span className="text-emerald-500">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="leading-relaxed whitespace-pre-wrap">{m.content}</div>
+                )}
 
                 {/* Interactive Action Proposal Cards */}
                 {m.action_payload && m.action_type && m.action_type !== "none" && (
@@ -405,8 +482,9 @@ export function TwinChat() {
                 )}
               </div>
 
+              {/* User Avatar */}
               {m.role === "user" && (
-                <div className="flex-shrink-0 h-7 w-7 rounded-lg bg-[#0071E3]/20 text-[#0071E3] dark:text-blue-400 flex items-center justify-center mt-0.5">
+                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-[#0071E3]/20 text-[#0071E3] dark:text-blue-400 flex items-center justify-center mt-0.5 shadow-xs">
                   <User className="h-4 w-4" />
                 </div>
               )}
@@ -416,7 +494,7 @@ export function TwinChat() {
 
         {loading && (
           <div className="flex gap-3 justify-start items-center text-xs text-muted-foreground animate-pulse">
-            <div className="h-7 w-7 rounded-lg bg-indigo-600/15 text-indigo-600 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-[#0071E3] to-indigo-600 text-white flex items-center justify-center">
               <RefreshCw className="h-4 w-4 animate-spin" />
             </div>
             <span>Running Monte Carlo simulation & computing impact...</span>
@@ -427,7 +505,7 @@ export function TwinChat() {
       </div>
 
       {/* Quick Suggestion Pills */}
-      <div className="px-4 py-2 border-t border-border/30 bg-sidebar/10 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+      <div className="px-4 py-2.5 border-t border-border/30 bg-sidebar/20 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 shrink-0">
           <Sparkles className="h-3 w-3 text-amber-500" /> Prompts:
         </span>
@@ -437,14 +515,14 @@ export function TwinChat() {
             type="button"
             onClick={() => handleSend(qp)}
             disabled={loading}
-            className="text-[11px] px-2.5 py-1 rounded-full bg-sidebar/60 hover:bg-black/5 dark:hover:bg-white/10 border border-border/50 transition-colors whitespace-nowrap text-muted-foreground hover:text-foreground shrink-0"
+            className="text-[11px] px-3 py-1 rounded-full bg-background/80 hover:bg-black/5 dark:hover:bg-white/10 border border-border/50 transition-colors whitespace-nowrap text-muted-foreground hover:text-foreground shrink-0 shadow-2xs"
           >
             {qp}
           </button>
         ))}
       </div>
 
-      {/* Input Box */}
+      {/* ChatGPT-Style Input Box */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -456,17 +534,17 @@ export function TwinChat() {
           value={inputPrompt}
           onChange={(e) => setInputPrompt(e.target.value)}
           placeholder="Ask anything: 'If I buy a $1,200 laptop...', 'Add a 45 min deep work sprint', 'Run wealth forecast'..."
-          className="bg-background/80 h-10 text-xs sm:text-sm border-border/60 focus-visible:ring-1 focus-visible:ring-[#0071E3]"
+          className="bg-background/90 h-10 text-xs sm:text-sm border-border/60 focus-visible:ring-1 focus-visible:ring-[#0071E3] rounded-xl shadow-2xs"
           disabled={loading}
         />
         <Button
           type="submit"
           disabled={!inputPrompt.trim() || loading}
           size="sm"
-          className="h-10 px-4 bg-[#0071E3] hover:bg-[#0071E3]/90 text-white shrink-0 gap-1.5"
+          className="h-10 px-4 bg-[#0071E3] hover:bg-[#0071E3]/90 text-white shrink-0 gap-1.5 rounded-xl shadow-xs"
         >
           <Send className="h-4 w-4" />
-          <span className="hidden sm:inline">Simulate</span>
+          <span className="hidden sm:inline">Send</span>
         </Button>
       </form>
     </div>
@@ -504,9 +582,9 @@ function InteractiveActionCard({
   // 1. PURCHASE IMPACT CARD
   if (action_type === "purchase_impact") {
     return (
-      <div className="mt-3 p-3.5 rounded-xl border border-blue-500/30 bg-blue-500/5 space-y-2.5 text-xs">
+      <div className="mt-3 p-4 rounded-xl border border-blue-500/30 bg-blue-500/5 space-y-3 text-xs shadow-xs">
         <div className="flex items-center justify-between border-b border-blue-500/20 pb-2">
-          <span className="font-semibold text-foreground flex items-center gap-1.5">
+          <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
             <DollarSign className="h-4 w-4 text-emerald-500" />
             Purchase Analysis: {data.item_name} (${Number(data.cost).toLocaleString()})
           </span>
@@ -526,23 +604,23 @@ function InteractiveActionCard({
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-          <div className="p-2 rounded-lg bg-background/60 border border-border/40">
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
             <span className="text-[10px] text-muted-foreground block">Goal Delay</span>
             <span className="font-semibold text-rose-500 font-mono">+{data.delay_months} months</span>
           </div>
-          <div className="p-2 rounded-lg bg-background/60 border border-border/40">
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
             <span className="text-[10px] text-muted-foreground block">Post-Buy Progress</span>
             <span className="font-semibold text-foreground font-mono">
               ${Number(data.new_progress).toLocaleString()}
             </span>
           </div>
-          <div className="p-2 rounded-lg bg-background/60 border border-border/40">
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
             <span className="text-[10px] text-muted-foreground block">5Y Foregone Growth</span>
             <span className="font-semibold text-amber-500 font-mono">
               -${Number(data.foregone_growth).toLocaleString()}
             </span>
           </div>
-          <div className="p-2 rounded-lg bg-background/60 border border-border/40">
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
             <span className="text-[10px] text-muted-foreground block">Success Odds</span>
             <span className="font-semibold text-emerald-500 font-mono">{data.prob_after}%</span>
           </div>
@@ -553,7 +631,7 @@ function InteractiveActionCard({
             <Button
               size="sm"
               onClick={onApprove}
-              className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+              className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-xs"
             >
               <CheckCircle2 className="h-3.5 w-3.5" /> Approve & Record Expense
             </Button>
@@ -561,7 +639,7 @@ function InteractiveActionCard({
               size="sm"
               variant="ghost"
               onClick={onReject}
-              className="h-7 text-xs text-muted-foreground hover:text-foreground"
+              className="h-8 text-xs text-muted-foreground hover:text-foreground"
             >
               Dismiss
             </Button>
@@ -574,9 +652,9 @@ function InteractiveActionCard({
   // 2. TASK CREATION CARD
   if (action_type === "add_task") {
     return (
-      <div className="mt-3 p-3.5 rounded-xl border border-indigo-500/30 bg-indigo-500/5 space-y-2.5 text-xs">
+      <div className="mt-3 p-4 rounded-xl border border-indigo-500/30 bg-indigo-500/5 space-y-3 text-xs shadow-xs">
         <div className="flex items-center justify-between border-b border-indigo-500/20 pb-2">
-          <span className="font-semibold text-foreground flex items-center gap-1.5">
+          <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
             <Clock className="h-4 w-4 text-indigo-500" />
             Schedule Addition: {data.title}
           </span>
@@ -595,11 +673,23 @@ function InteractiveActionCard({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
-          <span>⏰ <strong>Time:</strong> {data.start}</span>
-          <span>⏳ <strong>Duration:</strong> {data.minutes} mins</span>
-          <span>🏷️ <strong>Category:</strong> {data.category}</span>
-          <span>⚡ <strong>Impact:</strong> {data.impact}</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
+            <span className="text-[10px] text-muted-foreground block">Scheduled Time</span>
+            <span className="font-semibold text-foreground font-mono">{data.start}</span>
+          </div>
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
+            <span className="text-[10px] text-muted-foreground block">Duration</span>
+            <span className="font-semibold text-foreground font-mono">{data.minutes} mins</span>
+          </div>
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
+            <span className="text-[10px] text-muted-foreground block">Category</span>
+            <span className="font-semibold text-indigo-500">{data.category}</span>
+          </div>
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
+            <span className="text-[10px] text-muted-foreground block">Impact</span>
+            <span className="font-semibold text-emerald-500">{data.impact}</span>
+          </div>
         </div>
 
         {!isExecuted && !isRejected && (
@@ -607,7 +697,7 @@ function InteractiveActionCard({
             <Button
               size="sm"
               onClick={onApprove}
-              className="h-7 text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1"
+              className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 shadow-xs"
             >
               <CheckCircle2 className="h-3.5 w-3.5" /> Approve & Add Task
             </Button>
@@ -615,7 +705,7 @@ function InteractiveActionCard({
               size="sm"
               variant="ghost"
               onClick={onReject}
-              className="h-7 text-xs text-muted-foreground hover:text-foreground"
+              className="h-8 text-xs text-muted-foreground hover:text-foreground"
             >
               Dismiss
             </Button>
@@ -628,9 +718,9 @@ function InteractiveActionCard({
   // 3. WHAT-IF SIMULATOR CARD
   if (action_type === "simulate_what_if") {
     return (
-      <div className="mt-3 p-3.5 rounded-xl border border-purple-500/30 bg-purple-500/5 space-y-2.5 text-xs">
+      <div className="mt-3 p-4 rounded-xl border border-purple-500/30 bg-purple-500/5 space-y-3 text-xs shadow-xs">
         <div className="flex items-center justify-between border-b border-purple-500/20 pb-2">
-          <span className="font-semibold text-foreground flex items-center gap-1.5">
+          <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
             <BrainCircuit className="h-4 w-4 text-purple-500" />
             What-If Scenario Simulation
           </span>
@@ -650,25 +740,25 @@ function InteractiveActionCard({
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-          <div className="p-2 rounded-lg bg-background/60 border border-border/40">
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
             <span className="text-[10px] text-muted-foreground block">Health Index</span>
             <span className="font-semibold font-mono">
               {data.baseline_health} ➔ {data.proposed_health}/10
             </span>
           </div>
-          <div className="p-2 rounded-lg bg-background/60 border border-border/40">
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
             <span className="text-[10px] text-muted-foreground block">Focus Rating</span>
             <span className="font-semibold font-mono">
               {data.baseline_focus} ➔ {data.proposed_focus}/10
             </span>
           </div>
-          <div className="p-2 rounded-lg bg-background/60 border border-border/40">
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
             <span className="text-[10px] text-muted-foreground block">5Y Wealth Delta</span>
             <span className={`font-semibold font-mono ${data.wealth_5y_diff >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
               {data.wealth_5y_diff >= 0 ? "+" : ""}${Number(data.wealth_5y_diff).toLocaleString()}
             </span>
           </div>
-          <div className="p-2 rounded-lg bg-background/60 border border-border/40">
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
             <span className="text-[10px] text-muted-foreground block">Retirement</span>
             <span className="font-semibold font-mono text-emerald-500">
               {data.attained_retirement ? "On Track" : "Adjust Pace"}
@@ -681,7 +771,7 @@ function InteractiveActionCard({
             <Button
               size="sm"
               onClick={onApprove}
-              className="h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white gap-1"
+              className="h-8 text-xs bg-purple-600 hover:bg-purple-700 text-white gap-1.5 shadow-xs"
             >
               <CheckCircle2 className="h-3.5 w-3.5" /> Approve & Apply to Simulator
             </Button>
@@ -690,7 +780,7 @@ function InteractiveActionCard({
             size="sm"
             variant="outline"
             onClick={() => onNavigate("/simulator")}
-            className="h-7 text-xs gap-1"
+            className="h-8 text-xs gap-1"
           >
             View in Simulator <ArrowRight className="h-3 w-3" />
           </Button>
@@ -702,9 +792,9 @@ function InteractiveActionCard({
   // 4. WEALTH FORECAST CARD
   if (action_type === "wealth_forecast") {
     return (
-      <div className="mt-3 p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-2.5 text-xs">
+      <div className="mt-3 p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-3 text-xs shadow-xs">
         <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
-          <span className="font-semibold text-foreground flex items-center gap-1.5">
+          <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
             <TrendingUp className="h-4 w-4 text-emerald-500" />
             Monte Carlo Wealth Projection
           </span>
@@ -714,15 +804,15 @@ function InteractiveActionCard({
         </div>
 
         <div className="grid grid-cols-3 gap-2 pt-1">
-          <div className="p-2 rounded-lg bg-background/60 border border-border/40">
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
             <span className="text-[10px] text-muted-foreground block">P10 Bear Floor</span>
             <span className="font-semibold font-mono text-rose-500">${Number(data.p10_final).toLocaleString()}</span>
           </div>
-          <div className="p-2 rounded-lg bg-background/60 border border-border/40">
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
             <span className="text-[10px] text-muted-foreground block">Median Outcome</span>
             <span className="font-semibold font-mono text-emerald-500">${Number(data.median_final).toLocaleString()}</span>
           </div>
-          <div className="p-2 rounded-lg bg-background/60 border border-border/40">
+          <div className="p-2.5 rounded-lg bg-background/80 border border-border/40">
             <span className="text-[10px] text-muted-foreground block">P90 Bull Ceiling</span>
             <span className="font-semibold font-mono text-indigo-500">${Number(data.p90_final).toLocaleString()}</span>
           </div>
@@ -733,7 +823,7 @@ function InteractiveActionCard({
             size="sm"
             variant="outline"
             onClick={() => onNavigate("/wealth")}
-            className="h-7 text-xs gap-1"
+            className="h-8 text-xs gap-1"
           >
             Open Wealth Engine <ArrowRight className="h-3 w-3" />
           </Button>
@@ -745,9 +835,9 @@ function InteractiveActionCard({
   // 5. SETTINGS UPDATE CARD
   if (action_type === "update_settings") {
     return (
-      <div className="mt-3 p-3.5 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-2.5 text-xs">
+      <div className="mt-3 p-4 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-3 text-xs shadow-xs">
         <div className="flex items-center justify-between border-b border-cyan-500/20 pb-2">
-          <span className="font-semibold text-foreground flex items-center gap-1.5">
+          <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs sm:text-sm">
             <Sliders className="h-4 w-4 text-cyan-500" />
             Profile & Parameter Updates
           </span>
@@ -766,10 +856,10 @@ function InteractiveActionCard({
           )}
         </div>
 
-        <div className="space-y-1 text-muted-foreground">
+        <div className="space-y-1.5 text-muted-foreground">
           {Object.entries(data).map(([key, val]) => (
-            <div key={key} className="flex items-center justify-between">
-              <span>{key.replace(/_/g, " ").toUpperCase()}:</span>
+            <div key={key} className="flex items-center justify-between p-2 rounded bg-background/60 border border-border/40">
+              <span className="font-mono text-[11px]">{key.replace(/_/g, " ").toUpperCase()}</span>
               <strong className="text-foreground font-mono">{String(val)}</strong>
             </div>
           ))}
@@ -780,7 +870,7 @@ function InteractiveActionCard({
             <Button
               size="sm"
               onClick={onApprove}
-              className="h-7 text-xs bg-cyan-600 hover:bg-cyan-700 text-white gap-1"
+              className="h-8 text-xs bg-cyan-600 hover:bg-cyan-700 text-white gap-1.5 shadow-xs"
             >
               <CheckCircle2 className="h-3.5 w-3.5" /> Approve Changes
             </Button>
@@ -788,7 +878,7 @@ function InteractiveActionCard({
               size="sm"
               variant="ghost"
               onClick={onReject}
-              className="h-7 text-xs text-muted-foreground hover:text-foreground"
+              className="h-8 text-xs text-muted-foreground hover:text-foreground"
             >
               Dismiss
             </Button>
