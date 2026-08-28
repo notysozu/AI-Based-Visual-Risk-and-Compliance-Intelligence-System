@@ -33,7 +33,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "VisualRisk AI — Visual Risk & Compliance Intelligence System" },
+      { title: "Digital Twin AI — AI-Based Visual Risk & Compliance Intelligence System" },
       {
         name: "description",
         content:
@@ -168,7 +168,7 @@ function LandingPage() {
           </h1>
 
           <p className="mac-fade-in mx-auto mt-5 max-w-xl text-base sm:text-lg text-muted-foreground leading-relaxed font-normal">
-            Autonomous predictive intelligence running 500-iteration Monte Carlo algorithms to stress-test your wealth, learning velocity, and life decisions.
+            AI-Based Visual Risk and Compliance Intelligence System: autonomous predictive intelligence running 500-iteration Monte Carlo simulations to model risk, wealth compounding, academic momentum, and daily decision trajectories.
           </p>
 
           <div className="mac-fade-in mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -914,7 +914,7 @@ function LandingPage() {
           {/* Bottom Colophon Bar */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-[11px] text-muted-foreground text-center sm:text-left">
-              © {new Date().getFullYear()} Digital Twin AI. All rights reserved.
+              © {new Date().getFullYear()} AI-Based Visual Risk & Compliance Intelligence System (Digital Twin AI). All rights reserved.
             </div>
 
             <div className="flex items-center gap-2">

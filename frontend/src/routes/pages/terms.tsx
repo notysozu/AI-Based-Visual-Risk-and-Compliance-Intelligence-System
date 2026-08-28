@@ -21,11 +21,10 @@ import { useTwin } from "@/lib/twin-store";
 export const Route = createFileRoute("/pages/terms")({
   head: () => ({
     meta: [
-      { title: "Terms of Service — VisualRisk AI" },
+      { title: "Terms of Service — Digital Twin AI (Visual Risk & Compliance Intelligence)" },
       {
         name: "description",
-        content:
-          "Review the terms, simulation modeling guidelines, and disclaimer policies for using Digital Twin AI.",
+        content: "Review the terms, simulation modeling guidelines, and disclaimer policies for using AI-Based Visual Risk and Compliance Intelligence System (Digital Twin AI).",
       },
     ],
   }),
@@ -94,7 +93,7 @@ function TermsPage() {
               <h2 className="font-display text-2xl font-bold">1. Acceptance of Terms</h2>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              By accessing or creating an account on Digital Twin AI, you acknowledge and agree to be bound by these Terms of Service. If you disagree with any portion of these terms, please discontinue using the service.
+              By accessing or creating an account on AI-Based Visual Risk and Compliance Intelligence System (Digital Twin AI), you acknowledge and agree to be bound by these Terms of Service. If you disagree with any portion of these terms, please discontinue using the service.
             </p>
           </div>
 
@@ -107,7 +106,7 @@ function TermsPage() {
               <h2 className="font-display text-2xl font-bold text-foreground">2. Simulation & Predictive Modeling Disclaimer</h2>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              Digital Twin AI provides probabilistic algorithmic modeling, 500-iteration Monte Carlo projections, focus momentum metrics, and syllabus scheduling for educational, self-reflection, and personal planning purposes only:
+              AI-Based Visual Risk and Compliance Intelligence System (Digital Twin AI) provides probabilistic algorithmic risk modeling, 500-iteration Monte Carlo projections, focus momentum metrics, and syllabus scheduling for educational, self-reflection, and personal planning purposes only:
             </p>
             <ul className="space-y-2.5 text-sm text-muted-foreground">
               <li className="flex items-start gap-2.5">
@@ -147,7 +146,7 @@ function TermsPage() {
               <h2 className="font-display text-2xl font-bold">4. Intellectual Property</h2>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              All proprietary algorithms, simulation engine code, user interfaces, branding, and visual designs remain the intellectual property of Digital Twin AI and its maintainers. You retain full ownership of all custom data and parameters you input.
+              All proprietary algorithms, simulation engine code, user interfaces, branding, and visual designs remain the intellectual property of AI-Based Visual Risk and Compliance Intelligence System (Digital Twin AI) and its maintainers. You retain full ownership of all custom data and parameters you input.
             </p>
           </div>
 
@@ -228,7 +227,7 @@ function TermsPage() {
           {/* Bottom Colophon Bar */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-[11px] text-muted-foreground text-center sm:text-left">
-              © {new Date().getFullYear()} Digital Twin AI. All rights reserved.
+              © {new Date().getFullYear()} AI-Based Visual Risk & Compliance Intelligence System (Digital Twin AI). All rights reserved.
             </div>
 
             <div className="flex items-center gap-2">

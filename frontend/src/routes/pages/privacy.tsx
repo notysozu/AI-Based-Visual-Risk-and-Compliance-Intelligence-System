@@ -21,11 +21,10 @@ import { useTwin } from "@/lib/twin-store";
 export const Route = createFileRoute("/pages/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — VisualRisk AI" },
+      { title: "Privacy Policy — Digital Twin AI (Visual Risk & Compliance Intelligence)" },
       {
         name: "description",
-        content:
-          "Read how Digital Twin AI protects your financial, lifestyle, and simulation data with strict local-first privacy principles.",
+        content: "Read how AI-Based Visual Risk and Compliance Intelligence System (Digital Twin AI) protects your financial, lifestyle, and simulation data with strict local-first privacy principles.",
       },
     ],
   }),
@@ -94,7 +93,7 @@ function PrivacyPage() {
               <h2 className="font-display text-2xl font-bold">1. Our Core Privacy Commitment</h2>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              At Digital Twin AI, we believe your personal life data, financial goals, study metrics, and behavioral simulations belong exclusively to you. We do not sell, rent, monetize, or broker your personal information to advertisers or data brokers under any circumstance.
+              At AI-Based Visual Risk & Compliance Intelligence System (Digital Twin AI), we believe your personal telemetry, financial goals, academic study metrics, and behavioral risk simulations belong exclusively to you. We do not sell, rent, monetize, or broker your personal information to advertisers or data brokers under any circumstance.
             </p>
           </div>
 
@@ -242,7 +241,7 @@ function PrivacyPage() {
           {/* Bottom Colophon Bar */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-[11px] text-muted-foreground text-center sm:text-left">
-              © {new Date().getFullYear()} Digital Twin AI. All rights reserved.
+              © {new Date().getFullYear()} AI-Based Visual Risk & Compliance Intelligence System (Digital Twin AI). All rights reserved.
             </div>
 
             <div className="flex items-center gap-2">
