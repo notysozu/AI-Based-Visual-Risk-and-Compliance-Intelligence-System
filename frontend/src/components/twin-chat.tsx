@@ -76,17 +76,19 @@ const DEMO_CARDS = [
 
 export function TwinChat({
   fullHeight = false,
-  className = ""
+  className = "",
+  selectedSessionId
 }: {
   fullHeight?: boolean;
   className?: string;
+  selectedSessionId?: number;
 } = {}) {
   const navigate = useNavigate();
   const { state, addTask, addTxn, updateProfile, saveScenarioPresets } = useTwin();
   const userId = state.profile.id ?? 1;
 
   const [sessions, setSessions] = useState<ChatSessionData[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<number | null>(selectedSessionId ?? null);
   const [messages, setMessages] = useState<ChatMessageData[]>([]);
   const [inputPrompt, setInputPrompt] = useState("");
   const [loading, setLoading] = useState(false);
@@ -106,6 +108,13 @@ export function TwinChat({
   useEffect(() => {
     loadSessions();
   }, [userId]);
+
+  // Sync with selectedSessionId from URL query param
+  useEffect(() => {
+    if (selectedSessionId && selectedSessionId !== activeSessionId) {
+      setActiveSessionId(selectedSessionId);
+    }
+  }, [selectedSessionId]);
 
   // Load messages when active session changes
   useEffect(() => {
@@ -133,7 +142,10 @@ export function TwinChat({
       const data = await getChatSessions(userId);
       if (data && data.length > 0) {
         setSessions(data);
-        if (!activeSessionId || !data.some((s) => s.id === activeSessionId)) {
+        if (selectedSessionId && data.some((s) => s.id === selectedSessionId)) {
+          setActiveSessionId(selectedSessionId);
+        } else if (!activeSessionId || !data.some((s) => s.id === activeSessionId)) {
+          // Open the latest conversation by default
           setActiveSessionId(data[0].id);
         }
       } else {
