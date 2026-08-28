@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Activity,
-  ChevronLeft,
   GraduationCap,
   LayoutGrid,
   ListChecks,
@@ -17,7 +16,9 @@ import {
   Wallet,
   Plus,
   Trash2,
-  MessageSquare
+  MessageSquare,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +41,7 @@ export function AppShell({
   children,
   fullBleed = false
 }: {
-  title: string;
+  title?: string;
   subtitle?: string;
   actions?: ReactNode;
   children: ReactNode;
@@ -83,7 +84,7 @@ export function AppShell({
     try {
       const data = await getChatSessions(userId);
       if (data) {
-        setSidebarSessions(data.slice(0, 8)); // Top 8 recent threads
+        setSidebarSessions(data.slice(0, 10)); // Top 10 recent threads
       }
     } catch (e) {
       console.warn("Could not load sidebar sessions:", e);
@@ -115,7 +116,7 @@ export function AppShell({
 
   const cfg = getRoleConfig(state.profile.role);
 
-  // Lower Section Modules & Tools
+  // Lower Section Modules & Tools (Pinned Below)
   const moduleItems = useMemo(() => {
     const items = [
       { to: "/dashboard", label: "Overview", icon: LayoutGrid, color: "text-indigo-500" },
@@ -147,25 +148,39 @@ export function AppShell({
           collapsed ? "w-[72px]" : "w-68"
         }`}
       >
-        {/* Brand Header */}
-        <div className="flex h-16 items-center justify-between px-4 border-b border-border/40">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0071E3] via-indigo-600 to-purple-600 text-white shadow-[0_4px_14px_rgba(0,113,227,0.35)]">
-              <Sparkles className="h-4.5 w-4.5 shrink-0" />
+        {/* Brand Header with Close/Open Navbar Toggle Beside Title */}
+        <div className="flex h-16 items-center justify-between px-3.5 border-b border-border/40 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0071E3] via-indigo-600 to-purple-600 text-white shadow-[0_4px_14px_rgba(0,113,227,0.35)] shrink-0">
+              <Sparkles className="h-4 w-4 shrink-0" />
             </div>
             {!collapsed && (
-              <div className="flex items-center gap-1.5 font-display text-base font-bold tracking-tight">
-                <span>Digital Twin</span>
-                <span className="text-[10px] bg-[#0071E3]/15 text-[#0071E3] dark:text-blue-400 font-bold px-1.5 py-0.5 rounded-md">
+              <div className="flex items-center gap-1.5 font-display text-sm font-bold tracking-tight truncate">
+                <span className="truncate">Digital Twin</span>
+                <span className="text-[10px] bg-[#0071E3]/15 text-[#0071E3] dark:text-blue-400 font-bold px-1.5 py-0.5 rounded-md shrink-0">
                   AI
                 </span>
               </div>
             )}
           </div>
+
+          {/* Toggle Navbar button beside Digital Twin AI, stays visible & clickable */}
+          <button
+            type="button"
+            onClick={() => setCollapsed((v) => !v)}
+            className="h-8 w-8 rounded-xl hover:bg-muted dark:hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            title={collapsed ? "Open Sidebar" : "Close Sidebar"}
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="h-4 w-4 text-[#0071E3]" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" />
+            )}
+          </button>
         </div>
 
-        {/* Top: New Chat & Chat Threads Section */}
-        <div className="p-3 pb-1 space-y-2 border-b border-border/40">
+        {/* Top: New Chat & Twin Copilot Action */}
+        <div className="p-3 pb-2 space-y-2 border-b border-border/40 shrink-0">
           <button
             type="button"
             onClick={handleNewChat}
@@ -176,7 +191,6 @@ export function AppShell({
             {!collapsed && <span>New Chat</span>}
           </button>
 
-          {/* Primary Twin Copilot Route Link */}
           <Link
             to="/chat"
             className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
@@ -190,9 +204,8 @@ export function AppShell({
           </Link>
         </div>
 
-        {/* Middle Scrollable Section: Recent Conversations & Modules */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-4">
-          {/* Recent Chat Threads (Top) */}
+        {/* Middle Section: Scrollable Recent Conversation Threads */}
+        <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
           {!collapsed && sidebarSessions.length > 0 && (
             <div className="space-y-1">
               <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
@@ -222,53 +235,40 @@ export function AppShell({
               ))}
             </div>
           )}
-
-          {/* Lower Section: Modules & Telemetry Tools */}
-          <div className="space-y-1">
-            {!collapsed && (
-              <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                <span>Modules & Tools</span>
-              </div>
-            )}
-
-            <nav className="flex flex-col gap-1">
-              {moduleItems.map((item) => {
-                const active = pathname === item.to;
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    title={item.label}
-                    className={`group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-150 ${
-                      active
-                        ? "bg-card text-foreground shadow-2xs border border-border/60"
-                        : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
-                    }`}
-                  >
-                    <item.icon
-                      className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-110 ${
-                        active ? item.color : "text-muted-foreground group-hover:text-foreground"
-                      }`}
-                    />
-                    {!collapsed && <span className="truncate">{item.label}</span>}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
         </div>
 
-        {/* Sidebar Footer: Collapse Toggle */}
-        <div className="p-2.5 border-t border-border/40">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2.5 rounded-xl text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => setCollapsed((v) => !v)}
-          >
-            <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
-            {!collapsed && <span>Collapse</span>}
-          </Button>
+        {/* Pinned Lower Section: Modules & Telemetry Tools (Stuck to Bottom) */}
+        <div className="mt-auto border-t border-border/40 p-2 space-y-1 bg-sidebar/95 dark:bg-[#141414]/95 shrink-0">
+          {!collapsed && (
+            <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <span>Modules & Tools</span>
+            </div>
+          )}
+
+          <nav className="flex flex-col gap-1">
+            {moduleItems.map((item) => {
+              const active = pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  title={item.label}
+                  className={`group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-150 ${
+                    active
+                      ? "bg-card text-foreground shadow-2xs border border-border/60"
+                      : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                  }`}
+                >
+                  <item.icon
+                    className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-110 ${
+                      active ? item.color : "text-muted-foreground group-hover:text-foreground"
+                    }`}
+                  />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
       </aside>
 
@@ -347,8 +347,8 @@ export function AppShell({
         </header>
 
         {/* Content Container */}
-        <main className={`flex-1 ${fullBleed ? "p-3 md:p-6" : "px-4 py-6 md:px-8 md:py-8"}`}>
-          <div className={`mx-auto w-full ${fullBleed ? "max-w-7xl" : "max-w-6xl"} animate-rise`}>
+        <main className={`flex-1 ${fullBleed ? "p-0 flex flex-col min-h-0" : "px-4 py-6 md:px-8 md:py-8"}`}>
+          <div className={`mx-auto w-full ${fullBleed ? "h-full flex flex-col flex-1" : "max-w-6xl animate-rise"}`}>
             {title && (
               <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
                 <div>
