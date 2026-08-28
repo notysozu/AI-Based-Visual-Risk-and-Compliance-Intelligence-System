@@ -2,32 +2,32 @@
 
 Digital Twin AI is an agentic, intelligent decision-support system that models, forecasts, and optimizes a user's life trajectory across finances, health, cognitive performance, and daily habits.
 
-By combining stochastic Monte Carlo simulations, deterministic compound growth algorithms, biological circadian feedback models, and conversational agentic intelligence (Groq GPT-OSS 120B / 20B & Qwen 3.6), the platform creates a living "digital twin" tailored to the user's specific life stage.
+By combining stochastic Monte Carlo simulations, deterministic compound growth algorithms, biological circadian feedback models, and conversational agentic intelligence (Groq GPT-OSS 120B / 20B & Qwen 3.6), the platform creates a living digital twin tailored to the user's specific life stage.
 
 ---
 
-## 🚀 Key Features & Innovations
+## Core Capabilities
 
-### 1. 🤖 Digital Twin Copilot & Conversational Agent
-- **ChatGPT-Style Fullscreen Experience (`/chat`)**: Modern conversational interface with collapsible sidebar, session history, and instant draft initialization without URL pollution.
+### 1. Digital Twin Copilot & Conversational Agent
+- **Fullscreen Interface (`/chat`)**: Modern conversational interface with collapsible sidebar, session history, and instant draft initialization without URL pollution.
 - **4-Stage Agentic Reasoning Pipeline**:
-  1. **🎯 Step 1 — Goal Definition**: Explicitly decomposes user intent into optimization objectives.
-  2. **🔍 Step 2 — Telemetry Search & Data Gathering**: Queries real database records (sleep duration, sleep debt, screen time, study subjects, cash surplus, milestone progress).
-  3. **📊 Step 3 — Multi-Criteria Analysis & Optimization**: Evaluates circadian alertness peaks (08:30–11:30), task load balancing, and elasticity projections (+1.8 Focus, +1.0 Vitality).
-  4. **🚀 Step 4 — Formulated Strategic Execution Plan**: Renders unbroken Markdown tables and interactive action proposals.
+  - **Step 1 — Goal Definition**: Explicitly decomposes user intent into optimization objectives.
+  - **Step 2 — Telemetry Search & Data Gathering**: Queries real database records (sleep duration, sleep debt, screen time, study subjects, cash surplus, milestone progress).
+  - **Step 3 — Multi-Criteria Analysis & Optimization**: Evaluates circadian alertness peaks (08:30–11:30), task load balancing, and elasticity projections (+1.8 Focus, +1.0 Vitality).
+  - **Step 4 — Formulated Strategic Execution Plan**: Renders unbroken Markdown tables and interactive action proposals.
 - **Step-by-Step Thought Process (`<think>`)**: Real-time collapsible reasoning disclosure detailing mathematical models, boundary checks, and intermediate metrics.
 - **Voice Input (Speech-to-Text)**: Native browser voice dictation powered by the Web Speech API.
 
-### 2. ⚡ Interactive Multi-Action Execution Engine
+### 2. Interactive Multi-Action Execution Engine
 Every Copilot recommendation includes an interactive, 1-click execution card:
 - **`add_multiple_tasks`**: Batch daily routine injection directly into the Daily Task Planner.
 - **`add_task`**: Single time-block scheduling with custom duration, start time, and category.
 - **`purchase_impact`**: Real-time capital friction analysis against active milestones, 5-year compounding opportunity cost (8% CAGR), and Monte Carlo retirement odds variance.
 - **`simulate_what_if`**: Instant lifestyle tradeoff sandboxing with 1-click scenario adoption.
-- **`wealth_forecast`**: 500-run stochastic projection with percentile bands ($p_{10}$, median, $p_{90}$) and retirement attainment probability.
+- **`wealth_forecast`**: 500-run stochastic projection with percentile bands (p10, median, p90) and retirement attainment probability.
 - **`update_settings`**: In-chat profile parameter modification (income, expenses, sleep targets, retirement age) with 1-click database commit.
 
-### 3. ⚙️ Interactive Settings & Telemetry Control Center (`/settings`)
+### 3. Interactive Settings & Telemetry Control Center (`/settings`)
 5 Dedicated configuration panels with live state reactivity:
 1. **Persona & Role**: 5 interactive cards (Student, Professional, Freelancer, Entrepreneur, Retiree) with live previews.
 2. **Biometrics & Daily Routine**: Interactive sliders for sleep baseline, study hours, screen time caps, and 7-day exercise selector.
@@ -35,29 +35,29 @@ Every Copilot recommendation includes an interactive, 1-click execution card:
 4. **AI Intelligence Engine**: `<think>` reasoning toggle, Monte Carlo trial depth (250/500/1000), and proactive scheduling sensitivity.
 5. **System & Data**: Theme toggles (Light/Dark), one-click JSON telemetry export, onboarding wizard rerun, and factory reset.
 
-### 4. 📈 Financial Twin & Monte Carlo Forecasting
-- **500-Iteration Stochastic Wealth Simulations**: Log-normal market volatility simulations with percentile bounds ($p_{10}$ Bear, $p_{50}$ Median, $p_{90}$ Bull).
+### 4. Financial Twin & Monte Carlo Forecasting
+- **500-Iteration Stochastic Wealth Simulations**: Log-normal market volatility simulations with percentile bounds (p10 Bear, p50 Median, p90 Bull).
 - **Adaptive Multi-Scale Charts**: Dynamic Y-axis scaling handling values from student allowances in hundreds/thousands to venture founders and retirees in millions.
 - **Intelligent Prediction Caching**: Automatic caching of computationally heavy forecasts for fast rendering.
 
-### 5. 🔬 Decision Sandbox ("What-If" Simulator)
+### 5. Decision Sandbox ("What-If" Simulator)
 - **Side-by-Side Comparison**: Real-time evaluation of competing lifestyle scenarios (Scenario A vs. Scenario B).
 - **Multi-Variable Tradeoff Modeling**: Sleep hours vs. Health Index vs. Cognitive Focus vs. 5-Year Net Worth trajectory.
 - **1-Click Adoption**: Seamlessly apply winning scenario parameters to your live profile.
 
-### 6. 📊 Universal Habit Analytics & Noon Reflection Cache
+### 6. Universal Habit Analytics & Noon Reflection Cache
 - **Grouped Correlation Visualizations**: Sleep vs. Focus, Screen Time vs. Mood, Exercise vs. Vitality.
 - **Automated Noon AI Reflection Cache**: Automatically generates and caches fresh daily insights at 12:00 PM local time.
 
-### 7. 🛡️ Robust Authentication & Security
-- **Unified Login (`POST /users/login`)**: Supports seamless authentication by **either email or username**.
+### 7. Robust Authentication & Security
+- **Unified Login (`POST /users/login`)**: Supports seamless authentication by either email or username.
 - **Dual Uniqueness Verification**: Prevents database collisions on user signup (`users.username` and `users.email`).
 - **Auto-Recovery**: Seamlessly links existing accounts if a user attempts to re-register with an existing email.
-- **Session Isolation**: Chat sessions and action approvals enforce strict `user_id` ownership verification (`403 Forbidden` on mismatch).
+- **Session Isolation**: Chat sessions and action approvals enforce strict `user_id` ownership verification (403 Forbidden on mismatch).
 
 ---
 
-## 🎭 The 5 User Personas
+## The 5 User Personas
 
 | Persona | Core Focus | Inflow Label | Baseline Net Worth | Target Horizon | Focus / Learning Metric |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -69,36 +69,36 @@ Every Copilot recommendation includes an interactive, 1-click execution card:
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            FRONTEND CLIENT (React 19)                       │
-│  • Fullscreen Copilot Chat (/chat)        • Decision Sandbox (/simulator)   │
-│  • Wealth Forecast Engine (/wealth)       • Interactive Settings (/settings)│
-│  • Habit Analytics (/analytics)           • Daily Task Planner (/tasks)     │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │ REST / JSON
-┌──────────────────────────────────────▼──────────────────────────────────────┐
-│                            BACKEND API (FastAPI)                            │
-│  • /chat (Sessions, Messages, Actions)    • /simulations (Monte Carlo, What-If)
-│  • /users (Auth, CRUD, Telemetry)         • /suggestions (AI Task Generator)│
-│  • /records (Habits, Study Sessions)      • /study (Analytics, Forecasts)   │
-└──────────────────┬───────────────────────────────────────────┬──────────────┘
-                   │                                           │
-┌──────────────────▼───────────────┐       ┌───────────────────▼──────────────┐
-│        AI INFERENCE ENGINE       │       │         DATABASE LAYER           │
-│  • Groq: openai/gpt-oss-120b     │       │  • SQLite / PostgreSQL           │
-│  • Groq: openai/gpt-oss-20b      │       │  • SQLAlchemy 2.0 ORM            │
-│  • Groq: qwen/qwen3.6-27b        │       │  • User, Habit, Study, Finance,  │
-│  • Groq: groq/compound           │       │    ChatSession, ChatMessage,     │
-│  • Rule-Based Offline Fallback   │       │    UserSuggestion tables         │
-└──────────────────────────────────┘       └──────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                            FRONTEND CLIENT (React 19)                       |
+|  * Fullscreen Copilot Chat (/chat)        * Decision Sandbox (/simulator)   |
+|  * Wealth Forecast Engine (/wealth)       * Interactive Settings (/settings)|
+|  * Habit Analytics (/analytics)           * Daily Task Planner (/tasks)     |
++--------------------------------------┬--------------------------------------+
+                                       | REST / JSON
++--------------------------------------v--------------------------------------+
+|                            BACKEND API (FastAPI)                            |
+|  * /chat (Sessions, Messages, Actions)    * /simulations (Monte Carlo, What-If)
+|  * /users (Auth, CRUD, Telemetry)         * /suggestions (AI Task Generator)|
+|  * /records (Habits, Study Sessions)      * /study (Analytics, Forecasts)   |
++------------------┬-------------------------------------------┬--------------+
+                   |                                           |
++------------------v---------------+       +-------------------v--------------+
+|        AI INFERENCE ENGINE       |       |         DATABASE LAYER           |
+|  * Groq: openai/gpt-oss-120b     |       |  * SQLite / PostgreSQL           |
+|  * Groq: openai/gpt-oss-20b      |       |  * SQLAlchemy 2.0 ORM            |
+|  * Groq: qwen/qwen3.6-27b        |       |  * User, Habit, Study, Finance,  |
+|  * Groq: groq/compound           |       |    ChatSession, ChatMessage,     |
+|  * Rule-Based Offline Fallback   |       |    UserSuggestion tables         |
++----------------------------------+       +----------------------------------+
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technologies |
 | :--- | :--- |
@@ -110,7 +110,7 @@ Every Copilot recommendation includes an interactive, 1-click execution card:
 
 ---
 
-## ⚡ Quickstart Guide
+## Quickstart Guide
 
 ### 1. Prerequisites
 - Python 3.10 or higher
@@ -156,7 +156,7 @@ GROQ_API_KEY=your_groq_api_key_here
 
 ---
 
-## 🚀 Running the Application
+## Running the Application
 
 ### Start Backend API (FastAPI)
 
@@ -180,7 +180,7 @@ npm run dev
 
 ---
 
-## 📚 Key API Endpoints
+## Key API Endpoints
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
@@ -207,7 +207,7 @@ npm run dev
 
 ---
 
-## 📖 Step-by-Step Workflow Documentation
+## Step-by-Step Workflow Documentation
 
 Detailed technical architecture documents for every layer of the platform are available in [`docs/workflow/`](docs/workflow/):
 
@@ -218,6 +218,7 @@ Detailed technical architecture documents for every layer of the platform are av
 5. [**05. Habit Analytics & Daily Noon Cache**](docs/workflow/05_habit_analytics_and_feedback.md) — Metric tracking, grouped correlation charts, and automated 12:00 PM cache invalidation.
 6. [**06. Task Planner & Suggestion Adoption Engine**](docs/workflow/06_task_planner_and_suggestions.md) — Data-analyzed suggestion engine, expansion pipelines, database persistence, and schedule injection.
 7. [**07. Study & Productivity Intelligence**](docs/workflow/07_study_and_productivity_intelligence.md) — Spaced repetition analytics, 7-day optimized schedules, and exam readiness regression models.
+8. [**08. Digital Twin Copilot & Conversational Agent**](docs/workflow/08_digital_twin_copilot_chat.md) — 4-stage agentic reasoning pipeline, multi-action proposal system, voice recognition, and chat API reference.
 
 ---
 
