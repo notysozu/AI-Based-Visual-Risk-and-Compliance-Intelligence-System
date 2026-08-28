@@ -168,7 +168,7 @@ Output the analysis in clean, professional markdown with beautiful emojis. Keep 
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,  # Calibrated for analytical precision
 
-            max_tokens=800,
+            max_tokens=2048,
         )
         return response.choices[0].message.content
 
@@ -271,7 +271,7 @@ class DigitalTwinAdvisor:
                 messages=messages,
                 temperature=0.4,  # Calibrated for analytical precision
 
-                max_tokens=800,
+                max_tokens=2048,
             )
             reply = response.choices[0].message.content
             self.history.append({"role": "user", "text": user_message})
@@ -377,7 +377,7 @@ When you state the user's target net worth, target age, or any dollar figures fr
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,  # Calibrated for analytical precision
 
-            max_tokens=400,
+            max_tokens=3500,
         )
         return response.choices[0].message.content
 
@@ -475,7 +475,7 @@ Return ONLY a valid JSON object matching the following structure. No explanation
             ],
             model="openai/gpt-oss-120b",
             temperature=0.3,
-            max_tokens=200,
+            max_tokens=3500,
         )
         response_text = chat_completion.choices[0].message.content.strip()
         if response_text.startswith("```"):
@@ -578,7 +578,7 @@ Instructions:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,  # Calibrated for analytical precision
 
-            max_tokens=300,
+            max_tokens=3500,
         )
         return response.choices[0].message.content
     except Exception as e:
@@ -773,7 +773,7 @@ Respond with ONLY the raw JSON object, without markdown formatting or code fence
             model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
-            max_tokens=1500,
+            max_tokens=3500,
         )
         content = response.choices[0].message.content.strip()
         if content.startswith("```"):
@@ -895,7 +895,7 @@ Respond with ONLY valid raw JSON in the following format:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,  # Calibrated for analytical precision
 
-            max_tokens=1400,
+            max_tokens=3500,
         )
         content = response.choices[0].message.content.strip()
         if content.startswith("```"):
@@ -1612,8 +1612,8 @@ GUIDELINES:
                         model=model_candidate,
                         messages=messages,
                         temperature=0.6,
-                        max_tokens=800,
-                        timeout=10.0
+                        max_tokens=4096,
+                        timeout=30.0
                     )
                     raw_content = resp.choices[0].message.content or ""
                     if think_mode:

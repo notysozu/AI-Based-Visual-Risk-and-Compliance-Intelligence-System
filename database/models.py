@@ -125,9 +125,9 @@ class ChatMessage(Base):
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(Integer, ForeignKey("chat_sessions.id"), nullable=False, index=True)
     role = Column(String, nullable=False)  # "user" | "assistant" | "system"
-    content = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
     action_type = Column(String, default="none")  # "none" | "add_task" | "simulate_what_if" | "wealth_forecast" | "update_settings" | "purchase_impact"
-    action_payload = Column(String, nullable=True)  # JSON-encoded payload representing structured action/simulation details
+    action_payload = Column(Text, nullable=True)  # JSON-encoded payload representing structured action/simulation details
     action_status = Column(String, default="none")  # "none" | "proposed" | "approved" | "rejected" | "executed"
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
