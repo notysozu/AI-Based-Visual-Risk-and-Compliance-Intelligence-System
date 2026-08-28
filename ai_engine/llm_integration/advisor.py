@@ -10,6 +10,8 @@ from .generators import (
     generate_scenario_suggestions,
     generate_analytics_summary,
     generate_wealth_advice,
+    get_rule_based_wealth_advice,
+    generate_optimized_study_plan,
     generate_study_plan_advice,
     generate_smart_role_suggestions
 )

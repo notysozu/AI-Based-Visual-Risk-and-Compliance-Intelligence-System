@@ -11,7 +11,7 @@ def generate_digital_twin_advice(user: Dict[str, Any], baseline: Dict[str, Any],
     client = get_groq_client()
     if client is not None:
         try:
-            prompt = f"""You are the Digital Twin AI Advisor for a user with the persona {user.get('role', 'professional')}.
+            prompt = f"""You are the VisualRisk AI Advisor for a user with the persona {user.get('role', 'professional')}.
 Explain the tradeoff results between Scenario A (baseline) and Scenario B (proposed adjustment) clearly and actionably in Markdown:
 - Scenario A: Health Index {sa['health_index']:.1f}, Focus Rating {sa['focus_index']:.1f}, 5-Year Wealth ${sa['wealth_at_end']:,.2f}
 - Scenario B: Health Index {sb['health_index']:.1f}, Focus Rating {sb['focus_index']:.1f}, 5-Year Wealth ${sb['wealth_at_end']:,.2f}
@@ -130,6 +130,20 @@ Your active baseline demonstrates an average of **{baseline.get('sleep_hours', 7
 Screen load is currently recorded at **{baseline.get('screen_time_hours', 4.0):.1f} hours/day**. Maintaining screen hygiene during the final 60 minutes before bedtime will directly protect deep sleep architecture and cognitive alertness for tomorrow's focus blocks."""
 
 
+def get_rule_based_wealth_advice(user: Dict[str, Any], mc_results: Dict[str, Any]) -> str:
+    target_nw = user.get("target_net_worth", 1000000.0) or 1000000.0
+    p10 = mc_results["p10"][-1]
+    p50 = mc_results["median"][-1]
+    p90 = mc_results["p90"][-1]
+    prob = mc_results.get("probability_of_success", 75)
+
+    return f"""### 500-Run Monte Carlo Wealth Projection
+
+Based on 500 stochastic simulation runs, your expected median net worth at retirement age is projected at **${p50:,.2f}**, with a conservative bear-market floor (10th percentile) of **${p10:,.2f}** and an optimistic bull-market ceiling (90th percentile) of **${p90:,.2f}**.
+
+Target Net Worth attainment probability is **{prob}%**. Maintaining consistent monthly compound savings at an 8% CAGR keeps your long-term capital horizon securely on track."""
+
+
 def generate_wealth_advice(user: Dict[str, Any], mc_results: Dict[str, Any]) -> str:
     client = get_groq_client()
     if client is not None:
@@ -156,30 +170,58 @@ Provide 2-3 concise paragraphs with actionable asset allocation guidance in clea
         except Exception as e:
             print(f"Error calling Groq for wealth advice: {e}")
 
-    return f"""### 500-Run Monte Carlo Wealth Projection
-
-Based on 500 stochastic simulation runs, your expected median net worth at retirement age is projected at **${mc_results['median'][-1]:,.2f}**, with a conservative bear-market floor (10th percentile) of **${mc_results['p10'][-1]:,.2f}** and an optimistic bull-market ceiling (90th percentile) of **${mc_results['p90'][-1]:,.2f}**.
-
-Maintaining consistent monthly compound savings at an 8% CAGR keeps your long-term capital horizon securely on track."""
+    return get_rule_based_wealth_advice(user, mc_results)
 
 
-def generate_study_plan_advice(user_info: Dict[str, Any], study_data: Dict[str, Any], target_milestone: Optional[str] = None) -> Dict[str, Any]:
+def generate_optimized_study_plan(user_info: Dict[str, Any], study_summary: Dict[str, Any], target_milestone: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Generates a structured 7-day academic study plan conforming to schemas.StudyPlanResponse.
+    """
+    target = target_milestone or "Core Mastery & Exam Readiness"
+    subjects = study_summary.get("subjects") or ["Machine Learning", "Linear Algebra", "Data Structures"]
+    if not subjects:
+        subjects = ["Core Curriculum", "Applied Problem Solving"]
+
     client = get_groq_client()
     if client is not None:
         try:
-            prompt = f"""Synthesize a personalized 7-day study plan for a student with target: {target_milestone or 'Exam Mastery'}.
-Return ONLY a valid JSON object with keys:
-- overview: 1-2 sentence strategy
-- schedule: array of 7 objects (day, blocks: array of {{subject, start_time, duration_minutes}})
-- key_focus_areas: array of strings"""
-
+            prompt = f"""Generate an AI-optimized 7-day academic study plan for a student with target: "{target}".
+Subjects: {json.dumps(subjects)}.
+Weekly study target: {user_info.get('study_target_hours_week', 18)} hours.
+Return ONLY valid JSON matching this schema:
+{{
+  "weekly_goal": "Concise weekly objective string",
+  "focus_strategy": "Spaced repetition strategy summary",
+  "daily_plans": [
+    {{
+      "day": "Monday",
+      "blocks": [
+        {{
+          "subject": "{subjects[0]}",
+          "start_time": "09:00",
+          "duration_minutes": 60,
+          "focus_type": "Deep Problem Solving",
+          "task_title": "Core Synthesis & Problem Set"
+        }}
+      ]
+    }}
+  ],
+  "recommendations": [
+    {{
+      "title": "Active Recall Sprint",
+      "impact": "+1.5 retention",
+      "description": "Review key flashcards 24 hours after initial lecture review.",
+      "category": "Retention"
+    }}
+  ]
+}}"""
             for model in AVAILABLE_GROQ_MODELS:
                 try:
                     resp = client.chat.completions.create(
                         model=model,
                         messages=[{"role": "user", "content": prompt}],
-                        temperature=0.6,
-                        max_tokens=3500,
+                        temperature=0.5,
+                        max_tokens=4000,
                         timeout=20.0
                     )
                     content = resp.choices[0].message.content.strip()
@@ -187,21 +229,62 @@ Return ONLY a valid JSON object with keys:
                         content = content[7:-3].strip()
                     elif content.startswith("```"):
                         content = content[3:-3].strip()
-                    return json.loads(content)
+                    parsed = json.loads(content)
+                    if "daily_plans" in parsed and "weekly_goal" in parsed:
+                        return parsed
                 except Exception:
                     continue
         except Exception as e:
-            print(f"Error calling Groq for study plan: {e}")
+            print(f"Error generating study plan with Groq: {e}")
 
-    # Fallback plan
+    # Deterministic fallback matching StudyPlanResponse
+    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    daily_plans = []
+    for i, day in enumerate(days):
+        subj = subjects[i % len(subjects)]
+        daily_plans.append({
+            "day": day,
+            "blocks": [
+                {
+                    "subject": subj,
+                    "start_time": "09:00",
+                    "duration_minutes": 60,
+                    "focus_type": "Deep Work",
+                    "task_title": f"{subj} Core Concepts & Synthesis"
+                },
+                {
+                    "subject": subj,
+                    "start_time": "14:00",
+                    "duration_minutes": 45,
+                    "focus_type": "Practice & Exercises",
+                    "task_title": f"{subj} Active Problem Solving"
+                }
+            ]
+        })
+
     return {
-        "overview": "Balanced 7-day spaced repetition and deep problem solving schedule.",
-        "schedule": [
-            {"day": d, "blocks": [{"subject": "Core Study", "start_time": "09:00", "duration_minutes": 90}]}
-            for d in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-        ],
-        "key_focus_areas": ["Spaced Repetition", "Active Recall", "Exam Simulation"]
+        "weekly_goal": f"Achieve mastery in {target} across {len(subjects)} core subjects with calibrated spaced repetition.",
+        "focus_strategy": "Frontload high-cognition problem solving in morning cortisol windows and reinforce retention through afternoon practice blocks.",
+        "daily_plans": daily_plans,
+        "recommendations": [
+            {
+                "title": "Spaced Recall Interval",
+                "impact": "+1.8 Retention",
+                "description": "Conduct a 15-minute active recall review within 24–48 hours of initial deep study.",
+                "category": "Retention"
+            },
+            {
+                "title": "Circadian Fatigue Buffer",
+                "impact": "+1.2 Alertness",
+                "description": "Insert a 15–20 minute screen-free walk or power nap at 14:00 to prevent post-lunch cognitive drops.",
+                "category": "Vitality"
+            }
+        ]
     }
+
+
+def generate_study_plan_advice(user_info: Dict[str, Any], study_data: Dict[str, Any], target_milestone: Optional[str] = None) -> Dict[str, Any]:
+    return generate_optimized_study_plan(user_info, study_data, target_milestone)
 
 
 def generate_smart_role_suggestions(role: str, user_info: Dict[str, Any], baseline_metrics: Dict[str, Any], mode: str = "regenerate", existing_suggestions: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
