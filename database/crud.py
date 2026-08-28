@@ -536,7 +536,7 @@ DEFAULT_ROLE_SUGGESTIONS = {
 
 
 def get_user_suggestions(db: Session, user_id: int):
-    return db.query(models.UserSuggestion).filter(models.UserSuggestion.user_id == user_id).order_by(models.UserSuggestion.created_at.desc(), models.UserSuggestion.id.desc()).all()
+    return db.query(models.UserSuggestion).filter(models.UserSuggestion.user_id == user_id).order_by(models.UserSuggestion.id.asc()).all()
 
 
 def save_user_suggestions(db: Session, user_id: int, suggestions: list, overwrite: bool = False):

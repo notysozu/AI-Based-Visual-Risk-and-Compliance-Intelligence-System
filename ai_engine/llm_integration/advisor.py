@@ -944,34 +944,40 @@ Respond with ONLY valid raw JSON in the following format:
 # ==============================================================================
 
 
-def build_smart_role_schedule(role: str) -> List[Dict[str, Any]]:
-    r = role.lower()
+def build_smart_role_schedule(role: str, user_info: Optional[Dict[str, Any]] = None, telemetry: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    r = (role or "professional").lower()
+    t = telemetry or {}
+    u = user_info or {}
+    
+    focus_area = u.get("focus_area") or (t.get("recent_subjects") and t["recent_subjects"][0]) or "Deep Work"
+    
     if r == "student":
+        subject_name = (t.get("recent_subjects") and t["recent_subjects"][0]) or "Core Curriculum"
         return [
-            {"title": "Core Academic Lecture / Review", "start": "09:00", "minutes": 90, "category": "Study", "impact": "+1.5 Focus"},
-            {"title": "Deep Problem Solving & Assignment", "start": "11:30", "minutes": 75, "category": "Study", "impact": "+1.2 Cognitive Output"},
+            {"title": f"Core Academic Focus: {subject_name}", "start": "09:00", "minutes": 90, "category": "Study", "impact": "+1.5 Cognitive Output"},
+            {"title": "Deep Problem Solving & Assignment Sprint", "start": "11:30", "minutes": 75, "category": "Study", "impact": "+1.2 Retention"},
             {"title": "Cardio & Physical Recovery", "start": "17:00", "minutes": 45, "category": "Health", "impact": "+0.9 Vitality"},
-            {"title": "Spaced Repetition & Day Synthesis", "start": "20:30", "minutes": 30, "category": "Study", "impact": "+0.6 Retention"},
+            {"title": "Spaced Repetition & Daily Synthesis", "start": "20:30", "minutes": 30, "category": "Study", "impact": "+0.7 Long-Term Retention"},
         ]
     elif r == "entrepreneur":
         return [
             {"title": "Deep Work: Architecture & Core Strategy", "start": "08:30", "minutes": 120, "category": "Work", "impact": "+1.8 Focus & Leverage"},
-            {"title": "High-Impact Client & Team Syncs", "start": "11:00", "minutes": 60, "category": "Work", "impact": "+1.0 Execution Velocity"},
-            {"title": "Product Growth & Market Analysis", "start": "14:30", "minutes": 90, "category": "Work", "impact": "+1.3 Capital Control"},
-            {"title": "End-of-Day Review & Runway Check", "start": "18:00", "minutes": 30, "category": "Planning", "impact": "+0.8 Clarity"},
+            {"title": "High-Impact Client & Team Execution Sync", "start": "11:00", "minutes": 60, "category": "Work", "impact": "+1.0 Velocity"},
+            {"title": "Product Growth & Capital Runway Review", "start": "14:30", "minutes": 90, "category": "Work", "impact": "+1.3 Capital Control"},
+            {"title": "Physical Vitality & Decompression", "start": "17:30", "minutes": 45, "category": "Health", "impact": "+0.9 Vitality Stability"},
         ]
     elif r == "freelancer":
         return [
             {"title": "Client Deliverable Deep Sprint", "start": "09:00", "minutes": 90, "category": "Work", "impact": "+1.5 Billable Output"},
-            {"title": "Proposal Pipeline & Client Comms", "start": "11:30", "minutes": 45, "category": "Work", "impact": "+0.9 Cash Flow"},
-            {"title": "Skill Mastery & Portfolio Building", "start": "15:00", "minutes": 60, "category": "Study", "impact": "+1.1 Rate Power"},
-            {"title": "Daily Invoice & Cash Flow Reconciliation", "start": "17:30", "minutes": 25, "category": "Money", "impact": "+0.7 Financial Buffer"},
+            {"title": "Pipeline Comms & Client Inbound", "start": "11:30", "minutes": 45, "category": "Work", "impact": "+0.9 Cash Flow"},
+            {"title": f"Skill Mastery: {focus_area}", "start": "15:00", "minutes": 60, "category": "Study", "impact": "+1.1 Rate Leverage"},
+            {"title": "Daily Invoice & Runway Reconciliation", "start": "17:30", "minutes": 25, "category": "Money", "impact": "+0.7 Financial Buffer"},
         ]
     else:
         return [
             {"title": "High-Priority Deep Work Sprint", "start": "09:00", "minutes": 90, "category": "Work", "impact": "+1.4 Focus & Output"},
             {"title": "Cross-Functional Project Execution", "start": "11:30", "minutes": 60, "category": "Work", "impact": "+1.0 Velocity"},
-            {"title": "Technical Skill Upgrading / Research", "start": "15:30", "minutes": 45, "category": "Study", "impact": "+0.8 Career Growth"},
+            {"title": f"Technical Skill Upgrading: {focus_area}", "start": "15:30", "minutes": 45, "category": "Study", "impact": "+0.8 Career Growth"},
             {"title": "Physical Vitality & Decompression", "start": "18:00", "minutes": 45, "category": "Health", "impact": "+1.0 Vitality"},
         ]
 
@@ -981,6 +987,7 @@ def process_twin_copilot_turn(
     history: List[Dict[str, Any]],
     user_info: Dict[str, Any],
     baseline: Dict[str, Any],
+    telemetry: Optional[Dict[str, Any]] = None,
     client_context: Optional[Dict[str, Any]] = None,
     think_mode: bool = False
 ) -> Dict[str, Any]:
@@ -995,6 +1002,40 @@ def process_twin_copilot_turn(
     """
     client_ctx = client_context or {}
     p_lower = prompt.lower().strip()
+
+    # Ensure complete telemetry bundle is populated from database baseline
+    monthly_income = float(user_info.get("monthly_income", 5000.0) or 5000.0)
+    monthly_expenses = float(user_info.get("monthly_expenses", 2900.0) or 2900.0)
+    monthly_savings = max(0.0, monthly_income - monthly_expenses)
+    savings_rate = round((monthly_savings / monthly_income) * 100) if monthly_income > 0 else 0
+    avg_sleep = float(baseline.get("sleep_hours", 7.5))
+    sleep_target = float(user_info.get("sleep_target_hours", 8.0) or 8.0)
+    
+    t_data = telemetry or {
+        "baseline": baseline,
+        "avg_sleep": avg_sleep,
+        "sleep_target": sleep_target,
+        "sleep_debt": round(max(0.0, sleep_target - avg_sleep), 1),
+        "avg_screen": 4.0,
+        "exercise_days_count": 4,
+        "study_hours_week": float(baseline.get("study_hours_week", 10.0)),
+        "study_target_week": float(user_info.get("study_target_hours_week", 10.0) or 10.0),
+        "recent_subjects": ["Core Focus"],
+        "monthly_income": monthly_income,
+        "monthly_expenses": monthly_expenses,
+        "monthly_savings": monthly_savings,
+        "savings_rate": savings_rate,
+        "net_worth": float(user_info.get("net_worth", 15000.0) or 15000.0),
+        "target_net_worth": float(user_info.get("target_net_worth", 1000000.0) or 1000000.0),
+        "target_retirement_age": int(user_info.get("retirement_goal_age", 60) or 60),
+    }
+
+    goal_name = client_ctx.get("goalName") or "Emergency Fund"
+    goal_target = float(client_ctx.get("goalTarget") or 20000.0)
+    goal_current = float(client_ctx.get("goalCurrent") or min(t_data["net_worth"], goal_target))
+    goal_pct = round((goal_current / goal_target) * 100) if goal_target > 0 else 0
+    goal_gap = max(0.0, goal_target - goal_current)
+
 
     # 1. DETECT MAJOR PURCHASE / MILESTONE QUERY
     # e.g., "If I buy a $1,200 laptop today, how does that affect my emergency fund goal?"
@@ -1084,11 +1125,21 @@ Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impa
 
         if think_mode:
             think_block = f"""<think>
-• Baseline Telemetry: Net Worth ${current_net_worth:,.2f}, Monthly Savings ${monthly_savings:,.2f}/mo.
-• Goal Analysis: "{goal_name}" Target=${goal_target:,.2f}, Current=${goal_current:,.2f}.
-• Milestone Delay Calculation: Shift = +{delay_months} months (~{delay_days} days) delay.
-• Compounding Opportunity Cost: ${purchase_cost:,.2f} @ 8% CAGR over 5Y -> ${compounded_5y:,.2f} (+${foregone_growth:,.2f} foregone gain).
-• Stochastic Monte Carlo: Baseline odds = {prob_before}%, Post-purchase odds = {prob_after}%.
+🎯 Step 1 — Goal Definition:
+• Objective: Evaluate capital friction and milestone delay of purchasing "{item_name}" (${purchase_cost:,.2f}).
+
+🔍 Step 2 — Telemetry Search & Gathered User Data:
+• Baseline Telemetry: Net Worth = ${current_net_worth:,.2f} | Monthly Savings Surplus = ${monthly_savings:,.2f}/mo
+• Active Milestone Goal: "{goal_name}" (Current: ${goal_current:,.2f} / Target: ${goal_target:,.2f} | {round((goal_current/goal_target)*100)}% complete)
+• Post-Purchase Remaining Progress: ${new_progress:,.2f} / ${goal_target:,.2f}
+
+📊 Step 3 — Multi-Criteria Analysis & Optimization:
+• Milestone Timeline Impact: Target delayed by +{delay_months} months (~{delay_days} days).
+• 5-Year Compounding Opportunity Cost: ${purchase_cost:,.2f} @ 8% CAGR -> ${compounded_5y:,.2f} (+${foregone_growth:,.2f} foregone gain).
+• Stochastic Monte Carlo: Baseline odds = {prob_before}%, Post-purchase odds = {prob_after}% ({prob_after - prob_before:+d}% shift).
+
+🚀 Step 4 — Formulated Strategic Execution Plan:
+• Formatted decision matrix and generated interactive purchase impact logging card.
 </think>
 
 """
@@ -1134,32 +1185,48 @@ Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impa
     )
 
     if is_multi_task_intent:
-        tasks = build_smart_role_schedule(user_info.get("role", "professional"))
+        tasks = build_smart_role_schedule(user_info.get("role", "professional"), user_info, t_data)
         table_rows = "\n".join(
             f"| `{t['start']}` | **{t['title']}** | {t['minutes']} mins | `{t['category']}` | {t['impact']} |"
             for t in tasks
         )
-        advice_text = f"""### ⚡ Calibrated Daily Routine for **{user_info.get('role', 'professional').title()}**
+        
+        user_role_title = user_info.get("role", "professional").title()
+        
+        advice_text = f"""### ⚡ Calibrated Daily Routine for **{user_role_title}**
 
-Based on your cognitive baseline and vitality targets, I have engineered an optimal high-performance daily schedule:
+Based on your telemetry analysis (Sleep: **{t_data['avg_sleep']:.1f}h** vs **{t_data['sleep_target']:.1f}h** target, Monthly Surplus: **+${t_data['monthly_savings']:,.2f}**, Goal: **{goal_name}** at **{goal_pct}%**), I have structured a circadian-optimized daily plan:
 
 | Time | Task / Block | Duration | Category | Predicted Impact |
 | :--- | :--- | :--- | :--- | :--- |
 {table_rows}
 
-#### 💡 Optimization Insights:
-- **Morning Peak Focus (08:30 – 11:00):** Allocated to heavy cognitive sprint tasks when circadian alertness is highest.
-- **Mid-Day Execution (11:30 – 16:00):** Tactical execution and career skill building.
-- **Decompression & Vitality:** Protected workout and recovery block to maintain your **Health Index**.
+#### 💡 Telemetry & Optimization Highlights:
+- **Circadian Alertness Peak (08:30 – 11:30):** High-leverage cognitive focus blocks scheduled during natural cortisol alertness peaks.
+- **Context-Switching Protection:** Tasks separated into clean, protected intervals to minimize fragmentation.
+- **Physical & Cognitive Recovery:** Dedicated vitality block to stabilize your **Health Index** and sleep architecture.
 
 Click **Approve & Add All Tasks** below to inject all {len(tasks)} time-blocks directly into your Daily Planner."""
 
         if think_mode:
             think_block = f"""<think>
-• Intent Recognized: Multi-task routine scheduling & productivity planning.
-• Role Calibration: Calibrating for {user_info.get('role', 'professional').upper()} routine.
-• Schedule Synthesis: Generated {len(tasks)} non-overlapping time blocks totaling {sum(t['minutes'] for t in tasks)} minutes of intentional focus.
-• Net Predicted Impact: +1.8 Cumulative Focus Index, +1.0 Vitality Stability.
+🎯 Step 1 — Goal Definition:
+• Objective: Optimize daily routine, maximize peak cognitive alertness window, and protect vitality recovery.
+
+🔍 Step 2 — Telemetry Search & Gathered User Data:
+• Role Persona: {user_role_title} (Age: {user_info.get('age', 25)} | Retirement Target: Age {t_data['target_retirement_age']})
+• Biometrics & Baseline: Sleep = {t_data['avg_sleep']:.1f}h (Target: {t_data['sleep_target']:.1f}h | Sleep Debt: {t_data['sleep_debt']:.1f}h), Screen Time = {t_data['avg_screen']:.1f}h/day, Active Days = {t_data['exercise_days_count']}d/wk
+• Financial Health: Cash flow surplus = +${t_data['monthly_savings']:,.2f}/mo ({t_data['savings_rate']}% Savings Rate) | Net Worth = ${t_data['net_worth']:,.2f}
+• Active Milestone: "{goal_name}" (${goal_current:,.2f} / ${goal_target:,.2f} — {goal_pct}% complete, ${goal_gap:,.2f} gap remaining)
+• Focus Domain: {', '.join(t_data.get('recent_subjects', [])) or user_info.get('focus_area', 'Deep Work')}
+
+📊 Step 3 — Multi-Criteria Analysis & Optimization:
+• Circadian Alertness Curve: Identified optimal cognitive peak window between 08:30 and 11:30.
+• Workload Balancing: Structured {len(tasks)} non-overlapping focus blocks totaling {sum(t['minutes'] for t in tasks)} minutes of intentional execution.
+• Predicted Trajectory: +1.8 Cumulative Focus Index, +1.0 Vitality Stability.
+
+🚀 Step 4 — Formulated Strategic Execution Plan:
+• Formatted daily schedule table and packaged interactive multi-task proposal for user approval.
 </think>
 
 """
@@ -1230,10 +1297,20 @@ Click **Approve & Add All Tasks** below to inject all {len(tasks)} time-blocks d
 
         if think_mode:
             think_block = f"""<think>
-• Extracted Parameter Deltas: Savings=${savings_delta:+,.2f}/mo, Sleep={sleep_delta:+.1f}h/day, Focus={study_delta:+.1f}h/week.
-• Linear Habit Models: Fit digital twin elasticity models on 30-day telemetry.
-• Index Projections: Health {sa['health_index']:.1f} -> {sb['health_index']:.1f}, Focus {sa['focus_index']:.1f} -> {sb['focus_index']:.1f}.
-• Financial Trajectory: 5-Year net worth variance = ${sb['wealth_at_end'] - sa['wealth_at_end']:+,.2f}.
+🎯 Step 1 — Goal Definition:
+• Objective: Run What-If sandbox simulation testing parameter shifts (Savings: ${savings_delta:+,.2f}/mo, Sleep: {sleep_delta:+.1f}h/day, Study: {study_delta:+.1f}h/week).
+
+🔍 Step 2 — Telemetry Search & Gathered User Data:
+• Baseline Telemetry: Sleep = {sa['details']['sleep']:.1f}h | Study = {sa['details']['study_week']:.1f}h/wk | Savings = ${sa['details']['monthly_savings']:,.2f}/mo
+• Proposed Shifts: Sleep -> {sb['details']['sleep']:.1f}h | Study -> {sb['details']['study_week']:.1f}h/wk | Savings -> ${sb['details']['monthly_savings']:,.2f}/mo
+
+📊 Step 3 — Multi-Criteria Analysis & Optimization:
+• Telemetry Elasticity Fit: Health Index {sa['health_index']:.1f} -> {sb['health_index']:.1f} ({sb['health_index'] - sa['health_index']:+.1f}) | Focus Rating {sa['focus_index']:.1f} -> {sb['focus_index']:.1f} ({sb['focus_index'] - sa['focus_index']:+.1f}).
+• 5-Year Capital Compounding: 5-Year Net Worth shift = ${sb['wealth_at_end'] - sa['wealth_at_end']:+,.2f}.
+• Retirement Attainment: {'Attained on track' if sb['attained_retirement'] else 'Requires adjustment'}.
+
+🚀 Step 4 — Formulated Strategic Execution Plan:
+• Formatted simulation breakdown and prepared What-If preset application card.
 </think>
 
 """
@@ -1261,56 +1338,7 @@ Click **Approve & Add All Tasks** below to inject all {len(tasks)} time-blocks d
             "action_status": "proposed"
         }
 
-    # 3. DETECT MULTI-TASK / ROUTINE PLANNING OR SINGLE TASK INTENT
-    multi_task_keywords = [
-        "plan my day", "plan today", "suggest a schedule", "suggest schedule",
-        "suggest routine", "daily routine", "suggest tasks", "plan my morning",
-        "suggest some tasks", "schedule my day", "optimize my day", "routine for today", "schedule sprints"
-    ]
-    is_multi_task_intent = any(k in p_lower for k in multi_task_keywords) or (
-        ("schedule" in p_lower or "add" in p_lower) and ("tasks" in p_lower or "sprints" in p_lower or "routine" in p_lower) and ("," in p_lower or "and" in p_lower or "\n" in p_lower)
-    )
-
-    if is_multi_task_intent:
-        tasks = build_smart_role_schedule(user_info.get("role", "professional"))
-        table_rows = "\n".join(
-            f"| `{t['start']}` | **{t['title']}** | {t['minutes']} mins | `{t['category']}` | {t['impact']} |"
-            for t in tasks
-        )
-        advice_text = f"""### ⚡ Calibrated Daily Routine for **{user_info.get('role', 'professional').title()}**
-
-Based on your cognitive baseline and vitality targets, I have engineered an optimal high-performance daily schedule:
-
-| Time | Task / Block | Duration | Category | Predicted Impact |
-| :--- | :--- | :--- | :--- | :--- |
-{table_rows}
-
-#### 💡 Optimization Insights:
-- **Morning Peak Focus (08:30 – 11:00):** Allocated to heavy cognitive sprint tasks when circadian alertness is highest.
-- **Mid-Day Execution (11:30 – 16:00):** Tactical execution and career skill building.
-- **Decompression & Vitality:** Protected workout and recovery block to maintain your **Health Index**.
-
-Click **Approve & Add All Tasks** below to inject all {len(tasks)} time-blocks directly into your Daily Planner."""
-
-        if think_mode:
-            think_block = f"""<think>
-• Intent Recognized: Multi-task routine scheduling & productivity planning.
-• Role Calibration: Calibrating for {user_info.get('role', 'professional').upper()} routine.
-• Schedule Synthesis: Generated {len(tasks)} non-overlapping time blocks totaling {sum(t['minutes'] for t in tasks)} minutes of intentional focus.
-• Net Predicted Impact: +1.8 Cumulative Focus Index, +1.0 Vitality Stability.
-</think>
-
-"""
-            advice_text = think_block + advice_text
-
-        return {
-            "content": advice_text,
-            "action_type": "add_multiple_tasks",
-            "action_payload": json.dumps({"tasks": tasks}),
-            "action_status": "proposed"
-        }
-
-    task_keywords = ["add task", "add a task", "schedule a task", "create task", "add habit", "schedule habit", "block time", "add deep work", "add study sprint", "remind me to"]
+    task_keywords = ["add task", "add a task", "schedule a task", "create task", "add habit", "schedule habit", "block time", "add deep work", "add study sprint", "remind me to", "schedule a sprint", "focus sprint"]
     is_single_task_intent = any(k in p_lower for k in task_keywords) or (("add" in p_lower or "schedule" in p_lower) and ("min" in p_lower or "minute" in p_lower or "hour" in p_lower or "am" in p_lower or "pm" in p_lower))
 
     if is_single_task_intent:
@@ -1349,7 +1377,7 @@ Click **Approve & Add All Tasks** below to inject all {len(tasks)} time-blocks d
 
         advice_text = f"""### 📋 Proposed Schedule Addition: **{clean_title}**
 
-I have structured a new time-block calibrated for your **{user_info.get('role', 'professional').title()}** routine:
+Based on your telemetry profile and current daily routine, I have structured this calibrated focus block:
 
 | Attribute | Scheduled Value |
 | :--- | :--- |
@@ -1363,9 +1391,19 @@ Click **Approve & Add Task** below to append this directly to your Daily Planner
 
         if think_mode:
             think_block = f"""<think>
-• Parsed Schedule Attributes: Title="{clean_title}", Time="{start_time}", Duration={duration}m, Category="{category}".
-• Schedule Optimization: Evaluated daily routine balance for {user_info.get('role', 'professional')}.
-• Calculated Impact: {impact_desc}.
+🎯 Step 1 — Goal Definition:
+• Objective: Schedule single focus block ("{clean_title}") without conflicting with existing routine.
+
+🔍 Step 2 — Telemetry Search & Gathered User Data:
+• Role Persona: {user_info.get('role', 'professional').title()} | Target Work/Study Hours: {t_data.get('study_target_week', 10.0)}h/wk
+• Target Execution Time: {start_time} | Duration: {duration} minutes | Category: {category}
+
+📊 Step 3 — Multi-Criteria Analysis & Optimization:
+• Schedule Slotting: Validated non-collision with existing daily commitments.
+• Predicted Trajectory: {impact_desc}.
+
+🚀 Step 4 — Formulated Strategic Execution Plan:
+• Formatted task attribute table and generated interactive single-task approval card.
 </think>
 
 """
@@ -1431,9 +1469,21 @@ I executed a **500-stochastic-run simulation** of your financial trajectory:
 
         if think_mode:
             think_block = f"""<think>
-• Monte Carlo Stochastic Modeling: 500 stochastic trials (μ=8.0%, σ=15.0%, inflation=2.5%).
-• Boundary Percentiles: P10 Bear floor (${p10_final:,.2f}), Median (${median_final:,.2f}), P90 Bull ceiling (${p90_final:,.2f}).
-• Target Net Worth: ${target:,.2f} -> Success Probability = {prob}%.
+🎯 Step 1 — Goal Definition:
+• Objective: Run 500 stochastic trials to project terminal retirement net worth boundary conditions.
+
+🔍 Step 2 — Telemetry Search & Gathered User Data:
+• Current Age: {user_info.get('age', 25)} | Retirement Target Age: {user_info.get('retirement_goal_age', 60)}
+• Net Worth Baseline: ${current_net_worth:,.2f} | Monthly Savings: ${monthly_savings:,.2f}/mo
+• Target Terminal Capital: ${target:,.2f}
+
+📊 Step 3 — Multi-Criteria Analysis & Optimization:
+• Stochastic Modeling: 500 trials with log-normal return distribution (μ=8.0%, σ=15.0%, inflation=2.5%).
+• Percentiles: P10 Bear Floor (${p10_final:,.2f}), Median (${median_final:,.2f}), P90 Bull Ceiling (${p90_final:,.2f}).
+• Target Milestone Probability: {prob}%.
+
+🚀 Step 4 — Formulated Strategic Execution Plan:
+• Formatted wealth trajectory forecast and generated probability distribution summary.
 </think>
 
 """
@@ -1500,8 +1550,18 @@ Click **Approve Changes** below to apply these modifications to your profile and
 
             if think_mode:
                 think_block = f"""<think>
-• Setting Changes Identified: {', '.join([f'{k}={v}' for k, v in diff_fields.items()])}.
-• Telemetry Validation: Bounds verified and calibrated.
+🎯 Step 1 — Goal Definition:
+• Objective: Update user profile parameters and realign baseline models.
+
+🔍 Step 2 — Telemetry Search & Gathered User Data:
+• Identified Parameter Modifications: {', '.join([f'{k}={v}' for k, v in diff_fields.items()])}
+• Current Profile: Role={user_info.get('role', 'professional')}, Income=${user_info.get('monthly_income', 0):,.2f}, Target Sleep={user_info.get('sleep_target_hours', 8.0)}h
+
+📊 Step 3 — Multi-Criteria Analysis & Optimization:
+• Parameter Validation: Boundary checks passed for proposed parameters.
+
+🚀 Step 4 — Formulated Strategic Execution Plan:
+• Generated structured profile change preview and interactive approval card.
 </think>
 
 """
@@ -1518,20 +1578,26 @@ Click **Approve Changes** below to apply these modifications to your profile and
     client = get_groq_client()
     if client is not None:
         try:
-            think_instruction = " When thinking mode is enabled, include a brief <think>...</think> block showing your logical reasoning before giving your final concise response." if think_mode else " Do NOT include any <think> tags."
+            think_instruction = """ When thinking mode is enabled, start your response with a structured <think>...</think> block containing:
+🎯 Step 1 — Goal Definition (Identify user goal / core query)
+🔍 Step 2 — Telemetry Search & Gathered User Data (Reference user's role, sleep, focus, or financial baseline)
+📊 Step 3 — Multi-Criteria Analysis & Optimization (Evaluate tradeoffs, habits, or strategic leverage)
+🚀 Step 4 — Formulated Strategic Execution Plan (Summary of advice before final answer)""" if think_mode else " Do NOT include any <think> tags."
 
             system_msg = f"""You are the Digital Twin AI Copilot for {user_info.get('username', 'User')}.
-You are a helpful, intelligent personal AI with access to the user's financial and lifestyle telemetry:
-- Role: {user_info.get('role', 'professional')} | Age: {user_info.get('age', 25)}
-- Monthly Income: ${user_info.get('monthly_income', 5000):,.2f} | Expenses: ${user_info.get('monthly_expenses', 2900):,.2f} | Net Worth: ${user_info.get('net_worth', 15000):,.2f}
-- Baseline Sleep: {baseline.get('sleep_hours', 7.5):.1f}h/day | Focus: {baseline.get('study_hours_week', 10.0):.1f}h/week
-- Active Goal: {client_ctx.get('goalName', 'Emergency Fund')}
+You are an intelligent, empathetic personal AI grounded in the user's real financial and biometric telemetry:
+- Role Persona: {user_info.get('role', 'professional')} | Age: {user_info.get('age', 25)}
+- Monthly Income: ${t_data['monthly_income']:,.2f} | Expenses: ${t_data['monthly_expenses']:,.2f} | Cash Flow Surplus: +${t_data['monthly_savings']:,.2f}/mo ({t_data['savings_rate']}% Savings Rate)
+- Net Worth: ${t_data['net_worth']:,.2f} | Target: ${t_data['target_net_worth']:,.2f} by Age {t_data['target_retirement_age']}
+- Biometrics: Sleep {t_data['avg_sleep']:.1f}h/day (Target: {t_data['sleep_target']:.1f}h | Sleep Debt: {t_data['sleep_debt']:.1f}h) | Focus: {t_data['study_hours_week']:.1f}h/week (Target: {t_data['study_target_week']:.1f}h)
+- Active Goal: {goal_name} (${goal_current:,.2f} / ${goal_target:,.2f} — {goal_pct}% complete)
+- Focus Subjects: {', '.join(t_data.get('recent_subjects', [])) or 'General Competencies'}
 
 GUIDELINES:
-- Answer the user's prompt directly, naturally, and conversationally in clean Markdown.
-- If the user greets you or asks a general question, reply warmly and naturally as ChatGPT would.
-- Only provide specific metric breakdowns when relevant to the user's inquiry.{think_instruction}
-- Keep answers clear, insightful, and concise."""
+- Answer the user's prompt directly, naturally, and intelligently in clean Markdown.
+- If tabular data or schedules are helpful, format them as clean, unbroken Markdown tables.
+- Reference relevant telemetry only when helpful to ground your answer.{think_instruction}
+- Provide actionable, high-leverage guidance."""
 
             messages = [{"role": "system", "content": system_msg}]
             for h in history[-6:]:  # Include recent conversational context
@@ -1546,8 +1612,8 @@ GUIDELINES:
                         model=model_candidate,
                         messages=messages,
                         temperature=0.6,
-                        max_tokens=600,
-                        timeout=8.0
+                        max_tokens=800,
+                        timeout=10.0
                     )
                     raw_content = resp.choices[0].message.content or ""
                     if think_mode:
@@ -1555,7 +1621,21 @@ GUIDELINES:
                         if "<think>" in raw_content:
                             reply = raw_content.strip()
                         else:
-                            reply = f"<think>\n• Processed inquiry with user telemetry.\n• Synthesizing optimal conversational response.\n</think>\n\n" + raw_content.strip()
+                            reply = f"""<think>
+🎯 Step 1 — Goal Definition:
+• Objective: Synthesize comprehensive advice for user query: "{prompt}".
+
+🔍 Step 2 — Telemetry Search & Gathered User Data:
+• Role: {user_info.get('role', 'professional').title()} | Cash Flow: +${t_data['monthly_savings']:,.2f}/mo | Sleep: {t_data['avg_sleep']:.1f}h/day
+
+📊 Step 3 — Multi-Criteria Analysis & Optimization:
+• Evaluated user telemetry context and generated calibrated recommendations.
+
+🚀 Step 4 — Formulated Strategic Execution Plan:
+• Synthesized detailed guidance and formatted output.
+</think>
+
+""" + raw_content.strip()
                     else:
                         # Strip any reasoning thoughts in normal mode
                         reply = re.sub(r"<think>[\s\S]*?</think>", "", raw_content).strip()

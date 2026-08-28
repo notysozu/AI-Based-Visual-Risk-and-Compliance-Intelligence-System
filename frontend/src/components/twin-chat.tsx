@@ -663,10 +663,10 @@ function ChatMessageItem({
     mainContent = message.content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
   }
 
-  // Sanitize and replace <br> tags with standard markdown line breaks
-  const sanitizedMarkdown = mainContent
-    .replace(/<br\s*\/?>/gi, "\n\n")
-    .replace(/([^\n])\n(\|[\s\S]+?\|)\n/g, "$1\n\n$2\n");
+  // Sanitize and replace <br> tags while keeping table rows strictly contiguous
+  let sanitizedMarkdown = mainContent.replace(/<br\s*\/?>/gi, "\n");
+  // Clean up any double blank lines inside tables that break GFM table parsing
+  sanitizedMarkdown = sanitizedMarkdown.replace(/(\|.+?\|)\n\s*\n+(\|.+?\|)/g, "$1\n$2");
 
   return (
     <div

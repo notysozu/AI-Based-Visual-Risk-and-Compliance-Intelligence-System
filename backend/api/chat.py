@@ -1,6 +1,6 @@
 import json
 import re
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import database, crud, models, schemas
@@ -141,24 +141,71 @@ def get_session_messages(
     return crud.get_chat_messages(db, session_id)
 
 
+def build_user_telemetry_bundle(db: Session, user: models.User) -> Dict[str, Any]:
+    """Search and aggregate all recent telemetry logs and baseline stats for the user."""
+    baseline = simulator.get_user_baseline_metrics(db, user.id)
+    recent_habits = crud.get_habit_records(db, user.id, limit=30)
+    recent_studies = crud.get_study_records(db, user.id, limit=30)
+    recent_txns = crud.get_financial_records(db, user.id, limit=30)
+    user_suggestions = crud.get_user_suggestions(db, user.id)
+
+    sleep_logs = [h.duration_minutes / 60.0 for h in recent_habits if h.habit_name.lower() == "sleep"]
+    screen_logs = [h.duration_minutes / 60.0 for h in recent_habits if "screen" in h.habit_name.lower()]
+    exercise_logs = [h for h in recent_habits if "exercise" in h.habit_name.lower() or "workout" in h.habit_name.lower()]
+    mood_logs = [h.impact_score for h in recent_habits if h.impact_score is not None]
+
+    avg_sleep = round(sum(sleep_logs) / len(sleep_logs), 1) if sleep_logs else float(baseline.get("sleep_hours", 7.5))
+    avg_screen = round(sum(screen_logs) / len(screen_logs), 1) if screen_logs else 4.0
+    study_mins = sum(s.duration_minutes for s in recent_studies)
+    study_hours_week = round((study_mins / 60.0) * (7.0 / max(1, len(recent_habits) or 1)), 1) if recent_studies else float(baseline.get("study_hours_week", 10.0))
+    subjects = list({s.subject for s in recent_studies if s.subject})[:4]
+
+    monthly_savings = max(0.0, float(user.monthly_income or 0.0) - float(user.monthly_expenses or 0.0))
+    savings_rate = round((monthly_savings / float(user.monthly_income)) * 100) if user.monthly_income and user.monthly_income > 0 else 0
+
+    return {
+        "baseline": baseline,
+        "avg_sleep": avg_sleep,
+        "sleep_target": float(user.sleep_target_hours or 8.0),
+        "sleep_debt": round(max(0.0, float(user.sleep_target_hours or 8.0) - avg_sleep), 1),
+        "avg_screen": avg_screen,
+        "exercise_days_count": len(exercise_logs),
+        "avg_mood": round(sum(mood_logs) / len(mood_logs), 1) if mood_logs else 7.5,
+        "study_hours_week": study_hours_week,
+        "study_target_week": float(user.study_target_hours_week or 10.0),
+        "recent_subjects": subjects,
+        "monthly_income": float(user.monthly_income or 0.0),
+        "monthly_expenses": float(user.monthly_expenses or 0.0),
+        "monthly_savings": monthly_savings,
+        "savings_rate": savings_rate,
+        "net_worth": float(user.net_worth or 0.0),
+        "target_net_worth": float(user.target_net_worth or 1000000.0),
+        "target_retirement_age": int(user.retirement_goal_age or 60),
+        "active_adopted_tasks": len([s for s in user_suggestions if s.is_adopted == 1]),
+    }
+
+
 @router.post("/message/create_thread")
 def create_thread_and_send_message(
     req: schemas.ChatPromptRequest,
     db: Session = Depends(database.get_db)
 ):
     """
-    Creates a new thread on-the-fly with an AI-summarized title when the user
-    sends their first prompt from a draft screen, preventing blank/empty placeholder sessions.
+    Creates a new session with an AI-summarized title and processes the first message.
     """
     user = crud.get_user(db, req.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # 1. Generate summarized title
-    summarized_title = generate_chat_title_summary(req.prompt)
-    session = crud.create_chat_session(db, req.user_id, title=summarized_title)
+    # Generate initial smart summary title
+    initial_title = generate_chat_title_summary(req.prompt)
 
-    # 2. Save user message
+    session = crud.create_chat_session(
+        db=db,
+        user_id=req.user_id,
+        title=initial_title
+    )
+
     user_msg = crud.create_chat_message(
         db=db,
         session_id=session.id,
@@ -169,8 +216,6 @@ def create_thread_and_send_message(
         action_status="none"
     )
 
-    # 3. Context & AI Copilot Turn
-    baseline = simulator.get_user_baseline_metrics(db, req.user_id)
     user_info = {
         "id": user.id,
         "username": user.username,
@@ -185,12 +230,15 @@ def create_thread_and_send_message(
         "study_target_hours_week": user.study_target_hours_week,
     }
 
+    telemetry = build_user_telemetry_bundle(db, user)
+
     bot_result = process_twin_copilot_turn(
         user_id=req.user_id,
         prompt=req.prompt,
         history=[],
         user_info=user_info,
-        baseline=baseline,
+        baseline=telemetry["baseline"],
+        telemetry=telemetry,
         client_context=req.client_context,
         think_mode=bool(getattr(req, "think_mode", False))
     )
@@ -292,13 +340,16 @@ def send_chat_message(
         for m in past_messages[:-1]
     ]
 
+    telemetry = build_user_telemetry_bundle(db, user)
+
     # 2. Process via AI Copilot Simulation Engine
     bot_result = process_twin_copilot_turn(
         user_id=req.user_id,
         prompt=req.prompt,
         history=history_payload,
         user_info=user_info,
-        baseline=baseline,
+        baseline=telemetry["baseline"],
+        telemetry=telemetry,
         client_context=req.client_context,
         think_mode=bool(getattr(req, "think_mode", False))
     )
