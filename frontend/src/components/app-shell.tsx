@@ -12,6 +12,7 @@ import {
   LogOut,
   Moon,
   Settings,
+  Sparkles,
   Split,
   Sun,
   User,
@@ -71,6 +72,7 @@ export function AppShell({
   const navItems = useMemo(() => {
     const items = [
       { to: "/dashboard", label: "Overview", icon: LayoutGrid, color: "text-indigo-500", activeBg: "clay-badge-indigo" },
+      { to: "/chat", label: "Twin Copilot", icon: Sparkles, color: "text-[#0071E3]", activeBg: "clay-badge-indigo" },
       { to: "/planner", label: "Tasks & Planner", icon: ListChecks, color: "text-cyan-500", activeBg: "clay-badge-cyan" },
     ];
 

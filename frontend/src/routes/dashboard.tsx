@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Area,
   AreaChart,
@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ArrowUpRight, BookOpen, BrainCircuit, HeartPulse, MoonStar, Plus, RefreshCw, Wallet } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BookOpen, BrainCircuit, HeartPulse, MoonStar, Plus, RefreshCw, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -115,6 +115,18 @@ function DashboardPage() {
     >
       {/* Conversational Digital Twin Copilot (Positioned at the Top) */}
       <div className="mb-6 space-y-2.5">
+        <div className="flex items-center justify-between px-1">
+          <div>
+            <p className="label-xs">Interactive Copilot</p>
+            <h3 className="font-display font-bold text-base mt-0.5">Conversational Digital Twin</h3>
+          </div>
+          <Button asChild size="sm" variant="ghost" className="h-8 text-xs gap-1 text-[#0071E3] hover:text-[#0071E3]/80 hover:bg-[#0071E3]/10 rounded-xl">
+            <Link to="/chat">
+              <span>Fullscreen Copilot</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
+        </div>
         <TwinChat />
       </div>
 

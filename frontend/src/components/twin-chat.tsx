@@ -81,7 +81,13 @@ const DEMO_CARDS = [
   }
 ];
 
-export function TwinChat() {
+export function TwinChat({
+  fullHeight = false,
+  className = ""
+}: {
+  fullHeight?: boolean;
+  className?: string;
+} = {}) {
   const navigate = useNavigate();
   const { state, addTask, addTxn, updateProfile, saveScenarioPresets } = useTwin();
   const userId = state.profile.id ?? 1;
@@ -406,7 +412,11 @@ export function TwinChat() {
       messages[0].content.includes("New conversation thread started"));
 
   return (
-    <div className="flex h-[660px] overflow-hidden rounded-3xl border border-border/80 bg-card text-foreground dark:bg-[#171717] dark:text-white shadow-xl backdrop-blur-2xl transition-all">
+    <div
+      className={`flex ${
+        fullHeight ? "h-[calc(100vh-12rem)] sm:h-[calc(100vh-11rem)] min-h-[580px]" : "h-[660px]"
+      } overflow-hidden rounded-3xl border border-border/80 bg-card text-foreground dark:bg-[#171717] dark:text-white shadow-xl backdrop-blur-2xl transition-all ${className}`}
+    >
       {/* ------------------------------------------------------------- */}
       {/* LEFT SIDEBAR FOR THREADS (ChatGPT Style)                      */}
       {/* ------------------------------------------------------------- */}
