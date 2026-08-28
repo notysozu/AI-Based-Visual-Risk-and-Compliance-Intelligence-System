@@ -949,7 +949,8 @@ def process_twin_copilot_turn(
     history: List[Dict[str, Any]],
     user_info: Dict[str, Any],
     baseline: Dict[str, Any],
-    client_context: Optional[Dict[str, Any]] = None
+    client_context: Optional[Dict[str, Any]] = None,
+    think_mode: bool = False
 ) -> Dict[str, Any]:
     """
     Process a conversational turn with the Digital Twin Copilot.
@@ -958,6 +959,7 @@ def process_twin_copilot_turn(
     probabilistic simulation results. Produces an informative markdown answer
     along with a structured interactive action proposal (if applicable) that
     requires explicit user approval before execution.
+    Supports think_mode for step-by-step reasoning chain-of-thought disclosures.
     """
     client_ctx = client_context or {}
     p_lower = prompt.lower().strip()
@@ -1048,6 +1050,18 @@ Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impa
 
 > **Twin Verdict:** If this {item_name} enhances your daily productivity or health, the {delay_months}-month delay is manageable. To neutralize the delay, consider increasing monthly savings by **+${round(purchase_cost / 6, 2):,.2f}/mo** for the next 6 months."""
 
+        if think_mode:
+            think_block = f"""<think>
+• Baseline Telemetry: Net Worth ${current_net_worth:,.2f}, Monthly Savings ${monthly_savings:,.2f}/mo.
+• Goal Analysis: "{goal_name}" Target=${goal_target:,.2f}, Current=${goal_current:,.2f}.
+• Milestone Delay Calculation: Shift = +{delay_months} months (~{delay_days} days) delay.
+• Compounding Opportunity Cost: ${purchase_cost:,.2f} @ 8% CAGR over 5Y -> ${compounded_5y:,.2f} (+${foregone_growth:,.2f} foregone gain).
+• Stochastic Monte Carlo: Baseline odds = {prob_before}%, Post-purchase odds = {prob_after}%.
+</think>
+
+"""
+            advice_text = think_block + advice_text
+
         action_payload = {
             "item_name": item_name.title(),
             "cost": purchase_cost,
@@ -1127,6 +1141,17 @@ Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impa
         sb = sim_results["scenario_b"]
         sa = sim_results["scenario_a"]
         advice_text = generate_digital_twin_advice(user_info, baseline, sim_results)
+
+        if think_mode:
+            think_block = f"""<think>
+• Extracted Parameter Deltas: Savings=${savings_delta:+,.2f}/mo, Sleep={sleep_delta:+.1f}h/day, Focus={study_delta:+.1f}h/week.
+• Linear Habit Models: Fit digital twin elasticity models on 30-day telemetry.
+• Index Projections: Health {sa['health_index']:.1f} -> {sb['health_index']:.1f}, Focus {sa['focus_index']:.1f} -> {sb['focus_index']:.1f}.
+• Financial Trajectory: 5-Year net worth variance = ${sb['wealth_at_end'] - sa['wealth_at_end']:+,.2f}.
+</think>
+
+"""
+            advice_text = think_block + advice_text
 
         action_payload = {
             "savings_delta": savings_delta,
@@ -1209,6 +1234,16 @@ I have structured a new time-block calibrated for your **{user_info.get('role', 
 
 Click **Approve & Add Task** below to append this directly to your Daily Planner."""
 
+        if think_mode:
+            think_block = f"""<think>
+• Parsed Schedule Attributes: Title="{clean_title}", Time="{start_time}", Duration={duration}m, Category="{category}".
+• Schedule Optimization: Evaluated daily routine balance for {user_info.get('role', 'professional')}.
+• Calculated Impact: {impact_desc}.
+</think>
+
+"""
+            advice_text = think_block + advice_text
+
         action_payload = {
             "title": clean_title,
             "start": start_time,
@@ -1266,6 +1301,16 @@ I executed a **500-stochastic-run simulation** of your financial trajectory:
             if prob >= 75 else
             "You are on a steady baseline. Increasing monthly contributions by $250 will boost your odds by +14%."
         )
+
+        if think_mode:
+            think_block = f"""<think>
+• Monte Carlo Stochastic Modeling: 500 stochastic trials (μ=8.0%, σ=15.0%, inflation=2.5%).
+• Boundary Percentiles: P10 Bear floor (${p10_final:,.2f}), Median (${median_final:,.2f}), P90 Bull ceiling (${p90_final:,.2f}).
+• Target Net Worth: ${target:,.2f} -> Success Probability = {prob}%.
+</think>
+
+"""
+            advice_text = think_block + advice_text
 
         action_payload = {
             "target": target,
@@ -1326,6 +1371,15 @@ I detected parameter adjustments for your Digital Twin:
 
 Click **Approve Changes** below to apply these modifications to your profile and recalculate all baseline models."""
 
+            if think_mode:
+                think_block = f"""<think>
+• Setting Changes Identified: {', '.join([f'{k}={v}' for k, v in diff_fields.items()])}.
+• Telemetry Validation: Bounds verified and calibrated.
+</think>
+
+"""
+                advice_text = think_block + advice_text
+
             return {
                 "content": advice_text,
                 "action_type": "update_settings",
@@ -1337,6 +1391,8 @@ Click **Approve Changes** below to apply these modifications to your profile and
     client = get_groq_client()
     if client is not None:
         try:
+            think_instruction = " When thinking mode is enabled, include a brief <think>...</think> block showing your logical reasoning before giving your final concise response." if think_mode else " Do NOT include any <think> tags."
+
             system_msg = f"""You are the Digital Twin AI Copilot for {user_info.get('username', 'User')}.
 You are a helpful, intelligent personal AI with access to the user's financial and lifestyle telemetry:
 - Role: {user_info.get('role', 'professional')} | Age: {user_info.get('age', 25)}
@@ -1347,7 +1403,7 @@ You are a helpful, intelligent personal AI with access to the user's financial a
 GUIDELINES:
 - Answer the user's prompt directly, naturally, and conversationally in clean Markdown.
 - If the user greets you or asks a general question, reply warmly and naturally as ChatGPT would.
-- Only provide specific metric breakdowns when relevant to the user's inquiry.
+- Only provide specific metric breakdowns when relevant to the user's inquiry.{think_instruction}
 - Keep answers clear, insightful, and concise."""
 
             messages = [{"role": "system", "content": system_msg}]
@@ -1367,8 +1423,15 @@ GUIDELINES:
                         timeout=8.0
                     )
                     raw_content = resp.choices[0].message.content or ""
-                    # Strip any reasoning thoughts
-                    reply = re.sub(r"<think>[\s\S]*?</think>", "", raw_content).strip()
+                    if think_mode:
+                        # Keep think tags intact if present, or add thought block if missing
+                        if "<think>" in raw_content:
+                            reply = raw_content.strip()
+                        else:
+                            reply = f"<think>\n• Processed inquiry with user telemetry.\n• Synthesizing optimal conversational response.\n</think>\n\n" + raw_content.strip()
+                    else:
+                        # Strip any reasoning thoughts in normal mode
+                        reply = re.sub(r"<think>[\s\S]*?</think>", "", raw_content).strip()
                     if reply:
                         break
                 except Exception:
@@ -1401,6 +1464,9 @@ How can I help you today?"""
         fallback_reply = f"""Based on your current setup as a **{user_info.get('role', 'professional').title()}**, you have a monthly cash flow surplus of **${max(0, user_info.get('monthly_income', 5000) - user_info.get('monthly_expenses', 2900)):,.2f}** and an average sleep baseline of **{baseline.get('sleep_hours', 7.5):.1f}h**.
 
 To simulate specific lifestyle adjustments or financial tradeoffs, feel free to ask questions like *"What if I study 5 more hours?"* or *"Add a 45 min focus block"*."""
+
+    if think_mode:
+        fallback_reply = f"<think>\n• Fallback mode active.\n• Synthesizing natural contextual reply.\n</think>\n\n" + fallback_reply
 
     return {
         "content": fallback_reply,

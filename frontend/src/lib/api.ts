@@ -202,7 +202,7 @@ export function getChatMessages(sessionId: number): Promise<ChatMessageData[]> {
 
 export function sendChatMessage(
   sessionId: number,
-  payload: { user_id: number; prompt: string; client_context?: Record<string, unknown> }
+  payload: { user_id: number; prompt: string; think_mode?: boolean; client_context?: Record<string, unknown> }
 ): Promise<{ user_message: ChatMessageData; assistant_message: ChatMessageData }> {
   return request(`/chat/message/${sessionId}`, {
     method: "POST",

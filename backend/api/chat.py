@@ -154,7 +154,8 @@ def send_chat_message(
         history=history_payload,
         user_info=user_info,
         baseline=baseline,
-        client_context=req.client_context
+        client_context=req.client_context,
+        think_mode=bool(getattr(req, "think_mode", False))
     )
 
     # 3. Save assistant message with action payload

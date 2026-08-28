@@ -248,6 +248,7 @@ class ChatSessionResponse(ChatSessionBase):
 class ChatPromptRequest(BaseModel):
     user_id: int
     prompt: str
+    think_mode: Optional[bool] = False
     client_context: Optional[dict] = None  # Optional live twin state from client (tasks, active presets, custom notes)
 
 class ChatActionExecuteRequest(BaseModel):
