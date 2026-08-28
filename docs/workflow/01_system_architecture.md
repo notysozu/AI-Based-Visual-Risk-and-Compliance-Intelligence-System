@@ -1,19 +1,19 @@
 # Workflow Step 1: System Architecture & Data Flow
 
-This document details the high-level architecture, module breakdown, database schema, and end-to-end data flow of the Digital Twin AI platform.
+This document details the high-level architecture, module breakdown, database schema, and end-to-end data flow of the VisualRisk AI platform.
 
 ---
 
 ## 1. System Overview
 
-Digital Twin AI is a decoupled, full-stack decision-support system designed to model, forecast, and optimize life trajectories across financial, health, productivity, and habit dimensions.
+VisualRisk AI is a decoupled, full-stack decision-support system designed to model, forecast, and optimize life trajectories across financial, health, productivity, and habit dimensions.
 
 ```
 +-----------------------------------------------------------------------------+
 |                               Client Browser                                |
 |   React 19 + TypeScript + Vite + TanStack Router + Tailwind CSS             |
 |   - Central Store (twin-store.tsx)                                          |
-|   - Fullscreen Digital Twin Copilot (/chat)                                 |
+|   - Fullscreen VisualRisk Copilot (/chat)                                 |
 |   - Interactive Settings & Telemetry Control Center (/settings)             |
 |   - Role Persona Engine & Dynamic Vocabulary                                |
 |   - Recharts Visualizations (Monte Carlo & Grouped Bar Charts)              |

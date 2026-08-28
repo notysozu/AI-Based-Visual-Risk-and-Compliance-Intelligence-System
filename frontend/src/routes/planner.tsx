@@ -15,9 +15,9 @@ import { today, useTwin, type Task, getRoleConfig } from "@/lib/twin-store";
 export const Route = createFileRoute("/planner")({
   head: () => ({
     meta: [
-      { title: "Tasks & Planner — Digital Twin" },
+      { title: "Tasks & Planner — VisualRisk AI" },
       { name: "description", content: "Today's plan, built from your tasks and adopted suggestions." },
-      { property: "og:title", content: "Tasks & Planner — Digital Twin" },
+      { property: "og:title", content: "Tasks & Planner — VisualRisk AI" },
       {
         property: "og:description",
         content: "Today's plan, built from your tasks and adopted suggestions.",

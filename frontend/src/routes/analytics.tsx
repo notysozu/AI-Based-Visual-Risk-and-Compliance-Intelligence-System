@@ -34,9 +34,9 @@ import { getAnalyticsSummary } from "@/lib/api";
 export const Route = createFileRoute("/analytics")({
   head: () => ({
     meta: [
-      { title: "Analytics — Digital Twin" },
+      { title: "Analytics — VisualRisk AI" },
       { name: "description", content: "Correlations, streaks and the full history of your logs." },
-      { property: "og:title", content: "Analytics — Digital Twin" },
+      { property: "og:title", content: "Analytics — VisualRisk AI" },
       {
         property: "og:description",
         content: "Correlations, streaks and the full history of your logs.",

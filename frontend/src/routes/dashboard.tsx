@@ -33,9 +33,9 @@ import { TwinChat } from "@/components/twin-chat";
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Twin Core — Digital Twin" },
+      { title: "Core Intelligence — VisualRisk AI" },
       { name: "description", content: "Your live indices, feed and daily numbers in one view." },
-      { property: "og:title", content: "Twin Core — Digital Twin" },
+      { property: "og:title", content: "Core Intelligence — VisualRisk AI" },
       {
         property: "og:description",
         content: "Your live indices, feed and daily numbers in one view.",

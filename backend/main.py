@@ -12,9 +12,9 @@ from database.database import SessionLocal
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Digital Twin AI Backend API",
-    description="Backend services for Digital Twin AI simulation and prediction system.",
-    version="0.1.0"
+    title="AI-Based Visual Risk and Compliance Intelligence System (VisualRisk AI)",
+    description="Backend services for AI-Based Visual Risk and Compliance Intelligence System (VisualRisk AI).",
+    version="1.0.0"
 )
 
 app.add_middleware(

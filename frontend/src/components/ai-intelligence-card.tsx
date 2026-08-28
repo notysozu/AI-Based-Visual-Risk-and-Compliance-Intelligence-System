@@ -28,7 +28,7 @@ interface ParsedSection {
 }
 
 export function AIIntelligenceCard({
-  title = "Digital Twin AI Intelligence",
+  title = "VisualRisk AI Intelligence",
   badge = "Neural Model",
   content,
   probability,

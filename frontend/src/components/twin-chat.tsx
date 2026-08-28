@@ -452,7 +452,7 @@ export function TwinChat({
             </div>
             <div>
               <span className="font-semibold text-xs tracking-tight text-foreground dark:text-white">
-                Digital Twin Copilot
+                VisualRisk Copilot
               </span>
               <span className="mx-1.5 text-muted-foreground dark:text-white/30 text-xs">•</span>
               <span className="text-[11px] text-muted-foreground dark:text-white/60 truncate max-w-[180px] sm:max-w-xs">

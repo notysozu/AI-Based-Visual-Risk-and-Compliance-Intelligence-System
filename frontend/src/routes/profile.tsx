@@ -12,9 +12,9 @@ import { money, useTwin, type Profile } from "@/lib/twin-store";
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
-      { title: "Profile & Goals — Digital Twin" },
+      { title: "Profile & Goals — VisualRisk AI" },
       { name: "description", content: "Your stored answers, goals and app preferences." },
-      { property: "og:title", content: "Profile & Goals — Digital Twin" },
+      { property: "og:title", content: "Profile & Goals — VisualRisk AI" },
       { property: "og:description", content: "Your stored answers, goals and app preferences." },
     ],
   }),

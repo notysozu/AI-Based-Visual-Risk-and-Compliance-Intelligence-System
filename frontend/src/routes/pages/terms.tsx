@@ -21,7 +21,7 @@ import { useTwin } from "@/lib/twin-store";
 export const Route = createFileRoute("/pages/terms")({
   head: () => ({
     meta: [
-      { title: "Terms of Service — Digital Twin AI" },
+      { title: "Terms of Service — VisualRisk AI" },
       {
         name: "description",
         content:
@@ -157,7 +157,7 @@ function TermsPage() {
             <p className="text-sm text-muted-foreground leading-relaxed">
               If you have any questions regarding these Terms of Service or wish to contribute to the project, reach out via our GitHub repository at{" "}
               <a
-                href="https://github.com/notysozu/Digital-Twin-AI"
+                href="https://github.com/notysozu/AI-Based-Visual-Risk-and-Compliance-Intelligence-System"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary font-semibold underline underline-offset-4 hover:text-primary/80"
@@ -217,7 +217,7 @@ function TermsPage() {
             <div className="space-y-2.5">
               <span className="text-[11px] font-semibold text-foreground tracking-wider uppercase font-mono">Project</span>
               <ul className="space-y-2">
-                <li><a href="https://github.com/notysozu/Digital-Twin-AI" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1">GitHub Repo <ArrowUpRight className="h-3 w-3" /></a></li>
+                <li><a href="https://github.com/notysozu/AI-Based-Visual-Risk-and-Compliance-Intelligence-System" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1">GitHub Repo <ArrowUpRight className="h-3 w-3" /></a></li>
                 <li><Link to="/pages/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
                 <li><Link to="/pages/terms" className="font-semibold text-foreground">Terms of Service</Link></li>
                 <li><Link to="/" className="hover:text-foreground transition-colors">Home Page</Link></li>
@@ -233,10 +233,10 @@ function TermsPage() {
 
             <div className="flex items-center gap-2">
               <a
-                href="https://github.com/notysozu/Digital-Twin-AI"
+                href="https://github.com/notysozu/AI-Based-Visual-Risk-and-Compliance-Intelligence-System"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Digital Twin AI GitHub"
+                aria-label="VisualRisk AI GitHub"
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               >
                 <Github className="h-4 w-4" />

@@ -41,12 +41,12 @@ import {
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Log In — Digital Twin AI" },
+      { title: "Log In — VisualRisk AI" },
       {
         name: "description",
         content: "Log in to your personalized Digital Twin AI workspace.",
       },
-      { property: "og:title", content: "Log In — Digital Twin AI" },
+      { property: "og:title", content: "Log In — VisualRisk AI" },
       {
         property: "og:description",
         content: "Log in to your personalized Digital Twin AI workspace.",

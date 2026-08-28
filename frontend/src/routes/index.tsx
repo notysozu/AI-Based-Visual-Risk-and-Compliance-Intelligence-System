@@ -33,7 +33,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Digital Twin AI — Model Your Life 5 Years Ahead" },
+      { title: "VisualRisk AI — Visual Risk & Compliance Intelligence System" },
       {
         name: "description",
         content:
@@ -902,7 +902,7 @@ function LandingPage() {
             <div className="space-y-2.5">
               <span className="text-[11px] font-semibold text-foreground tracking-wider uppercase font-mono">Project</span>
               <ul className="space-y-2">
-                <li><a href="https://github.com/notysozu/Digital-Twin-AI" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1">GitHub Repo <ArrowUpRight className="h-3 w-3" /></a></li>
+                <li><a href="https://github.com/notysozu/AI-Based-Visual-Risk-and-Compliance-Intelligence-System" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1">GitHub Repo <ArrowUpRight className="h-3 w-3" /></a></li>
                 <li><Link to="/pages/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
                 <li><Link to="/pages/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
                 <li><Link to="/login" className="hover:text-foreground transition-colors">Log In</Link></li>
@@ -919,10 +919,10 @@ function LandingPage() {
 
             <div className="flex items-center gap-2">
               <a
-                href="https://github.com/notysozu/Digital-Twin-AI"
+                href="https://github.com/notysozu/AI-Based-Visual-Risk-and-Compliance-Intelligence-System"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Digital Twin AI GitHub"
+                aria-label="VisualRisk AI GitHub"
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               >
                 <Github className="h-4 w-4" />
