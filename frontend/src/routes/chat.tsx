@@ -3,17 +3,8 @@ import { AppShell } from "@/components/app-shell";
 import { useGuard } from "@/lib/use-guard";
 import { TwinChat } from "@/components/twin-chat";
 
-type ChatSearchParams = {
-  session?: number;
-};
-
 /** Fullscreen Dedicated Conversational Digital Twin Copilot Route */
 export const Route = createFileRoute("/chat")({
-  validateSearch: (search: Record<string, unknown>): ChatSearchParams => {
-    return {
-      session: search.session ? Number(search.session) : undefined,
-    };
-  },
   head: () => ({
     meta: [
       { title: "Twin Copilot — Digital Twin AI" },
@@ -30,13 +21,12 @@ export const Route = createFileRoute("/chat")({
 
 function ChatPage() {
   const ok = useGuard();
-  const search = Route.useSearch();
   if (!ok) return null;
 
   return (
     <AppShell fullBleed={true}>
       <div className="w-full h-full flex flex-col flex-1">
-        <TwinChat fullHeight={true} selectedSessionId={search.session} />
+        <TwinChat fullHeight={true} />
       </div>
     </AppShell>
   );

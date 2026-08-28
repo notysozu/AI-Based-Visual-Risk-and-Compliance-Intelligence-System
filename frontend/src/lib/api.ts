@@ -190,14 +190,16 @@ export function createChatSession(userId: string | number, payload: { title?: st
   });
 }
 
-export function deleteChatSession(sessionId: number): Promise<{ message: string; session_id: number }> {
-  return request(`/chat/sessions/${sessionId}`, {
+export function deleteChatSession(sessionId: number, userId?: number): Promise<{ message: string; session_id: number }> {
+  const q = userId ? `?user_id=${userId}` : "";
+  return request(`/chat/sessions/${sessionId}${q}`, {
     method: "DELETE",
   });
 }
 
-export function getChatMessages(sessionId: number): Promise<ChatMessageData[]> {
-  return request(`/chat/messages/${sessionId}`);
+export function getChatMessages(sessionId: number, userId?: number): Promise<ChatMessageData[]> {
+  const q = userId ? `?user_id=${userId}` : "";
+  return request(`/chat/messages/${sessionId}${q}`);
 }
 
 export function sendChatMessage(
@@ -205,6 +207,18 @@ export function sendChatMessage(
   payload: { user_id: number; prompt: string; think_mode?: boolean; client_context?: Record<string, unknown> }
 ): Promise<{ user_message: ChatMessageData; assistant_message: ChatMessageData }> {
   return request(`/chat/message/${sessionId}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function createThreadAndSendMessage(payload: {
+  user_id: number;
+  prompt: string;
+  think_mode?: boolean;
+  client_context?: Record<string, unknown>;
+}): Promise<{ session: ChatSessionData; user_message: ChatMessageData; assistant_message: ChatMessageData }> {
+  return request(`/chat/message/create_thread`, {
     method: "POST",
     body: JSON.stringify(payload),
   });

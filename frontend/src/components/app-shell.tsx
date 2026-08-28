@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { useTwin, getRoleConfig } from "@/lib/twin-store";
-import { getChatSessions, createChatSession, deleteChatSession, type ChatSessionData } from "@/lib/api";
+import { getChatSessions, deleteChatSession, type ChatSessionData } from "@/lib/api";
 import { toast } from "sonner";
 
 export function AppShell({
@@ -78,37 +78,46 @@ export function AppShell({
   // Fetch chat sessions for sidebar
   useEffect(() => {
     loadSidebarSessions();
+
+    const handleSessionsUpdated = () => {
+      loadSidebarSessions();
+    };
+
+    window.addEventListener("chat-sessions-updated", handleSessionsUpdated);
+    return () => {
+      window.removeEventListener("chat-sessions-updated", handleSessionsUpdated);
+    };
   }, [userId, pathname]);
 
   const loadSidebarSessions = async () => {
     try {
       const data = await getChatSessions(userId);
       if (data) {
-        setSidebarSessions(data.slice(0, 12)); // Top 12 recent threads
+        setSidebarSessions(data.slice(0, 12));
       }
     } catch (e) {
       console.warn("Could not load sidebar sessions:", e);
     }
   };
 
-  const handleNewChat = async () => {
-    try {
-      const newSession = await createChatSession(userId, { title: "New Conversation" });
-      setSidebarSessions((prev) => [newSession, ...prev]);
-      toast.success("New conversation started");
-      navigate({ to: "/chat", search: { session: newSession.id } });
-    } catch (e) {
-      navigate({ to: "/chat" });
-    }
+  const handleNewChatDraft = () => {
+    window.dispatchEvent(new CustomEvent("twin-new-chat-draft"));
+    navigate({ to: "/chat" });
+  };
+
+  const handleSelectThread = (sessionId: number) => {
+    window.dispatchEvent(new CustomEvent("twin-switch-chat-session", { detail: { sessionId } }));
+    navigate({ to: "/chat" });
   };
 
   const handleDeleteThread = async (sessionId: number, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     try {
-      await deleteChatSession(sessionId);
+      await deleteChatSession(sessionId, Number(userId));
       setSidebarSessions((prev) => prev.filter((s) => s.id !== sessionId));
       toast.success("Thread deleted");
+      window.dispatchEvent(new Event("chat-sessions-updated"));
     } catch (e) {
       toast.error("Could not delete thread");
     }
@@ -177,54 +186,56 @@ export function AppShell({
           )}
         </div>
 
-        {/* Top: New Chat Action (Twin Copilot link removed) */}
-        <div className="p-3 pb-2 border-b border-border/40 shrink-0">
-          <button
-            type="button"
-            onClick={handleNewChat}
-            className="w-full h-9 px-3 rounded-xl bg-card dark:bg-white/10 hover:bg-muted dark:hover:bg-white/15 border border-border/70 dark:border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-2xs text-foreground dark:text-white cursor-pointer"
-            title="Start new conversation"
-          >
-            <Plus className="h-4 w-4 text-[#0071E3]" />
-            {!collapsed && <span>New Chat</span>}
-          </button>
-        </div>
-
-        {/* Middle Section: Scrollable Recent Conversation Threads */}
+        {/* Scrollable Recent Chats Section with '+' New Chat icon beside heading */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
-          {!collapsed && (
-            <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+          {!collapsed ? (
+            <div className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
               <span>Recent Chats</span>
-              <span className="font-mono text-[10px] bg-muted/60 dark:bg-white/10 px-1.5 py-0.5 rounded-md">
-                {sidebarSessions.length}
-              </span>
+              <button
+                type="button"
+                onClick={handleNewChatDraft}
+                className="h-6 w-6 rounded-lg hover:bg-muted dark:hover:bg-white/10 flex items-center justify-center text-[#0071E3] hover:text-[#0071E3]/80 transition-colors cursor-pointer"
+                title="New Chat"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="p-1 flex justify-center">
+              <button
+                type="button"
+                onClick={handleNewChatDraft}
+                className="h-8 w-8 rounded-xl bg-card dark:bg-white/10 hover:bg-muted dark:hover:bg-white/15 flex items-center justify-center text-[#0071E3] shadow-2xs cursor-pointer"
+                title="New Chat"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
             </div>
           )}
 
           <nav className="flex flex-col gap-1">
             {sidebarSessions.map((s) => (
-              <Link
+              <button
                 key={s.id}
-                to="/chat"
-                search={{ session: s.id }}
+                type="button"
+                onClick={() => handleSelectThread(s.id)}
                 title={s.title}
-                className="group flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-all duration-150 cursor-pointer"
+                className="w-full text-left group flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-all duration-150 cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 truncate min-w-0">
                   <MessageSquare className="h-4 w-4 text-[#0071E3] shrink-0 opacity-70 group-hover:opacity-100 transition-transform group-hover:scale-110" />
                   {!collapsed && <span className="truncate max-w-[145px]">{s.title}</span>}
                 </div>
                 {!collapsed && (
-                  <button
-                    type="button"
+                  <span
                     onClick={(e) => handleDeleteThread(s.id, e)}
                     className="opacity-0 group-hover:opacity-100 hover:text-rose-500 p-0.5 transition-opacity cursor-pointer"
                     title="Delete thread"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  </span>
                 )}
-              </Link>
+              </button>
             ))}
           </nav>
         </div>

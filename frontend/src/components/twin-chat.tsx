@@ -28,9 +28,9 @@ import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import {
   getChatSessions,
-  createChatSession,
   getChatMessages,
   sendChatMessage,
+  createThreadAndSendMessage,
   executeChatAction,
   rejectChatAction,
   type ChatSessionData,
@@ -109,7 +109,38 @@ export function TwinChat({
     loadSessions();
   }, [userId]);
 
-  // Sync with selectedSessionId from URL query param
+  // Listen to global events for New Chat Draft and Thread Switching without URL params
+  useEffect(() => {
+    const handleNewDraft = () => {
+      setActiveSessionId(null);
+      setMessages([]);
+      setInputPrompt("");
+    };
+
+    const handleSwitch = (e: any) => {
+      const sId = e.detail?.sessionId;
+      if (sId) {
+        setActiveSessionId(sId);
+        loadMessages(sId);
+      }
+    };
+
+    const handleUpdated = () => {
+      loadSessions(false);
+    };
+
+    window.addEventListener("twin-new-chat-draft", handleNewDraft);
+    window.addEventListener("twin-switch-chat-session", handleSwitch);
+    window.addEventListener("chat-sessions-updated", handleUpdated);
+
+    return () => {
+      window.removeEventListener("twin-new-chat-draft", handleNewDraft);
+      window.removeEventListener("twin-switch-chat-session", handleSwitch);
+      window.removeEventListener("chat-sessions-updated", handleUpdated);
+    };
+  }, [userId]);
+
+  // Sync with selectedSessionId prop if passed
   useEffect(() => {
     if (selectedSessionId && selectedSessionId !== activeSessionId) {
       setActiveSessionId(selectedSessionId);
@@ -120,6 +151,8 @@ export function TwinChat({
   useEffect(() => {
     if (activeSessionId) {
       loadMessages(activeSessionId);
+    } else {
+      setMessages([]);
     }
   }, [activeSessionId]);
 
@@ -136,42 +169,31 @@ export function TwinChat({
     prevMsgCountRef.current = messages.length;
   }, [messages, loading]);
 
-  const loadSessions = async () => {
+  const loadSessions = async (setDefault = true) => {
     try {
-      setInitialLoading(true);
+      if (setDefault) setInitialLoading(true);
       const data = await getChatSessions(userId);
       if (data && data.length > 0) {
         setSessions(data);
-        if (selectedSessionId && data.some((s) => s.id === selectedSessionId)) {
-          setActiveSessionId(selectedSessionId);
-        } else if (!activeSessionId || !data.some((s) => s.id === activeSessionId)) {
-          // Open the latest conversation by default
-          setActiveSessionId(data[0].id);
+        if (setDefault) {
+          if (selectedSessionId && data.some((s) => s.id === selectedSessionId)) {
+            setActiveSessionId(selectedSessionId);
+          } else if (!activeSessionId || !data.some((s) => s.id === activeSessionId)) {
+            // Default to the latest conversation
+            setActiveSessionId(data[0].id);
+          }
         }
-      } else {
-        await handleAutoInitiateThread();
       }
     } catch (err) {
       console.error("Failed to load chat sessions:", err);
-      await handleAutoInitiateThread();
     } finally {
-      setInitialLoading(false);
-    }
-  };
-
-  const handleAutoInitiateThread = async () => {
-    try {
-      const newSession = await createChatSession(userId, { title: "Twin Core Dialogue" });
-      setSessions([newSession]);
-      setActiveSessionId(newSession.id);
-    } catch (e) {
-      console.error("Failed to auto-initiate thread:", e);
+      if (setDefault) setInitialLoading(false);
     }
   };
 
   const loadMessages = async (sessionId: number) => {
     try {
-      const data = await getChatMessages(sessionId);
+      const data = await getChatMessages(sessionId, Number(userId));
       setMessages(data);
       prevMsgCountRef.current = data.length;
     } catch (err) {
@@ -249,7 +271,7 @@ export function TwinChat({
 
   const handleSend = async (customPrompt?: string) => {
     const promptToSend = (customPrompt || inputPrompt).trim();
-    if (!promptToSend || !activeSessionId || loading) return;
+    if (!promptToSend || loading) return;
 
     if (isListening && recognitionRef.current) {
       recognitionRef.current.stop();
@@ -259,7 +281,7 @@ export function TwinChat({
     setInputPrompt("");
     const optimisticUserMsg: ChatMessageData = {
       id: Date.now(),
-      session_id: activeSessionId,
+      session_id: activeSessionId || 0,
       role: "user",
       content: promptToSend,
       action_type: "none",
@@ -281,21 +303,40 @@ export function TwinChat({
         netWorth: state.profile.netWorth
       };
 
-      const res = await sendChatMessage(activeSessionId, {
-        user_id: Number(userId),
-        prompt: promptToSend,
-        think_mode: isThinkMode,
-        client_context: clientContext
-      });
+      // Case A: Draft mode (no active session yet) -> Create session with AI-summarized title on first message
+      if (!activeSessionId) {
+        const res = await createThreadAndSendMessage({
+          user_id: Number(userId),
+          prompt: promptToSend,
+          think_mode: isThinkMode,
+          client_context: clientContext
+        });
 
-      setMessages((prev) => [
-        ...prev.filter((m) => m.id !== optimisticUserMsg.id),
-        res.user_message,
-        res.assistant_message
-      ]);
+        setActiveSessionId(res.session.id);
+        setMessages([res.user_message, res.assistant_message]);
+        setSessions((prev) => [res.session, ...prev.filter((s) => s.id !== res.session.id)]);
+        
+        // Notify sidebar
+        window.dispatchEvent(new Event("chat-sessions-updated"));
+      } else {
+        // Case B: Existing session
+        const res = await sendChatMessage(activeSessionId, {
+          user_id: Number(userId),
+          prompt: promptToSend,
+          think_mode: isThinkMode,
+          client_context: clientContext
+        });
 
-      const updatedSessions = await getChatSessions(userId);
-      setSessions(updatedSessions);
+        setMessages((prev) => [
+          ...prev.filter((m) => m.id !== optimisticUserMsg.id),
+          res.user_message,
+          res.assistant_message
+        ]);
+
+        const updatedSessions = await getChatSessions(userId);
+        setSessions(updatedSessions);
+        window.dispatchEvent(new Event("chat-sessions-updated"));
+      }
     } catch (err: any) {
       toast.error(err.message || "Failed to communicate with Digital Twin AI");
     } finally {
@@ -374,11 +415,7 @@ export function TwinChat({
   };
 
   const activeSession = sessions.find((s) => s.id === activeSessionId);
-  const isConversationEmpty =
-    messages.length === 0 ||
-    (messages.length === 1 &&
-      messages[0].role === "assistant" &&
-      messages[0].content.includes("New conversation thread started"));
+  const isConversationEmpty = messages.length === 0;
 
   return (
     <div
@@ -717,7 +754,7 @@ function ChatMessageItem({
                 <button
                   type="button"
                   onClick={() => onCopy(message.id, message.content)}
-                  className="p-1 rounded hover:bg-muted dark:hover:bg-white/10 transition-colors flex items-center gap-1"
+                  className="p-1 rounded hover:bg-muted dark:hover:bg-white/10 transition-colors flex items-center gap-1 cursor-pointer"
                   title="Copy response"
                 >
                   {copiedId === message.id ? (
