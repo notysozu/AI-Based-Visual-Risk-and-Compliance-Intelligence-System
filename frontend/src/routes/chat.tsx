@@ -29,6 +29,7 @@ function ChatPage() {
     <AppShell
       title="Twin Copilot"
       subtitle="Fullscreen Conversational Simulation & Decision Intelligence"
+      fullBleed={true}
       actions={
         <div className="flex items-center gap-2">
           <Button asChild size="sm" variant="outline" className="h-8 text-xs gap-1.5 rounded-xl">
