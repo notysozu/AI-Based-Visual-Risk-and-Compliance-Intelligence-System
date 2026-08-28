@@ -1,6 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, BrainCircuit, Sparkles, Split, Wallet } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { useGuard } from "@/lib/use-guard";
 import { TwinChat } from "@/components/twin-chat";
@@ -26,28 +24,8 @@ function ChatPage() {
   if (!ok) return null;
 
   return (
-    <AppShell
-      title="Twin Copilot"
-      subtitle="Fullscreen Conversational Simulation & Decision Intelligence"
-      fullBleed={true}
-      actions={
-        <div className="flex items-center gap-2">
-          <Button asChild size="sm" variant="outline" className="h-8 text-xs gap-1.5 rounded-xl">
-            <Link to="/simulator">
-              <Split className="h-3.5 w-3.5 text-rose-500" />
-              <span>Simulator</span>
-            </Link>
-          </Button>
-          <Button asChild size="sm" variant="outline" className="h-8 text-xs gap-1.5 rounded-xl">
-            <Link to="/wealth">
-              <Wallet className="h-3.5 w-3.5 text-emerald-500" />
-              <span>Wealth Engine</span>
-            </Link>
-          </Button>
-        </div>
-      }
-    >
-      <div className="w-full">
+    <AppShell fullBleed={true}>
+      <div className="w-full h-full flex flex-col flex-1">
         <TwinChat fullHeight={true} />
       </div>
     </AppShell>

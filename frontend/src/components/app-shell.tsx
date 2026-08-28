@@ -164,7 +164,7 @@ export function AppShell({
             )}
           </div>
 
-          {/* Toggle Navbar button beside Digital Twin AI, stays visible & clickable */}
+          {/* Top Navbar Toggle Button Beside Title */}
           <button
             type="button"
             onClick={() => setCollapsed((v) => !v)}
@@ -204,37 +204,42 @@ export function AppShell({
           </Link>
         </div>
 
-        {/* Middle Section: Scrollable Recent Conversation Threads */}
+        {/* Middle Section: Scrollable Recent Conversation Threads (Styled same as Modules) */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
-          {!collapsed && sidebarSessions.length > 0 && (
-            <div className="space-y-1">
-              <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
-                <span>Recent Chats</span>
-                <span className="font-mono text-[10px]">{sidebarSessions.length}</span>
-              </div>
+          {!collapsed && (
+            <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+              <span>Recent Chats</span>
+              <span className="font-mono text-[10px] bg-muted/60 dark:bg-white/10 px-1.5 py-0.5 rounded-md">
+                {sidebarSessions.length}
+              </span>
+            </div>
+          )}
 
-              {sidebarSessions.map((s) => (
-                <Link
-                  key={s.id}
-                  to="/chat"
-                  className="group px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <MessageSquare className="h-3 w-3 opacity-60 shrink-0" />
-                    <span className="truncate max-w-[155px] text-[11.5px]">{s.title}</span>
-                  </div>
+          <nav className="flex flex-col gap-1">
+            {sidebarSessions.map((s) => (
+              <Link
+                key={s.id}
+                to="/chat"
+                title={s.title}
+                className="group flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-all duration-150"
+              >
+                <div className="flex items-center gap-2.5 truncate min-w-0">
+                  <MessageSquare className="h-4 w-4 text-[#0071E3] shrink-0 opacity-70 group-hover:opacity-100 transition-transform group-hover:scale-110" />
+                  {!collapsed && <span className="truncate max-w-[145px]">{s.title}</span>}
+                </div>
+                {!collapsed && (
                   <button
                     type="button"
                     onClick={(e) => handleDeleteThread(s.id, e)}
                     className="opacity-0 group-hover:opacity-100 hover:text-rose-500 p-0.5 transition-opacity"
                     title="Delete thread"
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
-                </Link>
-              ))}
-            </div>
-          )}
+                )}
+              </Link>
+            ))}
+          </nav>
         </div>
 
         {/* Pinned Lower Section: Modules & Telemetry Tools (Stuck to Bottom) */}
@@ -269,6 +274,26 @@ export function AppShell({
               );
             })}
           </nav>
+        </div>
+
+        {/* Bottom Collapse Toggle Button */}
+        <div className="p-2 border-t border-border/40 shrink-0 bg-sidebar/95 dark:bg-[#141414]/95">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2.5 rounded-xl text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => setCollapsed((v) => !v)}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="h-4 w-4 text-[#0071E3]" />
+            ) : (
+              <>
+                <PanelLeftClose className="h-4 w-4" />
+                <span>Collapse Sidebar</span>
+              </>
+            )}
+          </Button>
         </div>
       </aside>
 

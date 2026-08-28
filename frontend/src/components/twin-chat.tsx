@@ -376,34 +376,36 @@ export function TwinChat({
           : "h-[660px] rounded-3xl border border-border/80 bg-card text-foreground dark:bg-[#171717] dark:text-white shadow-xl backdrop-blur-2xl overflow-hidden"
       } transition-all ${className}`}
     >
-      {/* Top Header Bar */}
-      <div className="px-4 py-3 border-b border-border/40 flex items-center justify-between bg-card/40 dark:bg-black/10 shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-[#0071E3] to-indigo-600 text-white shadow-xs">
-            <Sparkles className="h-3.5 w-3.5" />
+      {/* Top Header Bar (Only shown when embedded as a widget) */}
+      {!fullHeight && (
+        <div className="px-4 py-3 border-b border-border/40 flex items-center justify-between bg-card/40 dark:bg-black/10 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-[#0071E3] to-indigo-600 text-white shadow-xs">
+              <Sparkles className="h-3.5 w-3.5" />
+            </div>
+            <div>
+              <span className="font-semibold text-xs tracking-tight text-foreground dark:text-white">
+                Digital Twin Copilot
+              </span>
+              <span className="mx-1.5 text-muted-foreground dark:text-white/30 text-xs">•</span>
+              <span className="text-[11px] text-muted-foreground dark:text-white/60 truncate max-w-[180px] sm:max-w-xs">
+                {activeSession ? activeSession.title : "Active Conversation"}
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="font-semibold text-xs tracking-tight text-foreground dark:text-white">
-              Digital Twin Copilot
-            </span>
-            <span className="mx-1.5 text-muted-foreground dark:text-white/30 text-xs">•</span>
-            <span className="text-[11px] text-muted-foreground dark:text-white/60 truncate max-w-[180px] sm:max-w-xs">
-              {activeSession ? activeSession.title : "Active Conversation"}
-            </span>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          {isThinkMode && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-[#0071E3]/15 text-[#0071E3] dark:text-blue-400 border border-[#0071E3]/30 flex items-center gap-1">
-              <Brain className="h-3 w-3" /> Think Active
+          <div className="flex items-center gap-2">
+            {isThinkMode && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-[#0071E3]/15 text-[#0071E3] dark:text-blue-400 border border-[#0071E3]/30 flex items-center gap-1">
+                <Brain className="h-3 w-3" /> Think Active
+              </span>
+            )}
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              Live
             </span>
-          )}
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-            Live
-          </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Messages & Empty State Scroll Feed */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
