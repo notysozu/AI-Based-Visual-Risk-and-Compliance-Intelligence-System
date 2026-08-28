@@ -485,6 +485,51 @@ def execute_chat_action(
             db.commit()
             execution_result = {"deducted_net_worth": cost, "remaining_net_worth": user.net_worth}
 
+    elif action_type == "log_study":
+        subject = payload.get("subject", "Academic Study")
+        dur_mins = int(payload.get("duration_minutes", 60))
+        focus_score = int(payload.get("focus_score", 8))
+        exam_score = float(payload["exam_score"]) if payload.get("exam_score") is not None else None
+        notes = payload.get("notes", "Logged via Digital Twin Copilot")
+        
+        study_rec = models.StudyRecord(
+            user_id=user.id,
+            subject=subject,
+            duration_minutes=dur_mins,
+            focus_score=focus_score,
+            exam_score=exam_score,
+            notes=notes,
+            session_type="study"
+        )
+        db.add(study_rec)
+        db.commit()
+        execution_result = {
+            "study_record_id": study_rec.id,
+            "subject": subject,
+            "duration_minutes": dur_mins,
+            "focus_score": focus_score
+        }
+
+    elif action_type == "log_habit":
+        h_name = payload.get("habit_name", "Sleep")
+        dur_mins = int(payload.get("duration_minutes", 300))
+        impact_score = int(payload.get("impact_score", 5))
+        
+        habit_rec = models.HabitRecord(
+            user_id=user.id,
+            habit_name=h_name,
+            duration_minutes=dur_mins,
+            impact_score=impact_score
+        )
+        db.add(habit_rec)
+        db.commit()
+        execution_result = {
+            "habit_record_id": habit_rec.id,
+            "habit_name": h_name,
+            "duration_minutes": dur_mins,
+            "impact_score": impact_score
+        }
+
     crud.update_chat_action_status(db, message_id, "executed")
 
     return {

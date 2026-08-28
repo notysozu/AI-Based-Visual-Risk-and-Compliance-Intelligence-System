@@ -944,42 +944,86 @@ Respond with ONLY valid raw JSON in the following format:
 # ==============================================================================
 
 
-def build_smart_role_schedule(role: str, user_info: Optional[Dict[str, Any]] = None, telemetry: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+def build_smart_role_schedule(
+    role: str,
+    user_info: Optional[Dict[str, Any]] = None,
+    telemetry: Optional[Dict[str, Any]] = None,
+    active_logged_sleep: Optional[float] = None,
+    active_study_subject: Optional[str] = None
+) -> List[Dict[str, Any]]:
     r = (role or "professional").lower()
     t = telemetry or {}
     u = user_info or {}
     
-    focus_area = u.get("focus_area") or (t.get("recent_subjects") and t["recent_subjects"][0]) or "Deep Work"
+    logged_sleep = active_logged_sleep if active_logged_sleep is not None else float(t.get("avg_sleep", 7.5))
+    has_sleep_deficit = logged_sleep < 6.2
+    
+    subject_name = active_study_subject or (t.get("recent_subjects") and t["recent_subjects"][0]) or "Core Academic Focus"
+    focus_area = active_study_subject or u.get("focus_area") or (t.get("recent_subjects") and t["recent_subjects"][0]) or "Deep Work"
     
     if r == "student":
-        subject_name = (t.get("recent_subjects") and t["recent_subjects"][0]) or "Core Curriculum"
-        return [
-            {"title": f"Core Academic Focus: {subject_name}", "start": "09:00", "minutes": 90, "category": "Study", "impact": "+1.5 Cognitive Output"},
-            {"title": "Deep Problem Solving & Assignment Sprint", "start": "11:30", "minutes": 75, "category": "Study", "impact": "+1.2 Retention"},
-            {"title": "Cardio & Physical Recovery", "start": "17:00", "minutes": 45, "category": "Health", "impact": "+0.9 Vitality"},
-            {"title": "Spaced Repetition & Daily Synthesis", "start": "20:30", "minutes": 30, "category": "Study", "impact": "+0.7 Long-Term Retention"},
-        ]
+        if has_sleep_deficit:
+            return [
+                {"title": f"Morning Focus Sprint: {subject_name}", "start": "09:00", "minutes": 75, "category": "Study", "impact": "+1.2 Alertness Sprint"},
+                {"title": "Deep Problem Solving & Assignment", "start": "11:00", "minutes": 60, "category": "Study", "impact": "+1.0 Retention"},
+                {"title": "Circadian Recharge & 20-Min Power Nap", "start": "14:00", "minutes": 30, "category": "Health", "impact": "+1.5 Vitality & Fatigue Protection"},
+                {"title": f"Light Review & Spaced Repetition ({subject_name})", "start": "16:30", "minutes": 45, "category": "Study", "impact": "+0.8 Retention"},
+                {"title": "Early Wind-Down & Sleep Debt Reset", "start": "21:30", "minutes": 30, "category": "Health", "impact": "+1.8 Sleep Recovery"},
+            ]
+        else:
+            return [
+                {"title": f"Core Academic Focus: {subject_name}", "start": "09:00", "minutes": 90, "category": "Study", "impact": "+1.5 Cognitive Output"},
+                {"title": "Deep Problem Solving & Assignment Sprint", "start": "11:30", "minutes": 75, "category": "Study", "impact": "+1.2 Retention"},
+                {"title": "Cardio & Physical Recovery", "start": "17:00", "minutes": 45, "category": "Health", "impact": "+0.9 Vitality"},
+                {"title": f"Spaced Repetition & Daily Synthesis ({subject_name})", "start": "20:30", "minutes": 30, "category": "Study", "impact": "+0.7 Long-Term Retention"},
+            ]
     elif r == "entrepreneur":
-        return [
-            {"title": "Deep Work: Architecture & Core Strategy", "start": "08:30", "minutes": 120, "category": "Work", "impact": "+1.8 Focus & Leverage"},
-            {"title": "High-Impact Client & Team Execution Sync", "start": "11:00", "minutes": 60, "category": "Work", "impact": "+1.0 Velocity"},
-            {"title": "Product Growth & Capital Runway Review", "start": "14:30", "minutes": 90, "category": "Work", "impact": "+1.3 Capital Control"},
-            {"title": "Physical Vitality & Decompression", "start": "17:30", "minutes": 45, "category": "Health", "impact": "+0.9 Vitality Stability"},
-        ]
+        if has_sleep_deficit:
+            return [
+                {"title": "High-Priority Architecture & Core Strategy", "start": "08:30", "minutes": 90, "category": "Work", "impact": "+1.5 Focus & Leverage"},
+                {"title": "Client & Team Execution Sync", "start": "11:00", "minutes": 45, "category": "Work", "impact": "+1.0 Velocity"},
+                {"title": "Mid-Day Restorative Recharge Block", "start": "14:00", "minutes": 30, "category": "Health", "impact": "+1.4 Fatigue Protection"},
+                {"title": "Product Growth & Capital Runway Review", "start": "15:30", "minutes": 60, "category": "Work", "impact": "+1.1 Capital Control"},
+                {"title": "Decompression & Sleep Debt Recovery", "start": "21:30", "minutes": 30, "category": "Health", "impact": "+1.6 Sleep Recovery"},
+            ]
+        else:
+            return [
+                {"title": "Deep Work: Architecture & Core Strategy", "start": "08:30", "minutes": 120, "category": "Work", "impact": "+1.8 Focus & Leverage"},
+                {"title": "High-Impact Client & Team Execution Sync", "start": "11:00", "minutes": 60, "category": "Work", "impact": "+1.0 Velocity"},
+                {"title": "Product Growth & Capital Runway Review", "start": "14:30", "minutes": 90, "category": "Work", "impact": "+1.3 Capital Control"},
+                {"title": "Physical Vitality & Decompression", "start": "17:30", "minutes": 45, "category": "Health", "impact": "+0.9 Vitality Stability"},
+            ]
     elif r == "freelancer":
-        return [
-            {"title": "Client Deliverable Deep Sprint", "start": "09:00", "minutes": 90, "category": "Work", "impact": "+1.5 Billable Output"},
-            {"title": "Pipeline Comms & Client Inbound", "start": "11:30", "minutes": 45, "category": "Work", "impact": "+0.9 Cash Flow"},
-            {"title": f"Skill Mastery: {focus_area}", "start": "15:00", "minutes": 60, "category": "Study", "impact": "+1.1 Rate Leverage"},
-            {"title": "Daily Invoice & Runway Reconciliation", "start": "17:30", "minutes": 25, "category": "Money", "impact": "+0.7 Financial Buffer"},
-        ]
+        if has_sleep_deficit:
+            return [
+                {"title": "Client Deliverable Deep Sprint", "start": "09:00", "minutes": 75, "category": "Work", "impact": "+1.3 Billable Output"},
+                {"title": "Pipeline Comms & Client Inbound", "start": "11:00", "minutes": 30, "category": "Work", "impact": "+0.9 Cash Flow"},
+                {"title": "Circadian Power Nap & Walking Recharge", "start": "14:00", "minutes": 30, "category": "Health", "impact": "+1.4 Vitality Reset"},
+                {"title": f"Skill Mastery: {focus_area}", "start": "15:30", "minutes": 45, "category": "Study", "impact": "+0.9 Skill Growth"},
+                {"title": "Early Sleep Recovery & Invoice Sync", "start": "21:30", "minutes": 30, "category": "Money", "impact": "+1.5 Rest & Stability"},
+            ]
+        else:
+            return [
+                {"title": "Client Deliverable Deep Sprint", "start": "09:00", "minutes": 90, "category": "Work", "impact": "+1.5 Billable Output"},
+                {"title": "Pipeline Comms & Client Inbound", "start": "11:30", "minutes": 45, "category": "Work", "impact": "+0.9 Cash Flow"},
+                {"title": f"Skill Mastery: {focus_area}", "start": "15:00", "minutes": 60, "category": "Study", "impact": "+1.1 Rate Leverage"},
+                {"title": "Daily Invoice & Runway Reconciliation", "start": "17:30", "minutes": 25, "category": "Money", "impact": "+0.7 Financial Buffer"},
+            ]
     else:
-        return [
-            {"title": "High-Priority Deep Work Sprint", "start": "09:00", "minutes": 90, "category": "Work", "impact": "+1.4 Focus & Output"},
-            {"title": "Cross-Functional Project Execution", "start": "11:30", "minutes": 60, "category": "Work", "impact": "+1.0 Velocity"},
-            {"title": f"Technical Skill Upgrading: {focus_area}", "start": "15:30", "minutes": 45, "category": "Study", "impact": "+0.8 Career Growth"},
-            {"title": "Physical Vitality & Decompression", "start": "18:00", "minutes": 45, "category": "Health", "impact": "+1.0 Vitality"},
-        ]
+        if has_sleep_deficit:
+            return [
+                {"title": "High-Priority Deep Work Sprint", "start": "09:00", "minutes": 75, "category": "Work", "impact": "+1.3 Focus & Output"},
+                {"title": "Cross-Functional Project Execution", "start": "11:00", "minutes": 45, "category": "Work", "impact": "+0.9 Velocity"},
+                {"title": "20-Min Restorative Energy Recharge", "start": "14:00", "minutes": 30, "category": "Health", "impact": "+1.4 Fatigue Protection"},
+                {"title": f"Technical Skill Upgrading: {focus_area}", "start": "15:30", "minutes": 45, "category": "Study", "impact": "+0.8 Career Growth"},
+                {"title": "Early Wind-Down & Sleep Debt Reset", "start": "21:30", "minutes": 30, "category": "Health", "impact": "+1.6 Rest & Vitality"},
+            ]
+        else:
+            return [
+                {"title": "High-Priority Deep Work Sprint", "start": "09:00", "minutes": 90, "category": "Work", "impact": "+1.4 Focus & Output"},
+                {"title": "Cross-Functional Project Execution", "start": "11:30", "minutes": 60, "category": "Work", "impact": "+1.0 Velocity"},
+                {"title": f"Technical Skill Upgrading: {focus_area}", "start": "15:30", "minutes": 45, "category": "Study", "impact": "+0.8 Career Growth"},
+            ]
 
 def process_twin_copilot_turn(
     user_id: int,
@@ -1037,7 +1081,189 @@ def process_twin_copilot_turn(
     goal_gap = max(0.0, goal_target - goal_current)
 
 
-    # 1. DETECT MAJOR PURCHASE / MILESTONE QUERY
+    # Extract conversational context: detect if user logged sleep or study in previous messages or current turn
+    combined_user_text = " ".join([h.get("content", "") for h in history if h.get("role") == "user"] + [prompt]).lower()
+    
+    # Check for recent sleep statements in dialogue (e.g. "I slept for 5 hours", "slept 5h", "only 4 hours sleep")
+    recent_sleep_matches = re.findall(r"(?:slept\s*(?:for\s*)?|only\s*got\s*|had\s*|sleep\s*(?:was\s*)?|slept\s*)([0-9]+(?:\.[0-9]+)?)\s*(?:hours?|hrs?|h\b)", combined_user_text)
+    active_logged_sleep = float(recent_sleep_matches[-1]) if recent_sleep_matches else t_data["avg_sleep"]
+    acute_sleep_deficit = max(0.0, t_data["sleep_target"] - active_logged_sleep)
+    has_acute_sleep_deficit = active_logged_sleep < 6.2 or (bool(recent_sleep_matches) and active_logged_sleep < t_data["sleep_target"] - 0.8)
+
+    # Check for recent study statements in dialogue (e.g. "studied 2 hours for Economics", "studied Math")
+    recent_study_matches = re.findall(r"(?:studied|revised|learning|completed)\s*(?:a\s*)?([0-9]+(?:\.[0-9]+)?\s*(?:hours?|hrs?|h\b|mins?|minutes?))?\s*(?:of|for|in)?\s*([a-zA-Z0-9\s\-]+)?", combined_user_text)
+    active_study_subject = None
+    if recent_study_matches:
+        for match_item in reversed(recent_study_matches):
+            cand_subject = match_item[1].strip() if len(match_item) > 1 and match_item[1] else ""
+            cand_subject = re.sub(r"\b(?:today|yesterday|score|test|exam|with|and|hours?|mins?|for|of|in)\b.*", "", cand_subject, flags=re.IGNORECASE).strip()
+            if cand_subject and len(cand_subject) >= 3 and cand_subject.lower() not in ["study", "tasks", "routine", "planner", "my", "hours", "mins"]:
+                active_study_subject = cand_subject.title()
+                break
+
+    # 1. DETECT ACADEMIC STUDY LOGGING INTENT
+    study_log_triggers = ["i studied", "studied for", "studied ", "log study", "log my study", "log academic", "recorded study", "track study", "completed study", "finished studying"]
+    is_study_log_intent = any(k in p_lower for k in study_log_triggers) and any(w in p_lower for w in ["hour", "hours", "hr", "hrs", "min", "mins", "minute", "minutes"])
+
+    if is_study_log_intent:
+        hrs_m = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*(?:hours?|hrs?|h\b)", p_lower)
+        mins_m = re.search(r"([0-9]+)\s*(?:mins?|minutes?|m\b)", p_lower)
+        if hrs_m:
+            study_mins = int(float(hrs_m.group(1)) * 60)
+            study_hrs = float(hrs_m.group(1))
+        elif mins_m:
+            study_mins = int(mins_m.group(1))
+            study_hrs = round(study_mins / 60.0, 1)
+        else:
+            study_mins = 60
+            study_hrs = 1.0
+
+        f_score_m = re.search(r"(?:focus|rating|intensity)\s*(?:score|rating|is|of)?\s*([0-9]|10)\b", p_lower)
+        focus_score = int(f_score_m.group(1)) if f_score_m else 8
+
+        exam_m = re.search(r"(?:exam|test|quiz|grade|score)\s*(?:was|is|of|scored)?\s*([0-9]{1,3}(?:\.[0-9]+)?)\b", p_lower)
+        exam_score = float(exam_m.group(1)) if exam_m and float(exam_m.group(1)) <= 100 else None
+
+        clean_subj_str = re.sub(r"\b(?:i\s+studied|log\s+study|log\s+my\s+study|record|track|completed|finished)\b", "", prompt, flags=re.IGNORECASE)
+        clean_subj_str = re.sub(r"[0-9]+(?:\.[0-9]+)?\s*(?:hours?|hrs?|mins?|minutes?|h\b)", "", clean_subj_str, flags=re.IGNORECASE)
+        clean_subj_str = re.sub(r"(?:focus|rating|exam|test|score|quiz|with)\s*(?:was|is|of)?\s*[0-9]+(?:\.[0-9]+)?%?", "", clean_subj_str, flags=re.IGNORECASE)
+        clean_subj_str = re.sub(r"\b(?:for|of|in|today|yesterday|and|my|academic|session)\b", "", clean_subj_str, flags=re.IGNORECASE).strip(" .?!,")
+        
+        subject = clean_subj_str.title() if len(clean_subj_str) >= 2 else (active_study_subject or "Core Curriculum")
+        if len(subject) > 35:
+            subject = subject[:32] + "..."
+
+        weekly_target = t_data.get("study_target_week", 15.0)
+        current_weekly_study = t_data.get("study_hours_week", 10.0)
+        new_weekly_study = round(current_weekly_study + study_hrs, 1)
+        weekly_pct = round((new_weekly_study / weekly_target) * 100) if weekly_target > 0 else 100
+        
+        exam_str = f"{exam_score:.0f}%" if exam_score is not None else "N/A"
+        
+        advice_text = f"""### Academic Study Session Logged: **{subject}**
+
+Successfully logged your academic deep work session. Here is your updated study telemetry and retention trajectory:
+
+| Metric | Recorded Value | Target / Baseline | Trajectory Impact |
+| :--- | :--- | :--- | :--- |
+| **Subject** | **{subject}** | Academic Focus | Primary Domain |
+| **Duration** | **{study_hrs:.1f}h** ({study_mins} mins) | Daily Study Pace | +{study_hrs:.1f}h Active Focus |
+| **Focus Quality** | **{focus_score} / 10** | High Cognition Baseline | Optimal Deep State |
+| **Exam / Mastery Score** | **{exam_str}** | Competency Baseline | Validated Mastery |
+| **Weekly Target Progress** | **{new_weekly_study:.1f}h / {weekly_target:.1f}h** | {weekly_target:.1f}h / week | **{weekly_pct}% Complete** |
+
+#### Recommended Next-Phase Study Action:
+- **Spaced Repetition Review:** To maximize long-term consolidation of today's {subject} material, schedule a **15-min Active Recall & Spaced Repetition Block** tomorrow morning at **09:00**.
+- **Cognitive Decompression:** Step away from screens for 15 minutes before your next work block to reset cognitive bandwidth.
+
+Click **Confirm & Save to Academic Records** below to commit this study session directly into your database."""
+
+        if think_mode:
+            think_block = f"""<think>
+Step 1 — Goal Definition:
+• Objective: Log academic study session for "{subject}" ({study_hrs:.1f}h), compute weekly progress delta, and synthesize next-phase spaced repetition protocol.
+
+Step 2 — Telemetry Search & Gathered User Data:
+• Academic Subject: {subject} | Session Duration: {study_hrs:.1f}h ({study_mins} mins) | Focus Score: {focus_score}/10
+• Weekly Target Progression: {current_weekly_study:.1f}h -> {new_weekly_study:.1f}h / {weekly_target:.1f}h ({weekly_pct}% achieved).
+• Baseline Telemetry: Sleep = {t_data['avg_sleep']:.1f}h | Cash Flow Surplus = +${t_data['monthly_savings']:,.2f}/mo
+
+Step 3 — Multi-Criteria Analysis & Optimization:
+• Memory Consolidation Curve: Optimal Ebbinghaus forgetting curve retention achieved by scheduling active recall review within 24–48 hours.
+• Cognitive Load Balance: Weekly study hours paced safely within cognitive saturation threshold.
+
+Step 4 — Formulated Strategic Execution Plan:
+• Formatted study telemetry breakdown and prepared 1-click database logging proposal for user confirmation.
+</think>
+
+"""
+            advice_text = think_block + advice_text
+
+        action_payload = {
+            "subject": subject,
+            "duration_minutes": study_mins,
+            "focus_score": focus_score,
+            "exam_score": exam_score,
+            "notes": f"Logged via Digital Twin Copilot ({study_hrs:.1f}h {subject})"
+        }
+
+        return {
+            "content": advice_text,
+            "action_type": "log_study",
+            "action_payload": json.dumps(action_payload),
+            "action_status": "proposed"
+        }
+
+    # 2. DETECT HABIT / SLEEP / SCREEN LOGGING INTENT
+    habit_log_triggers = ["i slept", "slept for", "slept ", "only slept", "sleep was", "log sleep", "log habit", "screen time was", "log screen", "i worked out", "exercised for", "log workout"]
+    is_habit_log_intent = any(k in p_lower for k in habit_log_triggers) and any(w in p_lower for w in ["hour", "hours", "hr", "hrs", "min", "mins", "minute", "minutes", "h\b"])
+
+    if is_habit_log_intent and not is_study_log_intent:
+        if any(w in p_lower for w in ["sleep", "slept", "bed", "rest"]):
+            habit_name = "Sleep"
+            hrs_m = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*(?:hours?|hrs?|h\b)", p_lower)
+            logged_hours = float(hrs_m.group(1)) if hrs_m else 5.0
+            logged_mins = int(logged_hours * 60)
+            baseline_target = t_data["sleep_target"]
+            deficit = round(baseline_target - logged_hours, 1)
+            impact_score = 4 if logged_hours < 6.0 else 8
+            
+            status_desc = f"Acute Deficit: -{deficit:.1f}h below target" if deficit > 0 else f"+{abs(deficit):.1f}h Restorative Surplus"
+            
+            advice_text = f"""### Biometric Habit Logged: **Sleep ({logged_hours:.1f}h)**
+
+Recorded your sleep baseline for today. Here is your biometric analysis and circadian optimization strategy:
+
+| Metric | Logged Value | Target Baseline | Variance | Circadian Protocol |
+| :--- | :--- | :--- | :--- | :--- |
+| **Daily Sleep** | **{logged_hours:.1f} hours** | {baseline_target:.1f} hours | **{status_desc}** | {('Circadian Afternoon Recharge Needed' if deficit > 1.0 else 'Optimal Recovery')} |
+| **Cognitive Alertness Peak** | 09:00 – 11:30 | Natural Morning Cortisol | High Alertness | Front-load deep cognitive sprints |
+| **Fatigue Trough Window** | 13:30 – 15:30 | Post-Prandial Drop | Low Alertness | Schedule 20-min recharge / light walk |
+| **Recommended Bedtime** | 22:30 | Sleep Debt Reset | Rest Recovery | 30-min screen-free wind-down |
+
+#### Circadian Recommendations for Today:
+- **Protect Morning Cognitive Output:** Capitalize on your 09:00–11:30 cortisol peak before the afternoon dip.
+- **Afternoon Power Nap / Light Walk:** A **20-min recharge at 14:00** will neutralize fatigue without disrupting nocturnal sleep pressure.
+- **Caffeine Curfew:** Cease caffeine intake by 13:00 to prevent sleep latency degradation tonight.
+
+Click **Confirm & Save to Biometric Records** below to commit this entry to your habit logs."""
+
+            if think_mode:
+                think_block = f"""<think>
+Step 1 — Goal Definition:
+• Objective: Log {logged_hours:.1f}h sleep, compute acute sleep deficit (-{deficit:.1f}h below {baseline_target:.1f}h target), and adapt circadian performance protocol.
+
+Step 2 — Telemetry Search & Gathered User Data:
+• Logged Sleep: {logged_hours:.1f}h | Target Baseline: {baseline_target:.1f}h | Sleep Debt: {max(0.0, deficit):.1f}h
+• Role Persona: {user_info.get('role', 'professional').title()} | Cash Flow Surplus: +${t_data['monthly_savings']:,.2f}/mo
+• Measured Alertness Window: Morning peak (09:00–11:30), afternoon fatigue trough (13:30–15:30).
+
+Step 3 — Multi-Criteria Analysis & Optimization:
+• Fatigue Index: {('Acute sleep deprivation detected (<6.0h). Afternoon cognitive output adjusted -15%.' if logged_hours < 6.0 else 'Restorative sleep baseline intact.')}
+• Schedule Adaptation: Insert 20-min restorative recharge block at 14:00 and cap evening deep blocks.
+
+Step 4 — Formulated Strategic Execution Plan:
+• Formatted biometric analysis table and prepared 1-click habit record logging proposal for user confirmation.
+</think>
+
+"""
+                advice_text = think_block + advice_text
+
+            action_payload = {
+                "habit_name": "Sleep",
+                "duration_minutes": logged_mins,
+                "hours": logged_hours,
+                "impact_score": impact_score
+            }
+
+            return {
+                "content": advice_text,
+                "action_type": "log_habit",
+                "action_payload": json.dumps(action_payload),
+                "action_status": "proposed"
+            }
+
+    # 3. DETECT MAJOR PURCHASE / MILESTONE QUERY
     # e.g., "If I buy a $1,200 laptop today, how does that affect my emergency fund goal?"
     price_match = re.search(r"[$]\s*([0-9][0-9,.]*)|([0-9][0-9,.]*)\s*(?:dollars?|usd)\b", prompt, re.IGNORECASE)
     purchase_keywords = ["buy", "purchase", "spend", "cost", "afford", "get a ", "buying", "invest in a "]
@@ -1185,7 +1411,7 @@ Step 4 — Formulated Strategic Execution Plan:
     )
 
     if is_multi_task_intent:
-        tasks = build_smart_role_schedule(user_info.get("role", "professional"), user_info, t_data)
+        tasks = build_smart_role_schedule(user_info.get("role", "professional"), user_info, t_data, active_logged_sleep=active_logged_sleep, active_study_subject=active_study_subject)
         table_rows = "\n".join(
             f"| `{t['start']}` | **{t['title']}** | {t['minutes']} mins | `{t['category']}` | {t['impact']} |"
             for t in tasks

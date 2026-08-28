@@ -23,7 +23,10 @@ import {
   ChevronDown,
   ChevronRight,
   Laptop,
-  CalendarCheck
+  CalendarCheck,
+  BookOpen,
+  Moon,
+  Activity
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
@@ -402,6 +405,10 @@ export function TwinChat({
           });
           toast.success(`✓ Recorded $${cost.toLocaleString()} expense transaction`);
         }
+      } else if (msg.action_type === "log_study") {
+        toast.success(`✓ Logged ${payload.duration_minutes || 60} mins of ${payload.subject || "Study"} to academic records`);
+      } else if (msg.action_type === "log_habit") {
+        toast.success(`✓ Logged ${payload.habit_name || "Habit"} (${payload.hours || ((payload.duration_minutes || 300) / 60).toFixed(1)}h) to biometric records`);
       }
 
       setMessages((prev) =>
@@ -1229,6 +1236,132 @@ function InteractiveActionCard({
               className="h-8 px-3.5 rounded-xl text-xs bg-cyan-600 hover:bg-cyan-500 text-white font-medium flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
             >
               <CheckCircle2 className="h-3.5 w-3.5" /> Approve Changes
+            </button>
+            <button
+              type="button"
+              onClick={onReject}
+              className="h-8 px-3 rounded-xl text-xs text-muted-foreground hover:text-foreground dark:text-white/60 dark:hover:text-white hover:bg-muted dark:hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ACADEMIC STUDY LOG
+  if (action_type === "log_study") {
+    return (
+      <div className="mt-3.5 p-4 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 dark:bg-indigo-500/10 space-y-3 text-xs shadow-md">
+        <div className="flex items-center justify-between border-b border-indigo-500/15 pb-2.5">
+          <span className="font-semibold text-foreground dark:text-white flex items-center gap-1.5 text-xs sm:text-sm">
+            <BookOpen className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
+            Academic Study Record
+          </span>
+          {isExecuted ? (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3" /> Logged
+            </span>
+          ) : isRejected ? (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-muted dark:bg-white/10 text-muted-foreground dark:text-white/40 flex items-center gap-1">
+              <XCircle className="h-3 w-3" /> Dismissed
+            </span>
+          ) : (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+              Ready to Log
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-muted-foreground dark:text-white/70">
+          <div className="p-2 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5 space-y-0.5">
+            <span className="text-[10px] font-medium text-muted-foreground">SUBJECT</span>
+            <div className="font-semibold text-foreground dark:text-white truncate">{data.subject || "Academic Study"}</div>
+          </div>
+          <div className="p-2 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5 space-y-0.5">
+            <span className="text-[10px] font-medium text-muted-foreground">DURATION</span>
+            <div className="font-semibold text-foreground dark:text-white">{data.duration_minutes || 60} mins</div>
+          </div>
+          <div className="p-2 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5 space-y-0.5">
+            <span className="text-[10px] font-medium text-muted-foreground">FOCUS RATING</span>
+            <div className="font-semibold text-foreground dark:text-white">{data.focus_score || 8} / 10</div>
+          </div>
+          <div className="p-2 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5 space-y-0.5">
+            <span className="text-[10px] font-medium text-muted-foreground">EXAM SCORE</span>
+            <div className="font-semibold text-foreground dark:text-white">{data.exam_score != null ? `${data.exam_score}%` : "Tracked"}</div>
+          </div>
+        </div>
+
+        {!isExecuted && !isRejected && (
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onApprove}
+              className="h-8 px-3.5 rounded-xl text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-medium flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" /> Confirm & Log Study
+            </button>
+            <button
+              type="button"
+              onClick={onReject}
+              className="h-8 px-3 rounded-xl text-xs text-muted-foreground hover:text-foreground dark:text-white/60 dark:hover:text-white hover:bg-muted dark:hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // BIOMETRIC HABIT LOG (SLEEP, SCREEN, EXERCISE)
+  if (action_type === "log_habit") {
+    return (
+      <div className="mt-3.5 p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 space-y-3 text-xs shadow-md">
+        <div className="flex items-center justify-between border-b border-emerald-500/15 pb-2.5">
+          <span className="font-semibold text-foreground dark:text-white flex items-center gap-1.5 text-xs sm:text-sm">
+            <Moon className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+            Biometric Telemetry Record: {data.habit_name || "Sleep"}
+          </span>
+          {isExecuted ? (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3" /> Logged
+            </span>
+          ) : isRejected ? (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-muted dark:bg-white/10 text-muted-foreground dark:text-white/40 flex items-center gap-1">
+              <XCircle className="h-3 w-3" /> Dismissed
+            </span>
+          ) : (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+              Ready to Log
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-muted-foreground dark:text-white/70">
+          <div className="p-2 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5 space-y-0.5">
+            <span className="text-[10px] font-medium text-muted-foreground">METRIC</span>
+            <div className="font-semibold text-foreground dark:text-white">{data.habit_name || "Sleep"}</div>
+          </div>
+          <div className="p-2 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5 space-y-0.5">
+            <span className="text-[10px] font-medium text-muted-foreground">LOGGED AMOUNT</span>
+            <div className="font-semibold text-foreground dark:text-white">{data.hours ? `${data.hours} hours` : `${data.duration_minutes || 300} mins`}</div>
+          </div>
+          <div className="p-2 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5 space-y-0.5">
+            <span className="text-[10px] font-medium text-muted-foreground">BIOMETRIC IMPACT</span>
+            <div className="font-semibold text-foreground dark:text-white">{data.impact_score || 5} / 10 Rating</div>
+          </div>
+        </div>
+
+        {!isExecuted && !isRejected && (
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onApprove}
+              className="h-8 px-3.5 rounded-xl text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" /> Confirm & Log Habit
             </button>
             <button
               type="button"
