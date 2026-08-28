@@ -943,6 +943,38 @@ Respond with ONLY valid raw JSON in the following format:
 # CONVERSATIONAL DIGITAL TWIN COPILOT ENGINE WITH MULTI-ACTION EXECUTION
 # ==============================================================================
 
+
+def build_smart_role_schedule(role: str) -> List[Dict[str, Any]]:
+    r = role.lower()
+    if r == "student":
+        return [
+            {"title": "Core Academic Lecture / Review", "start": "09:00", "minutes": 90, "category": "Study", "impact": "+1.5 Focus"},
+            {"title": "Deep Problem Solving & Assignment", "start": "11:30", "minutes": 75, "category": "Study", "impact": "+1.2 Cognitive Output"},
+            {"title": "Cardio & Physical Recovery", "start": "17:00", "minutes": 45, "category": "Health", "impact": "+0.9 Vitality"},
+            {"title": "Spaced Repetition & Day Synthesis", "start": "20:30", "minutes": 30, "category": "Study", "impact": "+0.6 Retention"},
+        ]
+    elif r == "entrepreneur":
+        return [
+            {"title": "Deep Work: Architecture & Core Strategy", "start": "08:30", "minutes": 120, "category": "Work", "impact": "+1.8 Focus & Leverage"},
+            {"title": "High-Impact Client & Team Syncs", "start": "11:00", "minutes": 60, "category": "Work", "impact": "+1.0 Execution Velocity"},
+            {"title": "Product Growth & Market Analysis", "start": "14:30", "minutes": 90, "category": "Work", "impact": "+1.3 Capital Control"},
+            {"title": "End-of-Day Review & Runway Check", "start": "18:00", "minutes": 30, "category": "Planning", "impact": "+0.8 Clarity"},
+        ]
+    elif r == "freelancer":
+        return [
+            {"title": "Client Deliverable Deep Sprint", "start": "09:00", "minutes": 90, "category": "Work", "impact": "+1.5 Billable Output"},
+            {"title": "Proposal Pipeline & Client Comms", "start": "11:30", "minutes": 45, "category": "Work", "impact": "+0.9 Cash Flow"},
+            {"title": "Skill Mastery & Portfolio Building", "start": "15:00", "minutes": 60, "category": "Study", "impact": "+1.1 Rate Power"},
+            {"title": "Daily Invoice & Cash Flow Reconciliation", "start": "17:30", "minutes": 25, "category": "Money", "impact": "+0.7 Financial Buffer"},
+        ]
+    else:
+        return [
+            {"title": "High-Priority Deep Work Sprint", "start": "09:00", "minutes": 90, "category": "Work", "impact": "+1.4 Focus & Output"},
+            {"title": "Cross-Functional Project Execution", "start": "11:30", "minutes": 60, "category": "Work", "impact": "+1.0 Velocity"},
+            {"title": "Technical Skill Upgrading / Research", "start": "15:30", "minutes": 45, "category": "Study", "impact": "+0.8 Career Growth"},
+            {"title": "Physical Vitality & Decompression", "start": "18:00", "minutes": 45, "category": "Health", "impact": "+1.0 Vitality"},
+        ]
+
 def process_twin_copilot_turn(
     user_id: int,
     prompt: str,
@@ -1085,9 +1117,58 @@ Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impa
             "action_status": "proposed"
         }
 
+    # 1. DETECT MULTI-TASK & ROUTINE PLANNING INTENT
+    multi_task_keywords = [
+        "plan my day", "plan today", "suggest a schedule", "suggest schedule",
+        "suggest routine", "daily routine", "suggest tasks", "plan my morning",
+        "suggest some tasks", "schedule my day", "build a schedule", "optimize my day",
+        "schedule sprints", "routine for today", "plan a productive day"
+    ]
+    is_multi_task_intent = any(k in p_lower for k in multi_task_keywords) or (
+        ("schedule" in p_lower or "add" in p_lower or "plan" in p_lower) and ("tasks" in p_lower or "sprints" in p_lower or "routine" in p_lower or "blocks" in p_lower) and ("," in p_lower or "and" in p_lower or "\n" in p_lower or "deep work" in p_lower)
+    )
+
+    if is_multi_task_intent:
+        tasks = build_smart_role_schedule(user_info.get("role", "professional"))
+        table_rows = "\n".join(
+            f"| `{t['start']}` | **{t['title']}** | {t['minutes']} mins | `{t['category']}` | {t['impact']} |"
+            for t in tasks
+        )
+        advice_text = f"""### ⚡ Calibrated Daily Routine for **{user_info.get('role', 'professional').title()}**
+
+Based on your cognitive baseline and vitality targets, I have engineered an optimal high-performance daily schedule:
+
+| Time | Task / Block | Duration | Category | Predicted Impact |
+| :--- | :--- | :--- | :--- | :--- |
+{table_rows}
+
+#### 💡 Optimization Insights:
+- **Morning Peak Focus (08:30 – 11:00):** Allocated to heavy cognitive sprint tasks when circadian alertness is highest.
+- **Mid-Day Execution (11:30 – 16:00):** Tactical execution and career skill building.
+- **Decompression & Vitality:** Protected workout and recovery block to maintain your **Health Index**.
+
+Click **Approve & Add All Tasks** below to inject all {len(tasks)} time-blocks directly into your Daily Planner."""
+
+        if think_mode:
+            think_block = f"""<think>
+• Intent Recognized: Multi-task routine scheduling & productivity planning.
+• Role Calibration: Calibrating for {user_info.get('role', 'professional').upper()} routine.
+• Schedule Synthesis: Generated {len(tasks)} non-overlapping time blocks totaling {sum(t['minutes'] for t in tasks)} minutes of intentional focus.
+• Net Predicted Impact: +1.8 Cumulative Focus Index, +1.0 Vitality Stability.
+</think>
+
+"""
+            advice_text = think_block + advice_text
+
+        return {
+            "content": advice_text,
+            "action_type": "add_multiple_tasks",
+            "action_payload": json.dumps({"tasks": tasks}),
+            "action_status": "proposed"
+        }
+
     # 2. DETECT WHAT-IF SIMULATOR SCENARIO INTENT
-    # e.g., "What if I sleep 6 hours, study 15 hours, and save $500 more?"
-    what_if_keywords = ["what if", "simulate", "if i sleep", "if i study", "cut sleep", "more savings", "less sleep", "routine", "scenario"]
+    what_if_keywords = ["what if", "simulate", "if i sleep", "if i study", "cut sleep", "more savings", "less sleep", "scenario", "sleep less", "study more"]
     is_what_if = any(k in p_lower for k in what_if_keywords) and not is_purchase_query
 
     if is_what_if:
@@ -1175,13 +1256,59 @@ Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impa
             "action_status": "proposed"
         }
 
-    # 3. DETECT TASK / HABIT CREATION INTENT
-    # e.g., "Add a 45 min deep work sprint to my tasks at 9:00 AM"
-    task_keywords = ["add task", "add a task", "schedule a task", "create task", "add habit", "schedule habit", "block time", "add deep work", "add study sprint", "remind me to"]
-    is_task_intent = any(k in p_lower for k in task_keywords) or (("add" in p_lower or "schedule" in p_lower) and ("min" in p_lower or "minute" in p_lower or "hour" in p_lower or "am" in p_lower or "pm" in p_lower))
+    # 3. DETECT MULTI-TASK / ROUTINE PLANNING OR SINGLE TASK INTENT
+    multi_task_keywords = [
+        "plan my day", "plan today", "suggest a schedule", "suggest schedule",
+        "suggest routine", "daily routine", "suggest tasks", "plan my morning",
+        "suggest some tasks", "schedule my day", "optimize my day", "routine for today", "schedule sprints"
+    ]
+    is_multi_task_intent = any(k in p_lower for k in multi_task_keywords) or (
+        ("schedule" in p_lower or "add" in p_lower) and ("tasks" in p_lower or "sprints" in p_lower or "routine" in p_lower) and ("," in p_lower or "and" in p_lower or "\n" in p_lower)
+    )
 
-    if is_task_intent:
-        # Extract minutes
+    if is_multi_task_intent:
+        tasks = build_smart_role_schedule(user_info.get("role", "professional"))
+        table_rows = "\n".join(
+            f"| `{t['start']}` | **{t['title']}** | {t['minutes']} mins | `{t['category']}` | {t['impact']} |"
+            for t in tasks
+        )
+        advice_text = f"""### ⚡ Calibrated Daily Routine for **{user_info.get('role', 'professional').title()}**
+
+Based on your cognitive baseline and vitality targets, I have engineered an optimal high-performance daily schedule:
+
+| Time | Task / Block | Duration | Category | Predicted Impact |
+| :--- | :--- | :--- | :--- | :--- |
+{table_rows}
+
+#### 💡 Optimization Insights:
+- **Morning Peak Focus (08:30 – 11:00):** Allocated to heavy cognitive sprint tasks when circadian alertness is highest.
+- **Mid-Day Execution (11:30 – 16:00):** Tactical execution and career skill building.
+- **Decompression & Vitality:** Protected workout and recovery block to maintain your **Health Index**.
+
+Click **Approve & Add All Tasks** below to inject all {len(tasks)} time-blocks directly into your Daily Planner."""
+
+        if think_mode:
+            think_block = f"""<think>
+• Intent Recognized: Multi-task routine scheduling & productivity planning.
+• Role Calibration: Calibrating for {user_info.get('role', 'professional').upper()} routine.
+• Schedule Synthesis: Generated {len(tasks)} non-overlapping time blocks totaling {sum(t['minutes'] for t in tasks)} minutes of intentional focus.
+• Net Predicted Impact: +1.8 Cumulative Focus Index, +1.0 Vitality Stability.
+</think>
+
+"""
+            advice_text = think_block + advice_text
+
+        return {
+            "content": advice_text,
+            "action_type": "add_multiple_tasks",
+            "action_payload": json.dumps({"tasks": tasks}),
+            "action_status": "proposed"
+        }
+
+    task_keywords = ["add task", "add a task", "schedule a task", "create task", "add habit", "schedule habit", "block time", "add deep work", "add study sprint", "remind me to"]
+    is_single_task_intent = any(k in p_lower for k in task_keywords) or (("add" in p_lower or "schedule" in p_lower) and ("min" in p_lower or "minute" in p_lower or "hour" in p_lower or "am" in p_lower or "pm" in p_lower))
+
+    if is_single_task_intent:
         min_m = re.search(r"(\d+)\s*(?:min|minute|minutes|m\b)", p_lower)
         hrs_m = re.search(r"(\d+(?:\.\d+)?)\s*(?:hour|hours|hr|hrs|h\b)", p_lower)
         if min_m:
@@ -1191,15 +1318,9 @@ Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impa
         else:
             duration = 45
 
-        # Extract time
         time_m = re.search(r"(\d{1,2}(?::\d{2})?\s*(?:am|pm)|\d{1,2}:\d{2})", p_lower)
-        if time_m:
-            raw_time = time_m.group(1).upper()
-            start_time = raw_time
-        else:
-            start_time = "09:00"
+        start_time = time_m.group(1).upper() if time_m else "09:00"
 
-        # Determine Category
         category = "Work"
         if any(w in p_lower for w in ["study", "syllabus", "exam", "reading", "learn", "course", "lecture"]):
             category = "Study"
@@ -1210,11 +1331,10 @@ Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impa
         elif any(w in p_lower for w in ["family", "hobby", "social", "clean", "personal"]):
             category = "Personal"
 
-        # Extract Title
         clean_title = re.sub(r"^(?:please\s+)?(?:can\s+you\s+)?(?:add\s+a?\s*|create\s+a?\s*|schedule\s+a?\s*)", "", prompt, flags=re.IGNORECASE).strip()
         clean_title = re.sub(r"(?:at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?|\b\d+\s*min(?:ute)?s?|\b\d+\s*hours?|\bto\s+my\s+(?:tasks?|planner|schedule))", "", clean_title, flags=re.IGNORECASE).strip()
         if not clean_title or len(clean_title) < 3:
-            clean_title = f"{category} Sprint Session"
+            clean_title = f"{category} Sprint Block"
 
         clean_title = clean_title.strip(" .?!,")
         if len(clean_title) > 50:
@@ -1226,11 +1346,13 @@ Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impa
 
 I have structured a new time-block calibrated for your **{user_info.get('role', 'professional').title()}** routine:
 
-- **Task Title:** {clean_title}
-- **Scheduled Time:** {start_time}
-- **Duration:** {duration} minutes
-- **Category:** {category}
-- **Predicted Impact:** {impact_desc}
+| Attribute | Scheduled Value |
+| :--- | :--- |
+| **Task Title** | {clean_title} |
+| **Scheduled Time** | `{start_time}` |
+| **Duration** | {duration} minutes |
+| **Category** | `{category}` |
+| **Predicted Impact** | {impact_desc} |
 
 Click **Approve & Add Task** below to append this directly to your Daily Planner."""
 
@@ -1413,7 +1535,7 @@ GUIDELINES:
 
             # Try primary available models
             reply = ""
-            for model_candidate in ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"]:
+            for model_candidate in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama3-8b-8192", "mixtral-8x7b-32768", "gemma2-9b-it"]:
                 try:
                     resp = client.chat.completions.create(
                         model=model_candidate,
@@ -1448,7 +1570,7 @@ GUIDELINES:
             print(f"Error invoking Groq Copilot chat: {e}")
 
     # Natural Conversational Fallback if offline
-    if any(g in p_lower for g in ["hi", "hello", "hey", "who are you", "what can you do", "help"]):
+    if re.search(r"\b(hi|hello|hey|greetings|help)\b|^who are you|^what can you do", p_lower):
         fallback_reply = f"""Hello {user_info.get('username', 'there')}! 👋 
 
 I'm your **Digital Twin AI Copilot**. I analyze your routines, productivity, and finances to help you optimize your daily performance and simulate future scenarios.

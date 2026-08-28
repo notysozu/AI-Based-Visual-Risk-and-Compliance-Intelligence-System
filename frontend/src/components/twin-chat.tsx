@@ -22,7 +22,8 @@ import {
   Send,
   ChevronDown,
   ChevronRight,
-  Laptop
+  Laptop,
+  CalendarCheck
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
@@ -49,20 +50,20 @@ const DEMO_CARDS = [
     color: "text-blue-500 bg-blue-500/10 border-blue-500/20"
   },
   {
+    title: "Optimize Daily Routine",
+    desc: "Suggest and schedule optimal focus & vitality blocks",
+    prompt: "Plan my day with high-impact deep work and recovery blocks",
+    icon: CalendarCheck,
+    badge: "Multi-Task",
+    color: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20"
+  },
+  {
     title: "Sleep & Study Shift",
     desc: "Simulate habit tradeoffs against vitality & focus indices",
     prompt: "What if I study 5 more hours a week and sleep 30 mins less?",
     icon: BrainCircuit,
     badge: "What-If",
     color: "text-purple-500 bg-purple-500/10 border-purple-500/20"
-  },
-  {
-    title: "Focus Sprint Block",
-    desc: "Add deep work time-block directly to Daily Planner",
-    prompt: "Add a 45 min deep work sprint at 10:00 AM",
-    icon: Clock,
-    badge: "Planner",
-    color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20"
   },
   {
     title: "Monte Carlo Wealth Plan",
@@ -179,7 +180,6 @@ export function TwinChat({
           if (selectedSessionId && data.some((s) => s.id === selectedSessionId)) {
             setActiveSessionId(selectedSessionId);
           } else if (!activeSessionId || !data.some((s) => s.id === activeSessionId)) {
-            // Default to the latest conversation
             setActiveSessionId(data[0].id);
           }
         }
@@ -241,7 +241,7 @@ export function TwinChat({
       recognition.onresult = (event: any) => {
         let transcript = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-          transcript += event.results[i][0].transcript;
+          transcript += event.resultIndex !== undefined ? event.results[i][0].transcript : "";
         }
         if (transcript) {
           setInputPrompt(transcript);
@@ -303,7 +303,7 @@ export function TwinChat({
         netWorth: state.profile.netWorth
       };
 
-      // Case A: Draft mode (no active session yet) -> Create session with AI-summarized title on first message
+      // Case A: Draft mode (no active session yet)
       if (!activeSessionId) {
         const res = await createThreadAndSendMessage({
           user_id: Number(userId),
@@ -315,8 +315,6 @@ export function TwinChat({
         setActiveSessionId(res.session.id);
         setMessages([res.user_message, res.assistant_message]);
         setSessions((prev) => [res.session, ...prev.filter((s) => s.id !== res.session.id)]);
-        
-        // Notify sidebar
         window.dispatchEvent(new Event("chat-sessions-updated"));
       } else {
         // Case B: Existing session
@@ -357,7 +355,20 @@ export function TwinChat({
         action_payload: payload
       });
 
-      if (msg.action_type === "add_task") {
+      if (msg.action_type === "add_multiple_tasks") {
+        const tasks = payload.tasks || [];
+        for (const t of tasks) {
+          addTask({
+            title: t.title || "Focus Block",
+            start: t.start || "09:00",
+            minutes: Number(t.minutes || 45),
+            category: t.category || "Work",
+            done: false,
+            date: today()
+          });
+        }
+        toast.success(`✓ Added ${tasks.length} tasks directly to your Daily Planner`);
+      } else if (msg.action_type === "add_task") {
         addTask({
           title: payload.title || "Focus Sprint",
           start: payload.start || "09:00",
@@ -524,16 +535,13 @@ export function TwinChat({
           </div>
         )}
 
+        {/* Dynamic "Thinking..." Loading Indicator */}
         {loading && (
           <div className="max-w-3xl mx-auto flex gap-3.5 justify-start items-center text-xs text-muted-foreground dark:text-white/60 animate-pulse">
-            <div className="h-7 w-7 rounded-full bg-muted dark:bg-white/10 text-[#0071E3] flex items-center justify-center">
+            <div className="h-7 w-7 rounded-full bg-muted dark:bg-white/10 text-[#0071E3] flex items-center justify-center shadow-xs">
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />
             </div>
-            <span>
-              {isThinkMode
-                ? "Evaluating telemetry & synthesizing reasoning..."
-                : "Computing simulation response..."}
-            </span>
+            <span className="font-medium tracking-wide">Thinking...</span>
           </div>
         )}
 
@@ -626,7 +634,7 @@ export function TwinChat({
 }
 
 // -----------------------------------------------------------------------------
-// Message Item with Collapsible Thinking Box & Markdown Formatter
+// Message Item with Collapsible Thinking Box & Formatted Markdown
 // -----------------------------------------------------------------------------
 
 function ChatMessageItem({
@@ -654,6 +662,11 @@ function ChatMessageItem({
     thoughtContent = thinkMatch[1].trim();
     mainContent = message.content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
   }
+
+  // Sanitize and replace <br> tags with standard markdown line breaks
+  const sanitizedMarkdown = mainContent
+    .replace(/<br\s*\/?>/gi, "\n\n")
+    .replace(/([^\n])\n(\|[\s\S]+?\|)\n/g, "$1\n\n$2\n");
 
   return (
     <div
@@ -737,6 +750,27 @@ function ChatMessageItem({
                       {...props}
                     />
                   ),
+                  // Styled Markdown Tables
+                  table: ({ node, ...props }) => (
+                    <div className="my-3 w-full overflow-x-auto rounded-xl border border-border/70 dark:border-white/10 shadow-xs bg-card/60 dark:bg-white/2">
+                      <table className="w-full text-left border-collapse text-xs sm:text-sm" {...props} />
+                    </div>
+                  ),
+                  thead: ({ node, ...props }) => (
+                    <thead className="bg-muted/80 dark:bg-white/10 text-foreground dark:text-white border-b border-border/70 dark:border-white/10 font-semibold" {...props} />
+                  ),
+                  tbody: ({ node, ...props }) => (
+                    <tbody className="divide-y divide-border/40 dark:divide-white/5" {...props} />
+                  ),
+                  tr: ({ node, ...props }) => (
+                    <tr className="hover:bg-muted/40 dark:hover:bg-white/5 transition-colors" {...props} />
+                  ),
+                  th: ({ node, ...props }) => (
+                    <th className="px-3.5 py-2.5 font-semibold text-xs text-foreground dark:text-white border-r border-border/30 dark:border-white/5 last:border-r-0" {...props} />
+                  ),
+                  td: ({ node, ...props }) => (
+                    <td className="px-3.5 py-2.5 text-xs text-foreground/90 dark:text-white/80 border-r border-border/20 dark:border-white/5 last:border-r-0" {...props} />
+                  ),
                   code: ({ node, inline, ...props }: any) =>
                     inline ? (
                       <code className="font-mono bg-muted dark:bg-white/10 px-1.5 py-0.5 rounded text-[11px] text-[#0071E3] dark:text-blue-400" {...props} />
@@ -747,7 +781,7 @@ function ChatMessageItem({
                     )
                 }}
               >
-                {mainContent}
+                {sanitizedMarkdown}
               </ReactMarkdown>
 
               <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 mt-2 text-[11px] text-muted-foreground dark:text-white/40">
@@ -796,7 +830,7 @@ function ChatMessageItem({
 }
 
 // -----------------------------------------------------------------------------
-// Interactive Action Card Component with User Approval Flow
+// Interactive Action Card Component with Multi-Task Support
 // -----------------------------------------------------------------------------
 
 function InteractiveActionCard({
@@ -823,17 +857,19 @@ function InteractiveActionCard({
   const isExecuted = action_status === "executed" || action_status === "approved";
   const isRejected = action_status === "rejected";
 
-  if (action_type === "purchase_impact") {
+  // MULTI-TASK SCHEDULE PROPOSAL
+  if (action_type === "add_multiple_tasks") {
+    const tasks = data.tasks || [];
     return (
-      <div className="mt-3.5 p-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 dark:bg-blue-500/10 space-y-3 text-xs shadow-md">
-        <div className="flex items-center justify-between border-b border-blue-500/15 pb-2.5">
+      <div className="mt-3.5 p-4 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 dark:bg-indigo-500/10 space-y-3 text-xs shadow-md">
+        <div className="flex items-center justify-between border-b border-indigo-500/15 pb-2.5">
           <span className="font-semibold text-foreground dark:text-white flex items-center gap-1.5 text-xs sm:text-sm">
-            <DollarSign className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
-            Purchase Analysis: {data.item_name} (${Number(data.cost).toLocaleString()})
+            <Clock className="h-4 w-4 text-[#0071E3]" />
+            Calibrated Daily Schedule ({tasks.length} Blocks)
           </span>
           {isExecuted ? (
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3" /> Approved & Logged
+              <CheckCircle2 className="h-3 w-3" /> All {tasks.length} Tasks Added to Planner
             </span>
           ) : isRejected ? (
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-muted dark:bg-white/10 text-muted-foreground dark:text-white/40 flex items-center gap-1">
@@ -841,36 +877,27 @@ function InteractiveActionCard({
             </span>
           ) : (
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-              Pending Approval
+              Needs Approval
             </span>
           )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-          <div className="p-2.5 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5">
-            <span className="text-[10px] text-muted-foreground dark:text-white/50 block">Goal Delay</span>
-            <span className="font-semibold text-rose-500 dark:text-rose-400 font-mono">
-              +{data.delay_months} months
-            </span>
-          </div>
-          <div className="p-2.5 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5">
-            <span className="text-[10px] text-muted-foreground dark:text-white/50 block">Post-Buy Progress</span>
-            <span className="font-semibold text-foreground dark:text-white font-mono">
-              ${Number(data.new_progress).toLocaleString()}
-            </span>
-          </div>
-          <div className="p-2.5 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5">
-            <span className="text-[10px] text-muted-foreground dark:text-white/50 block">5Y Foregone Growth</span>
-            <span className="font-semibold text-amber-500 dark:text-amber-400 font-mono">
-              -${Number(data.foregone_growth).toLocaleString()}
-            </span>
-          </div>
-          <div className="p-2.5 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5">
-            <span className="text-[10px] text-muted-foreground dark:text-white/50 block">Success Odds</span>
-            <span className="font-semibold text-emerald-500 dark:text-emerald-400 font-mono">
-              {data.prob_after}%
-            </span>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+          {tasks.map((t: any, idx: number) => (
+            <div
+              key={idx}
+              className="p-2.5 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5 space-y-1"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[10px] bg-muted/70 dark:bg-white/10 px-1.5 py-0.5 rounded font-semibold text-[#0071E3]">
+                  {t.start} ({t.minutes}m)
+                </span>
+                <span className="text-[10px] text-muted-foreground dark:text-white/50 font-mono uppercase">{t.category}</span>
+              </div>
+              <p className="font-semibold text-foreground dark:text-white text-xs truncate">{t.title}</p>
+              <p className="text-[10.5px] text-emerald-500 dark:text-emerald-400">{t.impact}</p>
+            </div>
+          ))}
         </div>
 
         {!isExecuted && !isRejected && (
@@ -878,9 +905,9 @@ function InteractiveActionCard({
             <button
               type="button"
               onClick={onApprove}
-              className="h-8 px-3.5 rounded-xl text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="h-8 px-3.5 rounded-xl text-xs bg-[#0071E3] hover:bg-[#0071E3]/90 text-white font-medium flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
             >
-              <CheckCircle2 className="h-3.5 w-3.5" /> Approve & Record Expense
+              <CheckCircle2 className="h-3.5 w-3.5" /> Approve & Add All {tasks.length} Tasks
             </button>
             <button
               type="button"
@@ -895,6 +922,7 @@ function InteractiveActionCard({
     );
   }
 
+  // SINGLE TASK ADDITION
   if (action_type === "add_task") {
     return (
       <div className="mt-3.5 p-4 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 dark:bg-indigo-500/10 space-y-3 text-xs shadow-md">
@@ -959,6 +987,80 @@ function InteractiveActionCard({
     );
   }
 
+  // PURCHASE TRADEOFF IMPACT
+  if (action_type === "purchase_impact") {
+    return (
+      <div className="mt-3.5 p-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 dark:bg-blue-500/10 space-y-3 text-xs shadow-md">
+        <div className="flex items-center justify-between border-b border-blue-500/15 pb-2.5">
+          <span className="font-semibold text-foreground dark:text-white flex items-center gap-1.5 text-xs sm:text-sm">
+            <DollarSign className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+            Purchase Analysis: {data.item_name} (${Number(data.cost).toLocaleString()})
+          </span>
+          {isExecuted ? (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3" /> Approved & Logged
+            </span>
+          ) : isRejected ? (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-muted dark:bg-white/10 text-muted-foreground dark:text-white/40 flex items-center gap-1">
+              <XCircle className="h-3 w-3" /> Dismissed
+            </span>
+          ) : (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+              Pending Approval
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+          <div className="p-2.5 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5">
+            <span className="text-[10px] text-muted-foreground dark:text-white/50 block">Goal Delay</span>
+            <span className="font-semibold text-rose-500 dark:text-rose-400 font-mono">
+              +{data.delay_months} months
+            </span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5">
+            <span className="text-[10px] text-muted-foreground dark:text-white/50 block">Post-Buy Progress</span>
+            <span className="font-semibold text-foreground dark:text-white font-mono">
+              ${Number(data.new_progress).toLocaleString()}
+            </span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5">
+            <span className="text-[10px] text-muted-foreground dark:text-white/50 block">5Y Foregone Growth</span>
+            <span className="font-semibold text-amber-500 dark:text-amber-400 font-mono">
+              -${Number(data.foregone_growth).toLocaleString()}
+            </span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5">
+            <span className="text-[10px] text-muted-foreground dark:text-white/50 block">Savings Pace</span>
+            <span className="font-semibold text-emerald-500 dark:text-emerald-400 font-mono">
+              ${Number(data.monthly_savings).toLocaleString()}/mo
+            </span>
+          </div>
+        </div>
+
+        {!isExecuted && !isRejected && (
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onApprove}
+              className="h-8 px-3.5 rounded-xl text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" /> Approve & Record Expense
+            </button>
+            <button
+              type="button"
+              onClick={onReject}
+              className="h-8 px-3 rounded-xl text-xs text-muted-foreground hover:text-foreground dark:text-white/60 dark:hover:text-white hover:bg-muted dark:hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // WHAT-IF SCENARIO SIMULATION
   if (action_type === "simulate_what_if") {
     return (
       <div className="mt-3.5 p-4 rounded-2xl border border-purple-500/20 bg-purple-500/5 dark:bg-purple-500/10 space-y-3 text-xs shadow-md">
@@ -1035,6 +1137,7 @@ function InteractiveActionCard({
     );
   }
 
+  // WEALTH PROJECTION FORECAST
   if (action_type === "wealth_forecast") {
     return (
       <div className="mt-3.5 p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 space-y-3 text-xs shadow-md">
@@ -1082,6 +1185,7 @@ function InteractiveActionCard({
     );
   }
 
+  // PROFILE SETTINGS UPDATE
   if (action_type === "update_settings") {
     return (
       <div className="mt-3.5 p-4 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 dark:bg-cyan-500/10 space-y-3 text-xs shadow-md">

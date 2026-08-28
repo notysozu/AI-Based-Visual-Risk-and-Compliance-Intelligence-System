@@ -372,30 +372,34 @@ def execute_chat_action(
     payload = req.action_payload
     execution_result = {}
 
-    if action_type == "add_task":
+    if action_type in ["add_task", "add_multiple_tasks"]:
         import time
-        sug_id = f"chat-task-{int(time.time())}"
-        saved_sug = models.UserSuggestion(
-            user_id=user.id,
-            suggestion_id=sug_id,
-            title=payload.get("title", "Focus Session"),
-            category=payload.get("category", "Focus"),
-            detail=f"Added via Digital Twin Copilot at {payload.get('start', '09:00')}",
-            impact=payload.get("impact", "+1.0 focus"),
-            start_time=payload.get("start", "09:00"),
-            duration_minutes=int(payload.get("minutes", 45)),
-            is_adopted=1,
-            is_ai_generated=1
-        )
-        db.add(saved_sug)
+        tasks_to_add = payload.get("tasks") if action_type == "add_multiple_tasks" else [payload]
+        created_list = []
+        for idx, t in enumerate(tasks_to_add):
+            sug_id = f"chat-task-{int(time.time())}-{idx}"
+            saved_sug = models.UserSuggestion(
+                user_id=user.id,
+                suggestion_id=sug_id,
+                title=t.get("title", "Focus Session"),
+                category=t.get("category", "Work"),
+                detail=f"Scheduled via Digital Twin Copilot at {t.get('start', '09:00')}",
+                impact=t.get("impact", "+0.8 Focus"),
+                start_time=t.get("start", "09:00"),
+                duration_minutes=int(t.get("minutes", 45)),
+                is_adopted=1,
+                is_ai_generated=1
+            )
+            db.add(saved_sug)
+            created_list.append({
+                "task_id": sug_id,
+                "title": saved_sug.title,
+                "category": saved_sug.category,
+                "start": saved_sug.start_time,
+                "minutes": saved_sug.duration_minutes
+            })
         db.commit()
-        execution_result = {
-            "task_id": sug_id,
-            "title": saved_sug.title,
-            "category": saved_sug.category,
-            "start": saved_sug.start_time,
-            "minutes": saved_sug.duration_minutes
-        }
+        execution_result = {"tasks": created_list, "count": len(created_list)}
 
     elif action_type == "update_settings":
         for key, val in payload.items():
@@ -430,7 +434,7 @@ def execute_chat_action(
             db.commit()
             execution_result = {"deducted_net_worth": cost, "remaining_net_worth": user.net_worth}
 
-    crud.update_chat_message_action_status(db, message_id, "executed")
+    crud.update_chat_action_status(db, message_id, "executed")
 
     return {
         "status": "success",
@@ -456,5 +460,5 @@ def reject_chat_action(
     if not session or session.user_id != req.user_id:
         raise HTTPException(status_code=403, detail="Unauthorized action on this session")
 
-    crud.update_chat_message_action_status(db, message_id, "rejected")
+    crud.update_chat_action_status(db, message_id, "rejected")
     return {"status": "rejected", "message_id": message_id}
