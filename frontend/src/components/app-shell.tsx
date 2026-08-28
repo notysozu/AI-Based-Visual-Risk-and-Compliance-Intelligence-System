@@ -159,7 +159,7 @@ export function AppShell({
         }`}
       >
         {/* Brand Header: Logo + Title + Collapse Toggle (Hidden when collapsed) */}
-        <div className="flex h-16 items-center justify-between px-3.5 border-b border-border/40 shrink-0">
+        <div className={`flex h-16 items-center border-b border-border/40 shrink-0 ${collapsed ? "justify-center px-0" : "justify-between px-3.5"}`}>
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0071E3] via-indigo-600 to-purple-600 text-white shadow-[0_4px_14px_rgba(0,113,227,0.35)] shrink-0">
               <Sparkles className="h-4 w-4 shrink-0" />
@@ -188,7 +188,7 @@ export function AppShell({
         </div>
 
         {/* Scrollable Recent Chats Section with '+' New Chat icon beside heading */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
+        <div className={`flex-1 overflow-y-auto space-y-1 min-h-0 ${collapsed ? "p-1.5 flex flex-col items-center" : "p-2"}`}>
           {!collapsed ? (
             <div className="px-2 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
               <span>Recent Chats</span>
@@ -198,32 +198,36 @@ export function AppShell({
                 className="h-6 w-6 rounded-lg hover:bg-muted dark:hover:bg-white/10 flex items-center justify-center text-[#0071E3] hover:text-[#0071E3]/80 transition-colors cursor-pointer"
                 title="New Chat"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4 shrink-0" />
               </button>
             </div>
           ) : (
-            <div className="p-1 flex justify-center">
+            <div className="py-1 w-full flex justify-center">
               <button
                 type="button"
                 onClick={handleNewChatDraft}
-                className="h-8 w-8 rounded-xl bg-card dark:bg-white/10 hover:bg-muted dark:hover:bg-white/15 flex items-center justify-center text-[#0071E3] shadow-2xs cursor-pointer"
+                className="h-9 w-9 rounded-xl bg-card dark:bg-white/10 hover:bg-muted dark:hover:bg-white/15 flex items-center justify-center text-[#0071E3] shadow-2xs cursor-pointer border border-border/40 dark:border-white/10 transition-transform active:scale-95"
                 title="New Chat"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4 shrink-0" />
               </button>
             </div>
           )}
 
-          <nav className="flex flex-col gap-1">
+          <nav className={`flex flex-col gap-1 ${collapsed ? "w-full items-center" : "w-full"}`}>
             {sidebarSessions.map((s) => (
               <button
                 key={s.id}
                 type="button"
                 onClick={() => handleSelectThread(s.id)}
                 title={s.title}
-                className="w-full text-left group flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-all duration-150 cursor-pointer"
+                className={`group flex items-center rounded-xl text-xs font-semibold text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-all duration-150 cursor-pointer ${
+                  collapsed
+                    ? "h-9 w-9 justify-center p-0"
+                    : "w-full justify-between px-3 py-2 text-left"
+                }`}
               >
-                <div className="flex items-center gap-2.5 truncate min-w-0">
+                <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5 truncate min-w-0"}`}>
                   <MessageSquare className="h-4 w-4 text-[#0071E3] shrink-0 opacity-70 group-hover:opacity-100 transition-transform group-hover:scale-110" />
                   {!collapsed && <span className="truncate max-w-[145px]">{s.title}</span>}
                 </div>
@@ -242,14 +246,14 @@ export function AppShell({
         </div>
 
         {/* Pinned Lower Section: Modules & Telemetry Tools (Stuck to Bottom) */}
-        <div className="mt-auto border-t border-border/40 p-2 space-y-1 bg-sidebar/95 dark:bg-[#141414]/95 shrink-0">
+        <div className={`mt-auto border-t border-border/40 space-y-1 bg-sidebar/95 dark:bg-[#141414]/95 shrink-0 ${collapsed ? "p-1.5 flex flex-col items-center" : "p-2"}`}>
           {!collapsed && (
             <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
               <span>Modules & Tools</span>
             </div>
           )}
 
-          <nav className="flex flex-col gap-1">
+          <nav className={`flex flex-col gap-1 ${collapsed ? "w-full items-center" : "w-full"}`}>
             {moduleItems.map((item) => {
               const active = pathname === item.to;
               return (
@@ -257,7 +261,11 @@ export function AppShell({
                   key={item.to}
                   to={item.to}
                   title={item.label}
-                  className={`group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-150 ${
+                  className={`group flex items-center rounded-xl text-xs font-semibold transition-all duration-150 ${
+                    collapsed
+                      ? "h-9 w-9 justify-center p-0"
+                      : "gap-2.5 px-3 py-2 w-full"
+                  } ${
                     active
                       ? "bg-card text-foreground shadow-2xs border border-border/60"
                       : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
@@ -276,19 +284,23 @@ export function AppShell({
         </div>
 
         {/* Bottom Collapse / Expand Button */}
-        <div className="p-2 border-t border-border/40 shrink-0 bg-sidebar/95 dark:bg-[#141414]/95">
+        <div className={`border-t border-border/40 shrink-0 bg-sidebar/95 dark:bg-[#141414]/95 ${collapsed ? "p-1.5 flex justify-center" : "p-2"}`}>
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start gap-2.5 rounded-xl text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+            className={`rounded-xl text-xs text-muted-foreground hover:text-foreground cursor-pointer ${
+              collapsed
+                ? "h-9 w-9 justify-center p-0"
+                : "w-full justify-start gap-2.5 px-3"
+            }`}
             onClick={() => setCollapsed((v) => !v)}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? (
-              <PanelLeftOpen className="h-4 w-4 text-[#0071E3]" />
+              <PanelLeftOpen className="h-4 w-4 text-[#0071E3] shrink-0" />
             ) : (
               <>
-                <PanelLeftClose className="h-4 w-4" />
+                <PanelLeftClose className="h-4 w-4 shrink-0" />
                 <span>Collapse Sidebar</span>
               </>
             )}
