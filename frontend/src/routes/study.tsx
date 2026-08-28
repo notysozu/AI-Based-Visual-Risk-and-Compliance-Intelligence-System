@@ -57,7 +57,7 @@ import { tooltipStyle } from "@/routes/dashboard";
 export const Route = createFileRoute("/study")({
   head: () => ({
     meta: [
-      { title: "Study & Productivity Intelligence — VisualRisk AI" },
+      { title: "Study & Productivity Intelligence — Visual Risk AI" },
       {
         name: "description",
         content: "Analyze study schedules, predict academic performance, and generate AI study plans.",

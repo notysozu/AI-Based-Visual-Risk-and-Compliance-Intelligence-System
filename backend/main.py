@@ -12,8 +12,8 @@ from database.database import SessionLocal
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="AI-Based Visual Risk and Compliance Intelligence System (VisualRisk AI)",
-    description="Backend services for AI-Based Visual Risk and Compliance Intelligence System (VisualRisk AI).",
+    title="AI-Based Visual Risk and Compliance Intelligence System (Visual Risk AI)",
+    description="Backend services for AI-Based Visual Risk and Compliance Intelligence System (Visual Risk AI).",
     version="1.0.0"
 )
 

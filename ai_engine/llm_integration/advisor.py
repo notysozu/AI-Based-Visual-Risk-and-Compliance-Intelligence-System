@@ -67,7 +67,7 @@ def process_twin_copilot_turn(
     think_mode: bool = False
 ) -> Dict[str, Any]:
     """
-    Process a conversational turn with the VisualRisk Copilot.
+    Process a conversational turn with the Visual Risk Copilot.
     Dispatches across modular intent processors (study logging, habit logging, purchase simulations,
     routine schedules, What-If comparisons, single tasks, wealth forecasts, settings updates).
     Falls back to conversational Groq inference if no structured intent is triggered.
@@ -170,7 +170,7 @@ def process_twin_copilot_turn(
     messages_payload = [
         {
             "role": "system",
-            "content": f"""You are the VisualRisk AI Copilot for {user_info.get('username', 'User')}, a {user_info.get('role', 'professional')}.
+            "content": f"""You are the Visual Risk AI Copilot for {user_info.get('username', 'User')}, a {user_info.get('role', 'professional')}.
 Provide clear, actionable, high-leverage insights and recommendations.
 Never use emojis in responses or thought chains.
 User Telemetry Baseline:

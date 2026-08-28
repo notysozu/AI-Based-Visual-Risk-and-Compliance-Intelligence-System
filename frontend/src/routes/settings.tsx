@@ -24,7 +24,8 @@ import {
   AlertTriangle,
   ChevronRight,
   Zap,
-  Target
+  Target,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,9 +47,9 @@ import {
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — VisualRisk AI (VRCI)" },
+      { title: "Settings — Visual Risk AI (VRCI)" },
       { name: "description", content: "Configure your twin persona, telemetry baselines, financial compounding, and AI intelligence." },
-      { property: "og:title", content: "Settings — VisualRisk AI (VRCI)" },
+      { property: "og:title", content: "Settings — Visual Risk AI (VRCI)" },
     ],
   }),
   component: SettingsPage,
@@ -107,7 +108,7 @@ const ROLE_OPTIONS: {
 function SettingsPage() {
   const ok = useGuard();
   const navigate = useNavigate();
-  const { state, updateProfile, setTheme, reset, loadDemo } = useTwin();
+  const { state, updateProfile, setTheme, reset, loadDemo, signOut } = useTwin();
 
   const [draft, setDraft] = useState<Profile>(state.profile);
   const [activeTab, setActiveTab] = useState<string>("persona");
@@ -160,13 +161,13 @@ function SettingsPage() {
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
-    toast.success("VisualRisk AI profile data exported as JSON");
+    toast.success("Visual Risk AI profile data exported as JSON");
   };
 
   return (
     <AppShell
       title="Settings"
-      subtitle="Manage your VisualRisk AI persona, telemetry baselines, financial models, and AI engine."
+      subtitle="Manage your Visual Risk AI persona, telemetry baselines, financial models, and AI engine."
       actions={
         hasChanges ? (
           <div className="flex items-center gap-2 animate-fade-in">
@@ -200,7 +201,7 @@ function SettingsPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-foreground">{draft.name || "VisualRisk AI User"}</h3>
+                <h3 className="text-lg font-bold text-foreground">{draft.name || "Visual Risk AI User"}</h3>
                 <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize ${
                   draft.role === "student"
                     ? "clay-badge-purple"
@@ -732,7 +733,7 @@ function SettingsPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  When enabled, your VisualRisk AI will reveal step-by-step telemetry math, circadian peak evaluations, and 5-year opportunity cost calculations.
+                  When enabled, your Visual Risk AI will reveal step-by-step telemetry math, circadian peak evaluations, and 5-year opportunity cost calculations.
                 </p>
               </div>
 
@@ -866,7 +867,7 @@ function SettingsPage() {
 
               {/* Data Export & Backup */}
               <div className="panel p-6 space-y-4">
-                <h4 className="text-sm font-semibold text-foreground">Export VisualRisk AI Data</h4>
+                <h4 className="text-sm font-semibold text-foreground">Export Visual Risk AI Data</h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Download an offline snapshot of your complete profile, habit logs, task schedule, and financial simulations.
                 </p>
@@ -884,7 +885,7 @@ function SettingsPage() {
               <div className="panel p-6 space-y-4 lg:col-span-2">
                 <h4 className="text-sm font-semibold text-foreground">Twin Maintenance & Reset Controls</h4>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <Button
                     variant="outline"
                     onClick={() => navigate({ to: "/setup" })}
@@ -904,6 +905,19 @@ function SettingsPage() {
                   >
                     <RotateCcw className="h-4 w-4 text-emerald-500" />
                     <span>Reload Demo Twin</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      signOut();
+                      toast.success("Signed out successfully");
+                      navigate({ to: "/" });
+                    }}
+                    className="justify-center gap-2 rounded-xl cursor-pointer h-11 text-muted-foreground hover:text-foreground"
+                  >
+                    <LogOut className="h-4 w-4 text-[#0071E3]" />
+                    <span>Sign Out</span>
                   </Button>
 
                   <Button

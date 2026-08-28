@@ -166,7 +166,7 @@ export function AppShell({
             </div>
             {!collapsed && (
               <div className="flex items-center gap-1.5 font-display text-sm font-bold tracking-tight truncate">
-                <span className="truncate">VisualRisk</span>
+                <span className="truncate">Visual Risk</span>
                 <span className="text-[10px] bg-[#0071E3]/15 text-[#0071E3] dark:text-blue-400 font-bold px-1.5 py-0.5 rounded-md shrink-0">
                   AI
                 </span>

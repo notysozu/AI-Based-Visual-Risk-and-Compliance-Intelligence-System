@@ -339,7 +339,7 @@ export function TwinChat({
         window.dispatchEvent(new Event("chat-sessions-updated"));
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to communicate with VisualRisk AI (VRCI)");
+      toast.error(err.message || "Failed to communicate with Visual Risk AI (VRCI)");
     } finally {
       setLoading(false);
     }
@@ -452,7 +452,7 @@ export function TwinChat({
             </div>
             <div>
               <span className="font-semibold text-xs tracking-tight text-foreground dark:text-white">
-                VisualRisk Copilot
+                Visual Risk Copilot
               </span>
               <span className="mx-1.5 text-muted-foreground dark:text-white/30 text-xs">•</span>
               <span className="text-[11px] text-muted-foreground dark:text-white/60 truncate max-w-[180px] sm:max-w-xs">
@@ -479,7 +479,7 @@ export function TwinChat({
         {initialLoading ? (
           <div className="h-full flex flex-col items-center justify-center text-center space-y-3 text-muted-foreground dark:text-white/50">
             <RefreshCw className="h-6 w-6 animate-spin text-[#0071E3]" />
-            <p className="text-xs">Initializing VisualRisk Intelligence...</p>
+            <p className="text-xs">Initializing Visual Risk Intelligence...</p>
           </div>
         ) : isConversationEmpty ? (
           /* ChatGPT Style Centered Hero with Easy Demonstrations */

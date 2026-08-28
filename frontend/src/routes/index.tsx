@@ -33,7 +33,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "VisualRisk AI (VRCI) — AI-Based Visual Risk & Compliance Intelligence System" },
+      { title: "Visual Risk AI (VRCI) — AI-Based Visual Risk & Compliance Intelligence System" },
       {
         name: "description",
         content:
@@ -132,7 +132,7 @@ function LandingPage() {
               <GaugeCircle className="h-4 w-4" />
             </div>
             <span className="text-sm font-semibold tracking-tight">
-              VisualRisk <span className="text-xs font-mono text-muted-foreground ml-1 font-normal">AI</span>
+              Visual Risk <span className="text-xs font-mono text-muted-foreground ml-1 font-normal">AI</span>
             </span>
           </Link>
 
@@ -864,7 +864,7 @@ function LandingPage() {
                 <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0071E3] text-white">
                   <GaugeCircle className="h-3.5 w-3.5" />
                 </div>
-                <span className="font-semibold text-foreground text-sm tracking-tight">VisualRisk AI (VRCI)</span>
+                <span className="font-semibold text-foreground text-sm tracking-tight">Visual Risk AI (VRCI)</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/10 text-[#0071E3] dark:text-blue-400 font-medium">
                   v2.0
                 </span>
@@ -914,7 +914,7 @@ function LandingPage() {
           {/* Bottom Colophon Bar */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-[11px] text-muted-foreground text-center sm:text-left">
-              © {new Date().getFullYear()} AI-Based Visual Risk & Compliance Intelligence System (VisualRisk AI (VRCI)). All rights reserved.
+              © {new Date().getFullYear()} AI-Based Visual Risk & Compliance Intelligence System (Visual Risk AI (VRCI)). All rights reserved.
             </div>
 
             <div className="flex items-center gap-2">
@@ -922,7 +922,7 @@ function LandingPage() {
                 href="https://github.com/notysozu/AI-Based-Visual-Risk-and-Compliance-Intelligence-System"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="VisualRisk AI GitHub"
+                aria-label="Visual Risk AI GitHub"
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               >
                 <Github className="h-4 w-4" />

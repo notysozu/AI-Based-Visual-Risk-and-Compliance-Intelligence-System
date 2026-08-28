@@ -32,15 +32,15 @@ import { useTwin, type UserRole } from "@/lib/twin-store";
 export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
-      { title: "Sign Up — VisualRisk AI (VRCI)" },
+      { title: "Sign Up — Visual Risk AI (VRCI)" },
       {
         name: "description",
-        content: "Create your personalized VisualRisk AI (VRCI) and start forecasting your life.",
+        content: "Create your personalized Visual Risk AI (VRCI) and start forecasting your life.",
       },
-      { property: "og:title", content: "Sign Up — VisualRisk AI (VRCI)" },
+      { property: "og:title", content: "Sign Up — Visual Risk AI (VRCI)" },
       {
         property: "og:description",
-        content: "Create your personalized VisualRisk AI (VRCI) and start forecasting your life.",
+        content: "Create your personalized Visual Risk AI (VRCI) and start forecasting your life.",
       },
     ],
   }),
@@ -125,7 +125,7 @@ function SignUpPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.4)]">
               <GaugeCircle className="h-4.5 w-4.5" />
             </div>
-            <span className="font-display text-base font-bold tracking-tight">VisualRisk AI</span>
+            <span className="font-display text-base font-bold tracking-tight">Visual Risk AI</span>
           </Link>
         </div>
 
@@ -134,7 +134,7 @@ function SignUpPage() {
             Start modeling your future today.
           </h2>
           <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-            Create your personalized VisualRisk AI in less than a minute. Tailored for students, professionals, freelancers, founders, and retirees.
+            Create your personalized Visual Risk AI in less than a minute. Tailored for students, professionals, freelancers, founders, and retirees.
           </p>
           <div className="mt-8">
             <Link
@@ -165,7 +165,7 @@ function SignUpPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.4)]">
                 <GaugeCircle className="h-4 w-4" />
               </div>
-              <span className="font-display text-base font-bold">VisualRisk AI</span>
+              <span className="font-display text-base font-bold">Visual Risk AI</span>
             </Link>
             <Button
               variant="outline"

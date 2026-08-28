@@ -1,6 +1,6 @@
-# VisualRisk AI — AI-Based Visual Risk and Compliance Intelligence System
+# Visual Risk AI — AI-Based Visual Risk and Compliance Intelligence System
 
-VisualRisk AI (VRCI) is an agentic, intelligent risk, compliance, and decision-support system that models, forecasts, and optimizes trajectories across operational compliance, financial risk, health, cognitive performance, and daily habits.
+Visual Risk AI (VRCI) is an agentic, intelligent risk, compliance, and decision-support system that models, forecasts, and optimizes trajectories across operational compliance, financial risk, health, cognitive performance, and daily habits.
 
 By combining stochastic Monte Carlo simulations, deterministic compound growth algorithms, biological circadian feedback models, and conversational agentic intelligence (Groq GPT-OSS 120B / 20B & Qwen 3.6), the platform creates a living digital twin tailored to the user's specific life stage.
 
@@ -8,7 +8,7 @@ By combining stochastic Monte Carlo simulations, deterministic compound growth a
 
 ## Core Capabilities
 
-### 1. VisualRisk Copilot & Conversational Agent
+### 1. Visual Risk Copilot & Conversational Agent
 - **Fullscreen Interface (`/chat`)**: Modern conversational interface with collapsible sidebar, session history, and instant draft initialization without URL pollution.
 - **4-Stage Agentic Reasoning Pipeline**:
   - **Step 1 — Goal Definition**: Explicitly decomposes user intent into optimization objectives.
@@ -218,8 +218,8 @@ Detailed technical architecture documents for every layer of the platform are av
 5. [**05. Habit Analytics & Daily Noon Cache**](docs/workflow/05_habit_analytics_and_feedback.md) — Metric tracking, grouped correlation charts, and automated 12:00 PM cache invalidation.
 6. [**06. Task Planner & Suggestion Adoption Engine**](docs/workflow/06_task_planner_and_suggestions.md) — Data-analyzed suggestion engine, expansion pipelines, database persistence, and schedule injection.
 7. [**07. Study & Productivity Intelligence**](docs/workflow/07_study_and_productivity_intelligence.md) — Spaced repetition analytics, 7-day optimized schedules, and exam readiness regression models.
-8. [**08. VisualRisk Copilot & Conversational Agent**](docs/workflow/08_digital_twin_copilot_chat.md) — 4-stage agentic reasoning pipeline, multi-action proposal system, voice recognition, and chat API reference.
+8. [**08. Visual Risk Copilot & Conversational Agent**](docs/workflow/08_digital_twin_copilot_chat.md) — 4-stage agentic reasoning pipeline, multi-action proposal system, voice recognition, and chat API reference.
 
 ---
 
-*VisualRisk AI — Comprehensive Multi-Persona Trajectory Engine.*
+*Visual Risk AI — Comprehensive Multi-Persona Trajectory Engine.*

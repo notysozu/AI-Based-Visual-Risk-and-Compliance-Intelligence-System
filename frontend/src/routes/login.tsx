@@ -41,15 +41,15 @@ import {
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Log In — VisualRisk AI (VRCI)" },
+      { title: "Log In — Visual Risk AI (VRCI)" },
       {
         name: "description",
-        content: "Log in to your personalized VisualRisk AI (VRCI) workspace.",
+        content: "Log in to your personalized Visual Risk AI (VRCI) workspace.",
       },
-      { property: "og:title", content: "Log In — VisualRisk AI (VRCI)" },
+      { property: "og:title", content: "Log In — Visual Risk AI (VRCI)" },
       {
         property: "og:description",
-        content: "Log in to your personalized VisualRisk AI (VRCI) workspace.",
+        content: "Log in to your personalized Visual Risk AI (VRCI) workspace.",
       },
     ],
   }),
@@ -134,7 +134,7 @@ function LoginPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.4)]">
               <GaugeCircle className="h-4.5 w-4.5" />
             </div>
-            <span className="font-display text-base font-bold tracking-tight">VisualRisk AI</span>
+            <span className="font-display text-base font-bold tracking-tight">Visual Risk AI</span>
           </Link>
         </div>
 
@@ -174,7 +174,7 @@ function LoginPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.4)]">
                 <GaugeCircle className="h-4 w-4" />
               </div>
-              <span className="font-display text-base font-bold">VisualRisk AI</span>
+              <span className="font-display text-base font-bold">Visual Risk AI</span>
             </Link>
             <Button
               variant="outline"

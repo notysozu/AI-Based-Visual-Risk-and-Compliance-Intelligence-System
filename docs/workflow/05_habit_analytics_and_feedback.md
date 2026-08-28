@@ -33,7 +33,7 @@ To make habit data instantly understandable for all user ages and personas witho
 
 ## 3. Automated 12:00 PM Local Noon Cache Architecture
 
-The AI VisualRisk AI Habit Summary provides high-level coaching on user routine balance. To prevent unnecessary API calls while ensuring users receive a fresh daily insight:
+The AI Visual Risk AI Habit Summary provides high-level coaching on user routine balance. To prevent unnecessary API calls while ensuring users receive a fresh daily insight:
 
 ```
 [Page Load / Analytics Mount]

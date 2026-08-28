@@ -11,7 +11,7 @@ def generate_digital_twin_advice(user: Dict[str, Any], baseline: Dict[str, Any],
     client = get_groq_client()
     if client is not None:
         try:
-            prompt = f"""You are the VisualRisk AI Advisor for a user with the persona {user.get('role', 'professional')}.
+            prompt = f"""You are the Visual Risk AI Advisor for a user with the persona {user.get('role', 'professional')}.
 Explain the tradeoff results between Scenario A (baseline) and Scenario B (proposed adjustment) clearly and actionably in Markdown:
 - Scenario A: Health Index {sa['health_index']:.1f}, Focus Rating {sa['focus_index']:.1f}, 5-Year Wealth ${sa['wealth_at_end']:,.2f}
 - Scenario B: Health Index {sb['health_index']:.1f}, Focus Rating {sb['focus_index']:.1f}, 5-Year Wealth ${sb['wealth_at_end']:,.2f}

@@ -93,7 +93,7 @@ Step 4 — Formulated Strategic Execution Plan:
         "duration_minutes": study_mins,
         "focus_score": focus_score,
         "exam_score": exam_score,
-        "notes": f"Logged via VisualRisk Copilot ({study_hrs:.1f}h {subject})"
+        "notes": f"Logged via Visual Risk Copilot ({study_hrs:.1f}h {subject})"
     }
 
     return {

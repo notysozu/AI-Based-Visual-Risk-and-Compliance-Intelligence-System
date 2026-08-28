@@ -1,12 +1,12 @@
-# Workflow Step 8: VisualRisk Copilot & Conversational Agent
+# Workflow Step 8: Visual Risk Copilot & Conversational Agent
 
-This document details the architecture, 4-stage agentic reasoning pipeline, multi-action proposal system, voice recognition, database persistence, and API specification for the **VisualRisk Copilot** (`/chat`).
+This document details the architecture, 4-stage agentic reasoning pipeline, multi-action proposal system, voice recognition, database persistence, and API specification for the **Visual Risk Copilot** (`/chat`).
 
 ---
 
 ## 1. Overview & Core Purpose
 
-The VisualRisk Copilot is a conversational intelligence agent designed to simulate decisions, optimize daily circadian routines, evaluate financial tradeoffs, and forecast long-term life trajectory.
+The Visual Risk Copilot is a conversational intelligence agent designed to simulate decisions, optimize daily circadian routines, evaluate financial tradeoffs, and forecast long-term life trajectory.
 
 Unlike generic chatbots, the Copilot is deeply integrated with the user's live database state (biometrics, habit logs, study records, cash flow, and active milestone goals). Every response is backed by mathematical modeling and stochastic simulations, presenting clear `<think>` reasoning blocks and 1-click interactive action proposals.
 

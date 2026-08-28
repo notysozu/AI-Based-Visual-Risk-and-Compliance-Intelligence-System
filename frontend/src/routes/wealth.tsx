@@ -28,9 +28,9 @@ import { getWealthAdvice, updateUser } from "@/lib/api";
 export const Route = createFileRoute("/wealth")({
   head: () => ({
     meta: [
-      { title: "Wealth Planner — VisualRisk AI" },
+      { title: "Wealth Planner — Visual Risk AI" },
       { name: "description", content: "AI-driven and Monte Carlo projections toward your target." },
-      { property: "og:title", content: "Wealth Planner — VisualRisk AI" },
+      { property: "og:title", content: "Wealth Planner — Visual Risk AI" },
       {
         property: "og:description",
         content: "AI-driven and Monte Carlo projections toward your target.",

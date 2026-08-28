@@ -70,7 +70,7 @@ def handle_purchase_impact_intent(
     hits_after = sum(1 for v in mc_after["final_values"] if v >= user_info.get("target_net_worth", 1000000.0))
     prob_after = round((hits_after / len(mc_after["final_values"])) * 100) if mc_after["final_values"] else 75
 
-    advice_text = f"""### VisualRisk Impact Analysis: {item_name.title()} (${purchase_cost:,.2f})
+    advice_text = f"""### Visual Risk Impact Analysis: {item_name.title()} (${purchase_cost:,.2f})
 
 Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impact your **{goal_name}** and 5-year capital compounding. Here is the exact simulation breakdown:
 

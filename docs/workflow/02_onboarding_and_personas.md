@@ -1,6 +1,6 @@
 # Workflow Step 2: Onboarding & Persona Architecture
 
-This document describes the 5 distinct life-stage personas supported by the VisualRisk AI platform, the role selection mechanism, and the adaptive question pipeline.
+This document describes the 5 distinct life-stage personas supported by the Visual Risk AI platform, the role selection mechanism, and the adaptive question pipeline.
 
 ---
 

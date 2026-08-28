@@ -21,10 +21,10 @@ import { useTwin } from "@/lib/twin-store";
 export const Route = createFileRoute("/pages/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — VisualRisk AI (VRCI)" },
+      { title: "Privacy Policy — Visual Risk AI (VRCI)" },
       {
         name: "description",
-        content: "Read how AI-Based Visual Risk and Compliance Intelligence System (VisualRisk AI (VRCI)) protects your financial, lifestyle, and simulation data with strict local-first privacy principles.",
+        content: "Read how AI-Based Visual Risk and Compliance Intelligence System (Visual Risk AI (VRCI)) protects your financial, lifestyle, and simulation data with strict local-first privacy principles.",
       },
     ],
   }),
@@ -44,7 +44,7 @@ function PrivacyPage() {
               <GaugeCircle className="h-5 w-5" />
             </div>
             <span className="font-display text-lg font-bold tracking-tight">
-              VisualRisk <span className="text-indigo-500 font-mono text-xs px-1.5 py-0.5 rounded-md bg-indigo-500/10">AI</span>
+              Visual Risk <span className="text-indigo-500 font-mono text-xs px-1.5 py-0.5 rounded-md bg-indigo-500/10">AI</span>
             </span>
           </Link>
 
@@ -93,7 +93,7 @@ function PrivacyPage() {
               <h2 className="font-display text-2xl font-bold">1. Our Core Privacy Commitment</h2>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              At AI-Based Visual Risk & Compliance Intelligence System (VisualRisk AI (VRCI)), we believe your personal telemetry, financial goals, academic study metrics, and behavioral risk simulations belong exclusively to you. We do not sell, rent, monetize, or broker your personal information to advertisers or data brokers under any circumstance.
+              At AI-Based Visual Risk & Compliance Intelligence System (Visual Risk AI (VRCI)), we believe your personal telemetry, financial goals, academic study metrics, and behavioral risk simulations belong exclusively to you. We do not sell, rent, monetize, or broker your personal information to advertisers or data brokers under any circumstance.
             </p>
           </div>
 
@@ -150,7 +150,7 @@ function PrivacyPage() {
               <h2 className="font-display text-2xl font-bold">4. Data Rights & Deletion</h2>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              You maintain total autonomy over your VisualRisk AI data:
+              You maintain total autonomy over your Visual Risk AI data:
             </p>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
@@ -193,7 +193,7 @@ function PrivacyPage() {
                 <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0071E3] text-white">
                   <GaugeCircle className="h-3.5 w-3.5" />
                 </div>
-                <span className="font-semibold text-foreground text-sm tracking-tight">VisualRisk AI (VRCI)</span>
+                <span className="font-semibold text-foreground text-sm tracking-tight">Visual Risk AI (VRCI)</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/10 text-[#0071E3] dark:text-blue-400 font-medium">
                   v2.0
                 </span>
@@ -241,7 +241,7 @@ function PrivacyPage() {
           {/* Bottom Colophon Bar */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-[11px] text-muted-foreground text-center sm:text-left">
-              © {new Date().getFullYear()} AI-Based Visual Risk & Compliance Intelligence System (VisualRisk AI (VRCI)). All rights reserved.
+              © {new Date().getFullYear()} AI-Based Visual Risk & Compliance Intelligence System (Visual Risk AI (VRCI)). All rights reserved.
             </div>
 
             <div className="flex items-center gap-2">
@@ -249,7 +249,7 @@ function PrivacyPage() {
                 href="https://github.com/notysozu/AI-Based-Visual-Risk-and-Compliance-Intelligence-System"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="VisualRisk AI GitHub"
+                aria-label="Visual Risk AI GitHub"
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               >
                 <Github className="h-4 w-4" />

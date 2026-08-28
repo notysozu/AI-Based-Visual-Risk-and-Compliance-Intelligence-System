@@ -12,9 +12,9 @@ import { money, useTwin, type Profile } from "@/lib/twin-store";
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
-      { title: "Profile & Goals — VisualRisk AI (VRCI)" },
+      { title: "Profile & Goals — Visual Risk AI (VRCI)" },
       { name: "description", content: "Your stored answers, goals and app preferences." },
-      { property: "og:title", content: "Profile & Goals — VisualRisk AI (VRCI)" },
+      { property: "og:title", content: "Profile & Goals — Visual Risk AI (VRCI)" },
       { property: "og:description", content: "Your stored answers, goals and app preferences." },
     ],
   }),
@@ -86,7 +86,7 @@ function ProfilePage() {
                 {(p.name || "T")[0].toUpperCase()}
               </div>
               <div>
-                <h4 className="font-bold text-sm">{p.name || "VisualRisk AI"}</h4>
+                <h4 className="font-bold text-sm">{p.name || "Visual Risk AI"}</h4>
                 <span className={`inline-block mt-0.5 px-2.5 py-0.5 text-[10px] font-bold rounded-full capitalize ${
                   p.role === "student"
                     ? "clay-badge-purple"

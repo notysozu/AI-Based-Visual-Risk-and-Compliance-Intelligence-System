@@ -22,7 +22,7 @@ def execute_action_payload(db: Session, user: models.User, action_type: str, pay
                 suggestion_id=sug_id,
                 title=t.get("title", "Focus Session"),
                 category=t.get("category", "Work"),
-                detail=f"Scheduled via VisualRisk Copilot at {t.get('start', '09:00')}",
+                detail=f"Scheduled via Visual Risk Copilot at {t.get('start', '09:00')}",
                 impact=t.get("impact", "+0.8 Focus"),
                 start_time=t.get("start", "09:00"),
                 duration_minutes=int(t.get("minutes", 45)),
@@ -77,7 +77,7 @@ def execute_action_payload(db: Session, user: models.User, action_type: str, pay
         dur_mins = int(payload.get("duration_minutes", 60))
         focus_score = int(payload.get("focus_score", 8))
         exam_score = float(payload["exam_score"]) if payload.get("exam_score") is not None else None
-        notes = payload.get("notes", "Logged via VisualRisk Copilot")
+        notes = payload.get("notes", "Logged via Visual Risk Copilot")
 
         study_rec = models.StudyRecord(
             user_id=user.id,
