@@ -339,7 +339,7 @@ export function TwinChat({
         window.dispatchEvent(new Event("chat-sessions-updated"));
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to communicate with Digital Twin AI");
+      toast.error(err.message || "Failed to communicate with VisualRisk AI (VRCI)");
     } finally {
       setLoading(false);
     }
@@ -479,7 +479,7 @@ export function TwinChat({
         {initialLoading ? (
           <div className="h-full flex flex-col items-center justify-center text-center space-y-3 text-muted-foreground dark:text-white/50">
             <RefreshCw className="h-6 w-6 animate-spin text-[#0071E3]" />
-            <p className="text-xs">Initializing Digital Twin Intelligence...</p>
+            <p className="text-xs">Initializing VisualRisk Intelligence...</p>
           </div>
         ) : isConversationEmpty ? (
           /* ChatGPT Style Centered Hero with Easy Demonstrations */

@@ -32,9 +32,9 @@ import {
 export const Route = createFileRoute("/suggestions")({
   head: () => ({
     meta: [
-      { title: "Smart AI Suggestions — Digital Twin" },
+      { title: "Smart AI Suggestions — VisualRisk AI" },
       { name: "description", content: "Hyper-personalized AI lifestyle, focus, and financial recommendations." },
-      { property: "og:title", content: "Smart AI Suggestions — Digital Twin" },
+      { property: "og:title", content: "Smart AI Suggestions — VisualRisk AI" },
       {
         property: "og:description",
         content: "Hyper-personalized AI lifestyle, focus, and financial recommendations.",

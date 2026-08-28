@@ -46,9 +46,9 @@ import {
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — VisualRisk AI" },
+      { title: "Settings — VisualRisk AI (VRCI)" },
       { name: "description", content: "Configure your twin persona, telemetry baselines, financial compounding, and AI intelligence." },
-      { property: "og:title", content: "Settings — VisualRisk AI" },
+      { property: "og:title", content: "Settings — VisualRisk AI (VRCI)" },
     ],
   }),
   component: SettingsPage,
@@ -160,13 +160,13 @@ function SettingsPage() {
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
-    toast.success("Digital Twin profile data exported as JSON");
+    toast.success("VisualRisk AI profile data exported as JSON");
   };
 
   return (
     <AppShell
       title="Settings"
-      subtitle="Manage your Digital Twin persona, telemetry baselines, financial models, and AI engine."
+      subtitle="Manage your VisualRisk AI persona, telemetry baselines, financial models, and AI engine."
       actions={
         hasChanges ? (
           <div className="flex items-center gap-2 animate-fade-in">
@@ -200,7 +200,7 @@ function SettingsPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-foreground">{draft.name || "Digital Twin User"}</h3>
+                <h3 className="text-lg font-bold text-foreground">{draft.name || "VisualRisk AI User"}</h3>
                 <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize ${
                   draft.role === "student"
                     ? "clay-badge-purple"
@@ -732,7 +732,7 @@ function SettingsPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  When enabled, your Digital Twin will reveal step-by-step telemetry math, circadian peak evaluations, and 5-year opportunity cost calculations.
+                  When enabled, your VisualRisk AI will reveal step-by-step telemetry math, circadian peak evaluations, and 5-year opportunity cost calculations.
                 </p>
               </div>
 
@@ -866,7 +866,7 @@ function SettingsPage() {
 
               {/* Data Export & Backup */}
               <div className="panel p-6 space-y-4">
-                <h4 className="text-sm font-semibold text-foreground">Export Digital Twin Data</h4>
+                <h4 className="text-sm font-semibold text-foreground">Export VisualRisk AI Data</h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Download an offline snapshot of your complete profile, habit logs, task schedule, and financial simulations.
                 </p>

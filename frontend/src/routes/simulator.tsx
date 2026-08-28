@@ -25,9 +25,9 @@ import { compareScenarios, getScenarioSuggestions } from "@/lib/api";
 export const Route = createFileRoute("/simulator")({
   head: () => ({
     meta: [
-      { title: "What-If Simulator — Digital Twin" },
+      { title: "What-If Simulator — VisualRisk AI" },
       { name: "description", content: "Compare two versions of the next five years side by side." },
-      { property: "og:title", content: "What-If Simulator — Digital Twin" },
+      { property: "og:title", content: "What-If Simulator — VisualRisk AI" },
       {
         property: "og:description",
         content: "Compare two versions of the next five years side by side.",

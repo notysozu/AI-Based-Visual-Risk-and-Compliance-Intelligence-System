@@ -76,13 +76,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Sign in — VisualRisk AI" },
+      { title: "Sign in — VisualRisk AI (VRCI)" },
       {
         name: "description",
         content:
           "Create your twin profile or load the demo twin to explore the dashboard.",
       },
-      { property: "og:title", content: "Sign in — VisualRisk AI" },
+      { property: "og:title", content: "Sign in — VisualRisk AI (VRCI)" },
       {
         property: "og:description",
         content:
@@ -90,7 +90,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Sign in — VisualRisk AI" },
+      { name: "twitter:title", content: "Sign in — VisualRisk AI (VRCI)" },
       { name: "twitter:description", content: "Create your twin profile or load the demo twin to explore the dashboard." },
       { property: "og:image", content: "" },
       { name: "twitter:image", content: "" },
