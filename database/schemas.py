@@ -20,6 +20,9 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     pass
 
+class UserLoginRequest(BaseModel):
+    identifier: str
+
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     role: Optional[str] = None

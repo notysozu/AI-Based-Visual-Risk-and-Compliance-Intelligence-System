@@ -6,14 +6,30 @@ async function request(path: string, options: RequestInit = {}) {
     ...options,
   });
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`API error ${res.status}: ${text || res.statusText}`);
+    let errorDetail = res.statusText;
+    try {
+      const errorJson = await res.json();
+      if (errorJson?.detail) {
+        errorDetail = errorJson.detail;
+      }
+    } catch {
+      const text = await res.text().catch(() => "");
+      if (text) errorDetail = text;
+    }
+    throw new Error(errorDetail || `API error ${res.status}`);
   }
   return res.json();
 }
 
 export function createUser(payload: Record<string, unknown>) {
   return request("/users/", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function loginUser(identifier: string) {
+  return request("/users/login", {
+    method: "POST",
+    body: JSON.stringify({ identifier }),
+  });
 }
 
 export function getUserByUsername(username: string) {

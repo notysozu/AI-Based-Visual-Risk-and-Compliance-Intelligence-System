@@ -78,13 +78,13 @@ function LoginPage() {
       return;
     }
     const isLogin = mode === "login";
-    const username = isLogin ? email.split("@")[0] : name;
+    const username = isLogin ? email : (name || email.split("@")[0]);
     try {
       const onboarded = await signIn(username, email, !isLogin);
       toast.success(isLogin ? "Welcome back!" : "Twin profile created!");
-      navigate({ to: onboarded && isLogin ? "/dashboard" : "/setup" });
+      navigate({ to: onboarded ? "/dashboard" : "/setup" });
     } catch (e: any) {
-      if (e.message.includes("Please sign up first")) {
+      if (e?.message?.includes("sign up first") || e?.message?.includes("No account found")) {
         setShowSignUpDialog(true);
       } else {
         toast.error(e.message || "Failed to log in");

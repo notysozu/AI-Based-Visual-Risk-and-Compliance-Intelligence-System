@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { createUser, getUserByUsername, getDefaultUser, getForecast, getUser, updateUser, adoptSuggestionApi } from "@/lib/api";
+import { createUser, loginUser, getUserByUsername, getDefaultUser, getForecast, getUser, updateUser, adoptSuggestionApi } from "@/lib/api";
 
 // --- Types ---
 
@@ -970,21 +970,41 @@ export function TwinProvider({ children }: { children: ReactNode }) {
   // savings target, income) directly into the profile at login time.
   const signIn = async (username: string, email: string, isSignup: boolean): Promise<boolean> => {
     if (isSignup) {
-      const user = await createUser({ username, email, age: 25 });
+      let user;
+      try {
+        user = await createUser({ username: username.trim(), email: email.trim().toLowerCase(), age: 25 });
+      } catch (err: any) {
+        // If an account already exists for this email or username, seamlessly fetch their existing profile
+        const msg = (err?.message || "").toLowerCase();
+        if (msg.includes("already exists") || msg.includes("already taken")) {
+          try {
+            user = await loginUser(email.trim().toLowerCase()).catch(() => loginUser(username.trim()));
+          } catch {
+            throw err;
+          }
+        } else {
+          throw err;
+        }
+      }
+
+      const hasOnboarded = Boolean(user?.role && user.role !== "default" && user.role !== "");
       setState((s) => ({
         ...s,
         authed: true,
-        profile: { ...s.profile, ...mapBackendToProfile(user), id: user.id, name: username, email, onboarded: false },
+        profile: { ...s.profile, ...mapBackendToProfile(user), id: user.id, name: user.username || username, email: user.email || email, onboarded: hasOnboarded },
       }));
       hasAutoSynced.current = true;
-      return false;
+      return hasOnboarded;
     } else {
       let user;
       try {
-        user = await getUserByUsername(username);
+        // Search by email first, fallback to username
+        user = await loginUser(email.trim()).catch(() => loginUser(username.trim()));
       } catch {
-        throw new Error("Please sign up first");
+        throw new Error("No account found for this email/username. Please sign up first.");
       }
+
+      const hasOnboarded = Boolean(user?.role && user.role !== "default" && user.role !== "");
       setState((s) => ({
         ...s,
         authed: true,
@@ -994,11 +1014,11 @@ export function TwinProvider({ children }: { children: ReactNode }) {
           id: user.id,
           name: user.username ?? username,
           email: user.email ?? email,
-          onboarded: true,
+          onboarded: hasOnboarded,
         },
       }));
       hasAutoSynced.current = true;
-      return true;
+      return hasOnboarded;
     }
   };
 

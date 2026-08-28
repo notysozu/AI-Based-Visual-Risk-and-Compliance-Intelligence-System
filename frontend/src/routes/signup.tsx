@@ -73,11 +73,11 @@ function SignUpPage() {
       return;
     }
     const isLogin = mode === "login";
-    const username = isLogin ? email.split("@")[0] : name;
+    const username = isLogin ? email : (name || email.split("@")[0]);
     try {
       const onboarded = await signIn(username, email, !isLogin);
       toast.success(isLogin ? "Welcome back!" : "Twin profile created!");
-      navigate({ to: onboarded && isLogin ? "/dashboard" : "/setup" });
+      navigate({ to: onboarded ? "/dashboard" : "/setup" });
     } catch (e: any) {
       toast.error(e.message || "Failed to authenticate");
     }
