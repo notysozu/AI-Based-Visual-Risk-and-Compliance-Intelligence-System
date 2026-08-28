@@ -142,6 +142,7 @@ export function AppShell({
       { to: "/wealth", label: "Wealth Planner", icon: Wallet, color: "text-emerald-500" },
       { to: "/analytics", label: "Analytics", icon: Activity, color: "text-blue-500" },
       { to: "/profile", label: "Profile & Goals", icon: User, color: "text-violet-500" },
+      { to: "/settings", label: "Settings", icon: Settings, color: "text-zinc-500 dark:text-zinc-400" },
     );
 
     return items;
@@ -353,8 +354,8 @@ export function AppShell({
               </DropdownMenuLabel>
               <p className="px-2 pb-2 text-xs text-muted-foreground truncate">{state.profile.email}</p>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => setSettingsOpen(true)} className="cursor-pointer">
-                <Settings className="mr-2 h-4 w-4" /> Settings & Roles
+              <DropdownMenuItem onSelect={() => navigate({ to: "/settings" })} className="cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" /> Settings
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() => {
