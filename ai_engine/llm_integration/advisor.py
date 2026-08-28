@@ -164,7 +164,7 @@ Ensure you address:
 Output the analysis in clean, professional markdown with beautiful emojis. Keep it concise, engaging, and directly addressed to the user.
 """
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,  # Calibrated for analytical precision
 
@@ -230,7 +230,7 @@ class DigitalTwinAdvisor:
     Uses Groq's free API (Llama 3.1) - no billing required.
     """
 
-    def __init__(self, user_id: int, model: str = "llama-3.1-8b-instant"):
+    def __init__(self, user_id: int, model: str = "openai/gpt-oss-120b"):
         self.user_id = user_id
         self.model = model
         self.system_prompt = None
@@ -373,7 +373,7 @@ State clearly whether they're on track, and if not, give one specific concrete s
 When you state the user's target net worth, target age, or any dollar figures from the data above, you MUST use the exact numbers given — do not round, alter, abbreviate, or invent different figures. You may explain what the numbers mean, but never change the digits. Keep it direct and helpful, addressed to the user.
 """
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,  # Calibrated for analytical precision
 
@@ -473,7 +473,7 @@ Return ONLY a valid JSON object matching the following structure. No explanation
                     "content": prompt,
                 }
             ],
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-120b",
             temperature=0.3,
             max_tokens=200,
         )
@@ -574,7 +574,7 @@ Instructions:
 
     try:
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,  # Calibrated for analytical precision
 
@@ -770,7 +770,7 @@ Respond with ONLY the raw JSON object, without markdown formatting or code fence
 
     try:
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=1500,
@@ -891,7 +891,7 @@ Respond with ONLY valid raw JSON in the following format:
     try:
         import time, random
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,  # Calibrated for analytical precision
 
@@ -1120,12 +1120,17 @@ Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impa
     # 1. DETECT MULTI-TASK & ROUTINE PLANNING INTENT
     multi_task_keywords = [
         "plan my day", "plan today", "suggest a schedule", "suggest schedule",
-        "suggest routine", "daily routine", "suggest tasks", "plan my morning",
+        "suggest routine", "daily routine", "suggest tasks", "suggest task",
         "suggest some tasks", "schedule my day", "build a schedule", "optimize my day",
-        "schedule sprints", "routine for today", "plan a productive day"
+        "schedule sprints", "routine for today", "plan a productive day",
+        "boost my productivity", "boost productivity", "increase productivity",
+        "improve productivity", "productivity suggestions", "suggestion for my task",
+        "suggestions for my task", "task suggestions", "tasks for productivity",
+        "recommend tasks", "suggest some suggestion", "productivity boost"
     ]
     is_multi_task_intent = any(k in p_lower for k in multi_task_keywords) or (
-        ("schedule" in p_lower or "add" in p_lower or "plan" in p_lower) and ("tasks" in p_lower or "sprints" in p_lower or "routine" in p_lower or "blocks" in p_lower) and ("," in p_lower or "and" in p_lower or "\n" in p_lower or "deep work" in p_lower)
+        ("schedule" in p_lower or "add" in p_lower or "plan" in p_lower or "suggest" in p_lower) and
+        ("task" in p_lower or "tasks" in p_lower or "sprint" in p_lower or "sprints" in p_lower or "routine" in p_lower or "productivity" in p_lower or "blocks" in p_lower)
     )
 
     if is_multi_task_intent:
@@ -1535,7 +1540,7 @@ GUIDELINES:
 
             # Try primary available models
             reply = ""
-            for model_candidate in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama3-8b-8192", "mixtral-8x7b-32768", "gemma2-9b-it"]:
+            for model_candidate in ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b", "groq/compound"]:
                 try:
                     resp = client.chat.completions.create(
                         model=model_candidate,
