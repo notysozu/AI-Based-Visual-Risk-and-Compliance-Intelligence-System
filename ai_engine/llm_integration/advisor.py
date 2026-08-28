@@ -1105,7 +1105,7 @@ def process_twin_copilot_turn(
         hits_after = sum(1 for v in mc_after["final_values"] if v >= user_info.get("target_net_worth", 1000000.0))
         prob_after = round((hits_after / len(mc_after["final_values"])) * 100)
 
-        advice_text = f"""### 🎯 Digital Twin Impact Analysis: {item_name.title()} (${purchase_cost:,.2f})
+        advice_text = f"""### Digital Twin Impact Analysis: {item_name.title()} (${purchase_cost:,.2f})
 
 Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impact your **{goal_name}** and 5-year capital compounding. Here is the exact simulation breakdown:
 
@@ -1125,20 +1125,20 @@ Purchasing this **{item_name}** for **${purchase_cost:,.2f}** will directly impa
 
         if think_mode:
             think_block = f"""<think>
-🎯 Step 1 — Goal Definition:
+Step 1 — Goal Definition:
 • Objective: Evaluate capital friction and milestone delay of purchasing "{item_name}" (${purchase_cost:,.2f}).
 
-🔍 Step 2 — Telemetry Search & Gathered User Data:
+Step 2 — Telemetry Search & Gathered User Data:
 • Baseline Telemetry: Net Worth = ${current_net_worth:,.2f} | Monthly Savings Surplus = ${monthly_savings:,.2f}/mo
 • Active Milestone Goal: "{goal_name}" (Current: ${goal_current:,.2f} / Target: ${goal_target:,.2f} | {round((goal_current/goal_target)*100)}% complete)
 • Post-Purchase Remaining Progress: ${new_progress:,.2f} / ${goal_target:,.2f}
 
-📊 Step 3 — Multi-Criteria Analysis & Optimization:
+Step 3 — Multi-Criteria Analysis & Optimization:
 • Milestone Timeline Impact: Target delayed by +{delay_months} months (~{delay_days} days).
 • 5-Year Compounding Opportunity Cost: ${purchase_cost:,.2f} @ 8% CAGR -> ${compounded_5y:,.2f} (+${foregone_growth:,.2f} foregone gain).
 • Stochastic Monte Carlo: Baseline odds = {prob_before}%, Post-purchase odds = {prob_after}% ({prob_after - prob_before:+d}% shift).
 
-🚀 Step 4 — Formulated Strategic Execution Plan:
+Step 4 — Formulated Strategic Execution Plan:
 • Formatted decision matrix and generated interactive purchase impact logging card.
 </think>
 
@@ -1201,7 +1201,7 @@ Based on your telemetry analysis (Sleep: **{t_data['avg_sleep']:.1f}h** vs **{t_
 | :--- | :--- | :--- | :--- | :--- |
 {table_rows}
 
-#### 💡 Telemetry & Optimization Highlights:
+#### Telemetry & Optimization Highlights:
 - **Circadian Alertness Peak (08:30 – 11:30):** High-leverage cognitive focus blocks scheduled during natural cortisol alertness peaks.
 - **Context-Switching Protection:** Tasks separated into clean, protected intervals to minimize fragmentation.
 - **Physical & Cognitive Recovery:** Dedicated vitality block to stabilize your **Health Index** and sleep architecture.
@@ -1210,22 +1210,22 @@ Click **Approve & Add All Tasks** below to inject all {len(tasks)} time-blocks d
 
         if think_mode:
             think_block = f"""<think>
-🎯 Step 1 — Goal Definition:
+Step 1 — Goal Definition:
 • Objective: Optimize daily routine, maximize peak cognitive alertness window, and protect vitality recovery.
 
-🔍 Step 2 — Telemetry Search & Gathered User Data:
+Step 2 — Telemetry Search & Gathered User Data:
 • Role Persona: {user_role_title} (Age: {user_info.get('age', 25)} | Retirement Target: Age {t_data['target_retirement_age']})
 • Biometrics & Baseline: Sleep = {t_data['avg_sleep']:.1f}h (Target: {t_data['sleep_target']:.1f}h | Sleep Debt: {t_data['sleep_debt']:.1f}h), Screen Time = {t_data['avg_screen']:.1f}h/day, Active Days = {t_data['exercise_days_count']}d/wk
 • Financial Health: Cash flow surplus = +${t_data['monthly_savings']:,.2f}/mo ({t_data['savings_rate']}% Savings Rate) | Net Worth = ${t_data['net_worth']:,.2f}
 • Active Milestone: "{goal_name}" (${goal_current:,.2f} / ${goal_target:,.2f} — {goal_pct}% complete, ${goal_gap:,.2f} gap remaining)
 • Focus Domain: {', '.join(t_data.get('recent_subjects', [])) or user_info.get('focus_area', 'Deep Work')}
 
-📊 Step 3 — Multi-Criteria Analysis & Optimization:
+Step 3 — Multi-Criteria Analysis & Optimization:
 • Circadian Alertness Curve: Identified optimal cognitive peak window between 08:30 and 11:30.
 • Workload Balancing: Structured {len(tasks)} non-overlapping focus blocks totaling {sum(t['minutes'] for t in tasks)} minutes of intentional execution.
 • Predicted Trajectory: +1.8 Cumulative Focus Index, +1.0 Vitality Stability.
 
-🚀 Step 4 — Formulated Strategic Execution Plan:
+Step 4 — Formulated Strategic Execution Plan:
 • Formatted daily schedule table and packaged interactive multi-task proposal for user approval.
 </think>
 
@@ -1297,19 +1297,19 @@ Click **Approve & Add All Tasks** below to inject all {len(tasks)} time-blocks d
 
         if think_mode:
             think_block = f"""<think>
-🎯 Step 1 — Goal Definition:
+Step 1 — Goal Definition:
 • Objective: Run What-If sandbox simulation testing parameter shifts (Savings: ${savings_delta:+,.2f}/mo, Sleep: {sleep_delta:+.1f}h/day, Study: {study_delta:+.1f}h/week).
 
-🔍 Step 2 — Telemetry Search & Gathered User Data:
+Step 2 — Telemetry Search & Gathered User Data:
 • Baseline Telemetry: Sleep = {sa['details']['sleep']:.1f}h | Study = {sa['details']['study_week']:.1f}h/wk | Savings = ${sa['details']['monthly_savings']:,.2f}/mo
 • Proposed Shifts: Sleep -> {sb['details']['sleep']:.1f}h | Study -> {sb['details']['study_week']:.1f}h/wk | Savings -> ${sb['details']['monthly_savings']:,.2f}/mo
 
-📊 Step 3 — Multi-Criteria Analysis & Optimization:
+Step 3 — Multi-Criteria Analysis & Optimization:
 • Telemetry Elasticity Fit: Health Index {sa['health_index']:.1f} -> {sb['health_index']:.1f} ({sb['health_index'] - sa['health_index']:+.1f}) | Focus Rating {sa['focus_index']:.1f} -> {sb['focus_index']:.1f} ({sb['focus_index'] - sa['focus_index']:+.1f}).
 • 5-Year Capital Compounding: 5-Year Net Worth shift = ${sb['wealth_at_end'] - sa['wealth_at_end']:+,.2f}.
 • Retirement Attainment: {'Attained on track' if sb['attained_retirement'] else 'Requires adjustment'}.
 
-🚀 Step 4 — Formulated Strategic Execution Plan:
+Step 4 — Formulated Strategic Execution Plan:
 • Formatted simulation breakdown and prepared What-If preset application card.
 </think>
 
@@ -1375,7 +1375,7 @@ Click **Approve & Add All Tasks** below to inject all {len(tasks)} time-blocks d
 
         impact_desc = "+0.8 Focus & Cognitive Output" if category in ["Work", "Study"] else ("+0.6 Vitality Index" if category == "Health" else "+2% Capital Control")
 
-        advice_text = f"""### 📋 Proposed Schedule Addition: **{clean_title}**
+        advice_text = f"""### Proposed Schedule Addition: **{clean_title}**
 
 Based on your telemetry profile and current daily routine, I have structured this calibrated focus block:
 
@@ -1391,18 +1391,18 @@ Click **Approve & Add Task** below to append this directly to your Daily Planner
 
         if think_mode:
             think_block = f"""<think>
-🎯 Step 1 — Goal Definition:
+Step 1 — Goal Definition:
 • Objective: Schedule single focus block ("{clean_title}") without conflicting with existing routine.
 
-🔍 Step 2 — Telemetry Search & Gathered User Data:
+Step 2 — Telemetry Search & Gathered User Data:
 • Role Persona: {user_info.get('role', 'professional').title()} | Target Work/Study Hours: {t_data.get('study_target_week', 10.0)}h/wk
 • Target Execution Time: {start_time} | Duration: {duration} minutes | Category: {category}
 
-📊 Step 3 — Multi-Criteria Analysis & Optimization:
+Step 3 — Multi-Criteria Analysis & Optimization:
 • Schedule Slotting: Validated non-collision with existing daily commitments.
 • Predicted Trajectory: {impact_desc}.
 
-🚀 Step 4 — Formulated Strategic Execution Plan:
+Step 4 — Formulated Strategic Execution Plan:
 • Formatted task attribute table and generated interactive single-task approval card.
 </think>
 
@@ -1451,7 +1451,7 @@ Click **Approve & Add Task** below to append this directly to your Daily Planner
         p10_final = mc_res["p10"][-1]
         p90_final = mc_res["p90"][-1]
 
-        advice_text = f"""### 📊 Monte Carlo 500-Run Wealth Projection
+        advice_text = f"""###  Monte Carlo 500-Run Wealth Projection
 
 I executed a **500-stochastic-run simulation** of your financial trajectory:
 
@@ -1469,20 +1469,20 @@ I executed a **500-stochastic-run simulation** of your financial trajectory:
 
         if think_mode:
             think_block = f"""<think>
-🎯 Step 1 — Goal Definition:
+Step 1 — Goal Definition:
 • Objective: Run 500 stochastic trials to project terminal retirement net worth boundary conditions.
 
-🔍 Step 2 — Telemetry Search & Gathered User Data:
+Step 2 — Telemetry Search & Gathered User Data:
 • Current Age: {user_info.get('age', 25)} | Retirement Target Age: {user_info.get('retirement_goal_age', 60)}
 • Net Worth Baseline: ${current_net_worth:,.2f} | Monthly Savings: ${monthly_savings:,.2f}/mo
 • Target Terminal Capital: ${target:,.2f}
 
-📊 Step 3 — Multi-Criteria Analysis & Optimization:
+Step 3 — Multi-Criteria Analysis & Optimization:
 • Stochastic Modeling: 500 trials with log-normal return distribution (μ=8.0%, σ=15.0%, inflation=2.5%).
 • Percentiles: P10 Bear Floor (${p10_final:,.2f}), Median (${median_final:,.2f}), P90 Bull Ceiling (${p90_final:,.2f}).
 • Target Milestone Probability: {prob}%.
 
-🚀 Step 4 — Formulated Strategic Execution Plan:
+Step 4 — Formulated Strategic Execution Plan:
 • Formatted wealth trajectory forecast and generated probability distribution summary.
 </think>
 
@@ -1540,7 +1540,7 @@ I executed a **500-stochastic-run simulation** of your financial trajectory:
 
         if diff_fields:
             diff_text = "\n".join(f"- **{k.replace('_', ' ').title()}:** {user_info.get(k, 'N/A')} ➔ **{v}**" for k, v in diff_fields.items())
-            advice_text = f"""### ⚙️ Proposed Profile & Settings Update
+            advice_text = f"""###  Proposed Profile & Settings Update
 
 I detected parameter adjustments for your Digital Twin:
 
@@ -1550,17 +1550,17 @@ Click **Approve Changes** below to apply these modifications to your profile and
 
             if think_mode:
                 think_block = f"""<think>
-🎯 Step 1 — Goal Definition:
+Step 1 — Goal Definition:
 • Objective: Update user profile parameters and realign baseline models.
 
-🔍 Step 2 — Telemetry Search & Gathered User Data:
+Step 2 — Telemetry Search & Gathered User Data:
 • Identified Parameter Modifications: {', '.join([f'{k}={v}' for k, v in diff_fields.items()])}
 • Current Profile: Role={user_info.get('role', 'professional')}, Income=${user_info.get('monthly_income', 0):,.2f}, Target Sleep={user_info.get('sleep_target_hours', 8.0)}h
 
-📊 Step 3 — Multi-Criteria Analysis & Optimization:
+Step 3 — Multi-Criteria Analysis & Optimization:
 • Parameter Validation: Boundary checks passed for proposed parameters.
 
-🚀 Step 4 — Formulated Strategic Execution Plan:
+Step 4 — Formulated Strategic Execution Plan:
 • Generated structured profile change preview and interactive approval card.
 </think>
 
@@ -1579,10 +1579,10 @@ Click **Approve Changes** below to apply these modifications to your profile and
     if client is not None:
         try:
             think_instruction = """ When thinking mode is enabled, start your response with a structured <think>...</think> block containing:
-🎯 Step 1 — Goal Definition (Identify user goal / core query)
-🔍 Step 2 — Telemetry Search & Gathered User Data (Reference user's role, sleep, focus, or financial baseline)
-📊 Step 3 — Multi-Criteria Analysis & Optimization (Evaluate tradeoffs, habits, or strategic leverage)
-🚀 Step 4 — Formulated Strategic Execution Plan (Summary of advice before final answer)""" if think_mode else " Do NOT include any <think> tags."
+Step 1 — Goal Definition (Identify user goal / core query)
+Step 2 — Telemetry Search & Gathered User Data (Reference user's role, sleep, focus, or financial baseline)
+Step 3 — Multi-Criteria Analysis & Optimization (Evaluate tradeoffs, habits, or strategic leverage)
+Step 4 — Formulated Strategic Execution Plan (Summary of advice before final answer)""" if think_mode else " Do NOT include any <think> tags."
 
             system_msg = f"""You are the Digital Twin AI Copilot for {user_info.get('username', 'User')}.
 You are an intelligent, empathetic personal AI grounded in the user's real financial and biometric telemetry:
@@ -1594,6 +1594,7 @@ You are an intelligent, empathetic personal AI grounded in the user's real finan
 - Focus Subjects: {', '.join(t_data.get('recent_subjects', [])) or 'General Competencies'}
 
 GUIDELINES:
+- Maintain a clean, professional, and clear tone. Do NOT use emojis in your thought process or in your response.
 - Answer the user's prompt directly, naturally, and intelligently in clean Markdown.
 - If tabular data or schedules are helpful, format them as clean, unbroken Markdown tables.
 - Reference relevant telemetry only when helpful to ground your answer.{think_instruction}
@@ -1622,16 +1623,16 @@ GUIDELINES:
                             reply = raw_content.strip()
                         else:
                             reply = f"""<think>
-🎯 Step 1 — Goal Definition:
+Step 1 — Goal Definition:
 • Objective: Synthesize comprehensive advice for user query: "{prompt}".
 
-🔍 Step 2 — Telemetry Search & Gathered User Data:
+Step 2 — Telemetry Search & Gathered User Data:
 • Role: {user_info.get('role', 'professional').title()} | Cash Flow: +${t_data['monthly_savings']:,.2f}/mo | Sleep: {t_data['avg_sleep']:.1f}h/day
 
-📊 Step 3 — Multi-Criteria Analysis & Optimization:
+Step 3 — Multi-Criteria Analysis & Optimization:
 • Evaluated user telemetry context and generated calibrated recommendations.
 
-🚀 Step 4 — Formulated Strategic Execution Plan:
+Step 4 — Formulated Strategic Execution Plan:
 • Synthesized detailed guidance and formatted output.
 </think>
 
@@ -1656,7 +1657,7 @@ GUIDELINES:
 
     # Natural Conversational Fallback if offline
     if re.search(r"\b(hi|hello|hey|greetings|help)\b|^who are you|^what can you do", p_lower):
-        fallback_reply = f"""Hello {user_info.get('username', 'there')}! 👋 
+        fallback_reply = f"""Hello {user_info.get('username', 'there')}!  
 
 I'm your **Digital Twin AI Copilot**. I analyze your routines, productivity, and finances to help you optimize your daily performance and simulate future scenarios.
 
