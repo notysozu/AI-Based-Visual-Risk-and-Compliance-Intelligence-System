@@ -287,10 +287,150 @@ def generate_study_plan_advice(user_info: Dict[str, Any], study_data: Dict[str, 
     return generate_optimized_study_plan(user_info, study_data, target_milestone)
 
 
-def generate_smart_role_suggestions(role: str, user_info: Dict[str, Any], baseline_metrics: Dict[str, Any], mode: str = "regenerate", existing_suggestions: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+def generate_smart_role_suggestions(
+    role: Optional[str] = None,
+    user_info: Optional[Dict[str, Any]] = None,
+    baseline: Optional[Dict[str, Any]] = None,
+    baseline_metrics: Optional[Dict[str, Any]] = None,
+    recent_logs: Optional[List[Any]] = None,
+    existing_suggestions: Optional[List[Dict[str, Any]]] = None,
+    mode: str = "regenerate",
+    **kwargs
+) -> Dict[str, Any]:
+    import random
     from database.crud import DEFAULT_ROLE_SUGGESTIONS
-    base_defaults = DEFAULT_ROLE_SUGGESTIONS.get(role, DEFAULT_ROLE_SUGGESTIONS["professional"])
+
+    target_role = (
+        role 
+        or (user_info.get("role") if user_info else None) 
+        or kwargs.get("user_role") 
+        or "professional"
+    ).lower()
+
+    metrics = baseline or baseline_metrics or (user_info.get("baseline") if user_info else {}) or {}
+    sleep_h = metrics.get("sleep", 7.5)
+    screen_h = metrics.get("screen", 4.0)
+    study_h = metrics.get("study", 1.8)
+
+    existing_titles = set()
+    if existing_suggestions:
+        for item in existing_suggestions:
+            if isinstance(item, dict):
+                t = item.get("title", "").lower()
+                if t:
+                    existing_titles.add(t)
+
+    client = get_groq_client()
+    if client is not None:
+        try:
+            count = 4 if mode == "regenerate" else 3
+            avoid_str = f"Avoid these existing titles: {list(existing_titles)}" if existing_titles else ""
+            prompt = f"""You are the Visual Risk AI Advisor. Generate {count} distinct, actionable lifestyle & productivity suggestions for a {target_role} persona.
+Current Baseline: Sleep {sleep_h:.1f}h/day, Screen time {screen_h:.1f}h/day, Daily Focus/Study {study_h:.1f}h/day.
+Mode: {mode}. {avoid_str}
+
+Return ONLY valid JSON matching this schema:
+{{
+  "diagnostic": "1-sentence summary diagnostic of user habits",
+  "suggestions": [
+    {{
+      "suggestion_id": "ai-sug-1",
+      "title": "Clear action title",
+      "category": "Focus",
+      "detail": "Actionable explanation of the habit or task",
+      "impact": "+1.5 Focus score",
+      "start_time": "09:00",
+      "duration_minutes": 45,
+      "is_ai_generated": true
+    }}
+  ]
+}}
+Category must be one of: Focus, Vitality, Finance, Study, Leisure, Habits.
+"""
+            for model in AVAILABLE_GROQ_MODELS:
+                try:
+                    resp = client.chat.completions.create(
+                        model=model,
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.7,
+                        max_tokens=2500,
+                        timeout=15.0
+                    )
+                    content = resp.choices[0].message.content.strip()
+                    if content.startswith("```json"):
+                        content = content[7:-3].strip()
+                    elif content.startswith("```"):
+                        content = content[3:-3].strip()
+                    parsed = json.loads(content)
+                    if "suggestions" in parsed and isinstance(parsed["suggestions"], list) and len(parsed["suggestions"]) > 0:
+                        for s in parsed["suggestions"]:
+                            s["suggestion_id"] = f"ai-{target_role[:3]}-{random.randint(10000, 99999)}"
+                            s["is_ai_generated"] = True
+                            s["is_adopted"] = False
+                        return parsed
+                except Exception:
+                    continue
+        except Exception as e:
+            print(f"Error generating AI suggestions with Groq: {e}")
+
+    # Fallback Extended Role Pools
+    role_pools = {
+        "student": [
+            {"title": "Active Recall Flashcard Sprint", "category": "Study", "detail": "Test memory on core concepts without looking at lecture notes.", "impact": "+18% retention", "start_time": "08:30", "duration_minutes": 35},
+            {"title": "Feynman Concept Breakdown", "category": "Study", "detail": "Explain a complex proof or algorithm in simple terms on paper.", "impact": "+1.5 mastery rating", "start_time": "11:00", "duration_minutes": 45},
+            {"title": "Screen-Free Lunch Reset", "category": "Vitality", "detail": "Enjoy lunch without phones or video to prevent cognitive saturation.", "impact": "+0.8 alertness", "start_time": "12:30", "duration_minutes": 30},
+            {"title": "Practice Exam Problem Set", "category": "Focus", "detail": "Timed exam problem set under simulated test conditions.", "impact": "+2.2 exam readiness", "start_time": "15:00", "duration_minutes": 60},
+            {"title": "Textbook Cost Optimization", "category": "Finance", "detail": "Audit course material expenses and use library open access copies.", "impact": "+$120 saved", "start_time": "17:00", "duration_minutes": 20},
+            {"title": "Sleep Hygiene Wind-Down", "category": "Vitality", "detail": "Turn off screens 45 min before sleep to protect REM sleep cycles.", "impact": "+1.2 sleep quality", "start_time": "22:30", "duration_minutes": 30}
+        ],
+        "professional": [
+            {"title": "Deep Work Morning Block", "category": "Focus", "detail": "Zero-notification coding or design block before checking emails or Slack.", "impact": "+1.8 daily focus", "start_time": "09:00", "duration_minutes": 90},
+            {"title": "Post-Lunch Walking Meeting", "category": "Vitality", "detail": "Take a 20-minute audio-only call while walking to prevent afternoon fatigue.", "impact": "+1.0 vitality", "start_time": "13:30", "duration_minutes": 20},
+            {"title": "Career Upskilling Sprint", "category": "Study", "detail": "Study cloud architecture, distributed systems, or industry leadership.", "impact": "+1.5 trajectory", "start_time": "17:30", "duration_minutes": 45},
+            {"title": "Emergency Buffer Allocation", "category": "Finance", "detail": "Transfer monthly discretionary savings into high-yield liquidity reserve.", "impact": "+$450/mo saved", "start_time": "12:00", "duration_minutes": 15},
+            {"title": "Evening Screen Curfew", "category": "Vitality", "detail": "Enable blue-light filters and switch to physical reading.", "impact": "+0.9 deep sleep", "start_time": "21:30", "duration_minutes": 30}
+        ],
+        "freelancer": [
+            {"title": "Client Core Deliverable Block", "category": "Focus", "detail": "Focus exclusively on highest-paying client milestone deliverables.", "impact": "+1.5 billable output", "start_time": "09:00", "duration_minutes": 120},
+            {"title": "Inbound Pipeline Outreach", "category": "Study", "detail": "Publish a technical case study or follow up with prospective clients.", "impact": "+$800 pipeline", "start_time": "14:00", "duration_minutes": 45},
+            {"title": "Invoice & Tax Buffer Transfer", "category": "Finance", "detail": "Review accounts receivable and set aside 25% for upcoming tax buffer.", "impact": "Tax runway secured", "start_time": "16:30", "duration_minutes": 20},
+            {"title": "Strict Workplace Shutdown", "category": "Vitality", "detail": "Close client communication channels to preserve work-life boundary.", "impact": "+1.2 recovery", "start_time": "18:30", "duration_minutes": 15}
+        ],
+        "entrepreneur": [
+            {"title": "Product & Distribution Sprint", "category": "Focus", "detail": "Focus on product growth and distribution before daily operational fires.", "impact": "+2.0 leverage", "start_time": "08:30", "duration_minutes": 90},
+            {"title": "Customer Interview Synthesis", "category": "Study", "detail": "Review user recordings and extract key pain points for sprint planning.", "impact": "+Product clarity", "start_time": "13:30", "duration_minutes": 45},
+            {"title": "Runway & Burn Rate Audit", "category": "Finance", "detail": "Analyze monthly burn rate vs capital reserves to maintain 18+ month runway.", "impact": "Protects runway", "start_time": "17:00", "duration_minutes": 25},
+            {"title": "Executive Stress Reset Walk", "category": "Vitality", "detail": "Step away for an outdoor screen-free walk to restore strategic perspective.", "impact": "+1.4 resilience", "start_time": "12:30", "duration_minutes": 25}
+        ],
+        "retiree": [
+            {"title": "Morning Sunlight Mobility Walk", "category": "Vitality", "detail": "Gentle 30-minute walk in natural morning sunlight for circadian health.", "impact": "+1.5 vitality", "start_time": "07:30", "duration_minutes": 30},
+            {"title": "Cognitive Puzzle & Reading", "category": "Study", "detail": "Engage in chess, crosswords, or historical reading for neuroplasticity.", "impact": "+1.0 acuity", "start_time": "10:30", "duration_minutes": 45},
+            {"title": "Safe Withdrawal Rate Review", "category": "Finance", "detail": "Verify quarterly dividend payouts and maintain cash allocation.", "impact": "Preserves capital", "start_time": "15:00", "duration_minutes": 20},
+            {"title": "Evening Tea & Acoustic Unwind", "category": "Vitality", "detail": "Calming herbal tea and restorative music before bed.", "impact": "+1.2 sleep quality", "start_time": "20:30", "duration_minutes": 30}
+        ]
+    }
+
+    pool = role_pools.get(target_role, role_pools["professional"])
+    filtered_pool = [s for s in pool if s["title"].lower() not in existing_titles]
+    if len(filtered_pool) < 3:
+        filtered_pool = pool
+
+    selected = random.sample(filtered_pool, min(len(filtered_pool), 4 if mode == "regenerate" else 3))
+    out_suggestions = []
+    for s in selected:
+        out_suggestions.append({
+            "suggestion_id": f"ai-{target_role[:3]}-{random.randint(10000, 99999)}",
+            "title": s["title"],
+            "category": s["category"],
+            "detail": s["detail"],
+            "impact": s["impact"],
+            "start_time": s["start_time"],
+            "duration_minutes": s["duration_minutes"],
+            "is_adopted": False,
+            "is_ai_generated": True
+        })
+
     return {
-        "diagnostic": f"Calibrated for {role.title()} persona baseline.",
-        "suggestions": [dict(s, is_ai_generated=True) for s in base_defaults]
+        "diagnostic": f"Calibrated for {target_role.title()} profile · Sleep: {sleep_h:.1f}h · Screen: {screen_h:.1f}h · Focus: {study_h:.1f}h/day",
+        "suggestions": out_suggestions
     }
