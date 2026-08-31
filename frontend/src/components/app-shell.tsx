@@ -18,7 +18,8 @@ import {
   Trash2,
   MessageSquare,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +53,7 @@ export function AppShell({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   // Chat sessions for sidebar
   const [sidebarSessions, setSidebarSessions] = useState<ChatSessionData[]>([]);
@@ -83,9 +85,15 @@ export function AppShell({
       loadSidebarSessions();
     };
 
+    const handleOpenMobileThreads = () => {
+      setMobileDrawerOpen(true);
+    };
+
     window.addEventListener("chat-sessions-updated", handleSessionsUpdated);
+    window.addEventListener("twin-open-mobile-threads", handleOpenMobileThreads);
     return () => {
       window.removeEventListener("chat-sessions-updated", handleSessionsUpdated);
+      window.removeEventListener("twin-open-mobile-threads", handleOpenMobileThreads);
     };
   }, [userId, pathname]);
 
@@ -313,11 +321,21 @@ export function AppShell({
       {/* ------------------------------------------------------------- */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top Navbar */}
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border/40 bg-background/85 px-4 backdrop-blur md:px-8">
-          <div className="min-w-0 flex-1 flex items-center gap-2.5">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-2.5 sm:gap-3 border-b border-border/40 bg-background/85 px-3 sm:px-4 backdrop-blur md:px-8">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setMobileDrawerOpen(true)}
+            className="md:hidden rounded-xl text-muted-foreground hover:text-foreground cursor-pointer shadow-2xs shrink-0"
+            title="Chat Threads & Navigation"
+          >
+            <PanelLeftOpen className="h-4 w-4 text-[#0071E3]" />
+          </Button>
+
+          <div className="min-w-0 flex-1 flex items-center gap-2">
             <span className="truncate text-sm font-semibold">{state.profile.name || "Guest"}</span>
             <span
-              className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize ${
+              className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
                 state.profile.role === "student"
                   ? "clay-badge-purple"
                   : state.profile.role === "professional"
@@ -332,12 +350,12 @@ export function AppShell({
               {state.profile.role}
             </span>
             {isOnline ? (
-              <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+              <span className="hidden sm:flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
                 Live
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+              <span className="hidden sm:flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]" />
                 Offline
               </span>
@@ -349,7 +367,7 @@ export function AppShell({
             size="icon"
             aria-label="Toggle theme"
             onClick={() => setTheme(state.theme === "dark" ? "light" : "dark")}
-            className="rounded-xl shadow-2xs cursor-pointer"
+            className="rounded-xl shadow-2xs cursor-pointer shrink-0"
           >
             {state.theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
@@ -426,6 +444,106 @@ export function AppShell({
           );
         })}
       </nav>
+
+      {/* Mobile Sidebar & Chat Threads Drawer */}
+      {mobileDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden animate-fade-in">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setMobileDrawerOpen(false)}
+          />
+
+          {/* Slide-out Sheet */}
+          <div className="relative flex w-4/5 max-w-xs flex-1 flex-col bg-background dark:bg-[#141414] border-r border-border/60 shadow-2xl z-50">
+            {/* Drawer Brand Header */}
+            <div className="flex h-16 items-center justify-between border-b border-border/40 px-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0071E3] via-indigo-600 to-purple-600 text-white shadow-xs">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <div className="flex items-center gap-1.5 font-display text-sm font-bold">
+                  <span>Visual Risk</span>
+                  <span className="text-[10px] bg-[#0071E3]/15 text-[#0071E3] font-bold px-1.5 py-0.5 rounded-md">
+                    AI
+                  </span>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileDrawerOpen(false)}
+                className="rounded-xl text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* New Chat Button */}
+            <div className="p-3 border-b border-border/40">
+              <Button
+                onClick={() => {
+                  handleNewChatDraft();
+                  setMobileDrawerOpen(false);
+                }}
+                className="w-full justify-start gap-2 bg-[#0071E3] hover:bg-[#0071E3]/90 text-white rounded-xl shadow-xs cursor-pointer font-medium text-xs"
+              >
+                <Plus className="h-4 w-4" />
+                <span>New Chat Thread</span>
+              </Button>
+            </div>
+
+            {/* Recent Conversations List */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-1 min-h-0">
+              <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                Recent Conversations
+              </div>
+              {sidebarSessions.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-muted-foreground italic">No conversations yet.</p>
+              ) : (
+                sidebarSessions.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => {
+                      handleSelectThread(s.id);
+                      setMobileDrawerOpen(false);
+                    }}
+                    className="group w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-muted/70 hover:text-foreground text-left transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 truncate min-w-0">
+                      <MessageSquare className="h-4 w-4 text-[#0071E3] shrink-0" />
+                      <span className="truncate">{s.title}</span>
+                    </div>
+                    <span
+                      onClick={(e) => handleDeleteThread(s.id, e)}
+                      className="opacity-60 hover:opacity-100 hover:text-rose-500 p-1 cursor-pointer"
+                      title="Delete thread"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+
+            {/* Pinned Bottom Options */}
+            <div className="p-3 border-t border-border/40 space-y-1 bg-muted/20">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileDrawerOpen(false);
+                  navigate({ to: "/settings" });
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-muted/70 hover:text-foreground cursor-pointer"
+              >
+                <Settings className="h-4 w-4" />
+                <span>Settings</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>

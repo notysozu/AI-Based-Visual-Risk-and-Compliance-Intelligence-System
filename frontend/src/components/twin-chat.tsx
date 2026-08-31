@@ -26,7 +26,9 @@ import {
   CalendarCheck,
   BookOpen,
   Moon,
-  Activity
+  Activity,
+  MessageSquare,
+  Plus
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
@@ -447,6 +449,38 @@ export function TwinChat({
           : "h-[660px] rounded-3xl border border-border/80 bg-card text-foreground dark:bg-[#171717] dark:text-white shadow-xl backdrop-blur-2xl overflow-hidden"
       } transition-all ${className}`}
     >
+      {/* Mobile Top Context & Threads Bar on Fullscreen /chat page */}
+      {fullHeight && (
+        <div className="md:hidden px-3 py-2 border-b border-border/40 flex items-center justify-between bg-card/70 dark:bg-black/30 backdrop-blur shrink-0 z-10">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("twin-open-mobile-threads"))}
+            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-xl bg-card dark:bg-[#202020] text-foreground border border-border/60 shadow-2xs cursor-pointer active:scale-95 transition-all"
+            title="View Chat Sessions & Switch Threads"
+          >
+            <MessageSquare className="h-3.5 w-3.5 text-[#0071E3]" />
+            <span className="truncate max-w-[150px]">{activeSession ? activeSession.title : "Recent Chats"}</span>
+            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveSessionId(null);
+                setMessages([]);
+                setInputPrompt("");
+              }}
+              className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-xl bg-[#0071E3]/15 text-[#0071E3] dark:text-blue-400 border border-[#0071E3]/30 cursor-pointer active:scale-95 transition-all"
+              title="Start New Chat"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>New</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Top Header Bar (Only shown when embedded as a widget) */}
       {!fullHeight && (
         <div className="px-4 py-3 border-b border-border/40 flex items-center justify-between bg-card/40 dark:bg-black/10 shrink-0">
