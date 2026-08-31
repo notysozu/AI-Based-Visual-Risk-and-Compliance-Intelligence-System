@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Copy,
   Check,
@@ -21,11 +23,68 @@ type Props = {
   className?: string;
 };
 
-interface ParsedSection {
-  title: string;
-  type: "scenario_a" | "scenario_b" | "tradeoff" | "choice" | "wealth" | "general";
-  lines: string[];
-}
+const markdownComponents = {
+  h1: ({ node, ...props }: any) => (
+    <h1 className="text-base font-bold text-foreground dark:text-white mt-3 mb-1.5" {...props} />
+  ),
+  h2: ({ node, ...props }: any) => (
+    <h2 className="text-sm font-bold text-foreground dark:text-white mt-3 mb-1.5" {...props} />
+  ),
+  h3: ({ node, ...props }: any) => (
+    <h3 className="text-sm font-semibold text-foreground dark:text-white mt-2.5 mb-1 tracking-tight" {...props} />
+  ),
+  h4: ({ node, ...props }: any) => (
+    <h4 className="text-xs font-semibold text-muted-foreground dark:text-white/70 mt-2 mb-1 uppercase tracking-wider font-mono" {...props} />
+  ),
+  p: ({ node, ...props }: any) => (
+    <p className="leading-relaxed my-1.5 text-xs sm:text-sm text-foreground/90 dark:text-white/90" {...props} />
+  ),
+  ul: ({ node, ...props }: any) => (
+    <ul className="list-disc list-outside ml-4 my-2 space-y-1 text-xs sm:text-sm text-foreground/90 dark:text-white/90" {...props} />
+  ),
+  ol: ({ node, ...props }: any) => (
+    <ol className="list-decimal list-outside ml-4 my-2 space-y-1 text-xs sm:text-sm text-foreground/90 dark:text-white/90" {...props} />
+  ),
+  li: ({ node, ...props }: any) => <li className="leading-relaxed pl-1" {...props} />,
+  strong: ({ node, ...props }: any) => (
+    <strong className="font-semibold text-foreground dark:text-white" {...props} />
+  ),
+  blockquote: ({ node, ...props }: any) => (
+    <blockquote
+      className="border-l-2 border-[#0071E3] bg-[#0071E3]/5 dark:bg-white/5 pl-3 py-1.5 my-2.5 rounded-r text-xs sm:text-sm text-foreground/90 dark:text-white/80 font-normal italic"
+      {...props}
+    />
+  ),
+  // Styled Markdown Tables matching chat screen
+  table: ({ node, ...props }: any) => (
+    <div className="my-3.5 w-full overflow-x-auto rounded-xl border border-border/70 dark:border-white/10 shadow-xs bg-card/60 dark:bg-white/2">
+      <table className="w-full text-left border-collapse text-xs sm:text-sm" {...props} />
+    </div>
+  ),
+  thead: ({ node, ...props }: any) => (
+    <thead className="bg-muted/80 dark:bg-white/10 text-foreground dark:text-white border-b border-border/70 dark:border-white/10 font-semibold" {...props} />
+  ),
+  tbody: ({ node, ...props }: any) => (
+    <tbody className="divide-y divide-border/40 dark:divide-white/5" {...props} />
+  ),
+  tr: ({ node, ...props }: any) => (
+    <tr className="hover:bg-muted/40 dark:hover:bg-white/5 transition-colors" {...props} />
+  ),
+  th: ({ node, ...props }: any) => (
+    <th className="px-3.5 py-2.5 font-semibold text-xs text-foreground dark:text-white border-r border-border/30 dark:border-white/5 last:border-r-0" {...props} />
+  ),
+  td: ({ node, ...props }: any) => (
+    <td className="px-3.5 py-2.5 text-xs text-foreground/90 dark:text-white/80 border-r border-border/20 dark:border-white/5 last:border-r-0" {...props} />
+  ),
+  code: ({ node, inline, ...props }: any) =>
+    inline ? (
+      <code className="font-mono bg-muted dark:bg-white/10 px-1.5 py-0.5 rounded text-[11px] text-[#0071E3] dark:text-blue-400" {...props} />
+    ) : (
+      <pre className="font-mono bg-muted/60 dark:bg-black/40 p-3 rounded-xl text-xs overflow-x-auto my-2 border border-border/60 dark:border-white/10 text-foreground dark:text-white/90">
+        <code {...props} />
+      </pre>
+    ),
+};
 
 export function AIIntelligenceCard({
   title = "Visual Risk AI Intelligence",
@@ -38,7 +97,6 @@ export function AIIntelligenceCard({
   className = "",
 }: Props) {
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<"all" | "verdict" | "scenarios">("all");
 
   const handleCopy = () => {
     if (!content) return;
@@ -48,120 +106,19 @@ export function AIIntelligenceCard({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Parse raw markdown into structured sections
-  const sections = useMemo<ParsedSection[]>(() => {
-    if (!content) return [];
-
-    const rawLines = content.split("\n");
-    const parsed: ParsedSection[] = [];
-    let currentSection: ParsedSection = {
-      title: "Overview",
-      type: "general",
-      lines: [],
-    };
-
-    for (const raw of rawLines) {
-      const line = raw.trim();
-      if (!line) continue;
-
-      if (line.startsWith("### ") || line.startsWith("#### ")) {
-        if (currentSection.lines.length > 0) {
-          parsed.push(currentSection);
-        }
-        const heading = line.replace(/^#{3,4}\s*/, "").replace(/\*\*/g, "");
-        const lower = heading.toLowerCase();
-
-        let type: ParsedSection["type"] = "general";
-        if (lower.includes("scenario a")) type = "scenario_a";
-        else if (lower.includes("scenario b")) type = "scenario_b";
-        else if (lower.includes("tradeoff") || lower.includes("comparison")) type = "tradeoff";
-        else if (lower.includes("choice") || lower.includes("verdict") || lower.includes("recommendation")) type = "choice";
-        else if (lower.includes("wealth") || lower.includes("prediction") || lower.includes("projection")) type = "wealth";
-
-        currentSection = {
-          title: heading,
-          type,
-          lines: [],
-        };
-      } else {
-        currentSection.lines.push(line);
-      }
-    }
-
-    if (currentSection.lines.length > 0) {
-      parsed.push(currentSection);
-    }
-
-    return parsed;
-  }, [content]);
-
-  // Extract winning scenario if not explicitly provided
   const winner = useMemo<"A" | "B" | null>(() => {
     if (recommendedScenario) return recommendedScenario;
-    const lower = content.toLowerCase();
-    if (lower.includes("choose scenario b") || lower.includes("adopt scenario b") || lower.includes("winner: scenario b")) {
+    const lower = (content || "").toLowerCase();
+    if (lower.includes("choose scenario b") || lower.includes("adopt scenario b") || lower.includes("winner: scenario b") || lower.includes("optimal: scenario b")) {
       return "B";
     }
-    if (lower.includes("choose scenario a") || lower.includes("adopt scenario a") || lower.includes("winner: scenario a")) {
+    if (lower.includes("choose scenario a") || lower.includes("adopt scenario a") || lower.includes("winner: scenario a") || lower.includes("optimal: scenario a")) {
       return "A";
     }
     return null;
   }, [content, recommendedScenario]);
 
-  const renderFormattedLine = (line: string, idx: number) => {
-    let text = line;
-    let isBullet = false;
-
-    if (text.startsWith("- ") || text.startsWith("* ")) {
-      isBullet = true;
-      text = text.substring(2);
-    }
-
-    // Parse **bold** parts
-    const parts = [];
-    const regex = /\*\*(.*?)\*\*/g;
-    let match;
-    let lastIndex = 0;
-    while ((match = regex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(text.substring(lastIndex, match.index));
-      }
-      parts.push(
-        <strong key={match.index} className="font-bold text-foreground">
-          {match[1]}
-        </strong>
-      );
-      lastIndex = regex.lastIndex;
-    }
-    if (lastIndex < text.length) {
-      parts.push(text.substring(lastIndex));
-    }
-
-    if (isBullet) {
-      return (
-        <div key={idx} className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed py-0.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-foreground/40 mt-1.5 shrink-0" />
-          <div className="flex-1">{parts}</div>
-        </div>
-      );
-    }
-
-    return (
-      <p key={idx} className="text-xs text-muted-foreground leading-relaxed my-1">
-        {parts}
-      </p>
-    );
-  };
-
-  const filteredSections = useMemo(() => {
-    if (activeTab === "verdict") {
-      return sections.filter((s) => s.type === "choice" || s.type === "tradeoff" || s.type === "wealth");
-    }
-    if (activeTab === "scenarios") {
-      return sections.filter((s) => s.type === "scenario_a" || s.type === "scenario_b");
-    }
-    return sections;
-  }, [sections, activeTab]);
+  if (!content) return null;
 
   return (
     <div className={`panel p-6 border border-border/60 shadow-[var(--clay-shadow)] space-y-5 animate-rise ${className}`}>
@@ -184,36 +141,10 @@ export function AIIntelligenceCard({
         </div>
 
         <div className="flex items-center gap-2">
-          {sections.some((s) => s.type === "scenario_a" || s.type === "scenario_b") && (
-            <div className="flex rounded-xl bg-input p-0.5 border border-border/30 shadow-[var(--clay-inset)] text-[11px]">
-              <button
-                type="button"
-                onClick={() => setActiveTab("all")}
-                className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                  activeTab === "all" ? "bg-card text-foreground shadow-[var(--clay-shadow-sm)]" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("scenarios")}
-                className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                  activeTab === "scenarios" ? "bg-card text-foreground shadow-[var(--clay-shadow-sm)]" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Scenarios
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("verdict")}
-                className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                  activeTab === "verdict" ? "bg-card text-foreground shadow-[var(--clay-shadow-sm)]" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Verdict
-              </button>
-            </div>
+          {winner && (
+            <span className="clay-badge-emerald text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <Zap className="h-3 w-3" /> Recommended: Scenario {winner}
+            </span>
           )}
 
           <Button
@@ -228,90 +159,42 @@ export function AIIntelligenceCard({
         </div>
       </div>
 
-      {/* Sections Grid */}
-      <div className="space-y-3.5">
-        {filteredSections.map((sec, idx) => {
-          const isA = sec.type === "scenario_a";
-          const isB = sec.type === "scenario_b";
-          const isChoice = sec.type === "choice";
-          const isTradeoff = sec.type === "tradeoff";
-
-          const cardStyle = isA
-            ? "border-indigo-500/30 bg-indigo-500/[0.04]"
-            : isB
-            ? "border-emerald-500/30 bg-emerald-500/[0.04]"
-            : isChoice
-            ? "border-purple-500/40 bg-gradient-to-br from-purple-500/[0.06] via-purple-500/[0.02] to-transparent"
-            : isTradeoff
-            ? "border-amber-500/30 bg-amber-500/[0.03]"
-            : "border-border/40 bg-input/40";
-
-          const badgeClass = isA
-            ? "clay-badge-indigo"
-            : isB
-            ? "clay-badge-emerald"
-            : isChoice
-            ? "clay-badge-purple"
-            : isTradeoff
-            ? "clay-badge-amber"
-            : "clay-badge-indigo";
-
-          return (
-            <div
-              key={idx}
-              className={`rounded-2xl border p-4 shadow-[var(--clay-inset)] transition-all ${cardStyle}`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full tracking-wider ${badgeClass}`}>
-                    {sec.title}
-                  </span>
-                </div>
-
-                {isChoice && winner && (
-                  <span className="clay-badge-emerald text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    <Zap className="h-3 w-3" /> Optimal: Scenario {winner}
-                  </span>
-                )}
-              </div>
-
-              <div className="space-y-1.5 mt-2">
-                {sec.lines.map((l, lIdx) => renderFormattedLine(l, lIdx))}
-              </div>
-
-              {/* Action buttons inside Choice card */}
-              {isChoice && (
-                <div className="mt-4 pt-3 border-t border-border/40 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
-                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> Adopt this optimal roadmap into your active habits:
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {onAdoptA && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-[11px] px-3 rounded-xl font-bold hover:border-indigo-500"
-                        onClick={onAdoptA}
-                      >
-                        Adopt Scenario A
-                      </Button>
-                    )}
-                    {onAdoptB && (
-                      <Button
-                        size="sm"
-                        className="h-7 text-[11px] px-3 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_2px_8px_rgba(16,185,129,0.4)]"
-                        onClick={onAdoptB}
-                      >
-                        <Zap className="h-3 w-3 mr-1" /> Adopt Scenario B
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+      {/* Structured Content Area with ReactMarkdown & Table Support */}
+      <div className="prose-chat leading-relaxed space-y-2 text-foreground">
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+          {content}
+        </ReactMarkdown>
       </div>
+
+      {/* Action Adoption Bar if both adopt callbacks available */}
+      {(onAdoptA || onAdoptB) && (
+        <div className="mt-4 pt-3.5 border-t border-border/40 flex flex-wrap items-center justify-between gap-3 bg-muted/20 dark:bg-white/2 p-3.5 rounded-2xl">
+          <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+            <ShieldCheck className="h-4 w-4 text-emerald-500" /> Adopt selected trajectory into your active habits & budget:
+          </span>
+          <div className="flex items-center gap-2">
+            {onAdoptA && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs px-3.5 rounded-xl font-bold hover:border-indigo-500"
+                onClick={onAdoptA}
+              >
+                Adopt Scenario A
+              </Button>
+            )}
+            {onAdoptB && (
+              <Button
+                size="sm"
+                className="h-8 text-xs px-3.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_2px_8px_rgba(16,185,129,0.4)]"
+                onClick={onAdoptB}
+              >
+                <Zap className="h-3.5 w-3.5 mr-1" /> Adopt Scenario B
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Probability footer badge if available */}
       {probability !== null && probability !== undefined && (

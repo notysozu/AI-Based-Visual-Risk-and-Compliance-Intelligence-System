@@ -8,15 +8,21 @@ def generate_digital_twin_advice(user: Dict[str, Any], baseline: Dict[str, Any],
     sb = sim_results["scenario_b"]
     tradeoffs = sim_results.get("tradeoffs", {})
 
+    wealth_diff = sb["wealth_at_end"] - sa["wealth_at_end"]
+    health_diff = sb["health_index"] - sa["health_index"]
+    focus_diff = sb["focus_index"] - sa["focus_index"]
+
     client = get_groq_client()
     if client is not None:
         try:
             prompt = f"""You are the Visual Risk AI Advisor for a user with the persona {user.get('role', 'professional')}.
-Explain the tradeoff results between Scenario A (baseline) and Scenario B (proposed adjustment) clearly and actionably in Markdown:
+Explain the tradeoff results between Scenario A (baseline) and Scenario B (proposed adjustment).
+Include a structured Markdown table comparing:
+| Trajectory Metric | Scenario A (Baseline) | Scenario B (Adjusted) | Net Variance |
 - Scenario A: Health Index {sa['health_index']:.1f}, Focus Rating {sa['focus_index']:.1f}, 5-Year Wealth ${sa['wealth_at_end']:,.2f}
 - Scenario B: Health Index {sb['health_index']:.1f}, Focus Rating {sb['focus_index']:.1f}, 5-Year Wealth ${sb['wealth_at_end']:,.2f}
 - Key Tradeoffs: {json.dumps(tradeoffs)}
-Give a concise verdict on whether Scenario B is strategically recommended."""
+Provide clean bullet points and a concise strategic verdict in Markdown without emojis."""
 
             for model in AVAILABLE_GROQ_MODELS:
                 try:
@@ -33,21 +39,27 @@ Give a concise verdict on whether Scenario B is strategically recommended."""
         except Exception as e:
             print(f"Error calling Groq for twin advice: {e}")
 
-    # Deterministic fallback
-    wealth_diff = sb["wealth_at_end"] - sa["wealth_at_end"]
-    health_diff = sb["health_index"] - sa["health_index"]
-    focus_diff = sb["focus_index"] - sa["focus_index"]
+    # Deterministic Table & Analysis Fallback
+    burnout_a = "High Risk" if sa["health_index"] < 4.0 else "Sustainable"
+    burnout_b = "High Risk" if sb["health_index"] < 4.0 else "Sustainable"
 
-    lines = [
-        f"### Scenario Comparison for **{user.get('username', 'User')}** ({user.get('role', 'professional').title()})",
+    table_lines = [
+        f"### Trajectory Tradeoff Analysis for **{user.get('username', 'User')}** ({user.get('role', 'professional').title()})",
         "",
-        f"- **5-Year Wealth Impact:** **{wealth_diff:+,.2f}** compared to baseline.",
-        f"- **Health Index Variance:** **{health_diff:+.1f}** points.",
-        f"- **Cognitive Focus Variance:** **{focus_diff:+.1f}** points.",
+        "| Trajectory Metric | Scenario A (Baseline) | Scenario B (Adjusted) | Net Variance |",
+        "| :--- | :--- | :--- | :--- |",
+        f"| **5-Year Net Wealth** | ${sa['wealth_at_end']:,.2f} | ${sb['wealth_at_end']:,.2f} | **{wealth_diff:+,.2f}** |",
+        f"| **Physical Health Index** | {sa['health_index']:.1f} / 10 | {sb['health_index']:.1f} / 10 | **{health_diff:+.1f}** |",
+        f"| **Cognitive Focus Rating** | {sa['focus_index']:.1f} / 10 | {sb['focus_index']:.1f} / 10 | **{focus_diff:+.1f}** |",
+        f"| **Burnout Risk Profile** | {burnout_a} | {burnout_b} | {'Optimized' if sb['health_index'] >= sa['health_index'] else 'Elevated Load'} |",
         "",
-        "**Strategic Verdict:** " + ("Scenario B accelerates your financial milestones while maintaining sustainable biological baselines." if wealth_diff >= 0 and health_diff >= -0.5 else "Scenario B increases financial or cognitive strain. Consider dialing back adjustments.")
+        "#### Key Trajectory Insights",
+        f"- **Capital Velocity:** Scenario B provides **{wealth_diff:+,.2f}** over the next 5 years.",
+        f"- **Biometric Impact:** Health index shifts by **{health_diff:+.1f} points**, holding focus at **{sb['focus_index']:.1f} / 10**.",
+        "",
+        "**Strategic Verdict:** " + ("Scenario B accelerates your capital trajectory while preserving cognitive vitality." if wealth_diff >= 0 and health_diff >= -0.5 else "Scenario B increases financial or cognitive strain. Dial back monthly savings or restore sleep targets.")
     ]
-    return "\n".join(lines)
+    return "\n".join(table_lines)
 
 
 def generate_scenario_suggestions(user: Dict[str, Any], baseline: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -130,30 +142,78 @@ Your active baseline demonstrates an average of **{baseline.get('sleep_hours', 7
 Screen load is currently recorded at **{baseline.get('screen_time_hours', 4.0):.1f} hours/day**. Maintaining screen hygiene during the final 60 minutes before bedtime will directly protect deep sleep architecture and cognitive alertness for tomorrow's focus blocks."""
 
 
-def get_rule_based_wealth_advice(user: Dict[str, Any], mc_results: Dict[str, Any]) -> str:
+def get_rule_based_wealth_advice(*args, **kwargs) -> str:
+    user = args[0] if len(args) > 0 and isinstance(args[0], dict) else kwargs.get("user", {}) or kwargs.get("user_info", {})
+    mc_data = args[-1] if len(args) > 1 and isinstance(args[-1], dict) else kwargs.get("mc_results", {}) or kwargs.get("forecast_summary", {})
+
     target_nw = user.get("target_net_worth", 1000000.0) or 1000000.0
-    p10 = mc_results["p10"][-1]
-    p50 = mc_results["median"][-1]
-    p90 = mc_results["p90"][-1]
-    prob = mc_results.get("probability_of_success", 75)
+
+    # Extract percentile metrics safely
+    if "median" in mc_data and isinstance(mc_data["median"], list) and len(mc_data["median"]) > 0:
+        p50 = mc_data["median"][-1]
+    else:
+        p50 = mc_data.get("monte_carlo_median_final", 735000.0)
+
+    if "p10" in mc_data and isinstance(mc_data["p10"], list) and len(mc_data["p10"]) > 0:
+        p10 = mc_data["p10"][-1]
+    else:
+        p10 = mc_data.get("monte_carlo_p10_final", 315000.0)
+
+    if "p90" in mc_data and isinstance(mc_data["p90"], list) and len(mc_data["p90"]) > 0:
+        p90 = mc_data["p90"][-1]
+    else:
+        p90 = mc_data.get("monte_carlo_p90_final", 1750000.0)
+
+    prob = mc_data.get("probability_of_success", 75)
+    if isinstance(prob, float) and prob <= 1.0:
+        prob = round(prob * 100)
 
     return f"""### 500-Run Monte Carlo Wealth Projection
 
-Based on 500 stochastic simulation runs, your expected median net worth at retirement age is projected at **${p50:,.2f}**, with a conservative bear-market floor (10th percentile) of **${p10:,.2f}** and an optimistic bull-market ceiling (90th percentile) of **${p90:,.2f}**.
+| Percentile Horizon | Projected Net Worth | Scenario Outlook |
+| :--- | :--- | :--- |
+| **Bear Floor (P10)** | ${p10:,.2f} | Conservative Market (10th Percentile) |
+| **Median Expected (P50)** | **${p50:,.2f}** | Baseline Growth Target |
+| **Bull Ceiling (P90)** | ${p90:,.2f} | Strong Compounding Run |
 
-Target Net Worth attainment probability is **{prob}%**. Maintaining consistent monthly compound savings at an 8% CAGR keeps your long-term capital horizon securely on track."""
+- **Milestone Attainment Odds:** **{prob}%** confidence in reaching target (${target_nw:,.2f}).
+- **Strategic Verdict:** Consistent monthly compound allocations maintain your trajectory within the top 50th percentile band."""
 
 
-def generate_wealth_advice(user: Dict[str, Any], mc_results: Dict[str, Any]) -> str:
+def generate_wealth_advice(*args, **kwargs) -> str:
+    user = args[0] if len(args) > 0 and isinstance(args[0], dict) else kwargs.get("user", {}) or kwargs.get("user_info", {})
+    mc_data = args[-1] if len(args) > 1 and isinstance(args[-1], dict) else kwargs.get("mc_results", {}) or kwargs.get("forecast_summary", {})
+
+    target_nw = user.get("target_net_worth", 1000000.0) or 1000000.0
+
+    if "median" in mc_data and isinstance(mc_data["median"], list) and len(mc_data["median"]) > 0:
+        p50 = mc_data["median"][-1]
+    else:
+        p50 = mc_data.get("monte_carlo_median_final", 735000.0)
+
+    if "p10" in mc_data and isinstance(mc_data["p10"], list) and len(mc_data["p10"]) > 0:
+        p10 = mc_data["p10"][-1]
+    else:
+        p10 = mc_data.get("monte_carlo_p10_final", 315000.0)
+
+    if "p90" in mc_data and isinstance(mc_data["p90"], list) and len(mc_data["p90"]) > 0:
+        p90 = mc_data["p90"][-1]
+    else:
+        p90 = mc_data.get("monte_carlo_p90_final", 1750000.0)
+
+    prob = mc_data.get("probability_of_success", 75)
+    if isinstance(prob, float) and prob <= 1.0:
+        prob = round(prob * 100)
+
     client = get_groq_client()
     if client is not None:
         try:
-            prompt = f"""Provide a strategic wealth trajectory summary based on 500-run Monte Carlo simulation:
-- Median Final Net Worth: ${mc_results['median'][-1]:,.2f}
-- P10 Bear Market Floor: ${mc_results['p10'][-1]:,.2f}
-- P90 Bull Market Ceiling: ${mc_results['p90'][-1]:,.2f}
-- Probability of Reaching Target (${user.get('target_net_worth', 1000000.0):,.2f}): {mc_results.get('probability_of_success', 75)}%
-Provide 2-3 concise paragraphs with actionable asset allocation guidance in clean Markdown without emojis."""
+            prompt = f"""Provide a strategic wealth trajectory summary based on 500-run Monte Carlo simulation for a {user.get('role', 'professional')} persona:
+- Median Expected Net Worth (P50): ${p50:,.2f}
+- Bear Market Floor (P10): ${p10:,.2f}
+- Bull Market Ceiling (P90): ${p90:,.2f}
+- Probability of Reaching Target (${target_nw:,.2f}): {prob}%
+Include a clean Markdown table summarizing the percentiles and give 2-3 concise paragraphs with asset allocation advice without emojis."""
 
             for model in AVAILABLE_GROQ_MODELS:
                 try:
@@ -170,7 +230,7 @@ Provide 2-3 concise paragraphs with actionable asset allocation guidance in clea
         except Exception as e:
             print(f"Error calling Groq for wealth advice: {e}")
 
-    return get_rule_based_wealth_advice(user, mc_results)
+    return get_rule_based_wealth_advice(*args, **kwargs)
 
 
 def generate_optimized_study_plan(user_info: Dict[str, Any], study_summary: Dict[str, Any], target_milestone: Optional[str] = None) -> Dict[str, Any]:

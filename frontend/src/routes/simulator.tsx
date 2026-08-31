@@ -40,60 +40,6 @@ export const Route = createFileRoute("/simulator")({
 type Scenario = { savings: number; sleep: number; study: number };
 const ZERO: Scenario = { savings: 0, sleep: 0, study: 0 };
 
-function parseMarkdown(text: string) {
-  if (!text) return null;
-  const lines = text.split("\n");
-  return lines.map((line, i) => {
-    let cleanLine = line.trim();
-    if (!cleanLine) return <div key={i} className="h-2" />;
-    
-    if (cleanLine.startsWith("### ")) {
-      return <h4 key={i} className="text-sm font-semibold mt-3 mb-1 text-foreground">{cleanLine.replace("### ", "")}</h4>;
-    }
-    if (cleanLine.startsWith("## ")) {
-      return <h3 key={i} className="text-base font-bold mt-4 mb-2 text-foreground">{cleanLine.replace("## ", "")}</h3>;
-    }
-    if (cleanLine.startsWith("# ")) {
-      return <h2 key={i} className="text-lg font-bold mt-4 mb-2 text-foreground">{cleanLine.replace("# ", "")}</h2>;
-    }
-    
-    let isBullet = false;
-    if (cleanLine.startsWith("- ") || cleanLine.startsWith("* ")) {
-      isBullet = true;
-      cleanLine = cleanLine.substring(2);
-    }
-    
-    const parts = [];
-    const regex = /\*\*(.*?)\*\*/g;
-    let match;
-    let lastIndex = 0;
-    while ((match = regex.exec(cleanLine)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(cleanLine.substring(lastIndex, match.index));
-      }
-      parts.push(<strong key={match.index} className="font-bold text-foreground">{match[1]}</strong>);
-      lastIndex = regex.lastIndex;
-    }
-    if (lastIndex < cleanLine.length) {
-      parts.push(cleanLine.substring(lastIndex));
-    }
-    
-    if (isBullet) {
-      return (
-        <li key={i} className="ml-4 list-disc text-sm text-muted-foreground pl-1 py-0.5">
-          {parts}
-        </li>
-      );
-    }
-    
-    return (
-      <p key={i} className="text-sm text-muted-foreground leading-relaxed my-1">
-        {parts}
-      </p>
-    );
-  });
-}
-
 function SimulatorPage() {
   const ok = useGuard();
   const { state, updateProfile, saveScenarioPresets, loadScenarioPresets } = useTwin();
