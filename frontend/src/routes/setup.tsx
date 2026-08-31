@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, GraduationCap, Briefcase, Laptop, Rocket, HeartHandshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -134,7 +134,10 @@ function SetupPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0); // step 0 is Role Selection, step 1..N are questions
   const [dir, setDir] = useState<1 | -1>(1);
-  const [draft, setDraft] = useState<Profile>(state.profile);
+  const [draft, setDraft] = useState<Profile>(() => ({
+    ...DEFAULT_PROFILE,
+    ...state.profile,
+  }));
 
   // If not logged in, redirect to signup
   useEffect(() => {
@@ -145,22 +148,23 @@ function SetupPage() {
 
   // Keep draft profile synced with current user name and id
   useEffect(() => {
-    if (state.profile.name || state.profile.email || state.profile.id) {
+    if (state.profile?.name || state.profile?.email || state.profile?.id) {
       setDraft((prev) => ({
         ...prev,
         id: state.profile.id ?? prev.id,
         name: state.profile.name ?? prev.name,
         email: state.profile.email ?? prev.email,
+        role: prev.role || state.profile.role || "professional",
       }));
     }
-  }, [state.profile.name, state.profile.email, state.profile.id]);
+  }, [state.profile]);
 
-  const questions = useMemo(() => getQuestionsForRole(draft.role), [draft.role]);
+  const questions = useMemo(() => getQuestionsForRole(draft?.role || "professional"), [draft?.role]);
   const totalSteps = questions.length + 1; // +1 for the role selection step
   const progress = ((step + 1) / totalSteps) * 100;
 
   const handleSelectRole = (role: UserRole) => {
-    const cfg = ROLE_CONFIGS[role];
+    const cfg = ROLE_CONFIGS[role] || ROLE_CONFIGS.professional;
     setDraft((prev) => ({
       ...prev,
       role,
