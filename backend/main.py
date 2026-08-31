@@ -46,12 +46,18 @@ app.include_router(chat.router)
 @app.get("/")
 def read_root():
     return {
-        "message": "Digital Twin AI API is running",
+        "message": "Visual Risk AI API is running",
         "status": "online"
     }
 
 @app.get("/health")
 def health_check():
-    return {
-        "status": "healthy"
-    }
+    return {"status": "healthy"}
+
+@app.get("/api/v1/health")
+def health_check_v1():
+    return {"status": "healthy"}
+
+@app.get("/api/health")
+def health_check_alias():
+    return {"status": "healthy"}
