@@ -75,6 +75,16 @@ def run_migrations():
         except Exception as e:
             print(f"Error migrating study_records table: {e}")
 
+        # Check user_suggestions table
+        try:
+            res = conn.exec_driver_sql("PRAGMA table_info(user_suggestions)")
+            existing_sug_cols = {row[1] for row in res.fetchall()}
+            if existing_sug_cols and "created_at" not in existing_sug_cols:
+                conn.exec_driver_sql("ALTER TABLE user_suggestions ADD COLUMN created_at DATETIME")
+                conn.commit()
+        except Exception as e:
+            print(f"Error migrating user_suggestions table: {e}")
+
     try:
         from .models import Base
         Base.metadata.create_all(bind=engine)

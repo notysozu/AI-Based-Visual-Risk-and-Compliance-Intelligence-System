@@ -103,6 +103,7 @@ class UserSuggestion(Base):
     duration_minutes = Column(Integer, default=30)
     is_adopted = Column(Integer, default=0)  # 0: false, 1: true (compatible with all SQLite/PostgreSQL setups)
     is_ai_generated = Column(Integer, default=1)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
     user = relationship("User", back_populates="suggestions")
 
 
