@@ -28,10 +28,19 @@ import {
   Moon,
   Activity,
   MessageSquare,
-  Plus
+  Plus,
+  Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   getChatSessions,
   getChatMessages,
@@ -39,6 +48,7 @@ import {
   createThreadAndSendMessage,
   executeChatAction,
   rejectChatAction,
+  deleteChatSession,
   type ChatSessionData,
   type ChatMessageData
 } from "@/lib/api";
@@ -441,6 +451,35 @@ export function TwinChat({
   const activeSession = sessions.find((s) => s.id === activeSessionId);
   const isConversationEmpty = messages.length === 0;
 
+  const handleDeleteSession = async (sessionId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    try {
+      await deleteChatSession(sessionId, Number(userId));
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      if (activeSessionId === sessionId) {
+        setActiveSessionId(null);
+        setMessages([]);
+        setInputPrompt("");
+      }
+      toast.success("Thread deleted");
+      window.dispatchEvent(new Event("chat-sessions-updated"));
+    } catch (err) {
+      toast.error("Could not delete chat session");
+    }
+  };
+
+  const handleNewChat = () => {
+    setActiveSessionId(null);
+    setMessages([]);
+    setInputPrompt("");
+  };
+
+  const handleSelectSession = (sessionId: number) => {
+    setActiveSessionId(sessionId);
+    loadMessages(sessionId);
+  };
+
   return (
     <div
       className={`flex flex-col ${
@@ -449,34 +488,98 @@ export function TwinChat({
           : "h-[660px] rounded-3xl border border-border/80 bg-card text-foreground dark:bg-[#171717] dark:text-white shadow-xl backdrop-blur-2xl overflow-hidden"
       } transition-all ${className}`}
     >
-      {/* Mobile Top Context & Threads Bar on Fullscreen /chat page */}
+      {/* Top Header Bar on Fullscreen /chat page (Shows Multiple Chats Dropdown & Quick Actions) */}
       {fullHeight && (
-        <div className="md:hidden px-3 py-2 border-b border-border/40 flex items-center justify-between bg-card/70 dark:bg-black/30 backdrop-blur shrink-0 z-10">
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent("twin-open-mobile-threads"))}
-            className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-xl bg-card dark:bg-[#202020] text-foreground border border-border/60 shadow-2xs cursor-pointer active:scale-95 transition-all"
-            title="View Chat Sessions & Switch Threads"
-          >
-            <MessageSquare className="h-3.5 w-3.5 text-[#0071E3]" />
-            <span className="truncate max-w-[150px]">{activeSession ? activeSession.title : "Recent Chats"}</span>
-            <ChevronDown className="h-3 w-3 text-muted-foreground" />
-          </button>
+        <div className="px-3 sm:px-6 py-2.5 border-b border-border/40 flex items-center justify-between bg-card/60 dark:bg-black/20 backdrop-blur shrink-0 z-10">
+          <div className="flex items-center gap-2 min-w-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-left bg-muted/70 hover:bg-muted dark:bg-white/5 dark:hover:bg-white/10 text-foreground transition-all cursor-pointer group shadow-2xs border border-border/60 active:scale-95"
+                  title="Switch Conversation Thread"
+                >
+                  <MessageSquare className="h-3.5 w-3.5 text-[#0071E3] shrink-0" />
+                  <span className="text-xs font-semibold truncate max-w-[150px] sm:max-w-[240px]">
+                    {activeSession ? activeSession.title : "New Conversation"}
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground group-hover:text-foreground shrink-0 transition-transform duration-200" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-80 p-1.5 max-h-84 overflow-y-auto z-50">
+                <div className="flex items-center justify-between px-2 py-1.5">
+                  <DropdownMenuLabel className="p-0 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Conversations ({sessions.length})
+                  </DropdownMenuLabel>
+                  <button
+                    type="button"
+                    onClick={handleNewChat}
+                    className="flex items-center gap-1 text-[11px] font-semibold text-[#0071E3] dark:text-blue-400 hover:underline cursor-pointer"
+                  >
+                    <Plus className="h-3 w-3" /> New Chat
+                  </button>
+                </div>
+                <DropdownMenuSeparator />
+                {sessions.length === 0 ? (
+                  <div className="py-4 text-center text-xs text-muted-foreground italic">
+                    No previous conversations
+                  </div>
+                ) : (
+                  <div className="space-y-0.5">
+                    {sessions.map((s) => {
+                      const isCurrent = s.id === activeSessionId;
+                      return (
+                        <DropdownMenuItem
+                          key={s.id}
+                          onSelect={() => handleSelectSession(s.id)}
+                          className={`flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs transition-colors ${
+                            isCurrent
+                              ? "bg-[#0071E3]/15 text-[#0071E3] dark:text-blue-400 font-semibold"
+                              : "text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 truncate min-w-0 flex-1 mr-2">
+                            <MessageSquare className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                            <span className="truncate">{s.title}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {isCurrent && <CheckCircle2 className="h-3.5 w-3.5 text-[#0071E3] dark:text-blue-400" />}
+                            <span
+                              onClick={(e) => handleDeleteSession(s.id, e)}
+                              className="opacity-40 hover:opacity-100 hover:text-rose-500 p-1 rounded-md transition-opacity cursor-pointer"
+                              title="Delete conversation"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </span>
+                          </div>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </div>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => {
-                setActiveSessionId(null);
-                setMessages([]);
-                setInputPrompt("");
-              }}
-              className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-xl bg-[#0071E3]/15 text-[#0071E3] dark:text-blue-400 border border-[#0071E3]/30 cursor-pointer active:scale-95 transition-all"
+              onClick={handleNewChat}
+              className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-xl bg-[#0071E3]/15 text-[#0071E3] dark:text-blue-400 border border-[#0071E3]/30 cursor-pointer active:scale-95 transition-all shrink-0"
               title="Start New Chat"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>New</span>
+              <span className="hidden sm:inline">New Thread</span>
             </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {isThinkMode && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-[#0071E3]/15 text-[#0071E3] dark:text-blue-400 border border-[#0071E3]/30 flex items-center gap-1">
+                <Brain className="h-3 w-3" /> Think Active
+              </span>
+            )}
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              Live
+            </span>
           </div>
         </div>
       )}
@@ -484,18 +587,60 @@ export function TwinChat({
       {/* Top Header Bar (Only shown when embedded as a widget) */}
       {!fullHeight && (
         <div className="px-4 py-3 border-b border-border/40 flex items-center justify-between bg-card/40 dark:bg-black/10 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-[#0071E3] to-indigo-600 text-white shadow-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-[#0071E3] to-indigo-600 text-white shadow-xs shrink-0">
               <Sparkles className="h-3.5 w-3.5" />
             </div>
-            <div>
-              <span className="font-semibold text-xs tracking-tight text-foreground dark:text-white">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-semibold text-xs tracking-tight text-foreground dark:text-white shrink-0">
                 Visual Risk Copilot
               </span>
-              <span className="mx-1.5 text-muted-foreground dark:text-white/30 text-xs">•</span>
-              <span className="text-[11px] text-muted-foreground dark:text-white/60 truncate max-w-[180px] sm:max-w-xs">
-                {activeSession ? activeSession.title : "Active Conversation"}
-              </span>
+              <span className="text-muted-foreground dark:text-white/30 text-xs shrink-0">•</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground dark:text-white/70 hover:text-foreground dark:hover:text-white px-2 py-0.5 rounded-lg hover:bg-muted/70 dark:hover:bg-white/10 transition-colors truncate max-w-[160px] sm:max-w-xs cursor-pointer"
+                    title="Switch Conversation"
+                  >
+                    <span className="truncate">{activeSession ? activeSession.title : "Active Conversation"}</span>
+                    <ChevronDown className="h-3 w-3 shrink-0 opacity-70" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-72 p-1.5 max-h-72 overflow-y-auto z-50">
+                  <div className="flex items-center justify-between px-2 py-1">
+                    <DropdownMenuLabel className="p-0 text-[10px] font-bold text-muted-foreground uppercase">
+                      All Conversations ({sessions.length})
+                    </DropdownMenuLabel>
+                    <button
+                      type="button"
+                      onClick={handleNewChat}
+                      className="flex items-center gap-1 text-[10px] font-semibold text-[#0071E3] hover:underline cursor-pointer"
+                    >
+                      <Plus className="h-2.5 w-2.5" /> New
+                    </button>
+                  </div>
+                  <DropdownMenuSeparator />
+                  {sessions.length === 0 ? (
+                    <div className="py-3 text-center text-xs text-muted-foreground italic">No chats yet</div>
+                  ) : (
+                    sessions.map((s) => (
+                      <DropdownMenuItem
+                        key={s.id}
+                        onSelect={() => handleSelectSession(s.id)}
+                        className={`flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs ${
+                          s.id === activeSessionId
+                            ? "bg-[#0071E3]/15 text-[#0071E3] dark:text-blue-400 font-semibold"
+                            : "text-foreground hover:bg-muted"
+                        }`}
+                      >
+                        <span className="truncate mr-2">{s.title}</span>
+                        {s.id === activeSessionId && <CheckCircle2 className="h-3 w-3 text-[#0071E3] shrink-0" />}
+                      </DropdownMenuItem>
+                    ))
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
