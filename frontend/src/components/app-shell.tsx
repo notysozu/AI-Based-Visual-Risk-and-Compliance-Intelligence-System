@@ -383,7 +383,7 @@ export function AppShell({
         </header>
 
         {/* Content Container */}
-        <main className={`flex-1 ${fullBleed ? "p-0 flex flex-col min-h-0" : "px-4 py-6 md:px-8 md:py-8"}`}>
+        <main className={`flex-1 ${fullBleed ? "p-0 flex flex-col min-h-0 pb-16 md:pb-0" : "px-4 py-6 pb-20 md:px-8 md:py-8 md:pb-8"}`}>
           <div className={`mx-auto w-full ${fullBleed ? "h-full flex flex-col flex-1" : "max-w-6xl animate-rise"}`}>
             {title && (
               <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -400,24 +400,28 @@ export function AppShell({
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-border/50 bg-background/95 py-2.5 backdrop-blur md:hidden shadow-[0_-8px_20px_rgba(0,0,0,0.06)]">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-border/50 bg-background/95 py-2 px-1 backdrop-blur md:hidden shadow-[0_-8px_20px_rgba(0,0,0,0.06)]">
         {[
           { to: "/chat", label: "Chat", icon: Sparkles, color: "text-[#0071E3]" },
-          ...moduleItems.slice(0, 4)
+          { to: "/dashboard", label: "Overview", icon: LayoutGrid, color: "text-indigo-500" },
+          { to: "/planner", label: "Planner", icon: ListChecks, color: "text-cyan-500" },
+          { to: "/simulator", label: "Simulator", icon: Split, color: "text-rose-500" },
+          { to: "/wealth", label: "Wealth", icon: Wallet, color: "text-emerald-500" },
+          { to: "/analytics", label: "Analytics", icon: Activity, color: "text-blue-500" },
         ].map((item) => {
           const active = pathname === item.to;
           return (
             <Link
               key={item.to}
               to={item.to}
-              className={`flex flex-col items-center gap-1 px-3 py-1 text-[10px] font-semibold transition-all ${
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 text-[9px] font-semibold transition-all ${
                 active
                   ? "bg-card text-foreground shadow-2xs rounded-xl border border-border/50"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <item.icon className={`h-4 w-4 ${active ? item.color : "text-muted-foreground"}`} />
-              <span>{item.label.split(" ")[0]}</span>
+              <item.icon className={`h-4 w-4 shrink-0 ${active ? item.color : "text-muted-foreground"}`} />
+              <span className="truncate">{item.label}</span>
             </Link>
           );
         })}

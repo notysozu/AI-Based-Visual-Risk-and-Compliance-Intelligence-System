@@ -443,7 +443,7 @@ export function TwinChat({
     <div
       className={`flex flex-col ${
         fullHeight
-          ? "h-[calc(100vh-4rem)] w-full bg-transparent"
+          ? "h-[calc(100dvh-4rem-3.75rem)] md:h-[calc(100vh-4rem)] w-full bg-transparent"
           : "h-[660px] rounded-3xl border border-border/80 bg-card text-foreground dark:bg-[#171717] dark:text-white shadow-xl backdrop-blur-2xl overflow-hidden"
       } transition-all ${className}`}
     >
@@ -562,14 +562,14 @@ export function TwinChat({
       {/* ------------------------------------------------------------- */}
       {/* CHATGPT STYLE FLOATING BOTTOM PILL BAR (Edge-to-Edge Canvas)  */}
       {/* ------------------------------------------------------------- */}
-      <div className="p-4 sm:p-5 pt-0 shrink-0">
+      <div className="p-3 sm:p-5 pt-0 shrink-0 z-20">
         <div className="max-w-3xl mx-auto">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSend();
             }}
-            className={`relative rounded-full bg-card dark:bg-[#212121] border px-4 py-2 flex items-center gap-2 shadow-lg dark:shadow-2xl transition-all ${
+            className={`relative rounded-full bg-card dark:bg-[#212121] border px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1.5 sm:gap-2 shadow-lg dark:shadow-2xl transition-all ${
               isListening
                 ? "border-rose-500 ring-2 ring-rose-500/20"
                 : "border-border/80 dark:border-white/15 hover:border-border dark:hover:border-white/25 focus-within:border-[#0071E3]/60 dark:focus-within:border-white/40 focus-within:ring-1 focus-within:ring-[#0071E3]/20"
