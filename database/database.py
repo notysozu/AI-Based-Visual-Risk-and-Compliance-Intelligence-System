@@ -51,6 +51,7 @@ def run_migrations():
                 ("last_analytics_updated", "TEXT"),
                 ("last_study_plan", "TEXT"),
                 ("last_study_plan_updated", "TEXT"),
+                ("is_onboarded", "INTEGER DEFAULT 0"),
             ]
             for col_name, col_def in user_migrations:
                 if col_name not in existing_user_cols:

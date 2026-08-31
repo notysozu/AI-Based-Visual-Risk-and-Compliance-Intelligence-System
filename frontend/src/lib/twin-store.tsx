@@ -313,6 +313,7 @@ function mapProfileToBackend(profile: Profile) {
     net_worth: profile.netWorth,
     sleep_target_hours: profile.sleepHours,
     study_target_hours_week: profile.studyHours,
+    is_onboarded: profile.onboarded ? 1 : 0,
     last_success_odds: profile.lastSuccessOdds,
     last_wealth_prediction: profile.lastWealthPrediction,
     last_analytics_summary: profile.lastAnalyticsSummary,
@@ -332,6 +333,7 @@ function mapBackendToProfile(user: any): Partial<Profile> {
     netWorth: user.net_worth ?? 15000,
     sleepHours: user.sleep_target_hours,
     studyHours: user.study_target_hours_week,
+    onboarded: Boolean(user.is_onboarded === 1 || user.is_onboarded === true),
     name: user.username ?? undefined,
     email: user.email ?? undefined,
     lastSuccessOdds: user.last_success_odds ?? null,
@@ -515,7 +517,7 @@ export function TwinProvider({ children }: { children: ReactNode }) {
     if (isSignup) {
       let user;
       try {
-        user = await createUser({ username: username.trim(), email: email.trim().toLowerCase(), age: 25 });
+        user = await createUser({ username: username.trim(), email: email.trim().toLowerCase(), age: 25, is_onboarded: 0 });
       } catch (err: any) {
         // If an account already exists for this email or username, seamlessly fetch their existing profile
         const msg = (err?.message || "").toLowerCase();
@@ -530,14 +532,15 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const hasOnboarded = Boolean(user?.role && user.role !== "default" && user.role !== "");
+      // New registrations are strictly not onboarded until they complete /setup
+      const hasOnboarded = Boolean(user?.is_onboarded === 1 || user?.is_onboarded === true);
       setState((s) => ({
         ...s,
         authed: true,
-        profile: { ...s.profile, ...mapBackendToProfile(user), id: user.id, name: user.username || username, email: user.email || email, onboarded: hasOnboarded },
+        profile: { ...s.profile, ...mapBackendToProfile(user), id: user.id, name: user.username || username, email: user.email || email, onboarded: false },
       }));
       hasAutoSynced.current = true;
-      return hasOnboarded;
+      return false;
     } else {
       let user;
       try {
@@ -547,7 +550,7 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         throw new Error("No account found for this email/username. Please sign up first.");
       }
 
-      const hasOnboarded = Boolean(user?.role && user.role !== "default" && user.role !== "");
+      const hasOnboarded = Boolean(user?.is_onboarded === 1 || user?.is_onboarded === true);
       setState((s) => ({
         ...s,
         authed: true,

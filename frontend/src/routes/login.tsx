@@ -67,8 +67,12 @@ function LoginPage() {
   const [loadingRole, setLoadingRole] = useState<string | null>(null);
 
   useEffect(() => {
-    if (ready && state.authed && state.profile.onboarded) {
-      navigate({ to: "/dashboard" });
+    if (ready && state.authed) {
+      if (state.profile.onboarded) {
+        navigate({ to: "/dashboard" });
+      } else {
+        navigate({ to: "/setup" });
+      }
     }
   }, [ready, state.authed, state.profile.onboarded, navigate]);
 

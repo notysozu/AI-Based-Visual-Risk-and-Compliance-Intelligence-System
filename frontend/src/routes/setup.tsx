@@ -130,11 +130,30 @@ function getQuestionsForRole(role: UserRole): Q[] {
 }
 
 function SetupPage() {
-  const { state, updateProfile } = useTwin();
+  const { state, ready, updateProfile } = useTwin();
   const navigate = useNavigate();
   const [step, setStep] = useState(0); // step 0 is Role Selection, step 1..N are questions
   const [dir, setDir] = useState<1 | -1>(1);
   const [draft, setDraft] = useState<Profile>(state.profile);
+
+  // If not logged in, redirect to signup
+  useEffect(() => {
+    if (ready && !state.authed && !state.profile.id) {
+      navigate({ to: "/signup" });
+    }
+  }, [ready, state.authed, state.profile.id, navigate]);
+
+  // Keep draft profile synced with current user name and id
+  useEffect(() => {
+    if (state.profile.name || state.profile.email || state.profile.id) {
+      setDraft((prev) => ({
+        ...prev,
+        id: state.profile.id ?? prev.id,
+        name: state.profile.name ?? prev.name,
+        email: state.profile.email ?? prev.email,
+      }));
+    }
+  }, [state.profile.name, state.profile.email, state.profile.id]);
 
   const questions = useMemo(() => getQuestionsForRole(draft.role), [draft.role]);
   const totalSteps = questions.length + 1; // +1 for the role selection step

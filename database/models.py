@@ -12,6 +12,7 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     role = Column(String, default="professional")
+    is_onboarded = Column(Integer, default=0)
     
     # Profile details for forecasting
     age = Column(Integer, default=25)

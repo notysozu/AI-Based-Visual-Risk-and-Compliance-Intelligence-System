@@ -8,6 +8,7 @@ class UserBase(BaseModel):
     username: str
     email: EmailStr
     role: Optional[str] = "professional"
+    is_onboarded: Optional[int] = 0
     age: Optional[int] = 25
     retirement_goal_age: Optional[int] = 60
     target_net_worth: Optional[float] = 1000000.0
@@ -26,6 +27,7 @@ class UserLoginRequest(BaseModel):
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     role: Optional[str] = None
+    is_onboarded: Optional[int] = None
     age: Optional[int] = None
     retirement_goal_age: Optional[int] = None
     target_net_worth: Optional[float] = None
@@ -46,6 +48,7 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     id: int
     created_at: datetime
+    is_onboarded: Optional[int] = 0
     scenario_a_preset: Optional[str] = None
     scenario_b_preset: Optional[str] = None
     last_success_odds: Optional[float] = None

@@ -20,6 +20,7 @@ def create_user(db: Session, user: schemas.UserCreate):
         username=user.username,
         email=user.email,
         role=user.role or "professional",
+        is_onboarded=getattr(user, "is_onboarded", 0) if getattr(user, "is_onboarded", None) is not None else 0,
         age=user.age,
         retirement_goal_age=user.retirement_goal_age,
         target_net_worth=user.target_net_worth,
