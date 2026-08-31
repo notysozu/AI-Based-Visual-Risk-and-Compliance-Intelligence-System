@@ -88,7 +88,7 @@ export function TwinChat({
   selectedSessionId?: number;
 } = {}) {
   const navigate = useNavigate();
-  const { state, addTask, addTxn, updateProfile, saveScenarioPresets } = useTwin();
+  const { state, addTask, addTxn, logHabitActivity, logStudyActivity, updateProfile, saveScenarioPresets } = useTwin();
   const userId = state.profile.id ?? 1;
 
   const [sessions, setSessions] = useState<ChatSessionData[]>([]);
@@ -406,9 +406,13 @@ export function TwinChat({
           toast.success(`✓ Recorded $${cost.toLocaleString()} expense transaction`);
         }
       } else if (msg.action_type === "log_study") {
-        toast.success(`✓ Logged ${payload.duration_minutes || 60} mins of ${payload.subject || "Study"} to academic records`);
+        const durHours = Number(payload.hours || (payload.duration_minutes ? payload.duration_minutes / 60 : 1));
+        logStudyActivity(payload.subject || "Study", durHours);
+        toast.success(`✓ Logged ${payload.duration_minutes || 60} mins of ${payload.subject || "Study"} to academic records and /analytics`);
       } else if (msg.action_type === "log_habit") {
-        toast.success(`✓ Logged ${payload.habit_name || "Habit"} (${payload.hours || ((payload.duration_minutes || 300) / 60).toFixed(1)}h) to biometric records`);
+        const durHours = Number(payload.hours || (payload.duration_minutes ? payload.duration_minutes / 60 : 1));
+        logHabitActivity(payload.habit_name || "Exercise", durHours);
+        toast.success(`✓ Logged ${payload.habit_name || "Habit"} (${durHours.toFixed(1)}h) to biometric records and /analytics`);
       }
 
       setMessages((prev) =>

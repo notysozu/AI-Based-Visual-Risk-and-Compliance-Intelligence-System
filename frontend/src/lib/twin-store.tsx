@@ -367,6 +367,8 @@ type TwinContextValue = {
   state: TwinState;
   ready: boolean;
   addLog: (log: Omit<Log, "id">) => void;
+  logHabitActivity: (habitName: string, hours: number) => void;
+  logStudyActivity: (subject: string, hours: number) => void;
   addTxn: (txn: Txn) => void;
   updateProfile: (partial: Partial<Profile>) => Promise<void>;
   reset: () => void;
@@ -410,6 +412,69 @@ export function TwinProvider({ children }: { children: ReactNode }) {
   const addLog = (log: Omit<Log, "id">) => {
     const withId: Log = { ...log, id: `${log.date}-${Date.now()}` };
     setState((s) => ({ ...s, logs: [...s.logs, withId] }));
+  };
+
+  const logHabitActivity = (habitName: string, hours: number) => {
+    const todayDate = today();
+    setState((s) => {
+      const existingIndex = s.logs.findIndex((l) => l.date === todayDate);
+      const hLower = (habitName || "").toLowerCase();
+      const isEx = hLower.includes("exercise") || hLower.includes("workout") || hLower.includes("gym") || hLower.includes("training") || hLower.includes("walk") || hLower.includes("run");
+      const isSl = hLower.includes("sleep") || hLower.includes("rest");
+      const isSc = hLower.includes("screen");
+
+      if (existingIndex >= 0) {
+        const existing = s.logs[existingIndex];
+        const updated: Log = {
+          ...existing,
+          exercise: isEx ? Math.max(1, (existing.exercise || 0) + 1) : existing.exercise,
+          sleep: isSl ? hours : existing.sleep,
+          screen: isSc ? hours : existing.screen,
+        };
+        const newLogs = [...s.logs];
+        newLogs[existingIndex] = updated;
+        return { ...s, logs: newLogs };
+      } else {
+        const newLog: Log = {
+          id: `${todayDate}-${Date.now()}`,
+          date: todayDate,
+          sleep: isSl ? hours : (s.profile.sleepHours || 7.5),
+          screen: isSc ? hours : 3.5,
+          study: 0,
+          exercise: isEx ? 1 : 0,
+          mood: 8,
+        };
+        return { ...s, logs: [...s.logs, newLog] };
+      }
+    });
+  };
+
+  const logStudyActivity = (subject: string, hours: number) => {
+    const todayDate = today();
+    setState((s) => {
+      const existingIndex = s.logs.findIndex((l) => l.date === todayDate);
+      if (existingIndex >= 0) {
+        const existing = s.logs[existingIndex];
+        const updated: Log = {
+          ...existing,
+          study: Number(((existing.study || 0) + hours).toFixed(1)),
+        };
+        const newLogs = [...s.logs];
+        newLogs[existingIndex] = updated;
+        return { ...s, logs: newLogs };
+      } else {
+        const newLog: Log = {
+          id: `${todayDate}-${Date.now()}`,
+          date: todayDate,
+          sleep: s.profile.sleepHours || 7.5,
+          screen: 3.5,
+          study: hours,
+          exercise: 0,
+          mood: 8,
+        };
+        return { ...s, logs: [...s.logs, newLog] };
+      }
+    });
   };
 
   const clearLogs = () => {
@@ -727,6 +792,8 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         state,
         ready,
         addLog,
+        logHabitActivity,
+        logStudyActivity,
         addTxn,
         updateProfile,
         reset,
