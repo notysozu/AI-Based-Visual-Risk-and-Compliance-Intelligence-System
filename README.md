@@ -72,29 +72,75 @@ Every Copilot recommendation includes an interactive, 1-click execution card:
 ## System Architecture
 
 ```
-+-----------------------------------------------------------------------------+
-|                            FRONTEND CLIENT (React 19)                       |
-|  * Fullscreen Copilot Chat (/chat)        * Decision Sandbox (/simulator)   |
-|  * Wealth Forecast Engine (/wealth)       * Interactive Settings (/settings)|
-|  * Habit Analytics (/analytics)           * Daily Task Planner (/tasks)     |
-+--------------------------------------┬--------------------------------------+
-                                       | REST / JSON
-+--------------------------------------v--------------------------------------+
-|                            BACKEND API (FastAPI)                            |
-|  * /chat (Sessions, Messages, Actions)    * /simulations (Monte Carlo, What-If)
-|  * /users (Auth, CRUD, Telemetry)         * /suggestions (AI Task Generator)|
-|  * /records (Habits, Study Sessions)      * /study (Analytics, Forecasts)   |
-+------------------┬-------------------------------------------┬--------------+
-                   |                                           |
-+------------------v---------------+       +-------------------v--------------+
-|        AI INFERENCE ENGINE       |       |         DATABASE LAYER           |
-|  * Groq: openai/gpt-oss-120b     |       |  * SQLite / PostgreSQL           |
-|  * Groq: openai/gpt-oss-20b      |       |  * SQLAlchemy 2.0 ORM            |
-|  * Groq: qwen/qwen3.6-27b        |       |  * User, Habit, Study, Finance,  |
-|  * Groq: groq/compound           |       |    ChatSession, ChatMessage,     |
-|  * Rule-Based Offline Fallback   |       |    UserSuggestion tables         |
-+----------------------------------+       +----------------------------------+
++========================================================================================================+
+|                                      1. CLIENT PRESENTATION LAYER                                      |
+|                                       React 19 + TypeScript + Vite                                     |
+|                                                                                                        |
+|  [ Fullscreen Copilot Chat ]       [ Decision Sandbox ]        [ Wealth Planner ]      [ Habit Engine] |
+|  - /chat (Session Threads)         - /simulator (What-If)      - /wealth (Monte Carlo) - /analytics    |
+|  - Multi-Action 1-Click Cards      - Scenario A vs B Sliders   - Stochastic Percentile - Noon AI Cache |
+|  - Voice Input (STT)               - Elasticity Visualizer     - Dynamic Scaling       - Telemetry Log |
+|                                                                                                        |
+|  [ Tasks & Daily Planner ]         [ Study & Academics ]       [ Profile & Goals ]     [ Settings Ctr] |
+|  - /planner (Task Scheduling)      - /study (Spaced Sched.)    - /profile (Milestones) - /settings     |
++===================================================┬====================================================+
+                                                    | JSON over HTTP / REST (TanStack Router & Query)
++===================================================v====================================================+
+|                                        2. FASTAPI BACKEND GATEWAY                                      |
+|                                         Python 3.10+ ASGI Engine                                       |
+|                                                                                                        |
+|   +-----------------------+   +------------------------+   +---------------------+   +---------------+ |
+|   | /users                |   | /chat                  |   | /simulations        |   | /suggestions  | |
+|   | - Auth (Email/User)   |   | - Session Management   |   | - Monte Carlo 500   |   | - Pre-Analysis| |
+|   | - CRUD & Onboarding   |   | - 4-Stage Reasoning    |   | - What-If Tradeoffs |   | - Adoption DB | |
+|   | - Telemetry Profiles  |   | - Action Proposals     |   | - Wealth Advice     |   | - Role Presets| |
+|   +-----------------------+   +------------------------+   +---------------------+   +---------------+ |
+|                                                                                                        |
+|   +------------------------------------+             +-----------------------------------------------+ |
+|   | /records (Habits, Study Sessions)  |             | /study (Regression, Retention, Schedulers)    | |
+|   +------------------------------------+             +-----------------------------------------------+ |
++=========================┬====================================================┬========================+
+                          |                                                    |
++=========================v========================+ +=========================v========================+
+|            3. SIMULATION & AI ENGINE             | |               4. DATABASE & PERSISTENCE          |
+|                                                  | |                                                  |
+|  [ Stochastic Monte Carlo Engine ]               | |  [ SQLAlchemy 2.0 ORM ]                          |
+|  - 500-Run Geometric Brownian Volatility         | |  - User (Credentials, Goals, Presets)           |
+|  - Percentile Bounds: p10 (Bear), p50, p90 (Bull)| |  - HabitRecord (Sleep, Screen, Workout, Mood)    |
+|  - Probability of Retirement Goal Attainment     | |  - StudyRecord (Subject, Focus, Duration, Score) |
+|                                                  | |  - FinancialRecord (Inflow, Outflow, Balances)   |
+|  [ Multi-Variable Biological Feedback ]          | |  - ChatSession & ChatMessage (History & Actions) |
+|  - Circadian Alertness & Cortisol Peaks          | |  - UserSuggestion (Adopted Routine Injections)   |
+|  - Sleep Debt Deficit & Vitality Buffer Index    | |                                                  |
+|                                                  | |  [ Storage Engines ]                             |
+|  [ Large Language Model Inference (Groq) ]       | |  - SQLite (Local Dev & Testing)                  |
+|  - Primary: openai/gpt-oss-120b                  | |  - PostgreSQL (Production Enterprise Deployment) |
+|  - Secondary: openai/gpt-oss-20b                 | |                                                  |
+|  - Auxiliary: qwen/qwen3.6-27b / groq/compound   | |  [ State & Intelligence Cache ]                  |
+|  - Heuristic Offline Deterministic Fallback      | |  - 12:00 PM Noon AI Reflection Cache             |
++==================================================+ +==================================================+
 ```
+
+### System Architecture Component Breakdown
+
+| Architectural Layer | Subsystem / Module | Primary Responsibilities | Data Handled | Core Technologies |
+| :--- | :--- | :--- | :--- | :--- |
+| **Presentation Layer** | **Visual Risk Copilot (`/chat`)** | Fullscreen conversational interface with collapsible sessions drawer, multi-action 1-click execution cards, reasoning disclosure (`<think>`), and voice dictation. | Session IDs, prompt streams, action proposals, status updates | React 19, TypeScript, Radix UI, Lucide Icons, Web Speech API |
+| | **Decision Sandbox (`/simulator`)** | Interactive side-by-side lifestyle scenario comparison (Scenario A vs B), biological feedback modeling, and 1-click parameter adoption. | Sleep targets, study hours, monthly savings, burnout indices | Recharts, Radix Sliders, Tailwind CSS |
+| | **Wealth Engine (`/wealth`)** | 500-path stochastic Monte Carlo simulation visualization, deterministic compound growth curves, and percentile probability estimation. | Net worth, savings surplus, CAGR, asset volatility bounds | Recharts Multi-Scale Charts, Pydantic DTOs |
+| | **Habit Analytics (`/analytics`)** | Biometric habit tracking, grouped correlation charts, and automated noon daily reflection card display. | Sleep, screen time, exercise days, mood rating | Recharts, LocalStorage Cache |
+| | **Task Planner (`/planner`)** | Daily focus schedule management, time-blocking, habit injection, and recommendation adoption workflow. | Tasks, time slots, completion states, categories | Radix UI, TanStack Router |
+| | **Settings Center (`/settings`)** | Multi-panel telemetry control center for persona switching, biometrics, financial goals, and AI parameters. | User profiles, slider presets, onboarding status | Radix Tabs, React Hook Form |
+| **API Gateway Layer** | **FastAPI Application Router** | Validates payloads via Pydantic v2, enforces session ownership security, and orchestrates services. | JSON Request/Response schemas, HTTP status codes | FastAPI, Uvicorn, Pydantic v2 |
+| | **Authentication & CRUD Router (`/users`)** | Enforces username/email uniqueness, supports dual identifier login, and persists onboarding state. | User credentials, demographic baselines, targets | SQLAlchemy Sessions, Password Hashing |
+| | **Chat & Action Router (`/chat`)** | Manages conversation threads, dispatches prompts to the 4-stage pipeline, and handles action approvals/rejections. | Message history, action payloads, tool invocations | REST Endpoints, Custom Event Dispatchers |
+| | **Simulation Router (`/simulations`)** | Triggers Monte Carlo wealth projections, scenario tradeoff comparisons, and AI wealth roadmap generation. | Stochastic parameters, scenario vectors, advice text | NumPy, Pandas, Scipy |
+| | **Suggestion Router (`/suggestions`)** | Evaluates habit log pre-analysis, generates tailored routine adjustments, and manages database adoption. | Suggestion records, adoption flags, difficulty | Heuristic Rule Engine, Groq LLM |
+| **Intelligence Layer** | **Agentic Reasoning Pipeline** | 4-stage problem decomposition: (1) Goal Definition, (2) Telemetry Search, (3) Optimization Analysis, (4) Structured Markdown/Action Output. | Database telemetry bundles, prompt context | Groq API (`gpt-oss-120b`, `gpt-oss-20b`, `qwen3.6-27b`) |
+| | **Stochastic Simulation Engine** | Geometric Brownian Motion mathematical model running 500 volatility paths with inflation adjustments. | Mean return, variance, annual savings rate, time horizons | NumPy Vectorized Computations |
+| | **Circadian & Biological Modeler** | Calculates acute sleep debt, cortisol alertness peaks (09:00–11:30), post-prandial dips, and focus elasticity. | Biometric logs, target variances, fatigue indices | Heuristic Mathematical Models |
+| **Persistence Layer** | **Relational Database Engine** | ACID-compliant persistent storage for users, biometric logs, academic records, transactions, and chat sessions. | Normalized relational schemas, foreign key constraints | SQLite 3, PostgreSQL, SQLAlchemy 2.0 ORM |
+| | **Intelligence & Cache Layer** | Caches computationally expensive Monte Carlo trials and daily noon AI reflections to guarantee sub-50ms render latency. | Forecast bundles, daily summaries, timestamped keys | In-Memory / Local File Cache |
 
 ---
 
