@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="50%" stop-color="#0b1329"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <!-- Accent Glows -->
+    <radialGradient id="cyanGlow" cx="20%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#020617" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="purpleGlow" cx="80%" cy="70%" r="60%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#020617" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Title Gradient -->
+    <linearGradient id="titleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+
+    <!-- Grid Pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.75" opacity="0.6"/>
+    </pattern>
+
+    <!-- Card Background -->
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Base Canvas -->
+  <rect width="1200" height="380" fill="url(#bgGrad)" rx="16"/>
+  <rect width="1200" height="380" fill="url(#cyanGlow)" rx="16"/>
+  <rect width="1200" height="380" fill="url(#purpleGlow)" rx="16"/>
+  <rect width="1200" height="380" fill="url(#grid)" opacity="0.5" rx="16"/>
+  <rect width="1200" height="380" fill="none" stroke="#334155" stroke-width="1.5" rx="16"/>
+
+  <!-- Background Decorative Curves (Monte Carlo Visual Curves) -->
+  <g opacity="0.35">
+    <path d="M 0 300 C 300 280, 500 220, 800 180 C 1000 150, 1100 100, 1200 80" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,4"/>
+    <path d="M 0 320 C 350 300, 600 260, 900 210 C 1050 180, 1150 140, 1200 120" fill="none" stroke="#818cf8" stroke-width="3"/>
+    <path d="M 0 340 C 400 330, 700 310, 950 280 C 1100 260, 1150 240, 1200 220" fill="none" stroke="#34d399" stroke-width="2" stroke-dasharray="6,6"/>
+    <!-- Shaded percentile band -->
+    <path d="M 0 300 C 300 280, 500 220, 800 180 C 1000 150, 1100 100, 1200 80 L 1200 220 C 1150 240, 1100 260, 950 280 C 700 310, 400 330, 0 340 Z" fill="#38bdf8" opacity="0.05"/>
+  </g>
+
+  <!-- Left Glowing Icon Shield / Brain Visual -->
+  <g transform="translate(80, 70)">
+    <circle cx="60" cy="60" r="58" fill="#0f172a" stroke="#0ea5e9" stroke-width="2" opacity="0.9"/>
+    <circle cx="60" cy="60" r="46" fill="#0369a1" opacity="0.2"/>
+    <!-- Shield / Twin AI Symbol -->
+    <path d="M 60 25 L 92 40 L 92 70 C 92 92 60 105 60 105 C 60 105 28 92 28 70 L 28 40 Z" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 60 42 L 76 52 L 76 72 C 76 83 60 92 60 92 C 60 92 44 83 44 72 L 44 52 Z" fill="#0ea5e9" opacity="0.3" stroke="#818cf8" stroke-width="1.5"/>
+    <circle cx="60" cy="64" r="5" fill="#f8fafc"/>
+    <line x1="60" y1="48" x2="60" y2="59" stroke="#f8fafc" stroke-width="2"/>
+    <line x1="60" y1="69" x2="60" y2="80" stroke="#f8fafc" stroke-width="2"/>
+    <line x1="49" y1="64" x2="55" y2="64" stroke="#f8fafc" stroke-width="2"/>
+    <line x1="65" y1="64" x2="71" y2="64" stroke="#f8fafc" stroke-width="2"/>
+  </g>
+
+  <!-- Typography & Brand Titles -->
+  <g transform="translate(230, 60)">
+    <!-- Top Micro Tag -->
+    <rect x="0" y="5" width="235" height="24" rx="12" fill="#1e293b" stroke="#0284c7" stroke-width="1"/>
+    <circle cx="12" cy="17" r="4" fill="#38bdf8"/>
+    <text x="24" y="21" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#93c5fd" letter-spacing="1.2">ENTERPRISE TWIN ENGINE</text>
+
+    <!-- Main Title -->
+    <text x="0" y="85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="54" font-weight="900" fill="url(#titleGrad)" letter-spacing="-1">Visual Risk AI</text>
+
+    <!-- Full Subtitle -->
+    <text x="0" y="122" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="500" fill="#cbd5e1" letter-spacing="0.2">AI-Based Visual Risk and Compliance Intelligence System</text>
+
+    <text x="0" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#94a3b8">Stochastic Trajectory Modeling · Circadian Biological Twins · Multi-Action Conversational Copilot</text>
+
+    <!-- Pill Badges -->
+    <g transform="translate(0, 180)">
+      <!-- Badge 1 -->
+      <rect x="0" y="0" width="165" height="32" rx="16" fill="url(#cardBg)" stroke="#38bdf8" stroke-width="1.2"/>
+      <text x="14" y="20" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#7dd3fc">500-Run Monte Carlo</text>
+
+      <!-- Badge 2 -->
+      <rect x="175" y="0" width="180" height="32" rx="16" fill="url(#cardBg)" stroke="#818cf8" stroke-width="1.2"/>
+      <text x="189" y="20" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#c7d2fe">4-Stage Agentic Reasoner</text>
+
+      <!-- Badge 3 -->
+      <rect x="365" y="0" width="160" height="32" rx="16" fill="url(#cardBg)" stroke="#34d399" stroke-width="1.2"/>
+      <text x="379" y="20" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#6ee7b7">Circadian Bio-Feedback</text>
+
+      <!-- Badge 4 -->
+      <rect x="535" y="0" width="165" height="32" rx="16" fill="url(#cardBg)" stroke="#c084fc" stroke-width="1.2"/>
+      <text x="549" y="20" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#e9d5ff">React 19 + FastAPI</text>
+
+      <!-- Badge 5 -->
+      <rect x="710" y="0" width="175" height="32" rx="16" fill="url(#cardBg)" stroke="#f59e0b" stroke-width="1.2"/>
+      <text x="724" y="20" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#fcd34d">5 Life-Stage Personas</text>
+    </g>
+  </g>
+</svg>

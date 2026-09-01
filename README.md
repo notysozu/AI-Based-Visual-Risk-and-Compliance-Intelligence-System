@@ -1,8 +1,42 @@
-# Visual Risk AI — AI-Based Visual Risk and Compliance Intelligence System
+<p align="center">
+  <img src="docs/images/visual_risk_ai_banner.svg" alt="Visual Risk AI — AI-Based Visual Risk and Compliance Intelligence System" width="100%" />
+</p>
 
-Visual Risk AI (VRCI) is an agentic, intelligent risk, compliance, and decision-support system that models, forecasts, and optimizes trajectories across operational compliance, financial risk, health, cognitive performance, and daily habits.
+<p align="center">
+  <b>Visual Risk AI (VRCI)</b> is an agentic, intelligent risk, compliance, and decision-support system that models, forecasts, and optimizes trajectories across operational compliance, financial risk, health, cognitive performance, and daily habits.
+</p>
 
-By combining stochastic Monte Carlo simulations, deterministic compound growth algorithms, biological circadian feedback models, and conversational agentic intelligence (Groq GPT-OSS 120B / 20B & Qwen 3.6), the platform creates a living digital twin tailored to the user's specific life stage.
+---
+
+## Interactive Platform Gallery
+
+<div align="center">
+  <marquee scrollamount="6" behavior="scroll" direction="left" onmouseover="this.stop();" onmouseout="this.start();">
+    <a href="docs/images/01_landing.png"><img src="docs/images/01_landing.png" alt="Landing Page" height="230" style="border-radius: 8px; margin: 0 10px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/02_dashboard.png"><img src="docs/images/02_dashboard.png" alt="Telemetry Dashboard" height="230" style="border-radius: 8px; margin: 0 10px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/03_copilot_chat.png"><img src="docs/images/03_copilot_chat.png" alt="Visual Risk Copilot Chat" height="230" style="border-radius: 8px; margin: 0 10px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/04_simulator.png"><img src="docs/images/04_simulator.png" alt="Decision Sandbox Simulator" height="230" style="border-radius: 8px; margin: 0 10px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/05_wealth_planner.png"><img src="docs/images/05_wealth_planner.png" alt="Monte Carlo Wealth Planner" height="230" style="border-radius: 8px; margin: 0 10px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/06_habit_analytics.png"><img src="docs/images/06_habit_analytics.png" alt="Habit Analytics" height="230" style="border-radius: 8px; margin: 0 10px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/07_task_planner.png"><img src="docs/images/07_task_planner.png" alt="Daily Task Planner" height="230" style="border-radius: 8px; margin: 0 10px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/08_settings.png"><img src="docs/images/08_settings.png" alt="Telemetry Settings Center" height="230" style="border-radius: 8px; margin: 0 10px; border: 1px solid #334155;" /></a>
+  </marquee>
+</div>
+
+<details>
+<summary><b>View Full Screen Previews (Grid View)</b></summary>
+
+| 01. Landing Experience | 02. Telemetry Overview |
+| :---: | :---: |
+| [![Landing Page](docs/images/01_landing.png)](docs/images/01_landing.png) | [![Overview Dashboard](docs/images/02_dashboard.png)](docs/images/02_dashboard.png) |
+| **03. Visual Risk Copilot (`/chat`)** | **04. Decision Sandbox (`/simulator`)** |
+| [![Copilot Chat](docs/images/03_copilot_chat.png)](docs/images/03_copilot_chat.png) | [![What-If Simulator](docs/images/04_simulator.png)](docs/images/04_simulator.png) |
+| **05. Wealth Planner (`/wealth`)** | **06. Habit Analytics (`/analytics`)** |
+| [![Wealth Planner](docs/images/05_wealth_planner.png)](docs/images/05_wealth_planner.png) | [![Habit Analytics](docs/images/06_habit_analytics.png)](docs/images/06_habit_analytics.png) |
+| **07. Daily Task Planner (`/planner`)** | **08. Settings Center (`/settings`)** |
+| [![Task Planner](docs/images/07_task_planner.png)](docs/images/07_task_planner.png) | [![Settings Center](docs/images/08_settings.png)](docs/images/08_settings.png) |
+
+</details>
 
 ---
 
