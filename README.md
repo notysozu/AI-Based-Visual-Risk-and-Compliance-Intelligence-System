@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/visual_risk_ai_banner.png" alt="Visual Risk AI Banner" width="100%" />
+  <img src="docs/images/visual_risk_ai_banner.svg" alt="Visual Risk AI Banner" width="100%" />
 </p>
 
 ---
