@@ -20,22 +20,9 @@
 ---
 
 <div align="center">
-  <marquee scrollamount="6" behavior="scroll" direction="left" onmouseover="this.stop();" onmouseout="this.start();">
-    <a href="docs/images/01_landing.png"><img src="docs/images/01_landing.png" alt="1. Landing Page" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
-    <a href="docs/images/09_signup.png"><img src="docs/images/09_signup.png" alt="2. Sign Up Page" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
-    <a href="docs/images/10_login.png"><img src="docs/images/10_login.png" alt="3. Login Page" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
-    <a href="docs/images/02_dashboard.png"><img src="docs/images/02_dashboard.png" alt="4. Telemetry Dashboard" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
-    <a href="docs/images/03_copilot_chat.png"><img src="docs/images/03_copilot_chat.png" alt="5. Visual Risk Copilot Chat" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
-    <a href="docs/images/04_simulator.png"><img src="docs/images/04_simulator.png" alt="6. Decision Sandbox Simulator" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
-    <a href="docs/images/05_wealth_planner.png"><img src="docs/images/05_wealth_planner.png" alt="7. Wealth Planner" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
-    <a href="docs/images/06_habit_analytics.png"><img src="docs/images/06_habit_analytics.png" alt="8. Habit Analytics" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
-    <a href="docs/images/07_task_planner.png"><img src="docs/images/07_task_planner.png" alt="9. Daily Task Planner" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
-    <a href="docs/images/08_settings.png"><img src="docs/images/08_settings.png" alt="10. Telemetry Settings Center" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
-  </marquee>
-</div>
 
 | 1. Landing Page | 2. Sign Up Page |
-| :--- | :--- |
+| :---: | :---: |
 | <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/01_landing.png" width="100%" /></details> | <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/09_signup.png" width="100%" /></details> |
 | **3. Login Page** | **4. Telemetry Dashboard** |
 | <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/10_login.png" width="100%" /></details> | <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/02_dashboard.png" width="100%" /></details> |
@@ -45,6 +32,8 @@
 | <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/05_wealth_planner.png" width="100%" /></details> | <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/06_habit_analytics.png" width="100%" /></details> |
 | **9. Daily Task Planner** | **10. Telemetry Settings Center** |
 | <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/07_task_planner.png" width="100%" /></details> | <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/08_settings.png" width="100%" /></details> |
+
+</div>
 
 ---
 
