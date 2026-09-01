@@ -1,9 +1,16 @@
 <p align="center">
-  <img src="docs/images/visual_risk_ai_banner.svg" alt="Visual Risk AI — AI-Based Visual Risk and Compliance Intelligence System" width="100%" />
+  <img src="docs/images/logo.svg" alt="Visual Risk AI Logo" width="72" height="72" />
+</p>
+
+<h1 align="center">Visual Risk AI</h1>
+
+<p align="center">
+  <b>AI-Based Visual Risk and Compliance Intelligence System (VRCI)</b><br />
+  <i>Agentic Decision Intelligence · Circadian Biological Twins · Stochastic Monte Carlo Modeling</i>
 </p>
 
 <p align="center">
-  <b>Visual Risk AI (VRCI)</b> is an agentic, intelligent risk, compliance, and decision-support system that models, forecasts, and optimizes trajectories across operational compliance, financial risk, health, cognitive performance, and daily habits.
+  <img src="docs/images/visual_risk_ai_banner.png" alt="Visual Risk AI Banner" width="100%" />
 </p>
 
 ---
