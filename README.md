@@ -19,114 +19,61 @@
 
 ---
 
-### 1. Landing Page
-<details>
-<summary><b>View Screenshot</b></summary>
+<div align="center">
+  <marquee scrollamount="6" behavior="scroll" direction="left" onmouseover="this.stop();" onmouseout="this.start();">
+    <a href="docs/images/01_landing.png"><img src="docs/images/01_landing.png" alt="1. Landing Page" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/09_signup.png"><img src="docs/images/09_signup.png" alt="2. Sign Up Page" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/10_login.png"><img src="docs/images/10_login.png" alt="3. Login Page" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/02_dashboard.png"><img src="docs/images/02_dashboard.png" alt="4. Telemetry Dashboard" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/03_copilot_chat.png"><img src="docs/images/03_copilot_chat.png" alt="5. Visual Risk Copilot Chat" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/04_simulator.png"><img src="docs/images/04_simulator.png" alt="6. Decision Sandbox Simulator" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/05_wealth_planner.png"><img src="docs/images/05_wealth_planner.png" alt="7. Wealth Planner" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/06_habit_analytics.png"><img src="docs/images/06_habit_analytics.png" alt="8. Habit Analytics" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/07_task_planner.png"><img src="docs/images/07_task_planner.png" alt="9. Daily Task Planner" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
+    <a href="docs/images/08_settings.png"><img src="docs/images/08_settings.png" alt="10. Telemetry Settings Center" height="200" style="border-radius: 8px; margin: 0 8px; border: 1px solid #334155;" /></a>
+  </marquee>
+</div>
 
-![Landing Page](docs/images/01_landing.png)
-
-</details>
-
-### 2. Sign Up Page
-<details>
-<summary><b>View Screenshot</b></summary>
-
-![Sign Up Page](docs/images/09_signup.png)
-
-</details>
-
-### 3. Login Page
-<details>
-<summary><b>View Screenshot</b></summary>
-
-![Login Page](docs/images/10_login.png)
-
-</details>
-
-### 4. Telemetry Dashboard
-<details>
-<summary><b>View Screenshot</b></summary>
-
-![Telemetry Dashboard](docs/images/02_dashboard.png)
-
-</details>
-
-### 5. Visual Risk Copilot Chat
-<details>
-<summary><b>View Screenshot</b></summary>
-
-![Visual Risk Copilot Chat](docs/images/03_copilot_chat.png)
-
-</details>
-
-### 6. Decision Sandbox (What-If Simulator)
-<details>
-<summary><b>View Screenshot</b></summary>
-
-![Decision Sandbox Simulator](docs/images/04_simulator.png)
-
-</details>
-
-### 7. Wealth Planner (Monte Carlo)
-<details>
-<summary><b>View Screenshot</b></summary>
-
-![Monte Carlo Wealth Planner](docs/images/05_wealth_planner.png)
-
-</details>
-
-### 8. Habit Analytics & Correlations
-<details>
-<summary><b>View Screenshot</b></summary>
-
-![Habit Analytics](docs/images/06_habit_analytics.png)
-
-</details>
-
-### 9. Daily Task Planner
-<details>
-<summary><b>View Screenshot</b></summary>
-
-![Daily Task Planner](docs/images/07_task_planner.png)
-
-</details>
-
-### 10. Telemetry Settings Center
-<details>
-<summary><b>View Screenshot</b></summary>
-
-![Telemetry Settings Center](docs/images/08_settings.png)
-
-</details>
+| 1. Landing Page | 2. Sign Up Page |
+| :--- | :--- |
+| <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/01_landing.png" width="100%" /></details> | <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/09_signup.png" width="100%" /></details> |
+| **3. Login Page** | **4. Telemetry Dashboard** |
+| <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/10_login.png" width="100%" /></details> | <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/02_dashboard.png" width="100%" /></details> |
+| **5. Visual Risk Copilot Chat** | **6. Decision Sandbox (Simulator)** |
+| <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/03_copilot_chat.png" width="100%" /></details> | <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/04_simulator.png" width="100%" /></details> |
+| **7. Wealth Planner (Monte Carlo)** | **8. Habit Analytics & Correlations** |
+| <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/05_wealth_planner.png" width="100%" /></details> | <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/06_habit_analytics.png" width="100%" /></details> |
+| **9. Daily Task Planner** | **10. Telemetry Settings Center** |
+| <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/07_task_planner.png" width="100%" /></details> | <details><summary><b>Show Screenshot</b></summary><br /><img src="docs/images/08_settings.png" width="100%" /></details> |
 
 ---
 
-## Technical Documentation & Architecture Guides
+## [01. Core Capabilities](docs/core_capabilities.md)
 
-Explore comprehensive technical documentation, architectural specifications, and implementation references:
+## [02. The 5 User Personas](docs/user_personas.md)
 
-1. [**01. Core Capabilities**](docs/core_capabilities.md) — 4-Stage Copilot reasoning pipeline, 1-click action execution engine, Monte Carlo forecasting, decision sandbox, and habit analytics.
-2. [**02. The 5 User Personas**](docs/user_personas.md) — Multi-persona profiles (Student, Working Professional, Freelancer, Founder, Retiree) with tailored telemetry targets and horizons.
-3. [**03. System Architecture & Flowchart**](docs/system_architecture.md) — Multi-tier reactive architecture diagram, component breakdown, data flow, and subsystem responsibilities.
-4. [**04. Tech Stack & Engineering Architecture**](docs/tech_stack.md) — Complete technology stack specifications across React 19, TypeScript, TanStack Router, FastAPI, SQLAlchemy, and Groq LLMs.
-5. [**05. Quickstart & Installation Guide**](docs/quickstart_guide.md) — Step-by-step repository cloning, Python virtual environment configuration, Node dependencies, and `.env` setup.
-6. [**06. Running the Application & Deployment**](docs/running_the_application.md) — Running FastAPI Uvicorn backend, Vite frontend server, health verification, production build, and preview.
-7. [**07. Complete API Reference & Example Payloads**](docs/api_reference.md) — All 21 REST API endpoints with request schemas, curl examples, and response models in collapsible accordions.
+## [03. System Architecture & Flowchart](docs/system_architecture.md)
+
+## [04. Tech Stack & Engineering Architecture](docs/tech_stack.md)
+
+## [05. Quickstart & Installation Guide](docs/quickstart_guide.md)
+
+## [06. Running the Application & Deployment](docs/running_the_application.md)
+
+## [07. Complete API Reference & Example Payloads](docs/api_reference.md)
 
 ---
 
-## Step-by-Step Workflow Deep Dives
+## Step-by-Step Workflow
 
-Detailed engineering workflows and module breakdown documents are available in [`docs/workflow/`](docs/workflow/):
-
-1. [**01. System Architecture & Data Flow**](docs/workflow/01_system_architecture.md) — Module breakdown, data contracts, and REST communication.
-2. [**02. Onboarding & Persona Architecture**](docs/workflow/02_onboarding_and_personas.md) — Baseline initialization and adaptive question flows.
-3. [**03. Financial Forecasting & Monte Carlo Simulation**](docs/workflow/03_forecasting_and_monte_carlo.md) — 500-path stochastic modeling and prediction caching.
-4. [**04. Decision Sandbox & What-If Simulation**](docs/workflow/04_decision_sandbox_and_whatif.md) — Biological feedback calculations and structured tradeoff reporting.
-5. [**05. Habit Analytics & Daily Noon Cache**](docs/workflow/05_habit_analytics_and_feedback.md) — Grouped correlation charts and automated 12:00 PM cache invalidation.
-6. [**06. Task Planner & Suggestion Adoption Engine**](docs/workflow/06_task_planner_and_suggestions.md) — Data-analyzed suggestion engine, expansion pipelines, and routine injection.
-7. [**07. Study & Productivity Intelligence**](docs/workflow/07_study_and_productivity_intelligence.md) — Spaced repetition analytics and exam readiness regression models.
-8. [**08. Visual Risk Copilot & Conversational Agent**](docs/workflow/08_digital_twin_copilot_chat.md) — 4-stage agentic reasoning pipeline, multi-action proposals, and voice dictation.
+1. [**01. System Architecture & Data Flow**](docs/workflow/01_system_architecture.md)
+2. [**02. Onboarding & Persona Architecture**](docs/workflow/02_onboarding_and_personas.md)
+3. [**03. Financial Forecasting & Monte Carlo Simulation**](docs/workflow/03_forecasting_and_monte_carlo.md)
+4. [**04. Decision Sandbox & What-If Simulation**](docs/workflow/04_decision_sandbox_and_whatif.md)
+5. [**05. Habit Analytics & Daily Noon Cache**](docs/workflow/05_habit_analytics_and_feedback.md)
+6. [**06. Task Planner & Suggestion Adoption Engine**](docs/workflow/06_task_planner_and_suggestions.md)
+7. [**07. Study & Productivity Intelligence**](docs/workflow/07_study_and_productivity_intelligence.md)
+8. [**08. Visual Risk Copilot & Conversational Agent**](docs/workflow/08_digital_twin_copilot_chat.md)
 
 ---
 
