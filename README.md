@@ -9,6 +9,11 @@ By combining stochastic Monte Carlo simulations, deterministic compound growth a
 ## Core Capabilities
 
 ### 1. Visual Risk Copilot & Conversational Agent
+Agentic conversational assistant with real-time biometric and financial database connectivity, 4-stage reasoning disclosures, and voice dictation.
+
+<details>
+<summary><b>Show Details & Features</b></summary>
+
 - **Fullscreen Interface (`/chat`)**: Modern conversational interface with collapsible sidebar, session history, and instant draft initialization without URL pollution.
 - **4-Stage Agentic Reasoning Pipeline**:
   - **Step 1 — Goal Definition**: Explicitly decomposes user intent into optimization objectives.
@@ -18,16 +23,34 @@ By combining stochastic Monte Carlo simulations, deterministic compound growth a
 - **Step-by-Step Thought Process (`<think>`)**: Real-time collapsible reasoning disclosure detailing mathematical models, boundary checks, and intermediate metrics.
 - **Voice Input (Speech-to-Text)**: Native browser voice dictation powered by the Web Speech API.
 
+</details>
+
+---
+
 ### 2. Interactive Multi-Action Execution Engine
-Every Copilot recommendation includes an interactive, 1-click execution card:
+Every Copilot recommendation includes an interactive, 1-click execution card for immediate database and schedule synchronization.
+
+<details>
+<summary><b>Show Details & Features</b></summary>
+
 - **`add_multiple_tasks`**: Batch daily routine injection directly into the Daily Task Planner.
 - **`add_task`**: Single time-block scheduling with custom duration, start time, and category.
 - **`purchase_impact`**: Real-time capital friction analysis against active milestones, 5-year compounding opportunity cost (8% CAGR), and Monte Carlo retirement odds variance.
 - **`simulate_what_if`**: Instant lifestyle tradeoff sandboxing with 1-click scenario adoption.
 - **`wealth_forecast`**: 500-run stochastic projection with percentile bands (p10, median, p90) and retirement attainment probability.
 - **`update_settings`**: In-chat profile parameter modification (income, expenses, sleep targets, retirement age) with 1-click database commit.
+- **`log_habit` & `log_study`**: 1-click commit of biometric logs (exercise, sleep, screen time) and academic study sessions directly into `/analytics`.
+
+</details>
+
+---
 
 ### 3. Interactive Settings & Telemetry Control Center (`/settings`)
+Comprehensive multi-panel configuration hub providing live profile reactivity and telemetry adjustments.
+
+<details>
+<summary><b>Show Details & Features</b></summary>
+
 5 Dedicated configuration panels with live state reactivity:
 1. **Persona & Role**: 5 interactive cards (Student, Professional, Freelancer, Entrepreneur, Retiree) with live previews.
 2. **Biometrics & Daily Routine**: Interactive sliders for sleep baseline, study hours, screen time caps, and 7-day exercise selector.
@@ -35,25 +58,63 @@ Every Copilot recommendation includes an interactive, 1-click execution card:
 4. **AI Intelligence Engine**: `<think>` reasoning toggle, Monte Carlo trial depth (250/500/1000), and proactive scheduling sensitivity.
 5. **System & Data**: Theme toggles (Light/Dark), one-click JSON telemetry export, onboarding wizard rerun, and factory reset.
 
-### 4. Financial Twin & Monte Carlo Forecasting
+</details>
+
+---
+
+### 4. Financial Twin & Monte Carlo Forecasting (`/wealth`)
+500-iteration stochastic wealth simulations and deterministic compound growth modeling.
+
+<details>
+<summary><b>Show Details & Features</b></summary>
+
 - **500-Iteration Stochastic Wealth Simulations**: Log-normal market volatility simulations with percentile bounds (p10 Bear, p50 Median, p90 Bull).
 - **Adaptive Multi-Scale Charts**: Dynamic Y-axis scaling handling values from student allowances in hundreds/thousands to venture founders and retirees in millions.
-- **Intelligent Prediction Caching**: Automatic caching of computationally heavy forecasts for fast rendering.
+- **Intelligent Prediction Caching**: Automatic caching of computationally heavy forecasts for sub-50ms rendering.
 
-### 5. Decision Sandbox ("What-If" Simulator)
+</details>
+
+---
+
+### 5. Decision Sandbox & What-If Simulator (`/simulator`)
+Dual-scenario sandboxing tool evaluating biological feedback and financial divergence between competing lifestyle choices.
+
+<details>
+<summary><b>Show Details & Features</b></summary>
+
 - **Side-by-Side Comparison**: Real-time evaluation of competing lifestyle scenarios (Scenario A vs. Scenario B).
 - **Multi-Variable Tradeoff Modeling**: Sleep hours vs. Health Index vs. Cognitive Focus vs. 5-Year Net Worth trajectory.
 - **1-Click Adoption**: Seamlessly apply winning scenario parameters to your live profile.
 
-### 6. Universal Habit Analytics & Noon Reflection Cache
+</details>
+
+---
+
+### 6. Universal Habit Analytics & Noon Reflection Cache (`/analytics`)
+Biometric tracking, grouped correlation charts, and automated daily reflection intelligence.
+
+<details>
+<summary><b>Show Details & Features</b></summary>
+
 - **Grouped Correlation Visualizations**: Sleep vs. Focus, Screen Time vs. Mood, Exercise vs. Vitality.
 - **Automated Noon AI Reflection Cache**: Automatically generates and caches fresh daily insights at 12:00 PM local time.
 
-### 7. Robust Authentication & Security
+</details>
+
+---
+
+### 7. Robust Authentication & Session Security (`/users`)
+Unified multi-identifier authentication with strict user session isolation.
+
+<details>
+<summary><b>Show Details & Features</b></summary>
+
 - **Unified Login (`POST /users/login`)**: Supports seamless authentication by either email or username.
 - **Dual Uniqueness Verification**: Prevents database collisions on user signup (`users.username` and `users.email`).
 - **Auto-Recovery**: Seamlessly links existing accounts if a user attempts to re-register with an existing email.
 - **Session Isolation**: Chat sessions and action approvals enforce strict `user_id` ownership verification (403 Forbidden on mismatch).
+
+</details>
 
 ---
 
