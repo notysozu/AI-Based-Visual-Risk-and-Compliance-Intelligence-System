@@ -52,18 +52,15 @@
     <path d="M 0 300 C 300 280, 500 220, 800 180 C 1000 150, 1100 100, 1200 80 L 1200 220 C 1150 240, 1100 260, 950 280 C 700 310, 400 330, 0 340 Z" fill="#38bdf8" opacity="0.05"/>
   </g>
 
-  <!-- Left Glowing Icon Shield / Brain Visual -->
+  <!-- Official Circle Gauge Logo Emblem -->
   <g transform="translate(80, 70)">
-    <circle cx="60" cy="60" r="58" fill="#0f172a" stroke="#0ea5e9" stroke-width="2" opacity="0.9"/>
-    <circle cx="60" cy="60" r="46" fill="#0369a1" opacity="0.2"/>
-    <!-- Shield / Twin AI Symbol -->
-    <path d="M 60 25 L 92 40 L 92 70 C 92 92 60 105 60 105 C 60 105 28 92 28 70 L 28 40 Z" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M 60 42 L 76 52 L 76 72 C 76 83 60 92 60 92 C 60 92 44 83 44 72 L 44 52 Z" fill="#0ea5e9" opacity="0.3" stroke="#818cf8" stroke-width="1.5"/>
-    <circle cx="60" cy="64" r="5" fill="#f8fafc"/>
-    <line x1="60" y1="48" x2="60" y2="59" stroke="#f8fafc" stroke-width="2"/>
-    <line x1="60" y1="69" x2="60" y2="80" stroke="#f8fafc" stroke-width="2"/>
-    <line x1="49" y1="64" x2="55" y2="64" stroke="#f8fafc" stroke-width="2"/>
-    <line x1="65" y1="64" x2="71" y2="64" stroke="#f8fafc" stroke-width="2"/>
+    <circle cx="60" cy="60" r="58" fill="#0f172a" stroke="#0ea5e9" stroke-width="2.5" opacity="0.95"/>
+    <circle cx="60" cy="60" r="46" fill="#0369a1" opacity="0.25"/>
+    <g transform="translate(24, 24) scale(3)">
+      <path d="M15.6 2.7a10 10 0 1 0 5.7 5.7" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="12" cy="12" r="2" fill="#818cf8" stroke="#818cf8" stroke-width="1.5"/>
+      <path d="M13.4 10.6 19 5" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
   </g>
 
   <!-- Typography & Brand Titles -->
