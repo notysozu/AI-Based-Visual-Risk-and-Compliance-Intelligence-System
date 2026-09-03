@@ -319,7 +319,7 @@ export function AppShell({
       {/* ------------------------------------------------------------- */}
       {/* MAIN VIEW AREA                                                 */}
       {/* ------------------------------------------------------------- */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
         {/* Top Navbar */}
         <header className="sticky top-0 z-20 flex h-16 items-center gap-2.5 sm:gap-3 border-b border-border/40 bg-background/85 px-3 sm:px-4 backdrop-blur md:px-8">
           <Button
@@ -401,8 +401,8 @@ export function AppShell({
         </header>
 
         {/* Content Container */}
-        <main className={`flex-1 ${fullBleed ? "p-0 flex flex-col min-h-0 pb-16 md:pb-0" : "px-4 py-6 pb-20 md:px-8 md:py-8 md:pb-8"}`}>
-          <div className={`mx-auto w-full ${fullBleed ? "h-full flex flex-col flex-1" : "max-w-6xl animate-rise"}`}>
+        <main className={`flex-1 min-w-0 overflow-x-hidden ${fullBleed ? "p-0 flex flex-col min-h-0 pb-16 md:pb-0" : "px-4 py-6 pb-20 md:px-8 md:py-8 md:pb-8"}`}>
+          <div className={`mx-auto w-full min-w-0 ${fullBleed ? "h-full flex flex-col flex-1" : "max-w-6xl animate-rise"}`}>
             {title && (
               <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
                 <div>

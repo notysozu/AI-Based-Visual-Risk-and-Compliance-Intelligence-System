@@ -84,8 +84,8 @@ function PlannerPage() {
       title="Today's Plan"
       subtitle={`${cfg.badge} · ${done} of ${todays.length} done · ${Math.round(planned / 60 * 10) / 10}h scheduled`}
     >
-      <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
-        <div className="panel p-3 space-y-2">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px] w-full min-w-0">
+        <div className="panel p-3 space-y-2 min-w-0 overflow-hidden">
           {todays.length === 0 && (
             <p className="p-8 text-center text-sm text-muted-foreground">
               Nothing planned yet. Add a task, or adopt a suggestion to drop it straight in here.
@@ -96,31 +96,34 @@ function PlannerPage() {
             return (
               <div
                 key={t.id}
-                className="flex items-center gap-4 p-3.5 rounded-2xl border border-border/40 bg-card shadow-[var(--clay-shadow-sm)] hover:shadow-[var(--clay-shadow)] hover:-translate-y-0.5 transition-all duration-150"
+                className="flex items-center gap-3 sm:gap-4 p-3.5 rounded-2xl border border-border/40 bg-card shadow-[var(--clay-shadow-sm)] hover:shadow-[var(--clay-shadow)] hover:-translate-y-0.5 transition-all duration-150 min-w-0 w-full overflow-hidden"
               >
-                <Checkbox checked={t.done} onCheckedChange={() => toggleTask(t.id)} />
-                <div className="w-14 shrink-0 font-display text-sm font-bold tabular-nums">
+                <Checkbox checked={t.done} onCheckedChange={() => toggleTask(t.id)} className="shrink-0" />
+                <div className="w-12 sm:w-14 shrink-0 font-display text-sm font-bold tabular-nums">
                   {t.start}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className={`truncate text-sm font-medium ${t.done ? "text-muted-foreground line-through opacity-70" : "text-foreground"}`}>
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <p 
+                    title={t.title}
+                    className={`truncate text-sm font-medium ${t.done ? "text-muted-foreground line-through opacity-70" : "text-foreground"}`}
+                  >
                     {t.title}
                   </p>
-                  <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${badgeClass}`}>
+                  <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold shrink-0 ${badgeClass}`}>
                       {t.category}
                     </span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 shrink-0">
                       <Clock className="h-3 w-3" />
                       {t.minutes}m
                     </span>
-                    {t.fromSuggestion && <span className="italic text-[11px] text-indigo-500 dark:text-indigo-400">from suggestions</span>}
+                    {t.fromSuggestion && <span className="italic text-[11px] text-indigo-500 dark:text-indigo-400 truncate max-w-[140px]">from suggestions</span>}
                   </p>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-xl text-muted-foreground hover:text-destructive"
+                  className="h-8 w-8 shrink-0 rounded-xl text-muted-foreground hover:text-destructive"
                   onClick={() => removeTask(t.id)}
                   aria-label="Delete task"
                 >
@@ -131,8 +134,8 @@ function PlannerPage() {
           })}
         </div>
 
-        <div className="space-y-5">
-          <div className="panel p-5">
+        <div className="space-y-5 min-w-0 w-full">
+          <div className="panel p-5 min-w-0 overflow-hidden">
             <p className="label-xs">Add a task</p>
             <div className="mt-4 space-y-3">
               <div className="grid gap-1.5">
@@ -179,24 +182,26 @@ function PlannerPage() {
             </div>
           </div>
 
-          <div className="panel p-5">
+          <div className="panel p-5 min-w-0 overflow-hidden">
             <p className="label-xs">Timetable</p>
-            <div className="mt-4 space-y-1.5">
+            <div className="mt-4 space-y-1.5 min-w-0">
               {Array.from({ length: 16 }, (_, i) => i + 6).map((hour) => {
                 const slot = todays.find((t) => Number(t.start.slice(0, 2)) === hour);
                 const slotBadge = slot ? getCategoryBadgeClass(slot.category) : "";
                 return (
-                  <div key={hour} className="flex items-center gap-3 text-xs">
-                    <span className="w-8 text-muted-foreground font-mono tabular-nums">{`${hour}`.padStart(2, "0")}</span>
+                  <div key={hour} className="flex items-center gap-3 text-xs min-w-0 w-full">
+                    <span className="w-8 shrink-0 text-muted-foreground font-mono tabular-nums">{`${hour}`.padStart(2, "0")}</span>
                     <div
-                      className={`h-7 flex-1 rounded-xl px-3 text-[11px] leading-7 transition-all flex items-center justify-between ${
+                      className={`h-7 min-w-0 flex-1 rounded-xl px-3 text-[11px] leading-7 transition-all flex items-center justify-between overflow-hidden ${
                         slot
                           ? `${slotBadge} font-semibold text-foreground`
                           : "bg-input/60 border border-border/20 shadow-[var(--clay-inset)] text-muted-foreground/60"
                       }`}
                     >
-                      <span className="truncate">{slot ? slot.title : ""}</span>
-                      {slot?.done && <Check className="h-3 w-3 stroke-[3] shrink-0" />}
+                      <span className="truncate min-w-0 block" title={slot ? slot.title : undefined}>
+                        {slot ? slot.title : ""}
+                      </span>
+                      {slot?.done && <Check className="h-3 w-3 stroke-[3] shrink-0 ml-1.5" />}
                     </div>
                   </div>
                 );
