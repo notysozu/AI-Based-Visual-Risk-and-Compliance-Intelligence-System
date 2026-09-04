@@ -380,7 +380,8 @@ def run_e2e_tests():
         # 1. Get Suggestions
         r_sugs = requests.get(f"{BASE_URL}/suggestions/{user_id}")
         assert_test(r_sugs.status_code == 200, "GET /suggestions/{user_id} fetches recommendations from MongoDB")
-        sug_list = r_sugs.json()
+        sugs_resp = r_sugs.json()
+        sug_list = sugs_resp.get("suggestions", []) if isinstance(sugs_resp, dict) else sugs_resp
         assert_test(len(sug_list) >= 1, f"Suggestions loaded from MongoDB (Count: {len(sug_list)})")
         first_sug = sug_list[0]
         sug_id = first_sug.get("suggestion_id") or first_sug.get("id")

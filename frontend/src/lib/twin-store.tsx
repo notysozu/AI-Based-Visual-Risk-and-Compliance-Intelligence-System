@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { createUser, loginUser, getUserByUsername, getDefaultUser, getForecast, getUser, updateUser, adoptSuggestionApi, postHabitRecord, postStudyRecord, postFinancialRecord, getHabitRecords, getStudyRecords, getFinancialRecords } from "@/lib/api";
+import { createUser, loginUser, getUserByUsername, getDefaultUser, getDemoUser, getForecast, getUser, updateUser, adoptSuggestionApi, postHabitRecord, postStudyRecord, postFinancialRecord, getHabitRecords, getStudyRecords, getFinancialRecords } from "@/lib/api";
 
 // Re-export all models from types for 100% backwards compatibility
 export type {
@@ -695,19 +695,30 @@ export function TwinProvider({ children }: { children: ReactNode }) {
   };
 
   const loadDemo = async (role: UserRole = "professional", randomize = false) => {
-    let demoUserId: number = 1;
+    let demoUserId: string | number = 1;
+    let backendUser: any = null;
     try {
-      const user = await getDefaultUser();
-      if (user?.id) {
-        demoUserId = user.id;
+      backendUser = await getDemoUser(role);
+      if (backendUser?.id) {
+        demoUserId = backendUser.id;
       }
     } catch (err) {
-      console.warn("Failed to fetch default user from backend, using fallback ID 1:", err);
+      console.warn(`Failed to fetch dedicated demo user for role ${role} from backend, using fallback:`, err);
+      try {
+        const defaultUser = await getDefaultUser();
+        if (defaultUser?.id) demoUserId = defaultUser.id;
+      } catch {}
     }
 
     const demoProfile = buildDemoProfile(role, randomize);
     demoProfile.id = demoUserId;
     demoProfile.onboarded = true;
+    if (backendUser) {
+      Object.assign(demoProfile, mapBackendToProfile(backendUser));
+      demoProfile.role = role;
+      demoProfile.id = demoUserId;
+      demoProfile.onboarded = true;
+    }
 
     // Sync demo profile to backend asynchronously without blocking UI navigation
     try {
@@ -729,6 +740,8 @@ export function TwinProvider({ children }: { children: ReactNode }) {
       forecastLoading: false,
       forecastError: null,
     }));
+
+    hasAutoSynced.current = true;
 
     // Load updated forecast in the background
     getForecast(demoUserId)

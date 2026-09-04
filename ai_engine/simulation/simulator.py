@@ -62,8 +62,10 @@ async def get_user_baseline_metrics(user_id: Union[str, int]) -> Dict[str, float
 
     return {
         "monthly_savings": round(monthly_savings, 2),
+        "monthly_surplus": round(monthly_savings, 2),
         "current_net_worth": round(current_net_worth, 2),
         "sleep_hours": round(float(avg_sleep), 2),
+        "average_sleep": round(float(avg_sleep), 2),
         "exercise_hours": round(float(avg_exercise), 2),
         "screen_hours": round(float(avg_screen), 2),
         "social_hours": round(float(avg_social), 2),

@@ -40,6 +40,10 @@ export function getDefaultUser() {
   return request("/users/default");
 }
 
+export function getDemoUser(role: string) {
+  return request(`/users/demo/${encodeURIComponent(role)}`);
+}
+
 export function getUserByEmail(email: string) {
   return request(`/users/email/${encodeURIComponent(email)}`);
 }

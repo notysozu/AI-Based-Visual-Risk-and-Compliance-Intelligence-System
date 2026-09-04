@@ -27,7 +27,7 @@ class MongoBaseModel(BaseModel):
 class UserBase(BaseModel):
     """Core user profile data model."""
     username: str
-    email: EmailStr
+    email: str
     role: Optional[str] = "professional"
     is_onboarded: Optional[int] = 0
     age: Optional[int] = 25

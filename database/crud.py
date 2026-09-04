@@ -273,6 +273,8 @@ ROLE_DEFAULT_SUGGESTIONS = {
     ]
 }
 
+DEFAULT_ROLE_SUGGESTIONS = ROLE_DEFAULT_SUGGESTIONS
+
 
 async def get_user_suggestions(user_id: Union[str, int]) -> List[models.UserSuggestionDoc]:
     user = await get_user(user_id)
@@ -444,10 +446,161 @@ async def update_chat_message_status(
 
 
 # ──────────────────────────────────────────────
-# Mock Data Seeder
+# Demo Persona Specifications & Mock Data Seeder
 # ──────────────────────────────────────────────
 
-async def seed_mock_data(user_id: Union[str, int]):
+DEMO_PERSONA_SPECS: Dict[str, Dict[str, Any]] = {
+    "student": {
+        "username": "student_demo",
+        "email": "student.demo@twin.local",
+        "role": "student",
+        "is_onboarded": 1,
+        "age": 20,
+        "retirement_goal_age": 60,
+        "target_net_worth": 250000.0,
+        "monthly_income": 1200.0,
+        "monthly_expenses": 950.0,
+        "net_worth": 3500.0,
+        "sleep_target_hours": 8.0,
+        "study_target_hours_week": 25.0,
+        "exercise_target_days": 3.0,
+        "screen_time_target_hours": 4.0,
+        "savings_rate_target": 15.0,
+        "focus_area": "Academics & Skills",
+        "goal_name": "Graduate with Honors & $10k Emergency Fund",
+        "goal_current": 3500.0,
+        "goal_target": 10000.0,
+        "theme_preference": "dark",
+        "subjects": ["Data Structures", "Linear Algebra", "Machine Learning", "Operating Systems", "Discrete Math"],
+    },
+    "freelancer": {
+        "username": "freelancer_demo",
+        "email": "freelancer.demo@twin.local",
+        "role": "freelancer",
+        "is_onboarded": 1,
+        "age": 28,
+        "retirement_goal_age": 55,
+        "target_net_worth": 800000.0,
+        "monthly_income": 6500.0,
+        "monthly_expenses": 3200.0,
+        "net_worth": 45000.0,
+        "sleep_target_hours": 7.5,
+        "study_target_hours_week": 10.0,
+        "exercise_target_days": 4.0,
+        "screen_time_target_hours": 6.0,
+        "savings_rate_target": 30.0,
+        "focus_area": "Income Consistency",
+        "goal_name": "6-Month Runway Buffer",
+        "goal_current": 18000.0,
+        "goal_target": 30000.0,
+        "theme_preference": "dark",
+        "subjects": ["Client Consulting", "Full-Stack Design", "Contract Negotiation", "API Engineering", "Cloud Hosting"],
+    },
+    "entrepreneur": {
+        "username": "founder_demo",
+        "email": "founder.demo@twin.local",
+        "role": "entrepreneur",
+        "is_onboarded": 1,
+        "age": 32,
+        "retirement_goal_age": 50,
+        "target_net_worth": 3000000.0,
+        "monthly_income": 12000.0,
+        "monthly_expenses": 5500.0,
+        "net_worth": 180000.0,
+        "sleep_target_hours": 6.5,
+        "study_target_hours_week": 8.0,
+        "exercise_target_days": 4.0,
+        "screen_time_target_hours": 7.0,
+        "savings_rate_target": 40.0,
+        "focus_area": "Scale & Health",
+        "goal_name": "Seed Round Expansion & $500k ARR",
+        "goal_current": 150000.0,
+        "goal_target": 500000.0,
+        "theme_preference": "dark",
+        "subjects": ["Product Strategy", "Venture Finance", "Team Leadership", "GTM Sales", "Investor Pitching"],
+    },
+    "retiree": {
+        "username": "retiree_demo",
+        "email": "retiree.demo@twin.local",
+        "role": "retiree",
+        "is_onboarded": 1,
+        "age": 62,
+        "retirement_goal_age": 65,
+        "target_net_worth": 1500000.0,
+        "monthly_income": 4500.0,
+        "monthly_expenses": 2800.0,
+        "net_worth": 1350000.0,
+        "sleep_target_hours": 8.0,
+        "study_target_hours_week": 5.0,
+        "exercise_target_days": 5.0,
+        "screen_time_target_hours": 3.0,
+        "savings_rate_target": 10.0,
+        "focus_area": "Longevity & Wealth",
+        "goal_name": "Capital Preservation & Active Longevity",
+        "goal_current": 1350000.0,
+        "goal_target": 1500000.0,
+        "theme_preference": "dark",
+        "subjects": ["Portfolio Balancing", "Health & Longevity", "Estate Planning", "Creative Writing", "Nutrition Science"],
+    },
+    "professional": {
+        "username": "pro_demo",
+        "email": "pro.demo@twin.local",
+        "role": "professional",
+        "is_onboarded": 1,
+        "age": 29,
+        "retirement_goal_age": 58,
+        "target_net_worth": 1200000.0,
+        "monthly_income": 8500.0,
+        "monthly_expenses": 3800.0,
+        "net_worth": 95000.0,
+        "sleep_target_hours": 7.5,
+        "study_target_hours_week": 12.0,
+        "exercise_target_days": 4.0,
+        "screen_time_target_hours": 5.5,
+        "savings_rate_target": 35.0,
+        "focus_area": "Career & Savings",
+        "goal_name": "Senior Staff Promotion & $250k Liquid Portfolio",
+        "goal_current": 95000.0,
+        "goal_target": 250000.0,
+        "theme_preference": "dark",
+        "subjects": ["Deep Architecture", "Distributed Systems", "Cloud Infrastructure", "System Design", "Engineering Management"],
+    },
+}
+
+
+def _normalize_role(role: Optional[str]) -> str:
+    r = (role or "professional").lower().strip()
+    if r in ["founder", "creator"]:
+        return "entrepreneur"
+    if r in ["pro", "engineer"]:
+        return "professional"
+    if r not in DEMO_PERSONA_SPECS:
+        return "professional"
+    return r
+
+
+async def get_or_create_demo_user(role: str = "professional") -> models.UserDoc:
+    """Get existing or seed a dedicated, role-specific demo user document in MongoDB."""
+    norm_role = _normalize_role(role)
+    spec = DEMO_PERSONA_SPECS[norm_role]
+    username = spec["username"]
+
+    user = await get_user_by_username(username=username)
+    if not user:
+        user_create_data = {k: v for k, v in spec.items() if k != "subjects"}
+        user_create = schemas.UserCreate(**user_create_data)
+        user = await create_user(user_create)
+        await seed_mock_data(user.id, role=norm_role)
+    else:
+        u_id_str = str(user.id)
+        existing_habits = await models.HabitRecordDoc.find_one(models.HabitRecordDoc.user_id == u_id_str)
+        if not existing_habits:
+            await seed_mock_data(user.id, role=norm_role)
+
+    return user
+
+
+async def seed_mock_data(user_id: Union[str, int], role: Optional[str] = None):
     """Seed 30 days of realistic biometric, financial, and study logs in MongoDB."""
     user = await get_user(user_id)
     if not user:
@@ -459,6 +612,10 @@ async def seed_mock_data(user_id: Union[str, int]):
     if existing_habits:
         return
 
+    active_role = _normalize_role(role or user.role)
+    spec = DEMO_PERSONA_SPECS.get(active_role, DEMO_PERSONA_SPECS["professional"])
+    subjects = spec.get("subjects", ["Deep Architecture", "System Design", "Cloud Infrastructure", "Algorithms"])
+
     now = datetime.utcnow()
     habit_docs = []
     study_docs = []
@@ -467,9 +624,11 @@ async def seed_mock_data(user_id: Union[str, int]):
     for i in range(30, 0, -1):
         log_date = now - timedelta(days=i)
 
-        # Habit records
-        sleep_h = round(random.uniform(6.5, 9.0), 1)
-        screen_h = round(random.uniform(2.0, 5.5), 1)
+        # Habit records tailored to persona
+        sleep_base = user.sleep_target_hours or spec.get("sleep_target_hours", 7.5)
+        sleep_h = round(random.uniform(max(5.0, sleep_base - 1.2), min(10.0, sleep_base + 1.0)), 1)
+        screen_base = user.screen_time_target_hours or spec.get("screen_time_target_hours", 5.0)
+        screen_h = round(random.uniform(max(1.5, screen_base - 1.5), min(10.0, screen_base + 1.5)), 1)
         ex_min = random.choice([0, 30, 45, 60, 75])
 
         habit_docs.append(models.HabitRecordDoc(
@@ -496,13 +655,14 @@ async def seed_mock_data(user_id: Union[str, int]):
             ))
 
         # Study records
-        if random.random() > 0.25:
+        study_chance = 0.85 if active_role in ["student", "professional"] else 0.5
+        if random.random() < study_chance:
             study_docs.append(models.StudyRecordDoc(
                 user_id=u_id_str,
-                subject=random.choice(["Deep Architecture", "System Design", "Cloud Infrastructure", "Algorithms"]),
+                subject=random.choice(subjects),
                 duration_minutes=random.choice([45, 60, 90, 120]),
-                focus_score=random.randint(6, 9),
-                exam_score=random.choice([None, None, round(random.uniform(75, 98), 1)]),
+                focus_score=random.randint(7, 10),
+                exam_score=random.choice([None, None, round(random.uniform(80, 98), 1)]),
                 session_type="study",
                 created_at=log_date
             ))
@@ -512,8 +672,8 @@ async def seed_mock_data(user_id: Union[str, int]):
             fin_docs.append(models.FinancialRecordDoc(
                 user_id=u_id_str,
                 category="Income" if i == 1 else "Fixed Expense",
-                description="Salary Allocation" if i == 1 else "Living Expenses",
-                amount=user.monthly_income if i == 1 else (user.monthly_expenses / 2.0),
+                description="Monthly Inflow" if i == 1 else "Living Expenses",
+                amount=user.monthly_income if i == 1 else (user.monthly_expenses / 2.0 if user.monthly_expenses else 1500.0),
                 record_date=log_date
             ))
 
@@ -525,7 +685,7 @@ async def seed_mock_data(user_id: Union[str, int]):
         await models.FinancialRecordDoc.insert_many(fin_docs)
 
     # Seed default suggestions
-    await reset_user_suggestions(u_id_str, user.role or "professional")
+    await reset_user_suggestions(u_id_str, active_role)
 
 
 # ──────────────────────────────────────────────

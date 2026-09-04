@@ -30,6 +30,16 @@ async def get_default_user():
     return user
 
 
+@router.get("/demo/{role}", response_model=schemas.UserResponse)
+async def get_demo_user(role: str):
+    """
+    Get or seed dedicated role-specific demo user profile in MongoDB.
+    Supports: student, freelancer, entrepreneur/founder, retiree, professional/pro.
+    """
+    user = await crud.get_or_create_demo_user(role=role)
+    return user
+
+
 @router.post("/", response_model=schemas.UserResponse)
 async def create_user(user: schemas.UserCreate):
     """

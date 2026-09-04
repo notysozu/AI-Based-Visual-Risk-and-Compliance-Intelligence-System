@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
+from database.schemas import MongoBaseModel
 
 
 class HabitRecordCreate(BaseModel):
@@ -15,14 +16,10 @@ class HabitRecordUpdate(BaseModel):
     impact_score: Optional[int] = None
 
 
-class HabitRecordResponse(BaseModel):
-    id: int
-    user_id: int
+class HabitRecordResponse(MongoBaseModel):
+    id: Optional[Any] = None
+    user_id: Optional[Any] = None
     habit_name: str
     duration_minutes: int
     impact_score: int
-    created_at: datetime
-
-    model_config = {
-        "from_attributes": True
-    }
+    created_at: Optional[datetime] = None

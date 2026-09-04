@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
+from database.schemas import MongoBaseModel
 
 
 class FinancialRecordCreate(BaseModel):
@@ -15,14 +16,10 @@ class FinancialRecordUpdate(BaseModel):
     amount: Optional[float] = None
 
 
-class FinancialRecordResponse(BaseModel):
-    id: int
-    user_id: int
+class FinancialRecordResponse(MongoBaseModel):
+    id: Optional[Any] = None
+    user_id: Optional[Any] = None
     category: str
     description: str
     amount: float
-    record_date: datetime
-
-    model_config = {
-        "from_attributes": True
-    }
+    record_date: Optional[datetime] = None
