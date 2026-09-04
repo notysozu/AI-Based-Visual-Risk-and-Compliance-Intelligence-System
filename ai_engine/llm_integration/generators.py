@@ -109,14 +109,32 @@ Return ONLY a valid JSON array of 2 objects with keys: name, description, saving
     ]
 
 
-def generate_analytics_summary(user: Dict[str, Any], baseline: Dict[str, Any]) -> str:
+def generate_analytics_summary(user: Dict[str, Any], baseline: Any) -> str:
+    import numpy as np
+    if isinstance(baseline, list):
+        if len(baseline) > 0:
+            avg_sleep = float(np.mean([l.get("sleep", 7.5) for l in baseline]))
+            avg_screen = float(np.mean([l.get("screen", 3.5) for l in baseline]))
+            avg_study = float(np.mean([l.get("study", 2.0) for l in baseline])) * 7.0
+            base = {
+                "sleep_hours": avg_sleep,
+                "screen_time_hours": avg_screen,
+                "study_hours_week": avg_study,
+            }
+        else:
+            base = {"sleep_hours": 7.5, "screen_time_hours": 3.5, "study_hours_week": 10.0}
+    elif isinstance(baseline, dict):
+        base = baseline
+    else:
+        base = {"sleep_hours": 7.5, "screen_time_hours": 3.5, "study_hours_week": 10.0}
+
     client = get_groq_client()
     if client is not None:
         try:
             prompt = f"""Synthesize a high-leverage 2-3 paragraph analytical daily reflection for a {user.get('role', 'professional')}:
-- Sleep Baseline: {baseline.get('sleep_hours', 7.5):.1f}h/day
-- Screen Time Load: {baseline.get('screen_time_hours', 4.0):.1f}h/day
-- Weekly Study/Focus: {baseline.get('study_hours_week', 10.0):.1f}h/week
+- Sleep Baseline: {base.get('sleep_hours', 7.5):.1f}h/day
+- Screen Time Load: {base.get('screen_time_hours', 4.0):.1f}h/day
+- Weekly Study/Focus: {base.get('study_hours_week', 10.0):.1f}h/week
 - Target Net Worth: ${user.get('target_net_worth', 1000000.0):,.2f}
 Provide clean, professional insights in Markdown without emojis."""
 
@@ -137,9 +155,9 @@ Provide clean, professional insights in Markdown without emojis."""
 
     return f"""### Habit & Telemetry Performance Summary
 
-Your active baseline demonstrates an average of **{baseline.get('sleep_hours', 7.5):.1f} hours** of daily sleep and **{baseline.get('study_hours_week', 10.0):.1f} hours** of weekly focused execution.
+Your active baseline demonstrates an average of **{base.get('sleep_hours', 7.5):.1f} hours** of daily sleep and **{base.get('study_hours_week', 10.0):.1f} hours** of weekly focused execution.
 
-Screen load is currently recorded at **{baseline.get('screen_time_hours', 4.0):.1f} hours/day**. Maintaining screen hygiene during the final 60 minutes before bedtime will directly protect deep sleep architecture and cognitive alertness for tomorrow's focus blocks."""
+Screen load is currently recorded at **{base.get('screen_time_hours', 4.0):.1f} hours/day**. Maintaining screen hygiene during the final 60 minutes before bedtime will directly protect deep sleep architecture and cognitive alertness for tomorrow's focus blocks."""
 
 
 def get_rule_based_wealth_advice(*args, **kwargs) -> str:
