@@ -4,22 +4,44 @@ Visual Risk AI is constructed with a modern, type-safe stack designed for sub-50
 
 ---
 
-## Technology Stack Breakdown
+## Technology Architecture & Layer Breakdown
 
-| Layer | Technologies | Version / Specifications | Role & Purpose |
-| :--- | :--- | :--- | :--- |
-| **Frontend Framework** | React | 19.0.0 | Component rendering, hooks, suspense, and concurrent mode |
-| **Language & Tooling** | TypeScript & Vite | TypeScript 5.5, Vite 6.0 | End-to-end static type checking, instant HMR, and tree-shaken builds |
-| **Routing & State** | TanStack Router | v1.95+ | Type-safe client-side routing, search parameter validation, and layouts |
-| **Styling & Design System**| Tailwind CSS & Radix UI | Tailwind 3.4, Radix Primitives | Accessible headless UI components, animations, and dark/light modes |
-| **Data Visualization** | Recharts & D3 | Recharts 2.15, D3 Scale/Shape | Stochastic Monte Carlo bands, correlation matrices, and gauges |
-| **Markdown & Formatting** | ReactMarkdown & Remark-GFM | remark-gfm 4.0 | Seamless parsing of Copilot reasoning tables and markdown cards |
-| **Voice Dictation** | Web Speech API | Browser Native | Real-time speech-to-text dictation in the Copilot Chat interface |
-| **Backend API Engine** | FastAPI & Uvicorn | Python 3.10+, FastAPI 0.115, Uvicorn 0.34 | Asynchronous ASGI gateway, dependency injection, and REST endpoints |
-| **Data Validation** | Pydantic | v2.10+ | Strict request/response DTO schemas and type coercion |
-| **Database & ODM** | MongoDB, Motor & Beanie | MongoDB 7.0+, Motor 3.3+, Beanie 1.26+ | Asynchronous non-blocking document object mapper with fail-safe fallback |
-| **Mathematical Simulation**| NumPy, SciPy & Pandas | NumPy 2.0, SciPy 1.14 | 500-run Geometric Brownian Motion, regressions, and correlation matrices |
-| **AI Inference** | Groq API Client | Groq SDK Python | High-throughput LLM reasoning (`gpt-oss-120b`, `gpt-oss-20b`, `qwen3.6-27b`) |
+```mermaid
+flowchart TD
+  subgraph ClientLayer["Frontend Client Layer (React 19 + TypeScript + Vite)"]
+    direction TB
+    F1["React 19 & Concurrent Hooks"]
+    F2["TanStack Router (Type-Safe Client Routing)"]
+    F3["Tailwind CSS & Radix UI (Headless Primitives)"]
+    F4["Recharts & D3 (Monte Carlo Bands, Gauges & Overlays)"]
+    F5["ReactMarkdown & Remark-GFM (Copilot Card Rendering)"]
+    F6["Web Speech API (Native Voice Dictation)"]
+  end
+
+  subgraph GatewayLayer["Backend API Gateway (FastAPI + Uvicorn)"]
+    direction TB
+    B1["FastAPI 0.115 (Asynchronous ASGI Core)"]
+    B2["Pydantic v2.10 (Strict DTO Schemas & Type Coercion)"]
+    B3["Motor 3.3+ & Beanie ODM (Async MongoDB Abstraction)"]
+  end
+
+  subgraph EngineLayer["AI & Computational Math Engine"]
+    direction TB
+    E1["Groq API Client (GPT-OSS 120B/20B & Qwen 3.6 Reasoning)"]
+    E2["NumPy & SciPy (500-Run Geometric Brownian Motion & Distributions)"]
+    E3["Pandas (30-Day Telemetry Aggregations & Correlation Matrices)"]
+  end
+
+  subgraph StorageLayer["Database & Intelligence Persistence"]
+    direction TB
+    D1[("MongoDB Atlas Cluster / Local Engine")]
+    D2["Collections: users, habit_records, study_records, financial_records, app_cache, chat_sessions"]
+  end
+
+  ClientLayer -->|REST JSON Payloads / API Calls| GatewayLayer
+  GatewayLayer -->|Inference Prompts & Math Tasks| EngineLayer
+  GatewayLayer -->|Async Document Read/Write| StorageLayer
+```
 
 ---
 

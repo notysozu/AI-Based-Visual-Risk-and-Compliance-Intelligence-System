@@ -4,43 +4,60 @@ This document provides complete technical specifications, request models, query 
 
 ---
 
-## Endpoint Summary
+## REST API Service Architecture & Endpoint Map
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/health` | Server health and service connectivity check |
-| `POST` | `/users/` | Create a new user profile with email and username uniqueness validation |
-| `POST` | `/users/login` | Authenticate user by either email or username |
-| `GET` | `/users/{user_id}` | Retrieve user profile, cached predictions, and role |
-| `PUT` | `/users/{user_id}` | Update profile metrics, target age, net worth, and role settings |
-| `GET` | `/users/default` | Get or seed default twin user document in MongoDB |
-| `GET` | `/users/demo/{role}` | Get or seed dedicated role-specific demo user document in MongoDB |
-| `GET` | `/chat/sessions/{user_id}` | List all chat sessions strictly belonging to the user |
-| `POST` | `/chat/message/create_thread` | Create a new conversation thread with AI-summarized title |
-| `POST` | `/chat/message/{session_id}` | Send message and execute 4-stage Copilot reasoning pipeline |
-| `POST` | `/chat/action/execute/{message_id}` | Approve and commit proposed Copilot action to database |
-| `POST` | `/chat/action/reject/{message_id}` | Dismiss proposed Copilot action |
-| `DELETE` | `/chat/sessions/{session_id}` | Delete a chat session with ownership verification |
-| `GET` | `/simulations/forecast/{user_id}` | Monte Carlo forecast with percentile curves and success odds |
-| `GET` | `/simulations/wealth-advice/{user_id}` | AI wealth coach guidance with cache invalidation support |
-| `POST` | `/simulations/compare/{user_id}` | Evaluate Scenario A vs. Scenario B tradeoff analysis |
-| `POST` | `/simulations/analytics-summary/{user_id}` | AI daily habit analysis narrative (noon milestone cache) |
-| `GET` | `/suggestions/{user_id}` | Retrieve persisted suggestions or initialize persona defaults |
-| `POST` | `/suggestions/generate/{user_id}` | AI pre-analysis of habit logs to regenerate or expand suggestions |
-| `POST` | `/suggestions/adopt/{user_id}` | Toggle suggestion adoption status and sync with database |
-| `POST` | `/suggestions/reset/{user_id}` | Reset suggestions back to role default baseline |
-| `GET` | `/records/habit/{user_id}` | Retrieve historical habit logs |
-| `POST` | `/records/habit/{user_id}` | Record daily sleep, screen, study, and mood log |
-| `GET` | `/records/financial/{user_id}` | Retrieve user financial inflow and expense records |
-| `POST` | `/records/financial/{user_id}` | Record financial transaction in MongoDB |
-| `POST` | `/study/generate-plan/{user_id}` | Generate AI 7-day Pomodoro study schedule in MongoDB |
-| `GET` | `/study/plan/{user_id}` | Retrieve saved 7-day study schedule directly from MongoDB |
-| `POST` | `/study/log/{user_id}` | Record focused coursework session |
-| `GET` | `/study/analytics/{user_id}` | Compute spaced repetition retention and focus scores |
-| `GET` | `/study/forecast/{user_id}` | Compute probability of passing academic exams |
-| `GET` | `/cache/{cache_key}` | Retrieve document from MongoDB application intelligence cache |
-| `POST` | `/cache/{cache_key}` | Store document in MongoDB application intelligence cache |
-| `DELETE` | `/cache/{cache_key}` | Invalidate document in MongoDB application intelligence cache |
+```mermaid
+flowchart TB
+  subgraph Gateway["Visual Risk AI API Gateway (FastAPI)"]
+    direction TB
+    
+    subgraph UserSvc["User Lifecycle & Auth (/users)"]
+      U1["POST /users/ (Register Unique Profile)"]
+      U2["POST /users/login (Dual Identifier Login)"]
+      U3["GET /users/{id} (Profile & Target Telemetry)"]
+      U4["PUT /users/{id} (Update Metrics & Settings)"]
+      U5["GET /users/default (Default Twin Seed)"]
+      U6["GET /users/demo/{role} (Dedicated Persona Seed)"]
+    end
+
+    subgraph ChatSvc["Copilot Conversational AI (/chat)"]
+      C1["GET /chat/sessions/{user_id} (List Threads)"]
+      C2["POST /chat/message/create_thread (New Thread)"]
+      C3["POST /chat/message/{session_id} (4-Stage Reasoning Turn)"]
+      C4["POST /chat/action/execute/{msg_id} (Commit Action)"]
+      C5["POST /chat/action/reject/{msg_id} (Dismiss Action)"]
+      C6["DELETE /chat/sessions/{session_id} (Delete Thread)"]
+    end
+
+    subgraph SimSvc["Decision Sandbox & Simulations (/simulations)"]
+      M1["GET /simulations/forecast/{id} (500-Run Monte Carlo)"]
+      M2["GET /simulations/wealth-advice/{id} (Cached Guidance)"]
+      M3["POST /simulations/compare/{id} (What-If Tradeoffs)"]
+      M4["POST /simulations/analytics-summary/{id} (Noon Reflection)"]
+    end
+
+    subgraph HabitSvc["Habits, Finance & Suggestions"]
+      H1["GET & POST /records/habit/{id} (Biometrics)"]
+      H2["GET & POST /records/financial/{id} (Cashflows)"]
+      H3["GET & POST /suggestions/{id} (Action Library)"]
+      H4["POST /suggestions/adopt/{id} (Toggle State)"]
+    end
+
+    subgraph StudySvc["Academic & Productivity Intelligence (/study)"]
+      S1["POST /study/generate-plan/{id} (7-Day Pomodoro)"]
+      S2["GET /study/plan/{id} (Saved Schedule)"]
+      S3["POST /study/log/{id} (Coursework Block)"]
+      S4["GET /study/analytics/{id} (Spaced Repetition)"]
+      S5["GET /study/forecast/{id} (Exam Probability)"]
+    end
+
+    subgraph CacheSvc["Application Intelligence Cache (/cache)"]
+      K1["GET /cache/{key} (Retrieve Cached Computation)"]
+      K2["POST /cache/{key} (Persist with TTL)"]
+      K3["DELETE /cache/{key} (Invalidate Cache Entry)"]
+    end
+  end
+```
 
 ---
 

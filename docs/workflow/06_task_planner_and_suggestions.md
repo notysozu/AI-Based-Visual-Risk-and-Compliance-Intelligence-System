@@ -33,24 +33,27 @@ Before calling the LLM, the backend analyzes:
 
 ---
 
-## 3. Database Persistence (`user_suggestions`)
+## 3. Database Persistence (`UserSuggestionDoc`)
 
-Suggestions are stored in the database via the `UserSuggestion` model, ensuring custom recommendations and adoption states persist across sessions:
+Suggestions are stored in MongoDB via the `UserSuggestionDoc` Beanie document model, ensuring custom recommendations and adoption states persist across sessions:
 
-| Column | Type | Description |
-| :--- | :--- | :--- |
-| `id` | `Integer` | Primary key |
-| `user_id` | `Integer` | Foreign key to `users.id` |
-| `suggestion_id` | `String` | Unique slug (e.g. `stu-deep-block`) |
-| `title` | `String` | Actionable recommendation title |
-| `category` | `String` | Category (`Focus`, `Vitality`, `Finance`, `Study`, `Work`) |
-| `detail` | `Text` | Contextual rationale based on user metrics |
-| `impact` | `String` | Quantified impact (e.g. `+1.6 focus rating`, `+$300/mo savings`) |
-| `start_time` | `String` | Suggested start time (e.g. `09:00`) |
-| `duration_minutes` | `Integer` | Suggested duration in minutes |
-| `is_adopted` | `Integer` | 0 (unadopted) or 1 (adopted into today's plan) |
-| `is_ai_generated` | `Integer` | 0 (template) or 1 (AI-synthesized) |
-| `created_at` | `DateTime` | Generation timestamp |
+```mermaid
+classDiagram
+  class UserSuggestionDoc {
+    +ObjectId id
+    +String user_id
+    +String suggestion_id
+    +String title
+    +String category
+    +String detail
+    +String impact
+    +String start_time
+    +Int duration_minutes
+    +Int is_adopted
+    +Int is_ai_generated
+    +DateTime created_at
+  }
+```
 
 ---
 

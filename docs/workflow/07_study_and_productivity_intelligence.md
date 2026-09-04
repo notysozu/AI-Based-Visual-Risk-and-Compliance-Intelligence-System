@@ -56,15 +56,25 @@ where $\bar{G}$ is average day gap and $G_{\text{max}}$ is maximum day gap betwe
 
 ---
 
-## 4. Endpoints Reference
+## 4. Endpoints & Data Flow Reference
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/study/analytics/{user_id}` | Aggregated subject breakdown, retention score, and weekly hours |
-| `GET` | `/study/forecast/{user_id}?target_score=88` | Performance trend regression and exam readiness probability |
-| `POST` | `/study/generate-plan/{user_id}` | AI-generated 7-day optimized study plan with caching |
-| `POST` | `/study/log/{user_id}` | Log a completed study session with focus and optional test score |
-| `GET` | `/study/logs/{user_id}` | Fetch historical study log records |
+```mermaid
+flowchart LR
+  subgraph StudyService["Study & Academic Intelligence Engine (/study)"]
+    direction TB
+    S1["GET /study/analytics/{id}<br/>• Subject breakdown & retention score<br/>• Weekly consistency metrics"]
+    S2["GET /study/forecast/{id}<br/>• Performance trend regression<br/>• Exam readiness probability"]
+    S3["POST /study/generate-plan/{id}<br/>• 7-day optimized Pomodoro schedule<br/>• AI generation & MongoDB persistence"]
+    S4["POST /study/log/{id}<br/>• Log completed study session<br/>• Focus rating & optional test score"]
+    S5["GET /study/plan/{id}<br/>• Retrieve cached 7-day study plan"]
+  end
+
+  subgraph PlannerIntegration["Daily Task Planner Integration"]
+    P1["+ Add to Tasks -> Injects into /planner queue"]
+  end
+
+  S3 --> P1
+```
 
 
 ## 7. Exam Score Readiness Model

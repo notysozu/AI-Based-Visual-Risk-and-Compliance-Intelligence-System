@@ -51,14 +51,17 @@ Whenever a user prompts the Copilot, the AI execution engine processes the turn 
 
 Copilot responses can attach structured actionable payloads (`action_type`, `action_payload`, `action_status`) that require explicit user approval before execution:
 
-| Action Type | Trigger Examples | Action Effect upon User Approval |
-| :--- | :--- | :--- |
-| **`add_multiple_tasks`** | *"suggest tasks to boost my productivity"*, *"plan my day"* | Injects calibrated daily time-blocks into `user_suggestions` and today's Daily Task Planner. |
-| **`add_task`** | *"add 45 min deep work sprint at 10:00 AM"* | Creates a single scheduled time-block with category, duration, and predicted impact. |
-| **`purchase_impact`** | *"If I buy a $1,200 laptop today, how does that affect my goal?"* | Logs the simulated tradeoff, calculates milestone delay in days/months, and computes 5-year foregone compounding returns. |
-| **`simulate_what_if`** | *"What if I study 5 more hours and sleep 30 mins less?"* | Applies custom scenario adjustments to the user's active sandbox baseline. |
-| **`wealth_forecast`** | *"Run Monte Carlo wealth simulation for my retirement"* | Executes 500 stochastic trials, reporting $p_{10}$ Bear floor, median final wealth, and $p_{90}$ Bull ceiling. |
-| **`update_settings`** | *"Change my monthly income to 6000 and sleep target to 8h"* | Directly updates profile parameters in the database and recalculates elasticity baselines. |
+```mermaid
+flowchart LR
+  CopilotTurn["Copilot Reasoning Turn"] --> ActionRouter{"Action Type Proposal"}
+  
+  ActionRouter -->|add_multiple_tasks| Act1["add_multiple_tasks<br/>• Plans whole day with calibrated blocks<br/>• Injects into /planner"]
+  ActionRouter -->|add_task| Act2["add_task<br/>• Creates single deep work block<br/>• Categorized with impact tag"]
+  ActionRouter -->|purchase_impact| Act3["purchase_impact<br/>• Simulates capital friction<br/>• Computes 5-Yr CAGR loss"]
+  ActionRouter -->|simulate_what_if| Act4["simulate_what_if<br/>• Sandboxes lifestyle tradeoffs<br/>• Updates slider presets"]
+  ActionRouter -->|wealth_forecast| Act5["wealth_forecast<br/>• Runs 500 Monte Carlo paths<br/>• Computes percentile floor/ceiling"]
+  ActionRouter -->|update_settings| Act6["update_settings<br/>• Modifies income/sleep targets<br/>• Persists to MongoDB UserDoc"]
+```
 
 ---
 
@@ -83,26 +86,29 @@ When **Think Mode** is active, the model generates an explicit reasoning block w
 
 Chat interactions are persisted in MongoDB through Beanie Document models with embedded messages:
 
-### `ChatSessionDoc` Document (`chat_sessions`)
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `id` | `PydanticObjectId` | Primary document identifier (`_id`) |
-| `user_id` | `str` | User reference identifier (Session isolation) |
-| `title` | `str` | Auto-summarized conversation title (e.g. *"Daily Focus Sprint"*) |
-| `created_at` | `datetime` | Session creation timestamp |
-| `updated_at` | `datetime` | Last activity timestamp |
-| `messages` | `List[ChatMessageDoc]` | Embedded ordered sub-documents for instantaneous zero-join retrieval |
+```mermaid
+classDiagram
+  class ChatSessionDoc {
+    +ObjectId id
+    +String user_id
+    +String title
+    +DateTime created_at
+    +DateTime updated_at
+    +List~ChatMessageDoc~ messages
+  }
 
-### Embedded `ChatMessageDoc` Sub-Document
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `id` | `str` | Unique message UUID |
-| `role` | `str` | `"user"` or `"assistant"` |
-| `content` | `str` | Full message content including Markdown tables and `<think>` blocks |
-| `action_type` | `str` | `"none"`, `"add_task"`, `"add_multiple_tasks"`, `"purchase_impact"`, `"simulate_what_if"`, etc. |
-| `action_payload` | `Optional[str]` | Serialized JSON parameters for action execution |
-| `action_status` | `str` | `"none"`, `"proposed"`, `"executed"`, `"rejected"` |
-| `created_at` | `datetime` | Message creation timestamp |
+  class ChatMessageDoc {
+    +String id
+    +String role ("user | assistant")
+    +String content
+    +String action_type
+    +String action_payload
+    +String action_status ("proposed | executed | rejected")
+    +DateTime created_at
+  }
+
+  ChatSessionDoc *-- ChatMessageDoc : embedded sub-documents
+```
 
 ---
 

@@ -83,27 +83,54 @@ flowchart TB
 
 ---
 
-## Component Breakdown Table
+## Subsystem Component Interconnect Diagram
 
-| Architectural Layer | Subsystem / Module | Primary Responsibilities | Data Handled | Core Technologies |
-| :--- | :--- | :--- | :--- | :--- |
-| **Presentation Layer** | **Visual Risk Copilot (`/chat`)** | Fullscreen conversational interface with collapsible sessions drawer, multi-action 1-click execution cards, reasoning disclosure (`<think>`), and voice dictation. | Session IDs, prompt streams, action proposals, status updates | React 19, TypeScript, Radix UI, Lucide Icons, Web Speech API |
-| | **Decision Sandbox (`/simulator`)** | Interactive side-by-side lifestyle scenario comparison (Scenario A vs B), biological feedback modeling, and 1-click parameter adoption. | Sleep targets, study hours, monthly savings, burnout indices | Recharts, Radix Sliders, Tailwind CSS |
-| | **Wealth Engine (`/wealth`)** | 500-path stochastic Monte Carlo simulation visualization, deterministic compound growth curves, and percentile probability estimation. | Net worth, savings surplus, CAGR, asset volatility bounds | Recharts Multi-Scale Charts, Pydantic DTOs |
-| | **Habit Analytics (`/analytics`)** | Biometric habit tracking, grouped correlation charts, and automated noon daily reflection card display. | Sleep, screen time, exercise days, mood rating | Recharts, MongoDB Document Cache |
-| | **Task Planner (`/planner`)** | Daily focus schedule management, time-blocking, habit injection, and recommendation adoption workflow. | Tasks, time slots, completion states, categories | Radix UI, TanStack Router |
-| | **Settings Center (`/settings`)** | Multi-panel telemetry control center for persona switching, biometrics, financial goals, and AI parameters. | User profiles, slider presets, onboarding status | Radix Tabs, React Hook Form |
-| **API Gateway Layer** | **FastAPI Application Router** | Validates payloads via Pydantic v2, enforces session ownership security, and orchestrates services. | JSON Request/Response schemas, HTTP status codes | FastAPI, Uvicorn, Pydantic v2 |
-| | **Authentication & CRUD Router (`/users`)** | Enforces username/email uniqueness, supports dual identifier login, and persists onboarding state. | User credentials, demographic baselines, targets | Motor Async Client, Beanie ODM |
-| | **Chat & Action Router (`/chat`)** | Manages conversation threads, dispatches prompts to the 4-stage pipeline, and handles action approvals/rejections. | Message history, action payloads, tool invocations | REST Endpoints, Custom Event Dispatchers |
-| | **Simulation Router (`/simulations`)** | Triggers Monte Carlo wealth projections, scenario tradeoff comparisons, and AI wealth roadmap generation. | Stochastic parameters, scenario vectors, advice text | NumPy, Pandas, Scipy |
-| | **Suggestion Router (`/suggestions`)** | Evaluates habit log pre-analysis, generates tailored routine adjustments, and manages database adoption. | Suggestion records, adoption flags, difficulty | Heuristic Rule Engine, Groq LLM |
-| | **Cache Router (`/cache`)** | Manages high-performance application cache, noon reflection summaries, and study plan documents in MongoDB. | Cache keys, TTL expiration, user associations, JSON payloads | MongoDB AppCacheDoc, Motor Async |
-| **Intelligence Layer** | **Agentic Reasoning Pipeline** | 4-stage problem decomposition: (1) Goal Definition, (2) Telemetry Search, (3) Optimization Analysis, (4) Structured Markdown/Action Output. | Database telemetry bundles, prompt context | Groq API (`gpt-oss-120b`, `gpt-oss-20b`, `qwen3.6-27b`) |
-| | **Stochastic Simulation Engine** | Geometric Brownian Motion mathematical model running 500 volatility paths with inflation adjustments. | Mean return, variance, annual savings rate, time horizons | NumPy Vectorized Computations |
-| | **Circadian & Biological Modeler** | Calculates acute sleep debt, cortisol alertness peaks (09:00–11:30), post-prandial dips, and focus elasticity. | Biometric logs, target variances, fatigue indices | Heuristic Mathematical Models |
-| **Persistence Layer** | **MongoDB Document Database** | NoSQL document storage for users, biometric logs, academic records, transactions, and chat sessions with embedded messages. | BSON Document Collections, Unique Indexes | MongoDB (Local / Atlas), Motor Async, Beanie ODM |
-| | **Intelligence & Cache Layer** | Persists computationally expensive Monte Carlo trials, 7-day study plans, and daily noon AI reflections directly in MongoDB database collections (`UserDoc` & `AppCacheDoc`). | Forecast bundles, daily summaries, timestamped keys | MongoDB AppCacheDoc & UserDoc Intelligence Cache |
+```mermaid
+flowchart TB
+  subgraph PresentationLayer["Presentation Layer (React 19 + TanStack Router)"]
+    direction TB
+    UI_Chat["Visual Risk Copilot (/chat)<br/>Fullscreen Chat, Voice Dictation & Action Cards"]
+    UI_Sim["Decision Sandbox (/simulator)<br/>What-If Scenario A vs B Tradeoffs & Feedback"]
+    UI_Wealth["Wealth Engine (/wealth)<br/>500-Path Monte Carlo Projections & Percentiles"]
+    UI_Study["Study Intelligence (/study)<br/>7-Day Spaced Repetition Plan & Exam Readiness"]
+    UI_Habits["Habit Analytics (/analytics)<br/>Circadian Correlations & Daily Reflections"]
+    UI_Plan["Task Planner (/planner)<br/>Daily Focus Sprints & Suggestion Adoption"]
+    UI_Set["Settings Center (/settings)<br/>5-Panel Control Hub & Persona Switcher"]
+  end
+
+  subgraph GatewayLayer["API Gateway Layer (FastAPI Asynchronous Routers)"]
+    direction TB
+    R_Auth["Auth & Users Router (/users)<br/>Dual Identifier Login & Dedicated Demo Twins"]
+    R_Chat["Chat Router (/chat)<br/>Threads, Actions & 4-Stage Agentic Turns"]
+    R_Sim["Simulation Router (/simulations)<br/>Baseline, Tradeoffs & Forecasts"]
+    R_Study["Study Router (/study)<br/>Coursework Logs & 7-Day Plan Engine"]
+    R_Sug["Suggestion Router (/suggestions)<br/>Habit Pre-Analysis & Suggestion Lifecycle"]
+    R_Rec["Records Router (/records)<br/>Habits, Biometrics & Financial Flow"]
+    R_Cache["Cache Router (/cache)<br/>High-Performance AppCache Gateway"]
+  end
+
+  subgraph IntelligenceLayer["Agentic Intelligence & Mathematical Engines"]
+    direction TB
+    AI_Agent["Groq Agentic Copilot<br/>4-Stage Reasoning (GPT-OSS 120B/20B & Qwen 3.6)"]
+    AI_Math["Stochastic Simulation Engine<br/>500-Run Geometric Brownian Motion"]
+    AI_Bio["Circadian & Biology Modeler<br/>Sleep Debt, Alertness Peaks & Focus Elasticity"]
+  end
+
+  subgraph PersistenceLayer["Persistence Layer (MongoDB Atlas / Local Engine)"]
+    direction TB
+    DB_Users[("users<br/>UserDoc")]
+    DB_Habits[("habit_records<br/>HabitRecordDoc")]
+    DB_Study[("study_records<br/>StudyRecordDoc")]
+    DB_Fin[("financial_records<br/>FinancialRecordDoc")]
+    DB_Chat[("chat_sessions<br/>ChatSessionDoc")]
+    DB_Sug[("user_suggestions<br/>UserSuggestionDoc")]
+    DB_Cache[("app_cache<br/>AppCacheDoc")]
+  end
+
+  PresentationLayer --> GatewayLayer
+  GatewayLayer --> IntelligenceLayer
+  GatewayLayer --> PersistenceLayer
+```
 
 ---
 

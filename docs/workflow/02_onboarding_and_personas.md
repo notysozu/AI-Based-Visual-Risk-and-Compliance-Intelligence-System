@@ -6,15 +6,44 @@ This document describes the 5 distinct life-stage personas supported by the Visu
 
 ## 1. The 5 User Personas
 
-The system recognizes that financial planning, daily habits, and productivity metrics fundamentally differ depending on a user's life stage. 
+The system recognizes that financial planning, daily habits, and productivity metrics fundamentally differ depending on a user's life stage:
 
-| Persona | Core Focus | Inflow Label | Net Worth Scope | Learning / Focus Area |
-| :--- | :--- | :--- | :--- | :--- |
-| **Student** | Coursework, exams, pocket allowance | Pocket Money / Allowance | Saved Pocket Money ($10k scale) | Study & Coursework |
-| **Working Professional** | Salaried career, 401(k), retirement | Monthly Take-Home Salary | Current Net Worth ($1M scale) | Upskilling & Learning |
-| **Freelancer / Creator** | Client contracts, invoices, runway | Average Invoiced Revenue | Cash Buffer & Portfolio ($800k scale) | Skill Building & Portfolio |
-| **Founder / Entrepreneur**| Venture build sprints, equity, runway | Founder Draw / Income | Liquid Capital & Valuation ($2.5M scale) | Strategy & Market Research |
-| **Retiree / Senior** | Longevity, healthcare buffer, legacy | Monthly Pension / Passive | Nest Egg & Legacy ($600k scale) | Reading & Mind Hobbies |
+```mermaid
+flowchart TB
+  subgraph LifeStagePersonas["The 5 Visual Risk AI Personas"]
+    direction TB
+    
+    subgraph Student["Student Persona"]
+      S1["Focus: Coursework, Exams & Allowance"]
+      S2["Inflow: Pocket Money / Allowance"]
+      S3["Scope: Career Launch ($10k scale)"]
+    end
+
+    subgraph Pro["Working Professional Persona"]
+      P1["Focus: Salaried Career, 401(k) & Upskilling"]
+      P2["Inflow: Monthly Take-Home Salary"]
+      P3["Scope: Retirement ($1.2M scale)"]
+    end
+
+    subgraph Free["Freelancer / Creator Persona"]
+      F1["Focus: Client Contracts, Invoices & Runway"]
+      F2["Inflow: Invoiced Monthly Revenue"]
+      F3["Scope: Independence Buffer ($800k scale)"]
+    end
+
+    subgraph Founder["Founder / Entrepreneur Persona"]
+      E1["Focus: Venture Growth, Equity & Valuation"]
+      E2["Inflow: Founder Draw / Distribution"]
+      E3["Scope: Enterprise Exit ($3.0M scale)"]
+    end
+
+    subgraph Retiree["Retiree / Senior Persona"]
+      R1["Focus: Asset Longevity, Health & Reading"]
+      R2["Inflow: Monthly Pension & Dividends"]
+      R3["Scope: Capital Preservation ($1.5M scale)"]
+    end
+  end
+```
 
 ---
 
