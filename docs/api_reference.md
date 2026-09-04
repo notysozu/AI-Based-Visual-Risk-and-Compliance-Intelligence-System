@@ -1,6 +1,6 @@
 # API Reference & Endpoints — Visual Risk AI
 
-This document provides complete technical specifications, request models, query parameters, curl examples, and JSON response payloads for all 21 endpoints in the Visual Risk AI (VRCI) backend.
+This document provides complete technical specifications, request models, query parameters, curl examples, and JSON response payloads for all endpoints in the Visual Risk AI (VRCI) backend.
 
 ---
 
@@ -13,6 +13,8 @@ This document provides complete technical specifications, request models, query 
 | `POST` | `/users/login` | Authenticate user by either email or username |
 | `GET` | `/users/{user_id}` | Retrieve user profile, cached predictions, and role |
 | `PUT` | `/users/{user_id}` | Update profile metrics, target age, net worth, and role settings |
+| `GET` | `/users/default` | Get or seed default twin user document in MongoDB |
+| `GET` | `/users/demo/{role}` | Get or seed dedicated role-specific demo user document in MongoDB |
 | `GET` | `/chat/sessions/{user_id}` | List all chat sessions strictly belonging to the user |
 | `POST` | `/chat/message/create_thread` | Create a new conversation thread with AI-summarized title |
 | `POST` | `/chat/message/{session_id}` | Send message and execute 4-stage Copilot reasoning pipeline |
@@ -29,6 +31,16 @@ This document provides complete technical specifications, request models, query 
 | `POST` | `/suggestions/reset/{user_id}` | Reset suggestions back to role default baseline |
 | `GET` | `/records/habit/{user_id}` | Retrieve historical habit logs |
 | `POST` | `/records/habit/{user_id}` | Record daily sleep, screen, study, and mood log |
+| `GET` | `/records/financial/{user_id}` | Retrieve user financial inflow and expense records |
+| `POST` | `/records/financial/{user_id}` | Record financial transaction in MongoDB |
+| `POST` | `/study/generate-plan/{user_id}` | Generate AI 7-day Pomodoro study schedule in MongoDB |
+| `GET` | `/study/plan/{user_id}` | Retrieve saved 7-day study schedule directly from MongoDB |
+| `POST` | `/study/log/{user_id}` | Record focused coursework session |
+| `GET` | `/study/analytics/{user_id}` | Compute spaced repetition retention and focus scores |
+| `GET` | `/study/forecast/{user_id}` | Compute probability of passing academic exams |
+| `GET` | `/cache/{cache_key}` | Retrieve document from MongoDB application intelligence cache |
+| `POST` | `/cache/{cache_key}` | Store document in MongoDB application intelligence cache |
+| `DELETE` | `/cache/{cache_key}` | Invalidate document in MongoDB application intelligence cache |
 
 ---
 
@@ -812,6 +824,286 @@ curl -X POST http://127.0.0.1:8000/records/habit/1 \
   "duration_minutes": 60,
   "impact_score": 9,
   "notes": "1-hour strength training"
+}
+```
+
+### 22. Get Dedicated Demo Twin User — `GET /users/demo/{role}`
+
+Retrieves or initializes a dedicated, role-specific demo user document in MongoDB with 30 days of seeded telemetry (habit logs, financial flows, study records, and suggestion library).
+
+Supported roles: `student`, `freelancer`, `entrepreneur` / `founder`, `retiree`, `professional` / `pro`.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X GET http://127.0.0.1:8000/users/demo/student \
+  -H "Accept: application/json"
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "id": "6a9a8f942b032e1a5bddbacf",
+  "username": "student_demo",
+  "email": "student.demo@twin.local",
+  "role": "student",
+  "is_onboarded": 1,
+  "age": 20,
+  "retirement_goal_age": 60,
+  "target_net_worth": 250000.0,
+  "monthly_income": 1200.0,
+  "monthly_expenses": 950.0,
+  "net_worth": 3500.0,
+  "sleep_target_hours": 8.0,
+  "study_target_hours_week": 25.0,
+  "exercise_target_days": 3.0,
+  "screen_time_target_hours": 4.0,
+  "savings_rate_target": 15.0,
+  "focus_area": "Academics & Skills",
+  "goal_name": "Graduate with Honors & $10k Emergency Fund",
+  "goal_current": 3500.0,
+  "goal_target": 10000.0,
+  "theme_preference": "dark"
+}
+```
+
+</details>
+
+---
+
+### 23. Retrieve Financial Records — `GET /records/financial/{user_id}`
+
+Retrieves historical financial transactions and monthly cashflow entries from MongoDB.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X GET http://127.0.0.1:8000/records/financial/6a9a8f942b032e1a5bddbacf \
+  -H "Accept: application/json"
+```
+
+**Example Response (200 OK):**
+```json
+[
+  {
+    "id": "6a9a8f942b032e1a5bddbad0",
+    "user_id": "6a9a8f942b032e1a5bddbacf",
+    "category": "Income",
+    "description": "Monthly Stipend / Allowance",
+    "amount": 1200.0,
+    "record_date": "2026-09-01T00:00:00"
+  },
+  {
+    "id": "6a9a8f942b032e1a5bddbad1",
+    "user_id": "6a9a8f942b032e1a5bddbacf",
+    "category": "Fixed Expense",
+    "description": "Housing & Food Allocation",
+    "amount": 475.0,
+    "record_date": "2026-09-15T00:00:00"
+  }
+]
+```
+
+</details>
+
+---
+
+### 24. Log Financial Transaction — `POST /records/financial/{user_id}`
+
+Records a new cash inflow or outflow transaction directly into the user's MongoDB history.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X POST http://127.0.0.1:8000/records/financial/6a9a8f942b032e1a5bddbacf \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category": "Expense",
+    "description": "Course Textbook & Cloud Credits",
+    "amount": 85.50
+  }'
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "id": "6a9a8f942b032e1a5bddbad2",
+  "user_id": "6a9a8f942b032e1a5bddbacf",
+  "category": "Expense",
+  "description": "Course Textbook & Cloud Credits",
+  "amount": 85.5,
+  "record_date": "2026-09-04T15:00:00"
+}
+```
+
+</details>
+
+---
+
+### 25. Generate 7-Day Study Plan — `POST /study/generate-plan/{user_id}`
+
+Generates an AI-optimized 7-day Pomodoro coursework schedule based on active exam readiness and cognitive fatigue baselines, saving it directly to MongoDB `UserDoc.last_study_plan`.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X POST http://127.0.0.1:8000/study/generate-plan/6a9a8f942b032e1a5bddbacf \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target_subject": "Machine Learning",
+    "hours_per_day": 3.5,
+    "upcoming_exam_days": 14
+  }'
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "user_id": "6a9a8f942b032e1a5bddbacf",
+  "plan": [
+    {
+      "day": "Monday",
+      "focus": "Neural Architecture Review",
+      "blocks": [
+        {"time": "09:00", "duration_minutes": 50, "task": "Loss functions & Backpropagation"},
+        {"time": "14:00", "duration_minutes": 50, "task": "Attention Mechanism Implementation"}
+      ]
+    }
+  ],
+  "generated_at": "2026-09-04T15:00:00"
+}
+```
+
+</details>
+
+---
+
+### 26. Retrieve Saved Study Plan — `GET /study/plan/{user_id}`
+
+Retrieves the user's saved 7-day study plan from MongoDB without triggering external LLM inference.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X GET http://127.0.0.1:8000/study/plan/6a9a8f942b032e1a5bddbacf \
+  -H "Accept: application/json"
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "user_id": "6a9a8f942b032e1a5bddbacf",
+  "plan": [
+    {
+      "day": "Monday",
+      "focus": "Neural Architecture Review",
+      "blocks": [
+        {"time": "09:00", "duration_minutes": 50, "task": "Loss functions & Backpropagation"}
+      ]
+    }
+  ],
+  "updated_at": "2026-09-04T15:00:00"
+}
+```
+
+</details>
+
+---
+
+### 27. Application Intelligence Cache — `GET /cache/{cache_key}`
+
+Fetches a pre-computed calculation, simulation bundle, or AI insight from the MongoDB `app_cache` collection.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X GET http://127.0.0.1:8000/cache/forecast_cache_user_123 \
+  -H "Accept: application/json"
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "cache_key": "forecast_cache_user_123",
+  "user_id": "6a9a8f942b032e1a5bddbacf",
+  "data": {
+    "computed_p90_net_worth": 3450000.0,
+    "status": "verified"
+  },
+  "created_at": "2026-09-04T15:00:00",
+  "expires_at": "2026-09-05T15:00:00"
+}
+```
+
+</details>
+
+---
+
+### 28. Store Intelligence Cache Entry — `POST /cache/{cache_key}`
+
+Stores a JSON object in the MongoDB `app_cache` collection with optional TTL expiration.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X POST "http://127.0.0.1:8000/cache/forecast_cache_user_123?user_id=6a9a8f942b032e1a5bddbacf&ttl_seconds=86400" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "computed_p90_net_worth": 3450000.0,
+    "status": "verified"
+  }'
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "cache_key": "forecast_cache_user_123",
+  "user_id": "6a9a8f942b032e1a5bddbacf",
+  "data": {
+    "computed_p90_net_worth": 3450000.0,
+    "status": "verified"
+  },
+  "created_at": "2026-09-04T15:00:00",
+  "expires_at": "2026-09-05T15:00:00"
+}
+```
+
+</details>
+
+---
+
+### 29. Invalidate Intelligence Cache Entry — `DELETE /cache/{cache_key}`
+
+Removes a cached intelligence document from the MongoDB `app_cache` collection.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X DELETE http://127.0.0.1:8000/cache/forecast_cache_user_123 \
+  -H "Accept: application/json"
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Cache key 'forecast_cache_user_123' deleted."
 }
 ```
 

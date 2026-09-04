@@ -70,4 +70,20 @@ Visual Risk AI adapts its financial models, habit baselines, circadian schedules
 
 ---
 
+## Dedicated MongoDB Demo Twin Accounts
+
+To support instant, 1-click exploration with realistic multi-week history without requiring manual registration, Visual Risk AI automatically initializes dedicated, isolated demo documents in MongoDB Atlas (`GET /users/demo/{role}`):
+
+| Persona | MongoDB Username | Seeded Telemetry Profile | Auto-Seeded Data in MongoDB |
+| :--- | :--- | :--- | :--- |
+| **Student** | `student_demo` | Age: 20 · $1,200/mo allowance · 25h/wk coursework | 30d sleep/study logs, course subjects, micro-savings flows |
+| **Freelancer / Creator** | `freelancer_demo` | Age: 28 · $6,500/mo invoices · 10h/wk study | 30d client delivery logs, tax buffer reserves, contract cashflows |
+| **Founder / Entrepreneur** | `founder_demo` | Age: 32 · $12,000/mo draw · $3M exit target | 30d strategic sprint logs, equity milestones, burn telemetry |
+| **Retiree / Senior** | `retiree_demo` | Age: 62 · $4,500/mo pension · $1.5M nest egg | 30d vitality walk logs, safe withdrawal draws, health metrics |
+| **Working Professional** | `pro_demo` | Age: 29 · $8,500/mo salary · 12h/wk upskilling | 30d deep work sessions, surplus investment sweeps, promotion goals |
+
+Each demo persona maintains isolated simulation presets, AI reasoning history, and telemetry logs directly in MongoDB Atlas.
+
+---
+
 *Back to [README.md](../README.md)*

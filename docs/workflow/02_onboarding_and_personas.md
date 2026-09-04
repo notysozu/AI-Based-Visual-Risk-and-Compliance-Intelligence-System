@@ -62,6 +62,7 @@ Once onboarding is completed:
 - Freelancer onboarding captures average invoice income and tax runway.
 
 
-## 7. Instant Persona Switching
-- Users can seamlessly switch roles via the top-bar demo selector.
-- Dynamic UI instantly transforms metric vocabulary, suggestions, and chart annotations.
+## 7. Instant Persona Switching & Dedicated Demo Accounts
+- Users can explore any persona instantly without signing up via 1-click demo loaders on Landing, Login, and Signup pages.
+- Backend automatically initializes and seeds dedicated MongoDB documents (`student_demo`, `freelancer_demo`, `founder_demo`, `retiree_demo`, `pro_demo`) via `GET /users/demo/{role}`.
+- 30 days of realistic, persona-specific telemetry (biometrics, coursework sessions, cash flows) are seeded in MongoDB Atlas for rich dashboard interaction out of the box.

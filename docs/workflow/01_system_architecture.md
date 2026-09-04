@@ -52,14 +52,15 @@ Visual Risk AI is a decoupled, full-stack decision-support system designed to mo
 - **FastAPI Core**: High-performance asynchronous REST endpoints (`backend/main.py`).
 - **Data Routers**:
   - `backend/api/chat.py`: Multi-turn conversational intelligence, thread management, and action execution/rejection.
-  - `backend/api/users.py`: Unified login (`POST /users/login`), user creation with dual uniqueness checks, and profile telemetry updates.
+  - `backend/api/users.py`: Unified login (`POST /users/login`), dedicated demo twins (`GET /users/demo/{role}`), user creation with dual uniqueness checks, and profile telemetry updates.
+  - `backend/api/cache.py`: MongoDB application intelligence cache (`GET`, `POST`, `DELETE /cache/{cache_key}`) backed by `AppCacheDoc`.
   - `backend/api/suggestions.py`: AI habit pre-analysis, suggestion generation/expansion, and database persistence.
   - `backend/api/study.py`: Spaced repetition analytics, session logs, and 7-day optimized study plan caching.
   - `backend/api/records.py`: Habit logs, study blocks, and financial transaction recording.
   - `backend/api/simulations.py`: Baseline calculations, Monte Carlo forecasting, AI scenario generation, and advice retrieval.
 
 ### 3. Database Layer (`database/`)
-- **Beanie Document Models**: Asynchronous ODM models defined in `database/models.py` (`UserDoc`, `HabitRecordDoc`, `StudyRecordDoc`, `FinancialRecordDoc`, `ChatSessionDoc`, `ChatMessageDoc`, `UserSuggestionDoc`).
+- **Beanie Document Models**: Asynchronous ODM models defined in `database/models.py` (`UserDoc`, `HabitRecordDoc`, `StudyRecordDoc`, `FinancialRecordDoc`, `ChatSessionDoc`, `ChatMessageDoc`, `UserSuggestionDoc`, `AppCacheDoc`).
 - **Pydantic Validation**: Strict typing and field serializers in `database/schemas.py` for API requests and responses.
 - **Async CRUD Operations**: Centralized non-blocking database interactions in `database/crud.py` with fail-safe fallback.
 

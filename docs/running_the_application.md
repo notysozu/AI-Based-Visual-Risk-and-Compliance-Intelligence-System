@@ -45,6 +45,7 @@ npm run dev
   - `/wealth` — 500-Run Stochastic Monte Carlo Wealth Planner
   - `/analytics` — Universal Habit Correlation Analytics
   - `/planner` — Daily Task Sprints & Suggestion Adoption
+  - `/study` — Study & Productivity Intelligence (7-Day Spaced Repetition)
   - `/settings` — Multi-Panel Telemetry Control Center
 
 ---
