@@ -1,136 +1,141 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
-from sqlalchemy.orm import declarative_base, relationship
+import uuid
+from typing import Optional, List, Dict, Any
 from datetime import datetime
+from pydantic import BaseModel, Field
+from beanie import Document, Indexed
 
-Base = declarative_base()
 
+class UserDoc(Document):
+    """MongoDB User profile and telemetry state document."""
+    username: Indexed(str, unique=True)
+    email: Indexed(str, unique=True)
+    role: str = "professional"
+    is_onboarded: int = 0
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=False)
-    role = Column(String, default="professional")
-    is_onboarded = Column(Integer, default=0)
-    
     # Profile details for forecasting
-    age = Column(Integer, default=25)
-    retirement_goal_age = Column(Integer, default=60)
-    target_net_worth = Column(Float, default=1000000.0)
-    monthly_income = Column(Float, default=5000.0)
-    
+    age: int = 25
+    retirement_goal_age: int = 60
+    target_net_worth: float = 1000000.0
+    monthly_income: float = 5000.0
+    monthly_expenses: float = 2900.0
+    net_worth: float = 15000.0
+
     # Habit targets
-    sleep_target_hours = Column(Float, default=8.0)
-    study_target_hours_week = Column(Float, default=15.0)
+    sleep_target_hours: float = 8.0
+    study_target_hours_week: float = 15.0
 
     # Decision Sandbox scenario slider presets (JSON: {"savings": 0, "sleep": 0, "study": 0})
-    scenario_a_preset = Column(String, nullable=True)
-    scenario_b_preset = Column(String, nullable=True)
-    
-    # Financial profile settings sync
-    monthly_expenses = Column(Float, default=2900.0)
-    net_worth = Column(Float, default=15000.0)
+    scenario_a_preset: Optional[str] = None
+    scenario_b_preset: Optional[str] = None
 
     # AI prediction cache
-    last_success_odds = Column(Float, nullable=True)
-    last_wealth_prediction = Column(String, nullable=True)
-    last_analytics_summary = Column(String, nullable=True)
-    last_analytics_updated = Column(String, nullable=True)
-    last_study_plan = Column(String, nullable=True)
-    last_study_plan_updated = Column(String, nullable=True)
-    
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    last_success_odds: Optional[float] = None
+    last_wealth_prediction: Optional[str] = None
+    last_analytics_summary: Optional[str] = None
+    last_analytics_updated: Optional[str] = None
+    last_study_plan: Optional[str] = None
+    last_study_plan_updated: Optional[str] = None
 
-    # Relationships
-    financial_records = relationship("FinancialRecord", back_populates="user", cascade="all, delete-orphan")
-    habit_records = relationship("HabitRecord", back_populates="user", cascade="all, delete-orphan")
-    study_records = relationship("StudyRecord", back_populates="user", cascade="all, delete-orphan")
-    suggestions = relationship("UserSuggestion", back_populates="user", cascade="all, delete-orphan")
-    chat_sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
-class FinancialRecord(Base):
-    __tablename__ = "financial_records"
+    class Settings:
+        name = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    category = Column(String, index=True, nullable=False)
-    # Indexed category for grouped financial reporting  # Income, Investment, Fixed Expense, Discretionary Expense
-    description = Column(String, nullable=True)
-    amount = Column(Float, nullable=False)
-    record_date = Column(DateTime, default=datetime.utcnow)
-
-    user = relationship("User", back_populates="financial_records")
-
-class HabitRecord(Base):
-    __tablename__ = "habit_records"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    habit_name = Column(String, nullable=False)  # Sleep, Exercise, Screen Time, Diet, Socializing
-    duration_minutes = Column(Integer, default=0)
-    impact_score = Column(Integer, default=5)  # Subjective rating 1-10 of how they feel
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-
-    user = relationship("User", back_populates="habit_records")
-
-class StudyRecord(Base):
-    __tablename__ = "study_records"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), index=True)
-    subject = Column(String, nullable=False, index=True)
-    duration_minutes = Column(Integer, default=0)
-    focus_score = Column(Integer, default=7)  # 1-10 focus level
-    exam_score = Column(Float, nullable=True)  # Optional exam score result (0-100)
-    notes = Column(String, nullable=True)
-    session_type = Column(String, default="study")  # study, revision, exam, deep_work
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-
-    user = relationship("User", back_populates="study_records")
+    @property
+    def id_str(self) -> str:
+        return str(self.id)
 
 
-class UserSuggestion(Base):
-    __tablename__ = "user_suggestions"
+class FinancialRecordDoc(Document):
+    """MongoDB Financial transaction and expense records."""
+    user_id: str
+    category: str
+    description: Optional[str] = None
+    amount: float
+    record_date: datetime = Field(default_factory=datetime.utcnow)
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    suggestion_id = Column(String, index=True, nullable=False)
-    title = Column(String, nullable=False)
-    category = Column(String, default="Focus")  # Focus, Vitality, Finance, Study, Leisure, Habits
-    detail = Column(String, nullable=False)
-    impact = Column(String, default="+1.0 focus")
-    start_time = Column(String, default="09:00")
-    duration_minutes = Column(Integer, default=30)
-    is_adopted = Column(Integer, default=0)  # 0: false, 1: true (compatible with all SQLite/PostgreSQL setups)
-    is_ai_generated = Column(Integer, default=1)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    user = relationship("User", back_populates="suggestions")
+    class Settings:
+        name = "financial_records"
+        indexes = ["user_id", "category"]
 
 
-class ChatSession(Base):
-    __tablename__ = "chat_sessions"
+class HabitRecordDoc(Document):
+    """MongoDB Daily biometric sleep, screen time, exercise, and mood records."""
+    user_id: str
+    habit_name: str
+    duration_minutes: int = 0
+    impact_score: int = 5
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    title = Column(String, default="New Conversation")
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    user = relationship("User", back_populates="chat_sessions")
-    messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan", order_by="ChatMessage.created_at")
+    class Settings:
+        name = "habit_records"
+        indexes = ["user_id", "habit_name", "created_at"]
 
 
-class ChatMessage(Base):
-    __tablename__ = "chat_messages"
+class StudyRecordDoc(Document):
+    """MongoDB Academic coursework, deep work sprints, and focus scores."""
+    user_id: str
+    subject: str
+    duration_minutes: int = 0
+    focus_score: int = 7
+    exam_score: Optional[float] = None
+    notes: Optional[str] = None
+    session_type: str = "study"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    id = Column(Integer, primary_key=True, index=True)
-    session_id = Column(Integer, ForeignKey("chat_sessions.id"), nullable=False, index=True)
-    role = Column(String, nullable=False)  # "user" | "assistant" | "system"
-    content = Column(Text, nullable=False)
-    action_type = Column(String, default="none")  # "none" | "add_task" | "simulate_what_if" | "wealth_forecast" | "update_settings" | "purchase_impact"
-    action_payload = Column(Text, nullable=True)  # JSON-encoded payload representing structured action/simulation details
-    action_status = Column(String, default="none")  # "none" | "proposed" | "approved" | "rejected" | "executed"
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    class Settings:
+        name = "study_records"
+        indexes = ["user_id", "subject", "created_at"]
 
-    session = relationship("ChatSession", back_populates="messages")
+
+class UserSuggestionDoc(Document):
+    """MongoDB AI-generated recommendations and routine adjustments."""
+    user_id: str
+    suggestion_id: str
+    title: str
+    category: str = "Focus"
+    detail: str
+    impact: str = "+1.0 focus"
+    start_time: str = "09:00"
+    duration_minutes: int = 30
+    is_adopted: int = 0
+    is_ai_generated: int = 1
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "user_suggestions"
+        indexes = ["user_id", "suggestion_id"]
+
+
+class ChatMessageDoc(BaseModel):
+    """Embedded chat message sub-document."""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    role: str
+    content: str
+    action_type: str = "none"
+    action_payload: Optional[str] = None
+    action_status: str = "none"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ChatSessionDoc(Document):
+    """MongoDB Conversational session with embedded messages for atomic retrieval."""
+    user_id: str
+    title: str = "New Conversation"
+    messages: List[ChatMessageDoc] = []
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "chat_sessions"
+        indexes = ["user_id", "updated_at"]
+
+
+# Backwards compatibility class aliases
+User = UserDoc
+FinancialRecord = FinancialRecordDoc
+HabitRecord = HabitRecordDoc
+StudyRecord = StudyRecordDoc
+UserSuggestion = UserSuggestionDoc
+ChatMessage = ChatMessageDoc
+ChatSession = ChatSessionDoc

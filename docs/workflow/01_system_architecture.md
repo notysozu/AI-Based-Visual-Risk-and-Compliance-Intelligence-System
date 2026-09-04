@@ -28,12 +28,12 @@ Visual Risk AI is a decoupled, full-stack decision-support system designed to mo
 +-----------------^-------------------------------------------^---------------+
                   |                                           |
 +-----------------v---------------+       +-------------------v---------------+
-|     SQLite / SQLAlchemy ORM     |       |             AI Engine             |
+|     MongoDB & Beanie ODM        |       |             AI Engine             |
 |   - Users (with Persona Role)   |       |  - 4-Stage Copilot Reasoning      |
 |   - HabitLogs, StudyLogs, Txns  |       |  - Monte Carlo Simulator (500x)   |
-|   - ChatSession, ChatMessage    |       |  - Compound Wealth Forecaster     |
+|   - ChatSession (Embedded Msgs) |       |  - Compound Wealth Forecaster     |
 |   - UserSuggestions (Persisted) |       |  - Groq API (GPT-OSS 120B / 20B)  |
-|   - Local SQLite Cache (Noon)   |       |  - Rule-Based Mathematical Engine |
+|   - Motor Async / In-Memory Mock|       |  - Rule-Based Mathematical Engine |
 +---------------------------------+       +-----------------------------------+
 ```
 
@@ -59,9 +59,9 @@ Visual Risk AI is a decoupled, full-stack decision-support system designed to mo
   - `backend/api/simulations.py`: Baseline calculations, Monte Carlo forecasting, AI scenario generation, and advice retrieval.
 
 ### 3. Database Layer (`database/`)
-- **SQLAlchemy ORM**: Models defined in `database/models.py` (`User`, `HabitRecord`, `StudyRecord`, `FinancialRecord`, `ChatSession`, `ChatMessage`, `UserSuggestion`).
-- **Pydantic Validation**: Strict typing in `database/schemas.py` for API requests and responses.
-- **CRUD Operations**: Centralized database interactions in `database/crud.py`.
+- **Beanie Document Models**: Asynchronous ODM models defined in `database/models.py` (`UserDoc`, `HabitRecordDoc`, `StudyRecordDoc`, `FinancialRecordDoc`, `ChatSessionDoc`, `ChatMessageDoc`, `UserSuggestionDoc`).
+- **Pydantic Validation**: Strict typing and field serializers in `database/schemas.py` for API requests and responses.
+- **Async CRUD Operations**: Centralized non-blocking database interactions in `database/crud.py` with fail-safe fallback.
 
 ### 4. AI & Simulation Engine (`ai_engine/`)
 - **Agentic Copilot Advisor** (`ai_engine/llm_integration/advisor.py`): 4-stage reasoning pipeline with active Groq models (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.6-27b`, `groq/compound`) and rule-based mathematical fallbacks.

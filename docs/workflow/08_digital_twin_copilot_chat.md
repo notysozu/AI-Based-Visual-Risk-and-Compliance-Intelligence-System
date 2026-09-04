@@ -81,28 +81,28 @@ When **Think Mode** is active, the model generates an explicit reasoning block w
 
 ## 6. Database Models & Schema
 
-Chat interactions are persisted in SQLite / PostgreSQL through two dedicated SQLAlchemy models:
+Chat interactions are persisted in MongoDB through Beanie Document models with embedded messages:
 
-### `ChatSession` Model (`chat_sessions`)
-| Column | Type | Description |
+### `ChatSessionDoc` Document (`chat_sessions`)
+| Field | Type | Description |
 | :--- | :--- | :--- |
-| `id` | `Integer` | Primary key |
-| `user_id` | `Integer` | Foreign key to `users.id` (Session isolation) |
-| `title` | `String` | Auto-summarized conversation title (e.g. *"Daily Focus Sprint"*) |
-| `created_at` | `DateTime` | Session creation timestamp |
-| `updated_at` | `DateTime` | Last activity timestamp |
+| `id` | `PydanticObjectId` | Primary document identifier (`_id`) |
+| `user_id` | `str` | User reference identifier (Session isolation) |
+| `title` | `str` | Auto-summarized conversation title (e.g. *"Daily Focus Sprint"*) |
+| `created_at` | `datetime` | Session creation timestamp |
+| `updated_at` | `datetime` | Last activity timestamp |
+| `messages` | `List[ChatMessageDoc]` | Embedded ordered sub-documents for instantaneous zero-join retrieval |
 
-### `ChatMessage` Model (`chat_messages`)
-| Column | Type | Description |
+### Embedded `ChatMessageDoc` Sub-Document
+| Field | Type | Description |
 | :--- | :--- | :--- |
-| `id` | `Integer` | Primary key |
-| `session_id` | `Integer` | Foreign key to `chat_sessions.id` |
-| `role` | `String` | `"user"` or `"assistant"` |
-| `content` | `Text` | Full message content including Markdown tables and `<think>` blocks |
-| `action_type` | `String` | `"none"`, `"add_task"`, `"add_multiple_tasks"`, `"purchase_impact"`, `"simulate_what_if"`, etc. |
-| `action_payload` | `Text (JSON)` | Serialized parameters for action execution |
-| `action_status` | `String` | `"none"`, `"proposed"`, `"executed"`, `"rejected"` |
-| `created_at` | `DateTime` | Message timestamp |
+| `id` | `str` | Unique message UUID |
+| `role` | `str` | `"user"` or `"assistant"` |
+| `content` | `str` | Full message content including Markdown tables and `<think>` blocks |
+| `action_type` | `str` | `"none"`, `"add_task"`, `"add_multiple_tasks"`, `"purchase_impact"`, `"simulate_what_if"`, etc. |
+| `action_payload` | `Optional[str]` | Serialized JSON parameters for action execution |
+| `action_status` | `str` | `"none"`, `"proposed"`, `"executed"`, `"rejected"` |
+| `created_at` | `datetime` | Message creation timestamp |
 
 ---
 

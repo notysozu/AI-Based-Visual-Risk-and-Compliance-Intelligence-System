@@ -1,11 +1,11 @@
 import json
 import re
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from database import database, crud, models, schemas
+from fastapi import APIRouter, HTTPException, Query
+from database import crud, models, schemas
 from ai_engine.simulation import simulator
 from ai_engine.llm_integration.advisor import process_twin_copilot_turn
+from backend.api.action_handlers import execute_action_payload
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -34,120 +34,14 @@ def generate_chat_title_summary(prompt: str) -> str:
     return " ".join(words[:4]).title()
 
 
-@router.get("/sessions/{user_id}", response_model=List[schemas.ChatSessionResponse])
-def list_user_chat_sessions(user_id: int, db: Session = Depends(database.get_db)):
-    """
-    List all chat sessions strictly belonging to the specified user.
-    If no sessions exist for a new user, initialize the default 'Tutorial' guide thread.
-    """
-    user = crud.get_user(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    sessions = crud.get_chat_sessions(db, user_id)
-    if not sessions:
-        # Create initial default 'Tutorial' session for new users
-        tutorial_session = crud.create_chat_session(db, user_id, title="Tutorial")
-        crud.create_chat_message(
-            db=db,
-            session_id=tutorial_session.id,
-            role="assistant",
-            content="""### 👋 Welcome to your **Digital Twin AI Copilot**!
-
-I am your personal AI connected in real time to your daily routines, academic focus, and financial engine.
-
-#### 🚀 What you can do here:
-1. **Simulate Purchases & Financial Tradeoffs**: Ask *"If I buy a $1,200 laptop today, how does that affect my emergency fund goal?"* to see exact milestone delays and 5-year opportunity costs.
-2. **Stress-Test Habits & Routines**: Type *"What if I study 5 more hours a week and sleep 30 mins less?"* to evaluate vitality and cognitive focus elasticity.
-3. **Automate Daily Scheduling**: Type *"Add a 45 min deep work sprint at 10:00 AM"* to schedule focus blocks directly into your Daily Planner.
-4. **Explore the Website & Architecture**: Ask me anything about the **Planner**, **Simulator**, **Wealth Engine**, or **Analytics** modules.
-
-Feel free to ask your first question below!""",
-            action_type="none",
-            action_payload=None,
-            action_status="none"
-        )
-        sessions = crud.get_chat_sessions(db, user_id)
-
-    return sessions
-
-
-@router.post("/sessions/{user_id}", response_model=schemas.ChatSessionResponse)
-def create_new_chat_session(
-    user_id: int,
-    session_data: schemas.ChatSessionCreate,
-    db: Session = Depends(database.get_db)
-):
-    """Create a new conversational thread for a user."""
-    user = crud.get_user(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    session = crud.create_chat_session(db, user_id, title=session_data.title or "New Conversation")
-    
-    crud.create_chat_message(
-        db=db,
-        session_id=session.id,
-        role="assistant",
-        content="✨ New conversation thread started. What life decision or schedule adjustment would you like to simulate?",
-        action_type="none",
-        action_payload=None,
-        action_status="none"
-    )
-
-    return {
-        "id": session.id,
-        "user_id": session.user_id,
-        "title": session.title,
-        "created_at": session.created_at,
-        "updated_at": session.updated_at,
-        "message_count": 1,
-        "last_message_preview": "✨ New conversation thread started."
-    }
-
-
-@router.delete("/sessions/{session_id}")
-def remove_chat_session(
-    session_id: int,
-    user_id: Optional[int] = Query(None),
-    db: Session = Depends(database.get_db)
-):
-    """Delete a chat session, strictly verifying ownership by user_id."""
-    session = crud.get_chat_session(db, session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Chat session not found")
-
-    if user_id is not None and session.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized: Chat session does not belong to this user")
-
-    crud.delete_chat_session(db, session_id)
-    return {"message": "Chat session deleted successfully", "session_id": session_id}
-
-
-@router.get("/messages/{session_id}", response_model=List[schemas.ChatMessageResponse])
-def get_session_messages(
-    session_id: int,
-    user_id: Optional[int] = Query(None),
-    db: Session = Depends(database.get_db)
-):
-    """Retrieve full chronological conversation history for a given session with ownership verification."""
-    session = crud.get_chat_session(db, session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Chat session not found")
-
-    if user_id is not None and session.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized: Access denied to this user's conversation")
-
-    return crud.get_chat_messages(db, session_id)
-
-
-def build_user_telemetry_bundle(db: Session, user: models.User) -> Dict[str, Any]:
-    """Search and aggregate all recent telemetry logs and baseline stats for the user."""
-    baseline = simulator.get_user_baseline_metrics(db, user.id)
-    recent_habits = crud.get_habit_records(db, user.id, limit=30)
-    recent_studies = crud.get_study_records(db, user.id, limit=30)
-    recent_txns = crud.get_financial_records(db, user.id, limit=30)
-    user_suggestions = crud.get_user_suggestions(db, user.id)
+async def build_user_telemetry_bundle(user: models.UserDoc) -> Dict[str, Any]:
+    """Search and aggregate all recent telemetry logs and baseline stats for the user from MongoDB."""
+    u_id_str = str(user.id)
+    baseline = await simulator.get_user_baseline_metrics(u_id_str)
+    recent_habits = await crud.get_habit_records(u_id_str, limit=30)
+    recent_studies = await crud.get_study_records(u_id_str, limit=30)
+    recent_txns = await crud.get_financial_records(u_id_str, limit=30)
+    user_suggestions = await crud.get_user_suggestions(u_id_str)
 
     sleep_logs = [h.duration_minutes / 60.0 for h in recent_habits if h.habit_name.lower() == "sleep"]
     screen_logs = [h.duration_minutes / 60.0 for h in recent_habits if "screen" in h.habit_name.lower()]
@@ -185,30 +79,155 @@ def build_user_telemetry_bundle(db: Session, user: models.User) -> Dict[str, Any
     }
 
 
-@router.post("/message/create_thread")
-def create_thread_and_send_message(
-    req: schemas.ChatPromptRequest,
-    db: Session = Depends(database.get_db)
-):
+@router.get("/sessions/{user_id}", response_model=List[schemas.ChatSessionResponse])
+async def list_user_chat_sessions(user_id: str):
     """
-    Creates a new session with an AI-summarized title and processes the first message.
+    List all chat sessions strictly belonging to the specified user from MongoDB.
+    If no sessions exist for a new user, initialize the default 'Tutorial' guide thread.
     """
-    user = crud.get_user(db, req.user_id)
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Generate initial smart summary title
-    initial_title = generate_chat_title_summary(req.prompt)
+    u_id_str = str(user.id)
+    sessions = await crud.get_chat_sessions(u_id_str)
+    if not sessions:
+        tutorial_session = await crud.create_chat_session(u_id_str, title="Tutorial")
+        await crud.create_chat_message(
+            session_id=str(tutorial_session.id),
+            role="assistant",
+            content="""### 👋 Welcome to your **Digital Twin AI Copilot**!
 
-    session = crud.create_chat_session(
-        db=db,
-        user_id=req.user_id,
-        title=initial_title
+I am your personal AI connected in real time to your daily routines, academic focus, and financial engine.
+
+#### 🚀 What you can do here:
+1. **Simulate Purchases & Financial Tradeoffs**: Ask *"If I buy a $1,200 laptop today, how does that affect my emergency fund goal?"* to see exact milestone delays and 5-year opportunity costs.
+2. **Stress-Test Habits & Routines**: Type *"What if I study 5 more hours a week and sleep 30 mins less?"* to evaluate vitality and cognitive focus elasticity.
+3. **Automate Daily Scheduling**: Type *"Add a 45 min deep work sprint at 10:00 AM"* to schedule focus blocks directly into your Daily Planner.
+4. **Explore the Website & Architecture**: Ask me anything about the **Planner**, **Simulator**, **Wealth Engine**, or **Analytics** modules.
+
+Feel free to ask your first question below!""",
+            action_type="none",
+            action_payload=None,
+            action_status="none"
+        )
+        sessions = await crud.get_chat_sessions(u_id_str)
+
+    res = []
+    for s in sessions:
+        last_preview = s.messages[-1].content[:60] if s.messages else ""
+        res.append(schemas.ChatSessionResponse(
+            id=str(s.id),
+            user_id=s.user_id,
+            title=s.title,
+            created_at=s.created_at,
+            updated_at=s.updated_at,
+            message_count=len(s.messages),
+            last_message_preview=last_preview
+        ))
+    return res
+
+
+@router.post("/sessions/{user_id}", response_model=schemas.ChatSessionResponse)
+async def create_new_chat_session(
+    user_id: str,
+    session_data: schemas.ChatSessionCreate
+):
+    """Create a new conversational thread for a user in MongoDB."""
+    user = await crud.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    u_id_str = str(user.id)
+    session = await crud.create_chat_session(u_id_str, title=session_data.title or "New Conversation")
+
+    await crud.create_chat_message(
+        session_id=str(session.id),
+        role="assistant",
+        content="✨ New conversation thread started. What life decision or schedule adjustment would you like to simulate?",
+        action_type="none",
+        action_payload=None,
+        action_status="none"
     )
 
-    user_msg = crud.create_chat_message(
-        db=db,
-        session_id=session.id,
+    return schemas.ChatSessionResponse(
+        id=str(session.id),
+        user_id=session.user_id,
+        title=session.title,
+        created_at=session.created_at,
+        updated_at=session.updated_at,
+        message_count=1,
+        last_message_preview="✨ New conversation thread started."
+    )
+
+
+@router.delete("/sessions/{session_id}")
+async def remove_chat_session(
+    session_id: str,
+    user_id: Optional[str] = Query(None)
+):
+    """Delete a chat session from MongoDB with ownership verification."""
+    session = await crud.get_chat_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+
+    if user_id is not None:
+        user = await crud.get_user(user_id)
+        u_id_str = str(user.id) if user else str(user_id)
+        if session.user_id != u_id_str:
+            raise HTTPException(status_code=403, detail="Unauthorized: Chat session does not belong to this user")
+
+    await crud.delete_chat_session(session_id)
+    return {"message": "Chat session deleted successfully", "session_id": session_id}
+
+
+@router.get("/messages/{session_id}", response_model=List[schemas.ChatMessageResponse])
+async def get_session_messages(
+    session_id: str,
+    user_id: Optional[str] = Query(None)
+):
+    """Retrieve full chronological conversation history for a session from MongoDB."""
+    session = await crud.get_chat_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+
+    if user_id is not None:
+        user = await crud.get_user(user_id)
+        u_id_str = str(user.id) if user else str(user_id)
+        if session.user_id != u_id_str:
+            raise HTTPException(status_code=403, detail="Unauthorized: Access denied to this user's conversation")
+
+    return [
+        schemas.ChatMessageResponse(
+            id=m.id,
+            session_id=str(session.id),
+            role=m.role,
+            content=m.content,
+            action_type=m.action_type,
+            action_payload=m.action_payload,
+            action_status=m.action_status,
+            created_at=m.created_at
+        )
+        for m in session.messages
+    ]
+
+
+@router.post("/message/create_thread")
+async def create_thread_and_send_message(req: schemas.ChatPromptRequest):
+    """
+    Creates a new session with an AI-summarized title and processes the first message in MongoDB.
+    """
+    user = await crud.get_user(req.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    u_id_str = str(user.id)
+    initial_title = generate_chat_title_summary(req.prompt)
+
+    session = await crud.create_chat_session(u_id_str, title=initial_title)
+
+    user_msg = await crud.create_chat_message(
+        session_id=str(session.id),
         role="user",
         content=req.prompt,
         action_type="none",
@@ -217,7 +236,7 @@ def create_thread_and_send_message(
     )
 
     user_info = {
-        "id": user.id,
+        "id": u_id_str,
         "username": user.username,
         "role": user.role,
         "age": user.age,
@@ -230,10 +249,10 @@ def create_thread_and_send_message(
         "study_target_hours_week": user.study_target_hours_week,
     }
 
-    telemetry = build_user_telemetry_bundle(db, user)
+    telemetry = await build_user_telemetry_bundle(user)
 
     bot_result = process_twin_copilot_turn(
-        user_id=req.user_id,
+        user_id=u_id_str,
         prompt=req.prompt,
         history=[],
         user_info=user_info,
@@ -243,9 +262,8 @@ def create_thread_and_send_message(
         think_mode=bool(getattr(req, "think_mode", False))
     )
 
-    assistant_msg = crud.create_chat_message(
-        db=db,
-        session_id=session.id,
+    assistant_msg = await crud.create_chat_message(
+        session_id=str(session.id),
         role="assistant",
         content=bot_result["content"],
         action_type=bot_result.get("action_type", "none"),
@@ -255,7 +273,7 @@ def create_thread_and_send_message(
 
     return {
         "session": {
-            "id": session.id,
+            "id": str(session.id),
             "user_id": session.user_id,
             "title": session.title,
             "created_at": session.created_at.isoformat() if session.created_at else "",
@@ -265,7 +283,7 @@ def create_thread_and_send_message(
         },
         "user_message": {
             "id": user_msg.id,
-            "session_id": user_msg.session_id,
+            "session_id": str(session.id),
             "role": user_msg.role,
             "content": user_msg.content,
             "action_type": user_msg.action_type,
@@ -275,7 +293,7 @@ def create_thread_and_send_message(
         },
         "assistant_message": {
             "id": assistant_msg.id,
-            "session_id": assistant_msg.session_id,
+            "session_id": str(session.id),
             "role": assistant_msg.role,
             "content": assistant_msg.content,
             "action_type": assistant_msg.action_type,
@@ -287,28 +305,26 @@ def create_thread_and_send_message(
 
 
 @router.post("/message/{session_id}")
-def send_chat_message(
-    session_id: int,
-    req: schemas.ChatPromptRequest,
-    db: Session = Depends(database.get_db)
+async def send_chat_message(
+    session_id: str,
+    req: schemas.ChatPromptRequest
 ):
     """
-    Process a user message in an existing session with ownership verification.
+    Process a user message in an existing session with ownership verification in MongoDB.
     """
-    session = crud.get_chat_session(db, session_id)
+    session = await crud.get_chat_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Chat session not found")
 
-    if session.user_id != req.user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized: Chat session belongs to another user")
-
-    user = crud.get_user(db, req.user_id)
+    user = await crud.get_user(req.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # 1. Save user message
-    user_msg = crud.create_chat_message(
-        db=db,
+    u_id_str = str(user.id)
+    if session.user_id != u_id_str:
+        raise HTTPException(status_code=403, detail="Unauthorized: Chat session belongs to another user")
+
+    user_msg = await crud.create_chat_message(
         session_id=session_id,
         role="user",
         content=req.prompt,
@@ -317,10 +333,8 @@ def send_chat_message(
         action_status="none"
     )
 
-    # Fetch context
-    baseline = simulator.get_user_baseline_metrics(db, req.user_id)
     user_info = {
-        "id": user.id,
+        "id": u_id_str,
         "username": user.username,
         "role": user.role,
         "age": user.age,
@@ -333,18 +347,16 @@ def send_chat_message(
         "study_target_hours_week": user.study_target_hours_week,
     }
 
-    # Fetch recent history
-    past_messages = crud.get_chat_messages(db, session_id)
+    # Fetch history
     history_payload = [
         {"role": m.role, "content": m.content}
-        for m in past_messages[:-1]
+        for m in session.messages[:-1]
     ]
 
-    telemetry = build_user_telemetry_bundle(db, user)
+    telemetry = await build_user_telemetry_bundle(user)
 
-    # 2. Process via AI Copilot Simulation Engine
     bot_result = process_twin_copilot_turn(
-        user_id=req.user_id,
+        user_id=u_id_str,
         prompt=req.prompt,
         history=history_payload,
         user_info=user_info,
@@ -354,9 +366,7 @@ def send_chat_message(
         think_mode=bool(getattr(req, "think_mode", False))
     )
 
-    # 3. Save assistant message with action payload
-    assistant_msg = crud.create_chat_message(
-        db=db,
+    assistant_msg = await crud.create_chat_message(
         session_id=session_id,
         role="assistant",
         content=bot_result["content"],
@@ -365,15 +375,14 @@ def send_chat_message(
         action_status=bot_result.get("action_status", "none")
     )
 
-    # 4. Auto-update thread title if it's currently generic
     if session.title in ["New Conversation", "Twin Core Dialogue", "Untitled Conversation"]:
-        summarized_title = generate_chat_title_summary(req.prompt)
-        crud.update_chat_session_title(db, session_id, summarized_title)
+        session.title = generate_chat_title_summary(req.prompt)
+        await session.save()
 
     return {
         "user_message": {
             "id": user_msg.id,
-            "session_id": user_msg.session_id,
+            "session_id": session_id,
             "role": user_msg.role,
             "content": user_msg.content,
             "action_type": user_msg.action_type,
@@ -383,7 +392,7 @@ def send_chat_message(
         },
         "assistant_message": {
             "id": assistant_msg.id,
-            "session_id": assistant_msg.session_id,
+            "session_id": session_id,
             "role": assistant_msg.role,
             "content": assistant_msg.content,
             "action_type": assistant_msg.action_type,
@@ -395,37 +404,25 @@ def send_chat_message(
 
 
 @router.post("/action/execute/{message_id}")
-def execute_chat_action(
-    message_id: int,
-    req: schemas.ChatActionExecuteRequest,
-    db: Session = Depends(database.get_db)
+async def execute_chat_action(
+    message_id: str,
+    req: schemas.ChatActionExecuteRequest
 ):
     """
-    Approve and execute a proposed action from chat with user ownership verification:
-    - add_task: adds task to suggestions / planner
-    - update_settings: updates user profile in database
-    - simulate_what_if: applies scenario preset to database
-    - purchase_impact: logs transaction and deducts cost
+    Approve and execute a proposed action from chat with user ownership verification in MongoDB.
     """
-    msg = db.query(models.ChatMessage).filter(models.ChatMessage.id == message_id).first()
-    if not msg:
-        raise HTTPException(status_code=404, detail="Message not found")
-
-    session = crud.get_chat_session(db, msg.session_id)
-    if not session or session.user_id != req.user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized action on this session")
-
-    user = crud.get_user(db, req.user_id)
+    user = await crud.get_user(req.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     action_type = req.action_type
     payload = req.action_payload
 
-    from backend.api.action_handlers import execute_action_payload
-    execution_result = execute_action_payload(db, user, action_type, payload)
+    execution_result = await execute_action_payload(user, action_type, payload)
+    updated_msg = await crud.update_chat_message_status(message_id, "executed", user_id=user.id)
 
-    crud.update_chat_action_status(db, message_id, "executed")
+    if not updated_msg:
+        raise HTTPException(status_code=404, detail="Message not found")
 
     return {
         "status": "success",
@@ -437,19 +434,17 @@ def execute_chat_action(
 
 
 @router.post("/action/reject/{message_id}")
-def reject_chat_action(
-    message_id: int,
-    req: schemas.ChatActionRejectRequest,
-    db: Session = Depends(database.get_db)
+async def reject_chat_action(
+    message_id: str,
+    req: schemas.ChatActionRejectRequest
 ):
-    """Dismiss a proposed action from chat with ownership verification."""
-    msg = db.query(models.ChatMessage).filter(models.ChatMessage.id == message_id).first()
-    if not msg:
+    """Dismiss a proposed action from chat with ownership verification in MongoDB."""
+    user = await crud.get_user(req.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    updated_msg = await crud.update_chat_message_status(message_id, "rejected", user_id=user.id)
+    if not updated_msg:
         raise HTTPException(status_code=404, detail="Message not found")
 
-    session = crud.get_chat_session(db, msg.session_id)
-    if not session or session.user_id != req.user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized action on this session")
-
-    crud.update_chat_action_status(db, message_id, "rejected")
     return {"status": "rejected", "message_id": message_id}

@@ -1,6 +1,27 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_serializer
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Union, Any, Dict
+
+
+class MongoBaseModel(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        arbitrary_types_allowed=True
+    )
+
+    @field_serializer("id", check_fields=False)
+    def serialize_id(self, v: Any) -> Optional[str]:
+        return str(v) if v is not None else None
+
+    @field_serializer("user_id", check_fields=False)
+    def serialize_user_id(self, v: Any) -> Optional[str]:
+        return str(v) if v is not None else None
+
+    @field_serializer("session_id", check_fields=False)
+    def serialize_session_id(self, v: Any) -> Optional[str]:
+        return str(v) if v is not None else None
+
 
 # User Schemas
 class UserBase(BaseModel):
@@ -18,11 +39,14 @@ class UserBase(BaseModel):
     sleep_target_hours: Optional[float] = 8.0
     study_target_hours_week: Optional[float] = 15.0
 
+
 class UserCreate(UserBase):
     pass
 
+
 class UserLoginRequest(BaseModel):
     identifier: str
+
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
@@ -45,8 +69,9 @@ class UserUpdate(BaseModel):
     last_study_plan: Optional[str] = None
     last_study_plan_updated: Optional[str] = None
 
-class UserResponse(UserBase):
-    id: int
+
+class UserResponse(MongoBaseModel, UserBase):
+    id: Any
     created_at: datetime
     is_onboarded: Optional[int] = 0
     scenario_a_preset: Optional[str] = None
@@ -58,8 +83,6 @@ class UserResponse(UserBase):
     last_study_plan: Optional[str] = None
     last_study_plan_updated: Optional[str] = None
 
-    class Config:
-        from_attributes = True
 
 # Financial Record Schemas
 class FinancialRecordBase(BaseModel):
@@ -68,16 +91,16 @@ class FinancialRecordBase(BaseModel):
     amount: float
     record_date: Optional[datetime] = None
 
+
 class FinancialRecordCreate(FinancialRecordBase):
     pass
 
-class FinancialRecordResponse(FinancialRecordBase):
-    id: int
-    user_id: int
+
+class FinancialRecordResponse(MongoBaseModel, FinancialRecordBase):
+    id: Any
+    user_id: Any
     record_date: datetime
 
-    class Config:
-        from_attributes = True
 
 # Habit Record Schemas
 class HabitRecordBase(BaseModel):
@@ -86,16 +109,16 @@ class HabitRecordBase(BaseModel):
     impact_score: int = Field(5, ge=1, le=10)
     created_at: Optional[datetime] = None
 
+
 class HabitRecordCreate(HabitRecordBase):
     pass
 
-class HabitRecordResponse(HabitRecordBase):
-    id: int
-    user_id: int
+
+class HabitRecordResponse(MongoBaseModel, HabitRecordBase):
+    id: Any
+    user_id: Any
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 # Study Record Schemas
 class StudyRecordBase(BaseModel):
@@ -107,20 +130,21 @@ class StudyRecordBase(BaseModel):
     session_type: Optional[str] = "study"
     created_at: Optional[datetime] = None
 
+
 class StudyRecordCreate(StudyRecordBase):
     pass
 
-class StudyRecordResponse(StudyRecordBase):
-    id: int
-    user_id: int
+
+class StudyRecordResponse(MongoBaseModel, StudyRecordBase):
+    id: Any
+    user_id: Any
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 class StudyPlanRequest(BaseModel):
     target_milestone: Optional[str] = None
     force_refresh: Optional[bool] = False
+
 
 class StudyBlockItem(BaseModel):
     subject: str
@@ -129,9 +153,11 @@ class StudyBlockItem(BaseModel):
     focus_type: str
     task_title: str
 
+
 class DayStudyPlan(BaseModel):
     day: str
     blocks: List[StudyBlockItem]
+
 
 class StudyRecommendationItem(BaseModel):
     title: str
@@ -139,17 +165,20 @@ class StudyRecommendationItem(BaseModel):
     description: str
     category: str
 
+
 class StudyPlanResponse(BaseModel):
     weekly_goal: str
     focus_strategy: str
     daily_plans: List[DayStudyPlan]
     recommendations: List[StudyRecommendationItem]
 
+
 # Simulation & What-If schemas
 class ScenarioInput(BaseModel):
-    monthly_investment_change: float = 0.0  # + or - amount
-    sleep_hours_change: float = 0.0         # + or - hours
-    weekly_study_change: float = 0.0        # + or - hours
+    monthly_investment_change: float = 0.0
+    sleep_hours_change: float = 0.0
+    weekly_study_change: float = 0.0
+
 
 class SimulationRequest(BaseModel):
     """Dual scenario comparative simulation payload."""
@@ -157,12 +186,13 @@ class SimulationRequest(BaseModel):
     scenario_b: ScenarioInput
     years: int = Field(5, ge=1, le=40)
 
-# Forecast responses
+
 class Datapoint(BaseModel):
     year: int
     net_worth: float
     health_index: float
     focus_index: float
+
 
 class SimulationResult(BaseModel):
     scenario_name: str
@@ -170,10 +200,12 @@ class SimulationResult(BaseModel):
     attained_retirement: bool
     wealth_at_end: float
 
+
 class SimulationResponse(BaseModel):
     scenario_a: SimulationResult
     scenario_b: SimulationResult
     recommendation: str
+
 
 class AnalyticsLogItem(BaseModel):
     sleep: float
@@ -182,13 +214,15 @@ class AnalyticsLogItem(BaseModel):
     exercise: float
     mood: int
 
+
 class AnalyticsSummaryRequest(BaseModel):
     logs: List[AnalyticsLogItem]
 
+
 # Suggestions schemas
-class SuggestionItem(BaseModel):
+class SuggestionItem(MongoBaseModel):
     """Structured habit & lifestyle suggestion model."""
-    id: Optional[int] = None
+    id: Optional[Any] = None
     suggestion_id: str
     title: str
     category: str
@@ -200,16 +234,19 @@ class SuggestionItem(BaseModel):
     is_ai_generated: bool = False
     created_at: Optional[datetime] = None
 
+
 class SuggestionAdoptRequest(BaseModel):
     suggestion_id: str
     is_adopted: bool = True
+
 
 class GenerateSuggestionsRequest(BaseModel):
     mode: str = Field("regenerate", description="'regenerate' to replace, 'more' to append extra suggestions")
     custom_focus: Optional[str] = None
 
-class SuggestionsListResponse(BaseModel):
-    user_id: int
+
+class SuggestionsListResponse(MongoBaseModel):
+    user_id: Any
     role: str
     lifestyle_diagnostic: Optional[str] = None
     suggestions: List[SuggestionItem]
@@ -223,45 +260,46 @@ class ChatMessageBase(BaseModel):
     action_payload: Optional[str] = None
     action_status: Optional[str] = "none"
 
-class ChatMessageCreate(ChatMessageBase):
-    session_id: int
 
-class ChatMessageResponse(ChatMessageBase):
-    id: int
-    session_id: int
+class ChatMessageCreate(ChatMessageBase):
+    session_id: Any
+
+
+class ChatMessageResponse(MongoBaseModel, ChatMessageBase):
+    id: Any
+    session_id: Any
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 class ChatSessionBase(BaseModel):
     title: Optional[str] = "New Conversation"
 
-class ChatSessionCreate(ChatSessionBase):
-    user_id: int
 
-class ChatSessionResponse(ChatSessionBase):
-    id: int
-    user_id: int
+class ChatSessionCreate(ChatSessionBase):
+    user_id: Any
+
+
+class ChatSessionResponse(MongoBaseModel, ChatSessionBase):
+    id: Any
+    user_id: Any
     created_at: datetime
     updated_at: datetime
     message_count: Optional[int] = 0
     last_message_preview: Optional[str] = None
 
-    class Config:
-        from_attributes = True
 
 class ChatPromptRequest(BaseModel):
-    user_id: int
+    user_id: Any
     prompt: str
     think_mode: Optional[bool] = False
-    client_context: Optional[dict] = None  # Optional live twin state from client (tasks, active presets, custom notes)
+    client_context: Optional[dict] = None
+
 
 class ChatActionExecuteRequest(BaseModel):
-    user_id: int
+    user_id: Any
     action_type: str
     action_payload: dict
 
-class ChatActionRejectRequest(BaseModel):
-    user_id: int
 
+class ChatActionRejectRequest(BaseModel):
+    user_id: Any

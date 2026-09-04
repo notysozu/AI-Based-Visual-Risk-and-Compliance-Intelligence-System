@@ -54,7 +54,7 @@ The AI Visual Risk AI Habit Summary provides high-level coaching on user routine
                 [Generate Fresh Role-Tailored Summary via Groq LLaMA 3.1]
                     |
                     v
-                [Persist to SQLite: last_analytics_summary & last_analytics_updated]
+                [Persist to MongoDB: last_analytics_summary & last_analytics_updated]
 ```
 
 ### Cache Invalidation Logic:

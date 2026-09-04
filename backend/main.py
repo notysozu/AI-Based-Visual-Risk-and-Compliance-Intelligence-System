@@ -1,20 +1,32 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database.database import engine
-from database.models import Base
-from database.crud import seed_mock_data
+from database.database import init_mongodb, get_database_status
 from backend.api import users, records, simulations, finance, habits, study, suggestions, chat
-from database.database import SessionLocal
 
-Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Async lifespan manager for MongoDB database initialization and startup seeding."""
+    print("[FastAPI] Starting up Visual Risk AI backend...")
+    await init_mongodb()
+    try:
+        await users.get_default_user()
+        print("[FastAPI] Default persona seeded successfully.")
+    except Exception as e:
+        print(f"[FastAPI] Default persona startup seeding notice: {e}")
+    yield
+    print("[FastAPI] Shutting down Visual Risk AI backend...")
+
 
 app = FastAPI(
     title="AI-Based Visual Risk and Compliance Intelligence System (Visual Risk AI)",
-    description="Backend services for AI-Based Visual Risk and Compliance Intelligence System (Visual Risk AI).",
-    version="1.0.0"
+    description="Backend services for Visual Risk AI powered by MongoDB and Motor.",
+    version="2.0.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(
@@ -25,15 +37,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-def startup_event():
-    db = SessionLocal()
-    try:
-        from backend.api.users import get_default_user
-        get_default_user(db)
-    finally:
-        db.close()
-
 app.include_router(users.router)
 app.include_router(records.router)
 app.include_router(simulations.router)
@@ -43,21 +46,35 @@ app.include_router(study.router)
 app.include_router(suggestions.router)
 app.include_router(chat.router)
 
+
 @app.get("/")
-def read_root():
+async def read_root():
     return {
-        "message": "Visual Risk AI API is running",
-        "status": "online"
+        "message": "Visual Risk AI API is running on MongoDB",
+        "status": "online",
+        "database": get_database_status()
     }
 
+
 @app.get("/health")
-def health_check():
-    return {"status": "healthy"}
+async def health_check():
+    return {
+        "status": "healthy",
+        "database": get_database_status()
+    }
+
 
 @app.get("/api/v1/health")
-def health_check_v1():
-    return {"status": "healthy"}
+async def health_check_v1():
+    return {
+        "status": "healthy",
+        "database": get_database_status()
+    }
+
 
 @app.get("/api/health")
-def health_check_alias():
-    return {"status": "healthy"}
+async def health_check_alias():
+    return {
+        "status": "healthy",
+        "database": get_database_status()
+    }

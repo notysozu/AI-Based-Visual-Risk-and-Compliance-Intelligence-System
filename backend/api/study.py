@@ -1,43 +1,41 @@
 import json
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from database import database, crud, schemas, models
+from fastapi import APIRouter, HTTPException
+from typing import Dict, Any, List
+from database import crud, schemas
 from ai_engine.forecasting import study
 from ai_engine.llm_integration.advisor import generate_optimized_study_plan
-from typing import Dict, Any, List
 
 router = APIRouter(prefix="/study", tags=["study"])
 
 
 @router.get("/analytics/{user_id}")
-def get_study_analytics(user_id: int, db: Session = Depends(database.get_db)):
+async def get_study_analytics(user_id: str):
     """
     Get detailed study habits, subject time breakdown, retention health,
-    and weekly schedule distribution. Accessible for roles that need it.
+    and weekly schedule distribution from MongoDB.
     """
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    analytics_data = study.analyze_study_habits(db, user_id)
+    analytics_data = await study.analyze_study_habits(user_id)
     return analytics_data
 
 
 @router.get("/forecast/{user_id}")
-def get_study_forecast(
-    user_id: int, 
-    target_score: float = 85.0, 
-    db: Session = Depends(database.get_db)
+async def get_study_forecast(
+    user_id: str,
+    target_score: float = 85.0
 ):
     """
-    Predict academic performance trends and exam/milestone readiness probability.
+    Predict academic performance trends and exam/milestone readiness probability from MongoDB.
     """
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    records = db.query(models.StudyRecord).filter_by(user_id=user_id).order_by(models.StudyRecord.created_at.asc()).all()
+    records = await crud.get_study_records(user_id, limit=100)
     score_records = [
         {
             "performance_score": r.exam_score if r.exam_score is not None else (r.focus_score * 10),
@@ -46,11 +44,11 @@ def get_study_forecast(
         for r in records
     ]
 
-    habits_data = study.analyze_study_habits(db, user_id)
+    habits_data = await study.analyze_study_habits(user_id)
     trend_data = study.predict_performance_trend(score_records)
     readiness_data = study.predict_exam_readiness(
-        score_records, 
-        target_score=target_score, 
+        score_records,
+        target_score=target_score,
         weekly_study_hours=habits_data.get("avg_weekly_hours", 18.0)
     )
 
@@ -64,14 +62,14 @@ def get_study_forecast(
 
 
 @router.get("/plan/{user_id}")
-def get_study_plan_endpoint(user_id: int, db: Session = Depends(database.get_db)):
+async def get_study_plan_endpoint(user_id: str):
     """
-    Retrieve the current saved/persisted 7-day study plan for the user.
+    Retrieve the current saved/persisted 7-day study plan from MongoDB.
     """
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     if user.last_study_plan:
         try:
             cached = json.loads(user.last_study_plan)
@@ -83,20 +81,18 @@ def get_study_plan_endpoint(user_id: int, db: Session = Depends(database.get_db)
 
 
 @router.post("/generate-plan/{user_id}", response_model=schemas.StudyPlanResponse)
-def generate_study_plan_endpoint(
-    user_id: int, 
-    payload: schemas.StudyPlanRequest, 
-    db: Session = Depends(database.get_db)
+async def generate_study_plan_endpoint(
+    user_id: str,
+    payload: schemas.StudyPlanRequest
 ):
     """
     Generate an AI-optimized 7-day study plan with Pomodoro sprint blocks,
     prioritized subject allocations, and spaced repetition intervals.
     """
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # If cached plan exists and force_refresh is False, return cached plan
     if not payload.force_refresh and user.last_study_plan:
         try:
             cached = json.loads(user.last_study_plan)
@@ -112,14 +108,13 @@ def generate_study_plan_endpoint(
         "study_target_hours_week": user.study_target_hours_week
     }
 
-    study_summary = study.get_study_summary(db, user_id)
+    study_summary = await study.get_study_summary(user_id)
     plan = generate_optimized_study_plan(user_info, study_summary, payload.target_milestone)
 
-    # Cache plan to user record
     try:
         user.last_study_plan = json.dumps(plan)
         user.last_study_plan_updated = datetime.utcnow().isoformat()
-        db.commit()
+        await user.save()
     except Exception as e:
         print(f"Failed to persist study plan cache: {e}")
 
@@ -127,46 +122,27 @@ def generate_study_plan_endpoint(
 
 
 @router.post("/log/{user_id}", response_model=schemas.StudyRecordResponse)
-def log_study_session(
-    user_id: int, 
-    record: schemas.StudyRecordCreate, 
-    db: Session = Depends(database.get_db)
+async def log_study_session(
+    user_id: str,
+    record: schemas.StudyRecordCreate
 ):
     """
-    Log a new study session with subject, duration, focus rating, and optional exam score.
+    Log a new study session in MongoDB.
     """
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    db_record = models.StudyRecord(
-        user_id=user_id,
-        subject=record.subject,
-        duration_minutes=record.duration_minutes,
-        focus_score=record.focus_score,
-        exam_score=record.exam_score,
-        notes=record.notes,
-        session_type=record.session_type or "study",
-        created_at=record.created_at or datetime.utcnow()
-    )
-    db.add(db_record)
-    db.commit()
-    db.refresh(db_record)
-    return db_record
+    return await crud.create_study_record(record, user_id)
 
 
 @router.get("/logs/{user_id}", response_model=List[schemas.StudyRecordResponse])
-def get_study_logs(
-    user_id: int, 
-    limit: int = 50, 
-    offset: int = 0, 
-    db: Session = Depends(database.get_db)
+async def get_study_logs(
+    user_id: str,
+    limit: int = 50,
+    offset: int = 0
 ):
     """
-    Retrieve historical study logs for the user.
+    Retrieve historical study logs for the user from MongoDB.
     """
-    records = db.query(models.StudyRecord)\
-        .filter(models.StudyRecord.user_id == user_id)\
-        .order_by(models.StudyRecord.created_at.desc())\
-        .offset(offset).limit(limit).all()
-    return records
+    return await crud.get_study_records(user_id=user_id, limit=limit, offset=offset)

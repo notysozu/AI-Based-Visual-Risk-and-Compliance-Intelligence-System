@@ -17,7 +17,7 @@ Visual Risk AI is constructed with a modern, type-safe stack designed for sub-50
 | **Voice Dictation** | Web Speech API | Browser Native | Real-time speech-to-text dictation in the Copilot Chat interface |
 | **Backend API Engine** | FastAPI & Uvicorn | Python 3.10+, FastAPI 0.115, Uvicorn 0.34 | Asynchronous ASGI gateway, dependency injection, and REST endpoints |
 | **Data Validation** | Pydantic | v2.10+ | Strict request/response DTO schemas and type coercion |
-| **Database & ORM** | SQLAlchemy | 2.0+ ORM | Declarative relational modeling, SQLite/PostgreSQL persistence |
+| **Database & ODM** | MongoDB, Motor & Beanie | MongoDB 7.0+, Motor 3.3+, Beanie 1.26+ | Asynchronous non-blocking document object mapper with fail-safe fallback |
 | **Mathematical Simulation**| NumPy, SciPy & Pandas | NumPy 2.0, SciPy 1.14 | 500-run Geometric Brownian Motion, regressions, and correlation matrices |
 | **AI Inference** | Groq API Client | Groq SDK Python | High-throughput LLM reasoning (`gpt-oss-120b`, `gpt-oss-20b`, `qwen3.6-27b`) |
 
@@ -33,7 +33,8 @@ Visual Risk AI is constructed with a modern, type-safe stack designed for sub-50
 ---
 
 ## Backend Architectural Highlights
-- **Stateless Async Services**: Request handlers run asynchronously over Uvicorn workers.
+- **Stateless Async Services**: Request handlers run asynchronously over Uvicorn workers with non-blocking I/O.
+- **Asynchronous Document Persistence**: Powered by Motor and Beanie ODM for scalable NoSQL storage across users, telemetry records, chat sessions, and AI suggestion states.
 - **Dynamic Context Building**: The AI engine dynamically aggregates 30-day baseline statistics into concise telemetry bundles before prompting Groq.
 - **Fail-Safe Mathematical Fallbacks**: In the event of network timeouts, mathematical simulations seamlessly fallback to deterministic compound and heuristic models.
 

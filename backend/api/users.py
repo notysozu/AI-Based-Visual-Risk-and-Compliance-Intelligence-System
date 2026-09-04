@@ -1,20 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from database import crud, schemas, database
+from fastapi import APIRouter, HTTPException, status
+from database import crud, schemas
+from typing import Any
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("/default", response_model=schemas.UserResponse)
-def get_default_user(db: Session = Depends(database.get_db)):
+async def get_default_user():
     """
-    Get the default seeded user, or create one if it doesn't exist.
+    Get the default seeded user, or create one in MongoDB if it doesn't exist.
     """
     username = "default_twin"
-    user = crud.get_user_by_username(db, username=username)
+    user = await crud.get_user_by_username(username=username)
 
     if not user:
-        # Create a default user
         user_create = schemas.UserCreate(
             username=username,
             email="twin@example.com",
@@ -25,28 +24,28 @@ def get_default_user(db: Session = Depends(database.get_db)):
             sleep_target_hours=8.0,
             study_target_hours_week=15.0
         )
-        user = crud.create_user(db, user_create)
-        crud.seed_mock_data(db, user.id)
+        user = await crud.create_user(user_create)
+        await crud.seed_mock_data(user.id)
 
     return user
 
 
 @router.post("/", response_model=schemas.UserResponse)
-def create_user(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
+async def create_user(user: schemas.UserCreate):
     """
-    Create a new user profile after validating that username and email are unique.
+    Create a new user profile document in MongoDB after validating uniqueness.
     """
     clean_username = user.username.strip()
     clean_email = user.email.strip().lower()
 
-    existing_user = crud.get_user_by_username(db, username=clean_username)
+    existing_user = await crud.get_user_by_username(username=clean_username)
     if existing_user:
         raise HTTPException(
             status_code=400,
             detail=f"Username '{clean_username}' is already taken. Please choose another username or log in."
         )
 
-    existing_email = crud.get_user_by_email(db, email=clean_email)
+    existing_email = await crud.get_user_by_email(email=clean_email)
     if existing_email:
         raise HTTPException(
             status_code=400,
@@ -55,75 +54,60 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(database.get_db)
 
     user.username = clean_username
     user.email = clean_email
-    return crud.create_user(db, user)
+    created = await crud.create_user(user)
+    await crud.seed_mock_data(created.id)
+    return created
 
 
 @router.post("/login", response_model=schemas.UserResponse)
-def login_user(req: schemas.UserLoginRequest, db: Session = Depends(database.get_db)):
+async def login_user(req: schemas.UserLoginRequest):
     """
-    Log in or look up a user by either email or username.
+    Unified login supporting either registered email address or username in MongoDB.
     """
-    ident = req.identifier.strip()
-    if not ident:
-        raise HTTPException(status_code=400, detail="Identifier is required")
+    identifier = req.identifier.strip()
+    if not identifier:
+        raise HTTPException(status_code=400, detail="Please enter an email or username.")
 
-    # 1. Search by email (case-insensitive)
-    user = crud.get_user_by_email(db, email=ident.lower())
-    
-    # 2. Search by username if not found by email
+    user = await crud.get_user_by_email(email=identifier.lower())
     if not user:
-        user = crud.get_user_by_username(db, username=ident)
+        user = await crud.get_user_by_username(username=identifier)
 
     if not user:
         raise HTTPException(
             status_code=404,
-            detail=f"No user account found for '{ident}'. Please sign up first."
+            detail="No account found with this identifier. Please sign up first."
         )
 
     return user
 
 
 @router.get("/{user_id}", response_model=schemas.UserResponse)
-def read_user(user_id: int, db: Session = Depends(database.get_db)):
-    db_user = crud.get_user(db, user_id=user_id)
-
-    if db_user is None:
+async def get_user_profile(user_id: str):
+    """
+    Retrieve user document from MongoDB.
+    """
+    user = await crud.get_user(user_id)
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
-    return db_user
+    return user
 
 
 @router.put("/{user_id}", response_model=schemas.UserResponse)
-def update_user(
-    user_id: int,
-    user_update: schemas.UserUpdate,
-    db: Session = Depends(database.get_db)
-):
-    db_user = crud.update_user(db, user_id=user_id, user_update=user_update)
-
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return db_user
-
-
-@router.get("/username/{username}", response_model=schemas.UserResponse)
-def get_user_by_username(username: str, db: Session = Depends(database.get_db)):
+async def update_user_profile(user_id: str, user_update: schemas.UserUpdate):
     """
-    Get user details by username for login/lookup.
+    Update user document attributes in MongoDB.
     """
-    user = crud.get_user_by_username(db, username=username)
+    user = await crud.update_user(user_id, user_update)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
-@router.get("/email/{email}", response_model=schemas.UserResponse)
-def get_user_by_email(email: str, db: Session = Depends(database.get_db)):
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user_profile(user_id: str):
     """
-    Get user details by email for login/lookup.
+    Delete user document and all associated records from MongoDB.
     """
-    user = crud.get_user_by_email(db, email=email)
-    if not user:
+    success = await crud.delete_user(user_id)
+    if not success:
         raise HTTPException(status_code=404, detail="User not found")
-    return user

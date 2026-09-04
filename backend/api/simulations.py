@@ -1,46 +1,44 @@
-
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from database import database, crud
+from fastapi import APIRouter, HTTPException
+from typing import Dict, Any
+from database import crud, schemas
 from ai_engine.simulation import simulator
 from ai_engine.forecasting import financial, habits
 from backend.services.llm_service import LLMService
 from ai_engine.llm_integration.advisor import generate_wealth_advice, generate_scenario_suggestions, generate_analytics_summary
-from database import schemas
-from typing import Dict, Any
 
 router = APIRouter(prefix="/simulations", tags=["simulations"])
 
+
 @router.get("/baseline/{user_id}")
-def get_baseline(user_id: int, db: Session = Depends(database.get_db)):
+async def get_baseline(user_id: str):
     """
-    Get 30-day baseline statistics and habit correlations.
+    Get 30-day baseline statistics and habit correlations from MongoDB.
     """
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
-    baseline = simulator.get_user_baseline_metrics(db, user_id)
-    corr_data = habits.analyze_habits_correlation(db, user_id)
-    
+
+    baseline = await simulator.get_user_baseline_metrics(user_id)
+    corr_data = await habits.analyze_habits_correlation(user_id)
+
     return {
         "baseline": baseline,
         "correlations": corr_data.get("correlations", {}),
         "sample_size": corr_data.get("sample_size", 0)
     }
 
+
 @router.get("/forecast/{user_id}")
-def get_forecasts(user_id: int, db: Session = Depends(database.get_db)):
+async def get_forecasts(user_id: str):
     """
-    Get deterministic net worth growth projections and Monte Carlo simulations.
+    Get deterministic net worth growth projections and Monte Carlo simulations from MongoDB.
     """
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
-    baseline = simulator.get_user_baseline_metrics(db, user_id)
-    
-    # 1. Deterministic Projection to retirement age
+
+    baseline = await simulator.get_user_baseline_metrics(user_id)
+
     det_proj = financial.run_deterministic_projection(
         current_age=user.age,
         retirement_age=user.retirement_goal_age,
@@ -49,8 +47,7 @@ def get_forecasts(user_id: int, db: Session = Depends(database.get_db)):
         annual_return_rate=0.08,
         annual_inflation_rate=0.025
     )
-    
-    # 2. Monte Carlo Projection
+
     mc_proj = financial.run_monte_carlo_simulation(
         current_age=user.age,
         retirement_age=user.retirement_goal_age,
@@ -61,12 +58,11 @@ def get_forecasts(user_id: int, db: Session = Depends(database.get_db)):
         annual_inflation_rate=0.025,
         num_simulations=500
     )
-    
-    # Compute probability of hitting target net worth
+
     final_values = mc_proj["final_values"]
     hits = sum(1 for val in final_values if val >= user.target_net_worth)
     prob_success = float(hits) / len(final_values)
-    
+
     return {
         "deterministic": det_proj,
         "monte_carlo": {
@@ -79,21 +75,17 @@ def get_forecasts(user_id: int, db: Session = Depends(database.get_db)):
         "probability_of_success": prob_success
     }
 
+
 @router.get("/wealth-advice/{user_id}")
-def get_wealth_advice(  # Monte Carlo Wealth Advisor
-user_id: int, force: bool = False, db: Session = Depends(database.get_db)):
+async def get_wealth_advice(user_id: str, force: bool = False):
     """
-    Get an AI-generated prediction/narrative interpreting the Monte Carlo
-    and deterministic forecasts for this user. The underlying numbers are
-    still computed statistically (same as /forecast) — Groq is used only
-    to interpret and explain them in plain language, not to generate them.
-    If the success probability remains the same and force is False, cached advice is returned immediately.
+    Get an AI-generated wealth forecast narrative interpreting Monte Carlo simulations in MongoDB.
     """
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    baseline = simulator.get_user_baseline_metrics(db, user_id)
+    baseline = await simulator.get_user_baseline_metrics(user_id)
 
     det_proj = financial.run_deterministic_projection(
         current_age=user.age,
@@ -120,13 +112,11 @@ user_id: int, force: bool = False, db: Session = Depends(database.get_db)):
     prob_success = float(hits) / len(final_values)
     rounded_odds = round(prob_success, 2)
 
-    # Check if success odds are the same and we have cached advice (unless force is requested)
     has_valid_cache = (
         not force
         and user.last_success_odds is not None
         and abs(user.last_success_odds - rounded_odds) < 0.001
         and user.last_wealth_prediction
-        and "🤖" not in user.last_wealth_prediction
     )
 
     if has_valid_cache:
@@ -155,28 +145,27 @@ user_id: int, force: bool = False, db: Session = Depends(database.get_db)):
 
     advice = generate_wealth_advice(user_info, baseline, forecast_summary)
 
-    # Save to user database record
     user.last_success_odds = rounded_odds
     user.last_wealth_prediction = advice
-    db.commit()
+    await user.save()
 
     return {
         "advice": advice,
         "probability_of_success": prob_success,
     }
 
+
 @router.get("/suggest/{user_id}")
-def get_scenario_suggestions(  # Returns AI suggestions
-user_id: int, db: Session = Depends(database.get_db)):
+async def get_scenario_suggestions(user_id: str):
     """
-    Get AI-generated suggestions for Scenario A and Scenario B sliders.
+    Get AI-generated suggestions for Scenario A and Scenario B sliders in MongoDB.
     """
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
-    baseline = simulator.get_user_baseline_metrics(db, user_id)
-    
+
+    baseline = await simulator.get_user_baseline_metrics(user_id)
+
     user_info = {
         "username": user.username,
         "role": getattr(user, "role", "professional") or "professional",
@@ -185,35 +174,32 @@ user_id: int, db: Session = Depends(database.get_db)):
         "target_net_worth": user.target_net_worth,
         "monthly_income": user.monthly_income
     }
-    
+
     suggestions = generate_scenario_suggestions(user_info, baseline)
     return suggestions
 
+
 @router.post("/compare/{user_id}", response_model=schemas.SimulationResponse)
-def compare_scenarios(  # Comparative What-If Analyzer
-user_id: int, payload: schemas.SimulationRequest, db: Session = Depends(database.get_db)):
+async def compare_scenarios(user_id: str, payload: schemas.SimulationRequest):
     """
-    Compare Scenario A and Scenario B side-by-side and fetch LLM advisor analysis.
+    Compare Scenario A and Scenario B side-by-side with LLM advisor analysis.
     """
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
-    baseline = simulator.get_user_baseline_metrics(db, user_id)
-    
+
+    baseline = await simulator.get_user_baseline_metrics(user_id)
+
     change_a = payload.scenario_a.model_dump()
     change_b = payload.scenario_b.model_dump()
-    
-    # Run the simulator engine
-    sim_outputs = simulator.run_what_if_comparison(
-        db=db,
+
+    sim_outputs = await simulator.run_what_if_comparison(
         user_id=user_id,
         change_a=change_a,
         change_b=change_b,
         years=payload.years
     )
-    
-    # Get conversational advice from LLM
+
     user_info = {
         "username": user.username,
         "role": getattr(user, "role", "professional") or "professional",
@@ -222,12 +208,9 @@ user_id: int, payload: schemas.SimulationRequest, db: Session = Depends(database
         "target_net_worth": user.target_net_worth,
         "monthly_income": user.monthly_income
     }
-    
+
     advice_text = LLMService.get_advice(user_info, baseline, sim_outputs)
-    
-    # Map back to response schemas
-    # Note: we need to wrap the response structure as defined in schemas.py
-    
+
     def map_to_result(name: str, out: Dict[str, Any]) -> schemas.SimulationResult:
         datapoints = []
         for dp in out["datapoints"]:
@@ -243,22 +226,23 @@ user_id: int, payload: schemas.SimulationRequest, db: Session = Depends(database
             attained_retirement=out["attained_retirement"],
             wealth_at_end=out["wealth_at_end"]
         )
-        
+
     return schemas.SimulationResponse(
         scenario_a=map_to_result("scenario_a", sim_outputs["scenario_a"]),
         scenario_b=map_to_result("scenario_b", sim_outputs["scenario_b"]),
         recommendation=advice_text
     )
 
+
 @router.post("/analytics-summary/{user_id}")
-def get_analytics_summary(user_id: int, payload: schemas.AnalyticsSummaryRequest, db: Session = Depends(database.get_db)):
+async def get_analytics_summary(user_id: str, payload: schemas.AnalyticsSummaryRequest):
     """
-    Get AI-generated readable overview of daily logs.
+    Get AI-generated readable overview of daily logs in MongoDB.
     """
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
+
     user_info = {
         "username": user.username,
         "role": getattr(user, "role", "professional") or "professional",
@@ -267,9 +251,7 @@ def get_analytics_summary(user_id: int, payload: schemas.AnalyticsSummaryRequest
         "target_net_worth": user.target_net_worth,
         "monthly_income": user.monthly_income
     }
-    
-    # Convert payload logs schema list to dict list
+
     log_dicts = [item.model_dump() for item in payload.logs]
-    
     summary = generate_analytics_summary(user_info, log_dicts)
     return {"summary": summary}

@@ -1,6 +1,6 @@
 # System Architecture — Visual Risk AI
 
-Visual Risk AI (VRCI) is engineered as a decoupled, multi-tier reactive architecture combining a high-performance React 19 frontend client, an asynchronous FastAPI backend gateway, a vectorized mathematical simulation engine, and an agentic LLM inference pipeline.
+Visual Risk AI (VRCI) is engineered as a decoupled, multi-tier reactive architecture combining a high-performance React 19 frontend client, an asynchronous FastAPI backend gateway, a vectorized mathematical simulation engine, and an agentic LLM inference pipeline powered by MongoDB document persistence.
 
 ---
 
@@ -23,7 +23,7 @@ flowchart TB
         Settings["Settings Center (/settings)<br/>• 5 Telemetry Control Panels<br/>• Persona & Biometric Baseline"]:::clientStyle
     end
 
-    subgraph Gateway["2. Backend API Gateway (FastAPI + Pydantic v2)"]
+    subgraph Gateway["2. Backend API Gateway (FastAPI + Motor + Beanie ODM)"]
         UserRouter["Users Router (/users)<br/>• Unified Auth (Email/Username)<br/>• Onboarding & Telemetry CRUD"]:::gatewayStyle
         ChatRouter["Chat Router (/chat)<br/>• Session History & Ownership<br/>• 4-Stage Reasoning Dispatcher<br/>• Action Approval/Rejection"]:::gatewayStyle
         SimRouter["Simulation Router (/simulations)<br/>• Monte Carlo Wealth Projections<br/>• Dual Scenario Tradeoffs<br/>• AI Wealth Roadmap"]:::gatewayStyle
@@ -51,8 +51,8 @@ flowchart TB
         end
     end
 
-    subgraph Persistence["4. Database & Persistence Layer"]
-        DB[(Relational DB: SQLite / PostgreSQL<br/>• User Credentials & Profiles<br/>• HabitRecord & StudyRecord<br/>• FinancialRecord & Balances<br/>• ChatSession & ChatMessage<br/>• UserSuggestion Records)]:::dbStyle
+    subgraph Persistence["4. MongoDB Persistence Layer"]
+        DB[(MongoDB Document Database: Local / Atlas<br/>• UserDoc Collection<br/>• HabitRecordDoc Collection<br/>• StudyRecordDoc Collection<br/>• FinancialRecordDoc Collection<br/>• ChatSessionDoc with Embedded Messages<br/>• UserSuggestionDoc Collection)]:::dbStyle
         Cache[(Intelligence Cache<br/>• 12:00 PM Noon AI Reflection<br/>• Monte Carlo Wealth Projections)]:::dbStyle
     end
 
@@ -94,15 +94,15 @@ flowchart TB
 | | **Task Planner (`/planner`)** | Daily focus schedule management, time-blocking, habit injection, and recommendation adoption workflow. | Tasks, time slots, completion states, categories | Radix UI, TanStack Router |
 | | **Settings Center (`/settings`)** | Multi-panel telemetry control center for persona switching, biometrics, financial goals, and AI parameters. | User profiles, slider presets, onboarding status | Radix Tabs, React Hook Form |
 | **API Gateway Layer** | **FastAPI Application Router** | Validates payloads via Pydantic v2, enforces session ownership security, and orchestrates services. | JSON Request/Response schemas, HTTP status codes | FastAPI, Uvicorn, Pydantic v2 |
-| | **Authentication & CRUD Router (`/users`)** | Enforces username/email uniqueness, supports dual identifier login, and persists onboarding state. | User credentials, demographic baselines, targets | SQLAlchemy Sessions, Password Hashing |
+| | **Authentication & CRUD Router (`/users`)** | Enforces username/email uniqueness, supports dual identifier login, and persists onboarding state. | User credentials, demographic baselines, targets | Motor Async Client, Beanie ODM |
 | | **Chat & Action Router (`/chat`)** | Manages conversation threads, dispatches prompts to the 4-stage pipeline, and handles action approvals/rejections. | Message history, action payloads, tool invocations | REST Endpoints, Custom Event Dispatchers |
 | | **Simulation Router (`/simulations`)** | Triggers Monte Carlo wealth projections, scenario tradeoff comparisons, and AI wealth roadmap generation. | Stochastic parameters, scenario vectors, advice text | NumPy, Pandas, Scipy |
 | | **Suggestion Router (`/suggestions`)** | Evaluates habit log pre-analysis, generates tailored routine adjustments, and manages database adoption. | Suggestion records, adoption flags, difficulty | Heuristic Rule Engine, Groq LLM |
 | **Intelligence Layer** | **Agentic Reasoning Pipeline** | 4-stage problem decomposition: (1) Goal Definition, (2) Telemetry Search, (3) Optimization Analysis, (4) Structured Markdown/Action Output. | Database telemetry bundles, prompt context | Groq API (`gpt-oss-120b`, `gpt-oss-20b`, `qwen3.6-27b`) |
 | | **Stochastic Simulation Engine** | Geometric Brownian Motion mathematical model running 500 volatility paths with inflation adjustments. | Mean return, variance, annual savings rate, time horizons | NumPy Vectorized Computations |
 | | **Circadian & Biological Modeler** | Calculates acute sleep debt, cortisol alertness peaks (09:00–11:30), post-prandial dips, and focus elasticity. | Biometric logs, target variances, fatigue indices | Heuristic Mathematical Models |
-| **Persistence Layer** | **Relational Database Engine** | ACID-compliant persistent storage for users, biometric logs, academic records, transactions, and chat sessions. | Normalized relational schemas, foreign key constraints | SQLite 3, PostgreSQL, SQLAlchemy 2.0 ORM |
-| | **Intelligence & Cache Layer** | Caches computationally expensive Monte Carlo trials and daily noon AI reflections to guarantee sub-50ms render latency. | Forecast bundles, daily summaries, timestamped keys | In-Memory / Local File Cache |
+| **Persistence Layer** | **MongoDB Document Database** | NoSQL document storage for users, biometric logs, academic records, transactions, and chat sessions with embedded messages. | BSON Document Collections, Unique Indexes | MongoDB (Local / Atlas), Motor Async, Beanie ODM |
+| | **Intelligence & Cache Layer** | Caches computationally expensive Monte Carlo trials and daily noon AI reflections to guarantee sub-50ms render latency. | Forecast bundles, daily summaries, timestamped keys | Document Sub-fields / In-Memory Cache |
 
 ---
 

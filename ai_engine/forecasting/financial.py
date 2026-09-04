@@ -5,8 +5,7 @@ Financial forecasting: compound projections and goal-timeline calculations.
 Used by ai_engine/simulation/simulator.py and llm_integration/advisor.py.
 """
 import random
-from typing import Optional, List, Dict
-from sqlalchemy.orm import Session
+from typing import Optional, List, Dict, Union
 from database import models
 
 
@@ -68,13 +67,14 @@ def run_deterministic_projection(current_age: int, retirement_age: int,
     return projection
 
 
-def get_financial_summary(db: Session, user_id: int) -> dict:
+async def get_financial_summary(user_id: Union[str, int]) -> dict:
     """
     Used by llm_integration/advisor.py's set_context() to ground the chatbot.
     Keys: current_savings, projected_savings_1y, savings_rate
     """
-    user = db.query(models.User).filter_by(id=user_id).first()
-    records = db.query(models.FinancialRecord).filter_by(user_id=user_id).all()
+    uid_str = str(user_id)
+    user = await models.UserDoc.find_one({"$or": [{"_id": uid_str}, {"username": uid_str}]})
+    records = await models.FinancialRecordDoc.find({"user_id": uid_str}).to_list()
 
     if not user or not records:
         return {"current_savings": 0, "projected_savings_1y": 0, "savings_rate": 0,
@@ -85,10 +85,10 @@ def get_financial_summary(db: Session, user_id: int) -> dict:
     total_expenses = sum(r.amount for r in records
                           if r.category in ["Fixed Expense", "Discretionary Expense"])
 
-    current_savings = round(15000.0 + total_income - total_expenses, 2)  # matches simulator's seed logic
+    current_savings = round(15000.0 + total_income - total_expenses, 2)
     savings_rate = round((total_investment / total_income) * 100, 2) if total_income > 0 else 0
 
-    monthly_savings = total_investment / max(len(records) / 4, 1)  # rough monthly estimate
+    monthly_savings = total_investment / max(len(records) / 4, 1)
     projected_1y = project_savings(current_savings, monthly_savings, months=12)
 
     return {

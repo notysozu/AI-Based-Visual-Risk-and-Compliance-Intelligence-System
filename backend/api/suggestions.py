@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List
-from database import crud, schemas, models, database
+from fastapi import APIRouter, HTTPException, status
+from typing import List, Union
+from database import crud, schemas, models
 from ai_engine.llm_integration.advisor import generate_smart_role_suggestions
 
 router = APIRouter(
@@ -11,10 +10,10 @@ router = APIRouter(
 )
 
 
-def get_user_baseline_metrics(user: models.User, db: Session):
-    """Calculate 30-day baseline statistics from DB logs."""
-    habits = crud.get_habit_records(db, user.id, limit=30)
-    studies = crud.get_study_records(db, user.id, limit=30)
+async def get_user_baseline_metrics(user: models.UserDoc):
+    """Calculate 30-day baseline statistics from MongoDB records."""
+    habits = await crud.get_habit_records(user.id, limit=30)
+    studies = await crud.get_study_records(user.id, limit=30)
 
     sleep_records = [h.duration_minutes / 60.0 for h in habits if h.habit_name.lower() == "sleep"]
     screen_records = [h.duration_minutes / 60.0 for h in habits if "screen" in h.habit_name.lower()]
@@ -37,27 +36,26 @@ def get_user_baseline_metrics(user: models.User, db: Session):
 
 
 @router.get("/{user_id}", response_model=schemas.SuggestionsListResponse)
-def get_user_suggestions(user_id: int, db: Session = Depends(database.get_db)):
-    """Retrieve all saved suggestions for a user, initializing defaults if none exist."""
-    user = crud.get_user(db, user_id)
+async def get_user_suggestions(user_id: str):
+    """Retrieve all saved suggestions for a user from MongoDB, initializing defaults if none exist."""
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    items = crud.get_user_suggestions(db, user_id)
+    items = await crud.get_user_suggestions(user_id)
     if not items:
-        # Seed defaults
-        items = crud.reset_user_suggestions(db, user_id, user.role or "professional")
+        items = await crud.reset_user_suggestions(user_id, user.role or "professional")
 
-    baseline = get_user_baseline_metrics(user, db)
+    baseline = await get_user_baseline_metrics(user)
     diagnostic = f"Analyzed {user.role.capitalize()} profile · Sleep: {baseline['sleep']:.1f}h · Screen: {baseline['screen']:.1f}h · Focus: {baseline['study']:.1f}h/day"
 
     return schemas.SuggestionsListResponse(
-        user_id=user.id,
+        user_id=str(user.id),
         role=user.role or "professional",
         lifestyle_diagnostic=diagnostic,
         suggestions=[
             schemas.SuggestionItem(
-                id=s.id,
+                id=str(s.id),
                 suggestion_id=s.suggestion_id,
                 title=s.title,
                 category=s.category,
@@ -75,22 +73,19 @@ def get_user_suggestions(user_id: int, db: Session = Depends(database.get_db)):
 
 
 @router.post("/generate/{user_id}", response_model=schemas.SuggestionsListResponse)
-def generate_suggestions(
-    user_id: int,
-    req: schemas.GenerateSuggestionsRequest,
-    db: Session = Depends(database.get_db)
+async def generate_suggestions(
+    user_id: str,
+    req: schemas.GenerateSuggestionsRequest
 ):
     """
-    Analyzes user data & role to formulate fresh AI suggestions.
-    - mode="regenerate": replaces previous AI suggestions with fresh set
-    - mode="more": appends 3-4 extra distinct suggestions to current list
+    Analyzes user data & role to formulate fresh AI suggestions in MongoDB.
     """
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     user_info = {
-        "id": user.id,
+        "id": str(user.id),
         "username": user.username,
         "role": user.role or "professional",
         "age": user.age or 25,
@@ -101,8 +96,8 @@ def generate_suggestions(
         "net_worth": user.net_worth or 15000.0
     }
 
-    baseline = get_user_baseline_metrics(user, db)
-    existing_records = crud.get_user_suggestions(db, user_id)
+    baseline = await get_user_baseline_metrics(user)
+    existing_records = await crud.get_user_suggestions(user_id)
     existing_items = [
         {"title": s.title, "category": s.category, "suggestion_id": s.suggestion_id}
         for s in existing_records
@@ -117,18 +112,22 @@ def generate_suggestions(
     )
 
     new_suggestions = ai_result.get("suggestions", [])
-    overwrite = (req.mode == "regenerate")
+    if req.mode == "regenerate":
+        u_id_str = str(user.id)
+        await models.UserSuggestionDoc.find(models.UserSuggestionDoc.user_id == u_id_str).delete()
 
-    saved_items = crud.save_user_suggestions(db, user_id, new_suggestions, overwrite=overwrite)
-    all_current = crud.get_user_suggestions(db, user_id)
+    for item in new_suggestions:
+        await crud.create_user_suggestion(user_id, item)
+
+    all_current = await crud.get_user_suggestions(user_id)
 
     return schemas.SuggestionsListResponse(
-        user_id=user.id,
+        user_id=str(user.id),
         role=user.role or "professional",
         lifestyle_diagnostic=ai_result.get("diagnostic"),
         suggestions=[
             schemas.SuggestionItem(
-                id=s.id,
+                id=str(s.id),
                 suggestion_id=s.suggestion_id,
                 title=s.title,
                 category=s.category,
@@ -146,22 +145,21 @@ def generate_suggestions(
 
 
 @router.post("/adopt/{user_id}", response_model=schemas.SuggestionItem)
-def toggle_adopt_suggestion(
-    user_id: int,
-    req: schemas.SuggestionAdoptRequest,
-    db: Session = Depends(database.get_db)
+async def toggle_adopt_suggestion(
+    user_id: str,
+    req: schemas.SuggestionAdoptRequest
 ):
-    """Toggle or set the adopted status of a suggestion in the database."""
-    user = crud.get_user(db, user_id)
+    """Toggle or set the adopted status of a suggestion in MongoDB."""
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    updated = crud.adopt_user_suggestion(db, user_id, req.suggestion_id, req.is_adopted)
+    updated = await crud.adopt_user_suggestion(user_id, req.suggestion_id, req.is_adopted)
     if not updated:
         raise HTTPException(status_code=404, detail="Suggestion not found")
 
     return schemas.SuggestionItem(
-        id=updated.id,
+        id=str(updated.id),
         suggestion_id=updated.suggestion_id,
         title=updated.title,
         category=updated.category,
@@ -176,25 +174,21 @@ def toggle_adopt_suggestion(
 
 
 @router.post("/reset/{user_id}", response_model=schemas.SuggestionsListResponse)
-def reset_suggestions(
-    user_id: int,
-    db: Session = Depends(database.get_db)
-):
-    """Reset user suggestions to role defaults."""
-    user = crud.get_user(db, user_id)
+async def reset_suggestions(user_id: str):
+    """Reset user suggestions to role defaults in MongoDB."""
+    user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    items = crud.reset_user_suggestions(db, user_id, user.role or "professional")
-    baseline = get_user_baseline_metrics(user, db)
+    items = await crud.reset_user_suggestions(user_id, user.role or "professional")
 
     return schemas.SuggestionsListResponse(
-        user_id=user.id,
+        user_id=str(user.id),
         role=user.role or "professional",
         lifestyle_diagnostic=f"Reset to default {user.role.capitalize()} baseline templates.",
         suggestions=[
             schemas.SuggestionItem(
-                id=s.id,
+                id=str(s.id),
                 suggestion_id=s.suggestion_id,
                 title=s.title,
                 category=s.category,

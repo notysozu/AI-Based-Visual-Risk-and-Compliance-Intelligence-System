@@ -69,11 +69,21 @@ cp .env.example .env
 Edit `.env` with your preferred settings:
 
 ```env
-DATABASE_URL=sqlite:///./digital_twin.db
+# Local MongoDB instance:
+MONGODB_URL=mongodb://localhost:27017
+MONGODB_DB_NAME=digital_twin_ai
+
+# Or MongoDB Atlas Cloud Cluster:
+# MONGODB_URL=mongodb+srv://<username>:<password>@cluster0.mongodb.net/?retryWrites=true&w=majority
+# MONGODB_DB_NAME=digital_twin_ai
+
+# Groq LLM API Key (Optional for heuristic mode, required for live LLM):
 GROQ_API_KEY=your_groq_api_key_here
 ```
 
-> **Note:** A valid `GROQ_API_KEY` unlocks live conversational Copilot intelligence, multi-action generation, and scenario synthesis. If offline or without an API key, the system automatically uses robust heuristic mathematical fallbacks.
+> **Database Note:** If a local MongoDB instance is not detected, the application automatically initializes an embedded in-memory database fallback (`mongomock_motor`) for immediate development with zero configuration.
+>
+> **AI Copilot Note:** A valid `GROQ_API_KEY` unlocks live conversational Copilot intelligence, multi-action generation, and scenario synthesis. If offline or without an API key, the system automatically uses robust heuristic mathematical fallbacks.
 
 ---
 

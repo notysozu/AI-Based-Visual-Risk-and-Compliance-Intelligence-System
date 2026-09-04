@@ -1,15 +1,14 @@
 import re
 import json
 from typing import Dict, Any, Optional
-from ai_engine.simulation import simulator
-from database.database import SessionLocal
+from ai_engine.forecasting import financial, habits
 from ai_engine.llm_integration.generators import generate_digital_twin_advice
 
 
 def handle_what_if_intent(
     prompt: str,
     p_lower: str,
-    user_id: int,
+    user_id: Any,
     user_info: Dict[str, Any],
     baseline: Dict[str, Any],
     think_mode: bool = False
@@ -51,13 +50,100 @@ def handle_what_if_intent(
         study_delta = +4.0
         savings_delta = +250.0
 
-    with SessionLocal() as db_session:
-        sim_results = simulator.run_what_if_comparison(
-            db=db_session,
-            user_id=user_id,
-            change_a={"monthly_investment_change": 0.0, "sleep_hours_change": 0.0, "weekly_study_change": 0.0},
-            change_b={"monthly_investment_change": savings_delta, "sleep_hours_change": sleep_delta, "weekly_study_change": study_delta}
-        )
+    # Calculate Scenario A (Baseline)
+    mod_savings_a = float(baseline.get("monthly_savings", 1000.0))
+    mod_sleep_a = float(baseline.get("sleep_hours", 7.5))
+    mod_study_week_a = float(baseline.get("study_hours_week", 10.0))
+    mod_study_daily_a = mod_study_week_a / 7.0
+
+    preds_a = habits.predict_scenario_scores(
+        coefs={},
+        sleep_hours=mod_sleep_a,
+        exercise_hours=float(baseline.get("exercise_hours", 0.5)),
+        screen_hours=float(baseline.get("screen_hours", 3.5)),
+        social_hours=float(baseline.get("social_hours", 1.0)),
+        study_hours=mod_study_daily_a
+    )
+
+    age = int(user_info.get("age", 25) or 25)
+    retire_age = int(user_info.get("retirement_goal_age", 60) or 60)
+    net_worth = float(baseline.get("current_net_worth", 15000.0) or 15000.0)
+    target_net_worth = float(user_info.get("target_net_worth", 1000000.0) or 1000000.0)
+
+    fin_proj_a = financial.run_deterministic_projection(
+        current_age=age,
+        retirement_age=age + 5,
+        current_net_worth=net_worth,
+        monthly_savings=mod_savings_a,
+        annual_return_rate=0.08,
+        annual_inflation_rate=0.025
+    )
+
+    # Calculate Scenario B (Tweaked)
+    mod_savings_b = max(0.0, mod_savings_a + savings_delta)
+    mod_sleep_b = max(4.0, min(12.0, mod_sleep_a + sleep_delta))
+    mod_study_week_b = max(0.0, mod_study_week_a + study_delta)
+    mod_study_daily_b = mod_study_week_b / 7.0
+
+    preds_b = habits.predict_scenario_scores(
+        coefs={},
+        sleep_hours=mod_sleep_b,
+        exercise_hours=float(baseline.get("exercise_hours", 0.5)),
+        screen_hours=float(baseline.get("screen_hours", 3.5)),
+        social_hours=float(baseline.get("social_hours", 1.0)),
+        study_hours=mod_study_daily_b
+    )
+
+    fin_proj_b = financial.run_deterministic_projection(
+        current_age=age,
+        retirement_age=age + 5,
+        current_net_worth=net_worth,
+        monthly_savings=mod_savings_b,
+        annual_return_rate=0.08,
+        annual_inflation_rate=0.025
+    )
+
+    retirement_proj_b = financial.run_deterministic_projection(
+        current_age=age,
+        retirement_age=retire_age,
+        current_net_worth=net_worth,
+        monthly_savings=mod_savings_b,
+        annual_return_rate=0.08,
+        annual_inflation_rate=0.025
+    )
+    final_retirement_wealth = retirement_proj_b[-1]["net_worth"]
+    attained_retirement = final_retirement_wealth >= target_net_worth
+
+    sim_results = {
+        "scenario_a": {
+            "scenario_name": "Scenario A",
+            "datapoints": fin_proj_a,
+            "attained_retirement": True,
+            "wealth_at_end": fin_proj_a[-1]["net_worth"],
+            "retirement_wealth": fin_proj_a[-1]["net_worth"],
+            "health_index": preds_a["health_index"],
+            "focus_index": preds_a["focus_index"],
+            "details": {
+                "sleep": mod_sleep_a,
+                "study_week": mod_study_week_a,
+                "monthly_savings": mod_savings_a
+            }
+        },
+        "scenario_b": {
+            "scenario_name": "Scenario B",
+            "datapoints": fin_proj_b,
+            "attained_retirement": attained_retirement,
+            "wealth_at_end": fin_proj_b[-1]["net_worth"],
+            "retirement_wealth": final_retirement_wealth,
+            "health_index": preds_b["health_index"],
+            "focus_index": preds_b["focus_index"],
+            "details": {
+                "sleep": mod_sleep_b,
+                "study_week": mod_study_week_b,
+                "monthly_savings": mod_savings_b
+            }
+        }
+    }
 
     sb = sim_results["scenario_b"]
     sa = sim_results["scenario_a"]
