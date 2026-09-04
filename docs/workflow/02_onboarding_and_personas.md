@@ -51,8 +51,8 @@ Questions dynamically adjust their language, slider ranges, step intervals, and 
 ## 3. Dynamic Profile Synchronization
 
 Once onboarding is completed:
-1. Profile state is saved to browser LocalStorage.
-2. The user profile is created/updated in the backend database via `PUT /users/{user_id}` or `POST /users/`.
+1. The user profile is created/updated directly in the MongoDB database via `POST /users/` or `PUT /users/{user_id}`.
+2. All profile targets, biometrics, financial goals, and intelligence cache fields are persisted to MongoDB.
 3. All subsequent pages (`/dashboard`, `/wealth`, `/planner`, `/suggestions`, `/simulator`, `/analytics`) reference `getRoleConfig(profile.role)` to display cohesive terminology.
 
 

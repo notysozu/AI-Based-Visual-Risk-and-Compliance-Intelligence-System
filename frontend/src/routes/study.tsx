@@ -85,16 +85,8 @@ function StudyIntelligencePage() {
   const [forecast, setForecast] = useState<any>(null);
   const [forecastLoading, setForecastLoading] = useState(false);
 
-  // AI Plan data - initialize from localStorage if available
-  const [plan, setPlan] = useState<any>(() => {
-    if (typeof window === "undefined" || !p.id) return null;
-    try {
-      const cached = localStorage.getItem(`study_plan_${p.id}`);
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  });
+  // AI Plan data - loaded directly from MongoDB database
+  const [plan, setPlan] = useState<any>(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [targetMilestone, setTargetMilestone] = useState<string>("Upcoming Midterms & Finals");
   const [adoptedBlockKeys, setAdoptedBlockKeys] = useState<string[]>([]);
@@ -108,7 +100,7 @@ function StudyIntelligencePage() {
   const [logNotes, setLogNotes] = useState("");
   const [logging, setLogging] = useState(false);
 
-  // Fetch analytics, forecast, and saved study plan on mount
+  // Fetch analytics, forecast, and saved study plan from MongoDB database on mount
   useEffect(() => {
     if (!p.id) return;
     
@@ -124,14 +116,11 @@ function StudyIntelligencePage() {
       .catch((err) => console.warn("Failed to load study forecast:", err))
       .finally(() => setForecastLoading(false));
 
-    // Automatically load persisted study plan from backend database or cache
+    // Automatically load persisted study plan from MongoDB database
     getSavedStudyPlan(p.id)
       .then((saved) => {
         if (saved && (saved.daily_plans || saved.weekly_goal)) {
           setPlan(saved);
-          try {
-            localStorage.setItem(`study_plan_${p.id}`, JSON.stringify(saved));
-          } catch {}
         }
       })
       .catch((err) => console.warn("Failed to load saved study plan:", err));
@@ -148,11 +137,8 @@ function StudyIntelligencePage() {
       });
       if (result) {
         setPlan(result);
-        try {
-          localStorage.setItem(`study_plan_${p.id}`, JSON.stringify(result));
-        } catch {}
         if (force) setAdoptedBlockKeys([]);
-        toast.success(force ? "Fresh study plan generated & saved" : "Study plan loaded");
+        toast.success(force ? "Fresh study plan generated & saved to database" : "Study plan loaded from database");
       }
     } catch (e: any) {
       toast.error(e.message || "Failed to generate study plan");

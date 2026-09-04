@@ -259,3 +259,31 @@ export function rejectChatAction(
     body: JSON.stringify(payload),
   });
 }
+
+// --- Application Intelligence Cache APIs (MongoDB Persistence) ---
+
+export function getCache(cacheKey: string) {
+  return request(`/cache/${encodeURIComponent(cacheKey)}`);
+}
+
+export function setCache(
+  cacheKey: string,
+  payload: Record<string, unknown>,
+  userId?: string | number,
+  ttlSeconds?: number
+) {
+  const queryParams = new URLSearchParams();
+  if (userId) queryParams.set("user_id", String(userId));
+  if (ttlSeconds) queryParams.set("ttl_seconds", String(ttlSeconds));
+  const q = queryParams.toString() ? `?${queryParams.toString()}` : "";
+  return request(`/cache/${encodeURIComponent(cacheKey)}${q}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteCache(cacheKey: string) {
+  return request(`/cache/${encodeURIComponent(cacheKey)}`, {
+    method: "DELETE",
+  });
+}

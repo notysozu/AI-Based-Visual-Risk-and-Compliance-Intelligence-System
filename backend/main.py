@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database.database import init_mongodb, get_database_status
-from backend.api import users, records, simulations, finance, habits, study, suggestions, chat
+from backend.api import users, records, simulations, finance, habits, study, suggestions, chat, cache
 
 
 @asynccontextmanager
@@ -45,6 +45,7 @@ app.include_router(habits.router)
 app.include_router(study.router)
 app.include_router(suggestions.router)
 app.include_router(chat.router)
+app.include_router(cache.router)
 
 
 @app.get("/")

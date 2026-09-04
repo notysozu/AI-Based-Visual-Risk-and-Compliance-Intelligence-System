@@ -27,7 +27,8 @@ async def init_mongodb():
         HabitRecordDoc,
         StudyRecordDoc,
         FinancialRecordDoc,
-        UserSuggestionDoc
+        UserSuggestionDoc,
+        AppCacheDoc
     )
 
     document_models = [
@@ -36,7 +37,8 @@ async def init_mongodb():
         HabitRecordDoc,
         StudyRecordDoc,
         FinancialRecordDoc,
-        UserSuggestionDoc
+        UserSuggestionDoc,
+        AppCacheDoc
     ]
 
     try:

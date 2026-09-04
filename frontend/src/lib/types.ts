@@ -25,6 +25,8 @@ export type Profile = {
   lastWealthPrediction?: string | null;
   lastAnalyticsSummary?: string | null;
   lastAnalyticsUpdated?: string | null;
+  lastStudyPlan?: string | null;
+  lastStudyPlanUpdated?: string | null;
 };
 
 export type Log = {

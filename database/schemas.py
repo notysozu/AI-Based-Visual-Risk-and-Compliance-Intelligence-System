@@ -38,10 +38,28 @@ class UserBase(BaseModel):
     net_worth: Optional[float] = 15000.0
     sleep_target_hours: Optional[float] = 8.0
     study_target_hours_week: Optional[float] = 15.0
+    exercise_target_days: Optional[float] = 4.0
+    screen_time_target_hours: Optional[float] = 3.5
+    savings_rate_target: Optional[float] = 20.0
+    focus_area: Optional[str] = "Deep Work"
+    goal_name: Optional[str] = "Emergency Fund"
+    goal_current: Optional[float] = 15000.0
+    goal_target: Optional[float] = 50000.0
+    theme_preference: Optional[str] = "dark"
+    tasks_json: Optional[str] = None
+    scenario_a_preset: Optional[str] = None
+    scenario_b_preset: Optional[str] = None
+    last_success_odds: Optional[float] = None
+    last_wealth_prediction: Optional[str] = None
+    last_analytics_summary: Optional[str] = None
+    last_analytics_updated: Optional[str] = None
+    last_study_plan: Optional[str] = None
+    last_study_plan_updated: Optional[str] = None
 
 
 class UserCreate(UserBase):
     pass
+
 
 
 class UserLoginRequest(BaseModel):
@@ -60,6 +78,15 @@ class UserUpdate(BaseModel):
     net_worth: Optional[float] = None
     sleep_target_hours: Optional[float] = None
     study_target_hours_week: Optional[float] = None
+    exercise_target_days: Optional[float] = None
+    screen_time_target_hours: Optional[float] = None
+    savings_rate_target: Optional[float] = None
+    focus_area: Optional[str] = None
+    goal_name: Optional[str] = None
+    goal_current: Optional[float] = None
+    goal_target: Optional[float] = None
+    theme_preference: Optional[str] = None
+    tasks_json: Optional[str] = None
     scenario_a_preset: Optional[str] = None
     scenario_b_preset: Optional[str] = None
     last_success_odds: Optional[float] = None
@@ -82,6 +109,23 @@ class UserResponse(MongoBaseModel, UserBase):
     last_analytics_updated: Optional[str] = None
     last_study_plan: Optional[str] = None
     last_study_plan_updated: Optional[str] = None
+
+
+# App Cache Schemas
+class AppCacheCreate(BaseModel):
+    cache_key: str
+    user_id: Optional[str] = None
+    data: Dict[str, Any] = {}
+    ttl_seconds: Optional[int] = None
+
+
+class AppCacheResponse(MongoBaseModel):
+    cache_key: str
+    user_id: Optional[str] = None
+    data: Dict[str, Any] = {}
+    expires_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
 
 
 # Financial Record Schemas

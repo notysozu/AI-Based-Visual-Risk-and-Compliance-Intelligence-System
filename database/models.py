@@ -23,6 +23,19 @@ class UserDoc(Document):
     # Habit targets
     sleep_target_hours: float = 8.0
     study_target_hours_week: float = 15.0
+    exercise_target_days: float = 4.0
+    screen_time_target_hours: float = 3.5
+    savings_rate_target: float = 20.0
+    focus_area: Optional[str] = "Deep Work"
+
+    # Goal targets
+    goal_name: Optional[str] = "Emergency Fund"
+    goal_current: float = 15000.0
+    goal_target: float = 50000.0
+
+    # UI theme & planner tasks
+    theme_preference: Optional[str] = "dark"
+    tasks_json: Optional[str] = None
 
     # Decision Sandbox scenario slider presets (JSON: {"savings": 0, "sleep": 0, "study": 0})
     scenario_a_preset: Optional[str] = None
@@ -44,6 +57,20 @@ class UserDoc(Document):
     @property
     def id_str(self) -> str:
         return str(self.id)
+
+
+class AppCacheDoc(Document):
+    """MongoDB Application and Intelligence Cache document."""
+    cache_key: Indexed(str, unique=True)
+    user_id: Optional[str] = None
+    data: Dict[str, Any] = {}
+    expires_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "app_cache"
+        indexes = ["cache_key", "user_id"]
 
 
 class FinancialRecordDoc(Document):
@@ -139,3 +166,4 @@ StudyRecord = StudyRecordDoc
 UserSuggestion = UserSuggestionDoc
 ChatMessage = ChatMessageDoc
 ChatSession = ChatSessionDoc
+AppCache = AppCacheDoc

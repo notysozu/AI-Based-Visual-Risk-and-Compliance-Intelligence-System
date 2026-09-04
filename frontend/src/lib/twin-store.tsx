@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { createUser, loginUser, getUserByUsername, getDefaultUser, getForecast, getUser, updateUser, adoptSuggestionApi } from "@/lib/api";
+import { createUser, loginUser, getUserByUsername, getDefaultUser, getForecast, getUser, updateUser, adoptSuggestionApi, postHabitRecord, postStudyRecord, postFinancialRecord, getHabitRecords, getStudyRecords, getFinancialRecords } from "@/lib/api";
 
 // Re-export all models from types for 100% backwards compatibility
 export type {
@@ -313,11 +313,20 @@ function mapProfileToBackend(profile: Profile) {
     net_worth: profile.netWorth,
     sleep_target_hours: profile.sleepHours,
     study_target_hours_week: profile.studyHours,
+    exercise_target_days: profile.exerciseDays,
+    screen_time_target_hours: profile.screenTime,
+    savings_rate_target: profile.savingsRate,
+    focus_area: profile.focusArea,
+    goal_name: profile.goalName,
+    goal_current: profile.goalCurrent,
+    goal_target: profile.goalTarget,
     is_onboarded: profile.onboarded ? 1 : 0,
     last_success_odds: profile.lastSuccessOdds,
     last_wealth_prediction: profile.lastWealthPrediction,
     last_analytics_summary: profile.lastAnalyticsSummary,
     last_analytics_updated: profile.lastAnalyticsUpdated,
+    last_study_plan: profile.lastStudyPlan,
+    last_study_plan_updated: profile.lastStudyPlanUpdated,
   };
 }
 
@@ -325,14 +334,21 @@ function mapProfileToBackend(profile: Profile) {
 function mapBackendToProfile(user: any): Partial<Profile> {
   return {
     role: user.role ?? "professional",
-    age: user.age,
-    targetAge: user.retirement_goal_age,
-    targetNetWorth: user.target_net_worth,
-    monthlyIncome: user.monthly_income,
+    age: user.age ?? 25,
+    targetAge: user.retirement_goal_age ?? 60,
+    targetNetWorth: user.target_net_worth ?? 1000000,
+    monthlyIncome: user.monthly_income ?? 5000,
     monthlyExpenses: user.monthly_expenses ?? 2900,
     netWorth: user.net_worth ?? 15000,
-    sleepHours: user.sleep_target_hours,
-    studyHours: user.study_target_hours_week,
+    sleepHours: user.sleep_target_hours ?? 8.0,
+    studyHours: user.study_target_hours_week ?? 15.0,
+    exerciseDays: user.exercise_target_days ?? 4.0,
+    screenTime: user.screen_time_target_hours ?? 3.5,
+    savingsRate: user.savings_rate_target ?? 20.0,
+    focusArea: user.focus_area ?? "Deep Work",
+    goalName: user.goal_name ?? "Emergency Fund",
+    goalCurrent: user.goal_current ?? 15000,
+    goalTarget: user.goal_target ?? 50000,
     onboarded: Boolean(user.is_onboarded === 1 || user.is_onboarded === true),
     name: user.username ?? undefined,
     email: user.email ?? undefined,
@@ -340,6 +356,8 @@ function mapBackendToProfile(user: any): Partial<Profile> {
     lastWealthPrediction: user.last_wealth_prediction ?? null,
     lastAnalyticsSummary: user.last_analytics_summary ?? null,
     lastAnalyticsUpdated: user.last_analytics_updated ?? null,
+    lastStudyPlan: user.last_study_plan ?? null,
+    lastStudyPlanUpdated: user.last_study_plan_updated ?? null,
   };
 }
 
@@ -412,6 +430,24 @@ export function TwinProvider({ children }: { children: ReactNode }) {
   const addLog = (log: Omit<Log, "id">) => {
     const withId: Log = { ...log, id: `${log.date}-${Date.now()}` };
     setState((s) => ({ ...s, logs: [...s.logs, withId] }));
+
+    if (state.profile.id) {
+      if (log.sleep > 0) {
+        postHabitRecord(state.profile.id, {
+          habit_name: "Sleep",
+          duration_minutes: Math.round(log.sleep * 60),
+          impact_score: 8
+        }).catch((e) => console.warn("Failed to persist sleep record to MongoDB:", e));
+      }
+      if (log.study > 0) {
+        postStudyRecord(state.profile.id, {
+          subject: "Daily Coursework",
+          duration_minutes: Math.round(log.study * 60),
+          focus_score: 8,
+          session_type: "study"
+        }).catch((e) => console.warn("Failed to persist study record to MongoDB:", e));
+      }
+    }
   };
 
   const logHabitActivity = (habitName: string, hours: number) => {
@@ -447,6 +483,14 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         return { ...s, logs: [...s.logs, newLog] };
       }
     });
+
+    if (state.profile.id) {
+      postHabitRecord(state.profile.id, {
+        habit_name: habitName,
+        duration_minutes: Math.round(hours * 60),
+        impact_score: 8
+      }).catch((e) => console.warn("Failed to persist habit record to MongoDB:", e));
+    }
   };
 
   const logStudyActivity = (subject: string, hours: number) => {
@@ -475,6 +519,15 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         return { ...s, logs: [...s.logs, newLog] };
       }
     });
+
+    if (state.profile.id) {
+      postStudyRecord(state.profile.id, {
+        subject: subject,
+        duration_minutes: Math.round(hours * 60),
+        focus_score: 8,
+        session_type: "study"
+      }).catch((e) => console.warn("Failed to persist study record to MongoDB:", e));
+    }
   };
 
   const clearLogs = () => {
@@ -490,6 +543,14 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         profile: { ...s.profile, netWorth: s.profile.netWorth + delta },
       };
     });
+
+    if (state.profile.id) {
+      postFinancialRecord(state.profile.id, {
+        category: txn.kind === "income" ? "Income" : "Discretionary Expense",
+        description: txn.label,
+        amount: txn.amount
+      }).catch((e) => console.warn("Failed to persist financial record to MongoDB:", e));
+    }
   };
 
   const updateProfile = async (partial: Partial<Profile>) => {
@@ -725,18 +786,61 @@ export function TwinProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Pull backend profile state, overwriting local edits (used by Reset).
+  // Pull backend profile and records state from MongoDB, synchronizing store with database
   const syncProfile = async () => {
     const userId = state.profile.id;
     if (userId === null || userId === undefined) return;
     setState((s) => ({ ...s, profileSyncing: true, profileSyncError: null }));
     try {
       const user = await getUser(userId);
-      setState((s) => ({
-        ...s,
-        profile: { ...s.profile, ...mapBackendToProfile(user) },
-        profileSyncing: false,
-      }));
+      const [habitsData, finData] = await Promise.all([
+        getHabitRecords(userId).catch(() => []),
+        getFinancialRecords(userId).catch(() => []),
+      ]);
+
+      setState((s) => {
+        const nextProfile = { ...s.profile, ...mapBackendToProfile(user) };
+        let nextLogs = s.logs;
+        if (Array.isArray(habitsData) && habitsData.length > 0) {
+          const dateMap: Record<string, Log> = {};
+          habitsData.forEach((rec: any) => {
+            const dateStr = (rec.created_at || "").slice(0, 10) || today();
+            if (!dateMap[dateStr]) {
+              dateMap[dateStr] = {
+                id: `${dateStr}-${rec.id || Math.random()}`,
+                date: dateStr,
+                sleep: rec.habit_name === "Sleep" ? +(rec.duration_minutes / 60).toFixed(1) : (nextProfile.sleepHours || 8.0),
+                screen: 3.5,
+                study: 0,
+                exercise: rec.habit_name === "Exercise" ? Math.round(rec.duration_minutes) : 0,
+                mood: 8,
+              };
+            } else {
+              if (rec.habit_name === "Sleep") dateMap[dateStr].sleep = +(rec.duration_minutes / 60).toFixed(1);
+              if (rec.habit_name === "Exercise") dateMap[dateStr].exercise = Math.round(rec.duration_minutes);
+            }
+          });
+          nextLogs = Object.values(dateMap);
+        }
+
+        let nextTxns = s.txns;
+        if (Array.isArray(finData) && finData.length > 0) {
+          nextTxns = finData.map((f: any) => ({
+            date: (f.record_date || "").slice(0, 10) || today(),
+            label: f.description || f.category || "Transaction",
+            amount: Number(f.amount || 0),
+            kind: (f.category === "Income" ? "income" : "expense") as "income" | "expense",
+          }));
+        }
+
+        return {
+          ...s,
+          profile: nextProfile,
+          logs: nextLogs.length > 0 ? nextLogs : s.logs,
+          txns: nextTxns.length > 0 ? nextTxns : s.txns,
+          profileSyncing: false,
+        };
+      });
     } catch (err) {
       setState((s) => ({
         ...s,

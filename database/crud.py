@@ -43,22 +43,13 @@ async def get_user_by_email(email: str) -> Optional[models.UserDoc]:
 
 async def create_user(user: schemas.UserCreate) -> models.UserDoc:
     """Create and insert a new user profile document in MongoDB."""
-    db_user = models.UserDoc(
-        username=user.username.strip(),
-        email=user.email.strip().lower(),
-        role=user.role or "professional",
-        is_onboarded=user.is_onboarded if user.is_onboarded is not None else 0,
-        age=user.age or 25,
-        retirement_goal_age=user.retirement_goal_age or 60,
-        target_net_worth=user.target_net_worth or 1000000.0,
-        monthly_income=user.monthly_income or 5000.0,
-        monthly_expenses=user.monthly_expenses or 2900.0,
-        net_worth=user.net_worth or 15000.0,
-        sleep_target_hours=user.sleep_target_hours or 8.0,
-        study_target_hours_week=user.study_target_hours_week or 15.0
-    )
+    user_dict = user.model_dump()
+    user_dict["username"] = user.username.strip()
+    user_dict["email"] = user.email.strip().lower()
+    db_user = models.UserDoc(**user_dict)
     await db_user.insert()
     return db_user
+
 
 
 async def update_user(user_id: Union[str, int], user_update: schemas.UserUpdate) -> Optional[models.UserDoc]:
@@ -535,3 +526,60 @@ async def seed_mock_data(user_id: Union[str, int]):
 
     # Seed default suggestions
     await reset_user_suggestions(u_id_str, user.role or "professional")
+
+
+# ──────────────────────────────────────────────
+# Application Intelligence Cache Operations
+# ──────────────────────────────────────────────
+
+async def set_cache(
+    cache_key: str,
+    data: Dict[str, Any],
+    user_id: Optional[str] = None,
+    ttl_seconds: Optional[int] = None
+) -> models.AppCacheDoc:
+    """Store or update cached payload in MongoDB app_cache collection."""
+    now = datetime.utcnow()
+    expires_at = now + timedelta(seconds=ttl_seconds) if ttl_seconds else None
+
+    doc = await models.AppCacheDoc.find_one(models.AppCacheDoc.cache_key == cache_key)
+    if doc:
+        doc.data = data
+        if user_id is not None:
+            doc.user_id = user_id
+        doc.expires_at = expires_at
+        doc.updated_at = now
+        await doc.save()
+        return doc
+    else:
+        doc = models.AppCacheDoc(
+            cache_key=cache_key,
+            user_id=user_id,
+            data=data,
+            expires_at=expires_at,
+            created_at=now,
+            updated_at=now
+        )
+        await doc.insert()
+        return doc
+
+
+async def get_cache(cache_key: str) -> Optional[Dict[str, Any]]:
+    """Retrieve unexpired cached data from MongoDB."""
+    doc = await models.AppCacheDoc.find_one(models.AppCacheDoc.cache_key == cache_key)
+    if not doc:
+        return None
+    if doc.expires_at and doc.expires_at < datetime.utcnow():
+        await doc.delete()
+        return None
+    return doc.data
+
+
+async def delete_cache(cache_key: str) -> bool:
+    """Remove a cache entry from MongoDB."""
+    doc = await models.AppCacheDoc.find_one(models.AppCacheDoc.cache_key == cache_key)
+    if doc:
+        await doc.delete()
+        return True
+    return False
+
