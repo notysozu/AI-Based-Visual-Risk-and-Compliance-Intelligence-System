@@ -5,6 +5,7 @@ from typing import List, Optional, Union, Dict, Any
 from bson import ObjectId
 
 from . import models, schemas
+from backend.security.crypto import hash_token, hash_password
 
 
 def _to_object_id(val: Any) -> Optional[ObjectId]:
@@ -46,10 +47,21 @@ async def create_user(user: schemas.UserCreate) -> models.UserDoc:
     user_dict = user.model_dump()
     user_dict["username"] = user.username.strip()
     user_dict["email"] = user.email.strip().lower()
+    
+    # Securely hash plaintext password if passed
+    if "password" in user_dict and user_dict["password"]:
+        if not user_dict.get("password_hash"):
+            user_dict["password_hash"] = hash_password(user_dict["password"])
+        del user_dict["password"]
+    elif "password" in user_dict:
+        del user_dict["password"]
+
+    if not user_dict.get("updated_at"):
+        user_dict["updated_at"] = datetime.utcnow()
+
     db_user = models.UserDoc(**user_dict)
     await db_user.insert()
     return db_user
-
 
 
 async def update_user(user_id: Union[str, int], user_update: schemas.UserUpdate) -> Optional[models.UserDoc]:
@@ -65,6 +77,7 @@ async def update_user(user_id: Union[str, int], user_update: schemas.UserUpdate)
     for key, value in update_dict.items():
         setattr(db_user, key, value)
 
+    db_user.updated_at = datetime.utcnow()
     await db_user.save()
     return db_user
 
@@ -81,8 +94,145 @@ async def delete_user(user_id: Union[str, int]) -> bool:
     await models.StudyRecordDoc.find(models.StudyRecordDoc.user_id == u_id_str).delete()
     await models.UserSuggestionDoc.find(models.UserSuggestionDoc.user_id == u_id_str).delete()
     await models.ChatSessionDoc.find(models.ChatSessionDoc.user_id == u_id_str).delete()
+    await models.RefreshTokenDoc.find(models.RefreshTokenDoc.user_id == u_id_str).delete()
+    await models.PasswordResetTokenDoc.find(models.PasswordResetTokenDoc.user_id == u_id_str).delete()
+    await models.EmailVerificationTokenDoc.find(models.EmailVerificationTokenDoc.user_id == u_id_str).delete()
     await db_user.delete()
     return True
+
+
+# ──────────────────────────────────────────────
+# Authentication & Token Operations
+# ──────────────────────────────────────────────
+
+async def save_refresh_token(
+    user_id: Union[str, int],
+    token_hash: str,
+    token_family: str,
+    expires_at: datetime,
+    ip_address: Optional[str] = None,
+    device_info: Optional[str] = None
+) -> models.RefreshTokenDoc:
+    """Persist a hashed refresh token tied to a token family."""
+    doc = models.RefreshTokenDoc(
+        user_id=str(user_id),
+        token_hash=token_hash,
+        token_family=token_family,
+        is_revoked=False,
+        ip_address=ip_address,
+        device_info=device_info,
+        expires_at=expires_at
+    )
+    await doc.insert()
+    return doc
+
+
+async def get_refresh_token_by_hash(token_hash: str) -> Optional[models.RefreshTokenDoc]:
+    """Look up a refresh token record by its SHA-256 hash."""
+    return await models.RefreshTokenDoc.find_one(models.RefreshTokenDoc.token_hash == token_hash)
+
+
+async def revoke_refresh_token(token_hash: str, revoked_by_ip: Optional[str] = None) -> Optional[models.RefreshTokenDoc]:
+    """Mark a single refresh token as revoked."""
+    doc = await get_refresh_token_by_hash(token_hash)
+    if doc:
+        doc.is_revoked = True
+        doc.revoked_at = datetime.utcnow()
+        doc.revoked_by_ip = revoked_by_ip
+        await doc.save()
+    return doc
+
+
+async def revoke_refresh_token_family(token_family: str, revoked_by_ip: Optional[str] = None) -> int:
+    """
+    Revoke all refresh tokens in a family when reuse or theft is detected.
+    Returns the count of tokens marked revoked.
+    """
+    now = datetime.utcnow()
+    tokens = await models.RefreshTokenDoc.find(models.RefreshTokenDoc.token_family == token_family).to_list()
+    count = 0
+    for tok in tokens:
+        if not tok.is_revoked:
+            tok.is_revoked = True
+            tok.revoked_at = now
+            tok.revoked_by_ip = revoked_by_ip
+            await tok.save()
+            count += 1
+    return count
+
+
+async def revoke_all_user_refresh_tokens(user_id: Union[str, int]) -> int:
+    """
+    Revoke all active refresh tokens for a user across all devices.
+    Used for logout-all, password reset, or compromise lockdown.
+    """
+    u_id_str = str(user_id)
+    tokens = await models.RefreshTokenDoc.find(
+        models.RefreshTokenDoc.user_id == u_id_str,
+        models.RefreshTokenDoc.is_revoked == False
+    ).to_list()
+    now = datetime.utcnow()
+    count = 0
+    for tok in tokens:
+        tok.is_revoked = True
+        tok.revoked_at = now
+        await tok.save()
+        count += 1
+    return count
+
+
+async def create_password_reset_token(user_id: Union[str, int], raw_token: str, expires_minutes: int = 15) -> models.PasswordResetTokenDoc:
+    """Create and persist single-use password reset token."""
+    thash = hash_token(raw_token)
+    doc = models.PasswordResetTokenDoc(
+        user_id=str(user_id),
+        token_hash=thash,
+        is_used=False,
+        expires_at=datetime.utcnow() + timedelta(minutes=expires_minutes)
+    )
+    await doc.insert()
+    return doc
+
+
+async def get_password_reset_token(raw_token: str) -> Optional[models.PasswordResetTokenDoc]:
+    """Retrieve password reset token by raw token value."""
+    thash = hash_token(raw_token)
+    return await models.PasswordResetTokenDoc.find_one(models.PasswordResetTokenDoc.token_hash == thash)
+
+
+async def mark_password_reset_token_used(token_doc: models.PasswordResetTokenDoc) -> models.PasswordResetTokenDoc:
+    """Mark a password reset token as used."""
+    token_doc.is_used = True
+    token_doc.used_at = datetime.utcnow()
+    await token_doc.save()
+    return token_doc
+
+
+async def create_email_verification_token(user_id: Union[str, int], raw_token: str, expires_hours: int = 24) -> models.EmailVerificationTokenDoc:
+    """Create and persist single-use email verification token."""
+    thash = hash_token(raw_token)
+    doc = models.EmailVerificationTokenDoc(
+        user_id=str(user_id),
+        token_hash=thash,
+        is_used=False,
+        expires_at=datetime.utcnow() + timedelta(hours=expires_hours)
+    )
+    await doc.insert()
+    return doc
+
+
+async def get_email_verification_token(raw_token: str) -> Optional[models.EmailVerificationTokenDoc]:
+    """Retrieve email verification token by raw token value."""
+    thash = hash_token(raw_token)
+    return await models.EmailVerificationTokenDoc.find_one(models.EmailVerificationTokenDoc.token_hash == thash)
+
+
+async def mark_email_verification_token_used(token_doc: models.EmailVerificationTokenDoc) -> models.EmailVerificationTokenDoc:
+    """Mark an email verification token as used."""
+    token_doc.is_used = True
+    token_doc.used_at = datetime.utcnow()
+    await token_doc.save()
+    return token_doc
 
 
 # ──────────────────────────────────────────────

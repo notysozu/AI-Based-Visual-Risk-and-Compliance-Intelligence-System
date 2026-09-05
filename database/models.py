@@ -12,6 +12,13 @@ class UserDoc(Document):
     role: str = "professional"
     is_onboarded: int = 0
 
+    # Authentication & Security credentials
+    password_hash: Optional[str] = None
+    email_verified: bool = False
+    is_active: bool = True
+    status: str = "active"
+    updated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+
     # Profile details for forecasting
     age: int = 25
     retirement_goal_age: int = 60
@@ -57,6 +64,52 @@ class UserDoc(Document):
     @property
     def id_str(self) -> str:
         return str(self.id)
+
+
+class RefreshTokenDoc(Document):
+    """MongoDB Refresh Token tracking with family rotation and theft detection."""
+    user_id: str
+    token_hash: Indexed(str, unique=True)
+    token_family: Indexed(str)
+    is_revoked: bool = False
+    revoked_at: Optional[datetime] = None
+    revoked_by_ip: Optional[str] = None
+    device_info: Optional[str] = None
+    ip_address: Optional[str] = None
+    expires_at: datetime
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "refresh_tokens"
+        indexes = ["user_id", "token_hash", "token_family", "expires_at"]
+
+
+class PasswordResetTokenDoc(Document):
+    """MongoDB Single-use cryptographically random password reset tokens."""
+    user_id: str
+    token_hash: Indexed(str, unique=True)
+    is_used: bool = False
+    used_at: Optional[datetime] = None
+    expires_at: datetime
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "password_reset_tokens"
+        indexes = ["user_id", "token_hash", "expires_at"]
+
+
+class EmailVerificationTokenDoc(Document):
+    """MongoDB Single-use cryptographically random email verification tokens."""
+    user_id: str
+    token_hash: Indexed(str, unique=True)
+    is_used: bool = False
+    used_at: Optional[datetime] = None
+    expires_at: datetime
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "email_verification_tokens"
+        indexes = ["user_id", "token_hash", "expires_at"]
 
 
 class AppCacheDoc(Document):
@@ -167,3 +220,6 @@ UserSuggestion = UserSuggestionDoc
 ChatMessage = ChatMessageDoc
 ChatSession = ChatSessionDoc
 AppCache = AppCacheDoc
+RefreshToken = RefreshTokenDoc
+PasswordResetToken = PasswordResetTokenDoc
+EmailVerificationToken = EmailVerificationTokenDoc

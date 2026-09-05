@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017/digital_twin")
-DATABASE_NAME = os.getenv("DATABASE_NAME", "digital_twin")
+MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017/digital_twin_ai")
+DATABASE_NAME = os.getenv("DATABASE_NAME") or os.getenv("MONGODB_DB_NAME") or "digital_twin_ai"
 
 # Global Motor Client
 motor_client: AsyncIOMotorClient = None
@@ -28,7 +28,10 @@ async def init_mongodb():
         StudyRecordDoc,
         FinancialRecordDoc,
         UserSuggestionDoc,
-        AppCacheDoc
+        AppCacheDoc,
+        RefreshTokenDoc,
+        PasswordResetTokenDoc,
+        EmailVerificationTokenDoc
     )
 
     document_models = [
@@ -38,12 +41,15 @@ async def init_mongodb():
         StudyRecordDoc,
         FinancialRecordDoc,
         UserSuggestionDoc,
-        AppCacheDoc
+        AppCacheDoc,
+        RefreshTokenDoc,
+        PasswordResetTokenDoc,
+        EmailVerificationTokenDoc
     ]
 
     try:
-        # Attempt connection to configured MongoDB (Atlas or Local) with 2.5s timeout
-        client = AsyncIOMotorClient(MONGODB_URL, serverSelectionTimeoutMS=2500)
+        # Attempt connection to configured MongoDB (Atlas or Local) with 5.0s timeout
+        client = AsyncIOMotorClient(MONGODB_URL, serverSelectionTimeoutMS=5000)
         # Ping server to confirm live connection
         await client.admin.command("ping")
         motor_client = client

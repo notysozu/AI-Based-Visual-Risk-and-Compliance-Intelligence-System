@@ -51,6 +51,8 @@
 
 ## [07. Complete API Reference & Example Payloads](docs/api_reference.md)
 
+## [08. Authentication & Security Architecture (15 Principles)](docs/authentication_architecture.md)
+
 ---
 
 ## Step-by-Step Workflow

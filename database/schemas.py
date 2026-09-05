@@ -55,11 +55,27 @@ class UserBase(BaseModel):
     last_analytics_updated: Optional[str] = None
     last_study_plan: Optional[str] = None
     last_study_plan_updated: Optional[str] = None
+    email_verified: Optional[bool] = False
+    is_active: Optional[bool] = True
+    status: Optional[str] = "active"
+    updated_at: Optional[datetime] = None
 
 
 class UserCreate(UserBase):
-    pass
+    password: Optional[str] = None
+    password_hash: Optional[str] = None
 
+
+class UserRegisterRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    role: Optional[str] = "professional"
+
+
+class UserLoginCredentialsRequest(BaseModel):
+    identifier: str = Field(..., description="Username or Email")
+    password: str = Field(..., description="Plaintext password")
 
 
 class UserLoginRequest(BaseModel):
@@ -95,6 +111,9 @@ class UserUpdate(BaseModel):
     last_analytics_updated: Optional[str] = None
     last_study_plan: Optional[str] = None
     last_study_plan_updated: Optional[str] = None
+    email_verified: Optional[bool] = None
+    is_active: Optional[bool] = None
+    status: Optional[str] = None
 
 
 class UserResponse(MongoBaseModel, UserBase):
@@ -109,6 +128,36 @@ class UserResponse(MongoBaseModel, UserBase):
     last_analytics_updated: Optional[str] = None
     last_study_plan: Optional[str] = None
     last_study_plan_updated: Optional[str] = None
+
+
+# Authentication & Session Token Schemas
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int = 900
+    user: UserResponse
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: Optional[str] = None
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=8)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=8)
+
+
+class EmailVerifyRequest(BaseModel):
+    token: str
 
 
 # App Cache Schemas

@@ -11,7 +11,21 @@ flowchart TB
   subgraph Gateway["Visual Risk AI API Gateway (FastAPI)"]
     direction TB
     
-    subgraph UserSvc["User Lifecycle & Auth (/users)"]
+    subgraph AuthSecSvc["Authentication & Security (/auth)"]
+      A1["POST /auth/register (Bcrypt Registration & Tokens)"]
+      A2["POST /auth/login (JWT & HttpOnly Refresh Cookie)"]
+      A3["POST /auth/refresh (Rotation & Theft Detection)"]
+      A4["POST /auth/logout (Single Device Session Logout)"]
+      A5["POST /auth/logout-all (All-Device Session Revocation)"]
+      A6["GET /auth/me (Verified JWT Identity Profile)"]
+      A7["POST /auth/forgot-password (Enumeration-Safe Token Dispatch)"]
+      A8["POST /auth/reset-password (Password Reset & Session Invalidation)"]
+      A9["POST /auth/change-password (Authenticated Password Update)"]
+      A10["POST /auth/verify-email (Single-Use Email Verification)"]
+      A11["POST /auth/demo-login (Persona JWT Session Dispatch)"]
+    end
+
+    subgraph UserSvc["User Lifecycle & Profiles (/users)"]
       U1["POST /users/ (Register Unique Profile)"]
       U2["POST /users/login (Dual Identifier Login)"]
       U3["GET /users/{id} (Profile & Target Telemetry)"]
@@ -92,7 +106,288 @@ curl -X GET http://127.0.0.1:8000/health \
 
 ---
 
-### 2. User Registration — `POST /users/`
+## Authentication & Security Endpoints (`/auth`)
+
+---
+
+### 2. User Registration & Token Issuance — `POST /auth/register`
+
+Registers a new user account with bcrypt (12 rounds) password hashing. Returns a short-lived access token in the response payload and sets a long-lived HttpOnly refresh token cookie.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X POST http://127.0.0.1:8000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "alex_developer",
+    "email": "alex@example.com",
+    "password": "SuperSecretPassword123!",
+    "role": "professional"
+  }'
+```
+
+**Example Response (201 Created):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "expires_in": 900,
+  "user": {
+    "id": "6a9bfe9a0a0137f87f8fc425",
+    "username": "alex_developer",
+    "email": "alex@example.com",
+    "role": "professional",
+    "email_verified": false,
+    "is_active": true,
+    "status": "active"
+  }
+}
+```
+
+**Response Headers:**
+```http
+Set-Cookie: refresh_token=raw_token_string...; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800
+```
+
+</details>
+
+---
+
+### 3. User Login — `POST /auth/login`
+
+Authenticates credentials using constant-time bcrypt verification. Employs enumeration-safe error messages.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X POST http://127.0.0.1:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "identifier": "alex_developer",
+    "password": "SuperSecretPassword123!"
+  }'
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "expires_in": 900,
+  "user": {
+    "id": "6a9bfe9a0a0137f87f8fc425",
+    "username": "alex_developer",
+    "email": "alex@example.com",
+    "role": "professional"
+  }
+}
+```
+
+</details>
+
+---
+
+### 4. Refresh Access Token — `POST /auth/refresh`
+
+Exchanges an active refresh token for a fresh access token and rotates the refresh token. Includes automated theft detection with token family cascade revocation.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X POST http://127.0.0.1:8000/auth/refresh \
+  -H "Content-Type: application/json" \
+  --cookie "refresh_token=raw_token_string..."
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "expires_in": 900,
+  "user": {
+    "id": "6a9bfe9a0a0137f87f8fc425",
+    "username": "alex_developer"
+  }
+}
+```
+
+</details>
+
+---
+
+### 5. Single-Device Logout — `POST /auth/logout`
+
+Revokes the active refresh token for the calling device and clears the HttpOnly cookie.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X POST http://127.0.0.1:8000/auth/logout \
+  --cookie "refresh_token=raw_token_string..."
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "message": "Session logged out successfully."
+}
+```
+
+</details>
+
+---
+
+### 6. All-Device Logout — `POST /auth/logout-all`
+
+Revokes all active refresh tokens and sessions for the authenticated user across all devices.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X POST http://127.0.0.1:8000/auth/logout-all \
+  -H "Authorization: Bearer <access_token>"
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "message": "All active sessions (3) revoked successfully.",
+  "revoked_count": 3
+}
+```
+
+</details>
+
+---
+
+### 7. Get Authenticated User Profile — `GET /auth/me`
+
+Derives and returns user identity strictly from verified JWT claims.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X GET http://127.0.0.1:8000/auth/me \
+  -H "Authorization: Bearer <access_token>"
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "id": "6a9bfe9a0a0137f87f8fc425",
+  "username": "alex_developer",
+  "email": "alex@example.com",
+  "role": "professional",
+  "email_verified": true,
+  "is_active": true,
+  "status": "active"
+}
+```
+
+</details>
+
+---
+
+### 8. Forgot Password — `POST /auth/forgot-password`
+
+Dispatches a single-use 15-minute password reset token. Employs enumeration-safe responses.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X POST http://127.0.0.1:8000/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alex@example.com"
+  }'
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "message": "If an account matches this email, password reset instructions have been dispatched.",
+  "status": "dispatched"
+}
+```
+
+</details>
+
+---
+
+### 9. Reset Password — `POST /auth/reset-password`
+
+Consumes a single-use reset token, updates password hash with bcrypt, and invalidates all existing sessions across all devices.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X POST http://127.0.0.1:8000/auth/reset-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "48_byte_crypto_random_token_string",
+    "new_password": "BrandNewSecurePassword456!"
+  }'
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "message": "Password reset successfully. All active device sessions have been revoked for security."
+}
+```
+
+</details>
+
+---
+
+### 10. Change Password — `POST /auth/change-password`
+
+Updates password while authenticated and invalidates all other active sessions.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X POST http://127.0.0.1:8000/auth/change-password \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "current_password": "CurrentPassword123!",
+    "new_password": "UpdatedPassword456!"
+  }'
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "message": "Password changed successfully. All previous sessions invalidated."
+}
+```
+
+</details>
+
+---
+
+### 11. User Profile Creation — `POST /users/`
 
 Registers a new user profile, validating that both username and email are unique across the database.
 
