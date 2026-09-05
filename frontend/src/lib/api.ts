@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8001";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 async function request(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -179,8 +179,8 @@ export function resetSuggestionsApi(userId: string | number) {
 // --- Conversational Twin Chat APIs ---
 
 export interface ChatSessionData {
-  id: number;
-  user_id: number;
+  id: string | number;
+  user_id: string | number;
   title: string;
   created_at: string;
   updated_at: string;
@@ -189,8 +189,8 @@ export interface ChatSessionData {
 }
 
 export interface ChatMessageData {
-  id: number;
-  session_id: number;
+  id: string | number;
+  session_id: string | number;
   role: "user" | "assistant" | "system";
   content: string;
   action_type?: string;
@@ -206,61 +206,61 @@ export function getChatSessions(userId: string | number): Promise<ChatSessionDat
 export function createChatSession(userId: string | number, payload: { title?: string } = {}): Promise<ChatSessionData> {
   return request(`/chat/sessions/${userId}`, {
     method: "POST",
-    body: JSON.stringify({ user_id: Number(userId), title: payload.title || "New Conversation" }),
+    body: JSON.stringify({ user_id: String(userId), title: payload.title || "New Conversation" }),
   });
 }
 
-export function deleteChatSession(sessionId: number, userId?: number): Promise<{ message: string; session_id: number }> {
-  const q = userId ? `?user_id=${userId}` : "";
+export function deleteChatSession(sessionId: string | number, userId?: string | number): Promise<{ message: string; session_id: string | number }> {
+  const q = userId !== undefined ? `?user_id=${userId}` : "";
   return request(`/chat/sessions/${sessionId}${q}`, {
     method: "DELETE",
   });
 }
 
-export function getChatMessages(sessionId: number, userId?: number): Promise<ChatMessageData[]> {
-  const q = userId ? `?user_id=${userId}` : "";
+export function getChatMessages(sessionId: string | number, userId?: string | number): Promise<ChatMessageData[]> {
+  const q = userId !== undefined ? `?user_id=${userId}` : "";
   return request(`/chat/messages/${sessionId}${q}`);
 }
 
 export function sendChatMessage(
-  sessionId: number,
-  payload: { user_id: number; prompt: string; think_mode?: boolean; client_context?: Record<string, unknown> }
+  sessionId: string | number,
+  payload: { user_id: string | number; prompt: string; think_mode?: boolean; client_context?: Record<string, unknown> }
 ): Promise<{ user_message: ChatMessageData; assistant_message: ChatMessageData }> {
   return request(`/chat/message/${sessionId}`, {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, user_id: String(payload.user_id) }),
   });
 }
 
 export function createThreadAndSendMessage(payload: {
-  user_id: number;
+  user_id: string | number;
   prompt: string;
   think_mode?: boolean;
   client_context?: Record<string, unknown>;
 }): Promise<{ session: ChatSessionData; user_message: ChatMessageData; assistant_message: ChatMessageData }> {
   return request(`/chat/message/create_thread`, {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, user_id: String(payload.user_id) }),
   });
 }
 
 export function executeChatAction(
-  messageId: number,
-  payload: { user_id: number; action_type: string; action_payload: Record<string, unknown> }
-): Promise<{ status: string; message_id: number; action_type: string; action_status: string; result?: Record<string, unknown> }> {
+  messageId: string | number,
+  payload: { user_id: string | number; action_type: string; action_payload: Record<string, unknown> }
+): Promise<{ status: string; message_id: string | number; action_type: string; action_status: string; result?: Record<string, unknown> }> {
   return request(`/chat/action/execute/${messageId}`, {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, user_id: String(payload.user_id) }),
   });
 }
 
 export function rejectChatAction(
-  messageId: number,
-  payload: { user_id: number }
-): Promise<{ status: string; message_id: number; action_status: string }> {
+  messageId: string | number,
+  payload: { user_id: string | number }
+): Promise<{ status: string; message_id: string | number; action_status: string }> {
   return request(`/chat/action/reject/${messageId}`, {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, user_id: String(payload.user_id) }),
   });
 }
 

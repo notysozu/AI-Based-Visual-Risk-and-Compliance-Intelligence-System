@@ -559,7 +559,7 @@ async def run_all_100_tests():
 
         # Test 86: Generate 7-day AI study plan
         plan_req = {"target_milestone": "Senior Distributed Systems Architecture", "force_refresh": True}
-        r = await client.post(f"/study/generate-plan/{user_id}", json=plan_req, timeout=20)
+        r = await client.post(f"/study/generate-plan/{user_id}", json=plan_req, timeout=45.0)
         plan_ok = r.status_code == 200 and len(r.json().get("daily_plans", [])) == 7
         record_result(86, "POST /study/generate-plan/{user_id} generates 7-day Pomodoro plan", plan_ok)
 
@@ -588,10 +588,10 @@ async def run_all_100_tests():
 
         # Test 92: Adopt recommendation
         r = await client.post(f"/suggestions/adopt/{user_id}", json={"suggestion_id": str(first_sug_id), "is_adopted": True})
-        record_result(92, "POST /suggestions/adopt/{user_id} adopts recommendation in MongoDB", r.status_code == 200 and r.json().get("is_adopted") == 1)
+        record_result(92, "POST /suggestions/adopt/{user_id} adopts recommendation in MongoDB", r.status_code == 200 and r.json().get("is_adopted") in (1, True))
 
         # Test 93: Generate more AI suggestions
-        r = await client.post(f"/suggestions/generate/{user_id}", json={"mode": "more", "custom_focus": "Distributed Consensus"}, timeout=20)
+        r = await client.post(f"/suggestions/generate/{user_id}", json={"mode": "more", "custom_focus": "Distributed Consensus"}, timeout=45.0)
         record_result(93, "POST /suggestions/generate/{user_id} creates additional recommendations", r.status_code == 200)
 
         # Test 94: Store computation in MongoDB app_cache

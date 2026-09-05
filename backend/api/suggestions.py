@@ -40,17 +40,18 @@ async def get_user_suggestions(user_id: str):
     """Retrieve all saved suggestions for a user from MongoDB, initializing defaults if none exist."""
     user = await crud.get_user(user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        user = await crud.get_or_create_demo_user("professional")
 
-    items = await crud.get_user_suggestions(user_id)
+    u_id_str = str(user.id)
+    items = await crud.get_user_suggestions(u_id_str)
     if not items:
-        items = await crud.reset_user_suggestions(user_id, user.role or "professional")
+        items = await crud.reset_user_suggestions(u_id_str, user.role or "professional")
 
     baseline = await get_user_baseline_metrics(user)
     diagnostic = f"Analyzed {user.role.capitalize()} profile · Sleep: {baseline['sleep']:.1f}h · Screen: {baseline['screen']:.1f}h · Focus: {baseline['study']:.1f}h/day"
 
     return schemas.SuggestionsListResponse(
-        user_id=str(user.id),
+        user_id=u_id_str,
         role=user.role or "professional",
         lifestyle_diagnostic=diagnostic,
         suggestions=[
@@ -82,10 +83,11 @@ async def generate_suggestions(
     """
     user = await crud.get_user(user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        user = await crud.get_or_create_demo_user("professional")
 
+    u_id_str = str(user.id)
     user_info = {
-        "id": str(user.id),
+        "id": u_id_str,
         "username": user.username,
         "role": user.role or "professional",
         "age": user.age or 25,
@@ -97,7 +99,7 @@ async def generate_suggestions(
     }
 
     baseline = await get_user_baseline_metrics(user)
-    existing_records = await crud.get_user_suggestions(user_id)
+    existing_records = await crud.get_user_suggestions(u_id_str)
     existing_items = [
         {"title": s.title, "category": s.category, "suggestion_id": s.suggestion_id}
         for s in existing_records
@@ -113,16 +115,15 @@ async def generate_suggestions(
 
     new_suggestions = ai_result.get("suggestions", [])
     if req.mode == "regenerate":
-        u_id_str = str(user.id)
         await models.UserSuggestionDoc.find(models.UserSuggestionDoc.user_id == u_id_str).delete()
 
     for item in new_suggestions:
-        await crud.create_user_suggestion(user_id, item)
+        await crud.create_user_suggestion(u_id_str, item)
 
-    all_current = await crud.get_user_suggestions(user_id)
+    all_current = await crud.get_user_suggestions(u_id_str)
 
     return schemas.SuggestionsListResponse(
-        user_id=str(user.id),
+        user_id=u_id_str,
         role=user.role or "professional",
         lifestyle_diagnostic=ai_result.get("diagnostic"),
         suggestions=[
@@ -152,9 +153,10 @@ async def toggle_adopt_suggestion(
     """Toggle or set the adopted status of a suggestion in MongoDB."""
     user = await crud.get_user(user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        user = await crud.get_or_create_demo_user("professional")
 
-    updated = await crud.adopt_user_suggestion(user_id, req.suggestion_id, req.is_adopted)
+    u_id_str = str(user.id)
+    updated = await crud.adopt_user_suggestion(u_id_str, req.suggestion_id, req.is_adopted)
     if not updated:
         raise HTTPException(status_code=404, detail="Suggestion not found")
 
@@ -178,12 +180,13 @@ async def reset_suggestions(user_id: str):
     """Reset user suggestions to role defaults in MongoDB."""
     user = await crud.get_user(user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        user = await crud.get_or_create_demo_user("professional")
 
-    items = await crud.reset_user_suggestions(user_id, user.role or "professional")
+    u_id_str = str(user.id)
+    items = await crud.reset_user_suggestions(u_id_str, user.role or "professional")
 
     return schemas.SuggestionsListResponse(
-        user_id=str(user.id),
+        user_id=u_id_str,
         role=user.role or "professional",
         lifestyle_diagnostic=f"Reset to default {user.role.capitalize()} baseline templates.",
         suggestions=[

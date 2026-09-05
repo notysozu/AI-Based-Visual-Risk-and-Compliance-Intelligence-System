@@ -57,7 +57,7 @@ export function AppShell({
 
   // Chat sessions for sidebar
   const [sidebarSessions, setSidebarSessions] = useState<ChatSessionData[]>([]);
-  const userId = state.profile.id ?? 1;
+  const userId = state.profile.id ?? "default";
 
   // Real-time network connection detector
   const [isOnline, setIsOnline] = useState<boolean>(() => {
@@ -113,16 +113,16 @@ export function AppShell({
     navigate({ to: "/chat" });
   };
 
-  const handleSelectThread = (sessionId: number) => {
+  const handleSelectThread = (sessionId: string | number) => {
     window.dispatchEvent(new CustomEvent("twin-switch-chat-session", { detail: { sessionId } }));
     navigate({ to: "/chat" });
   };
 
-  const handleDeleteThread = async (sessionId: number, e: React.MouseEvent) => {
+  const handleDeleteThread = async (sessionId: string | number, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     try {
-      await deleteChatSession(sessionId, Number(userId));
+      await deleteChatSession(sessionId, userId);
       setSidebarSessions((prev) => prev.filter((s) => s.id !== sessionId));
       toast.success("Thread deleted");
       window.dispatchEvent(new Event("chat-sessions-updated"));

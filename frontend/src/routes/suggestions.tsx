@@ -45,7 +45,7 @@ export const Route = createFileRoute("/suggestions")({
 });
 
 interface SuggestionItemData {
-  id?: number;
+  id?: string | number;
   suggestion_id: string;
   title: string;
   category: string;
@@ -80,7 +80,7 @@ function SuggestionsPage() {
 
   const base = baseline(state.logs);
   const cfg = getRoleConfig(state.profile.role);
-  const userId = state.profile.id ?? 1;
+  const userId = state.profile.id ?? "default";
 
   // Load initial suggestions from database or fallback to local role templates
   useEffect(() => {

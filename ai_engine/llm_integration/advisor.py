@@ -203,7 +203,7 @@ User Telemetry Baseline:
                     messages=messages_payload,
                     temperature=0.6,
                     max_tokens=4096,
-                    timeout=30.0
+                    timeout=8.0
                 )
                 ai_reply = resp.choices[0].message.content.strip()
                 if ai_reply:

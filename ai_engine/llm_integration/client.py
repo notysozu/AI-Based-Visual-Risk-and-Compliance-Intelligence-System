@@ -4,10 +4,10 @@ from groq import Groq
 from dotenv import load_dotenv
 
 AVAILABLE_GROQ_MODELS: List[str] = [
-    "openai/gpt-oss-120b",
-    "openai/gpt-oss-20b",
-    "qwen/qwen3.6-27b",
-    "groq/compound"
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "llama3-70b-8192",
+    "mixtral-8x7b-32768"
 ]
 
 

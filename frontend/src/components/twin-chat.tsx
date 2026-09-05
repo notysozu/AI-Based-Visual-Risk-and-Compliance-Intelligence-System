@@ -97,19 +97,19 @@ export function TwinChat({
 }: {
   fullHeight?: boolean;
   className?: string;
-  selectedSessionId?: number;
+  selectedSessionId?: string | number;
 } = {}) {
   const navigate = useNavigate();
   const { state, addTask, addTxn, logHabitActivity, logStudyActivity, updateProfile, saveScenarioPresets } = useTwin();
-  const userId = state.profile.id ?? 1;
+  const userId = state.profile.id ?? "default";
 
   const [sessions, setSessions] = useState<ChatSessionData[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<number | null>(selectedSessionId ?? null);
+  const [activeSessionId, setActiveSessionId] = useState<string | number | null>(selectedSessionId ?? null);
   const [messages, setMessages] = useState<ChatMessageData[]>([]);
   const [inputPrompt, setInputPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [copiedId, setCopiedId] = useState<string | number | null>(null);
   const [isThinkMode, setIsThinkMode] = useState(true);
   const [isListening, setIsListening] = useState(false);
 
@@ -206,9 +206,9 @@ export function TwinChat({
     }
   };
 
-  const loadMessages = async (sessionId: number) => {
+  const loadMessages = async (sessionId: string | number) => {
     try {
-      const data = await getChatMessages(sessionId, Number(userId));
+      const data = await getChatMessages(sessionId, userId);
       setMessages(data);
       prevMsgCountRef.current = data.length;
     } catch (err) {
@@ -216,7 +216,7 @@ export function TwinChat({
     }
   };
 
-  const handleCopyMessage = (id: number, text: string) => {
+  const handleCopyMessage = (id: string | number, text: string) => {
     const cleanText = text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
     navigator.clipboard.writeText(cleanText);
     setCopiedId(id);
@@ -321,7 +321,7 @@ export function TwinChat({
       // Case A: Draft mode (no active session yet)
       if (!activeSessionId) {
         const res = await createThreadAndSendMessage({
-          user_id: Number(userId),
+          user_id: userId,
           prompt: promptToSend,
           think_mode: isThinkMode,
           client_context: clientContext
@@ -334,7 +334,7 @@ export function TwinChat({
       } else {
         // Case B: Existing session
         const res = await sendChatMessage(activeSessionId, {
-          user_id: Number(userId),
+          user_id: userId,
           prompt: promptToSend,
           think_mode: isThinkMode,
           client_context: clientContext
@@ -365,7 +365,7 @@ export function TwinChat({
       const payload = JSON.parse(msg.action_payload);
       
       await executeChatAction(msg.id, {
-        user_id: Number(userId),
+        user_id: userId,
         action_type: msg.action_type,
         action_payload: payload
       });
@@ -438,7 +438,7 @@ export function TwinChat({
   const handleActionRejection = async (msg: ChatMessageData) => {
     isActionUpdatingRef.current = true;
     try {
-      await rejectChatAction(msg.id, { user_id: Number(userId) });
+      await rejectChatAction(msg.id, { user_id: userId });
       setMessages((prev) =>
         prev.map((m) => (m.id === msg.id ? { ...m, action_status: "rejected" } : m))
       );
@@ -451,11 +451,11 @@ export function TwinChat({
   const activeSession = sessions.find((s) => s.id === activeSessionId);
   const isConversationEmpty = messages.length === 0;
 
-  const handleDeleteSession = async (sessionId: number, e: React.MouseEvent) => {
+  const handleDeleteSession = async (sessionId: string | number, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     try {
-      await deleteChatSession(sessionId, Number(userId));
+      await deleteChatSession(sessionId, userId);
       setSessions((prev) => prev.filter((s) => s.id !== sessionId));
       if (activeSessionId === sessionId) {
         setActiveSessionId(null);
@@ -475,7 +475,7 @@ export function TwinChat({
     setInputPrompt("");
   };
 
-  const handleSelectSession = (sessionId: number) => {
+  const handleSelectSession = (sessionId: string | number) => {
     setActiveSessionId(sessionId);
     loadMessages(sessionId);
   };

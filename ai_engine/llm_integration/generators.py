@@ -256,7 +256,16 @@ def generate_optimized_study_plan(user_info: Dict[str, Any], study_summary: Dict
     Generates a structured 7-day academic study plan conforming to schemas.StudyPlanResponse.
     """
     target = target_milestone or "Core Mastery & Exam Readiness"
-    subjects = study_summary.get("subjects") or ["Machine Learning", "Linear Algebra", "Data Structures"]
+    raw_subjects = study_summary.get("subjects") or ["Machine Learning", "Linear Algebra", "Data Structures"]
+    subjects = []
+    for s in raw_subjects:
+        if isinstance(s, dict):
+            subj_name = s.get("subject") or s.get("name")
+            if subj_name and str(subj_name) not in subjects:
+                subjects.append(str(subj_name))
+        elif isinstance(s, str) and s.strip():
+            if s.strip() not in subjects:
+                subjects.append(s.strip())
     if not subjects:
         subjects = ["Core Curriculum", "Applied Problem Solving"]
 
@@ -299,8 +308,8 @@ Return ONLY valid JSON matching this schema:
                         model=model,
                         messages=[{"role": "user", "content": prompt}],
                         temperature=0.5,
-                        max_tokens=4000,
-                        timeout=20.0
+                        max_tokens=2500,
+                        timeout=6.0
                     )
                     content = resp.choices[0].message.content.strip()
                     if content.startswith("```json"):

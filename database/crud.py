@@ -21,15 +21,37 @@ def _to_object_id(val: Any) -> Optional[ObjectId]:
 # User Operations
 # ──────────────────────────────────────────────
 
-async def get_user(user_id: Union[str, int, ObjectId]) -> Optional[models.UserDoc]:
-    """Retrieve user by MongoDB ObjectId or username fallback."""
-    oid = _to_object_id(user_id)
+async def get_user(user_id: Union[str, int, ObjectId, None]) -> Optional[models.UserDoc]:
+    """Retrieve user by MongoDB ObjectId or username fallback, with guest/demo fallback."""
+    if not user_id:
+        user = await models.UserDoc.find_one(models.UserDoc.username == "default_twin")
+        if user:
+            return user
+        return await get_or_create_demo_user("professional")
+
+    s_val = str(user_id).strip()
+    if s_val in ("1", "default", "default_twin", "0", "guest", "null", "undefined", ""):
+        user = await models.UserDoc.find_one(models.UserDoc.username == "default_twin")
+        if user:
+            return user
+        return await get_or_create_demo_user("professional")
+
+    oid = _to_object_id(s_val)
     if oid:
         user = await models.UserDoc.get(oid)
         if user:
             return user
+
     # Fallback search by username
-    return await models.UserDoc.find_one(models.UserDoc.username == str(user_id))
+    user = await models.UserDoc.find_one(models.UserDoc.username == s_val)
+    if user:
+        return user
+
+    # If numeric or short id not found, fallback to default demo user
+    if s_val.isdigit() or len(s_val) < 5:
+        return await get_or_create_demo_user("professional")
+
+    return None
 
 
 async def get_user_by_username(username: str) -> Optional[models.UserDoc]:
