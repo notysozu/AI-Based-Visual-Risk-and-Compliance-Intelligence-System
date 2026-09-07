@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Activity,
+  GaugeCircle,
   GraduationCap,
   LayoutGrid,
   ListChecks,
@@ -169,8 +170,8 @@ export function AppShell({
         {/* Brand Header: Logo + Title + Collapse Toggle (Hidden when collapsed) */}
         <div className={`flex h-16 items-center border-b border-border/40 shrink-0 ${collapsed ? "justify-center px-0" : "justify-between px-3.5"}`}>
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0071E3] via-indigo-600 to-purple-600 text-white shadow-[0_4px_14px_rgba(0,113,227,0.35)] shrink-0">
-              <Sparkles className="h-4 w-4 shrink-0" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 text-white shadow-[0_4px_14px_rgba(99,102,241,0.4)] shrink-0">
+              <GaugeCircle className="h-5 w-5 shrink-0" />
             </div>
             {!collapsed && (
               <div className="flex items-center gap-1.5 font-display text-sm font-bold tracking-tight truncate">
@@ -459,8 +460,8 @@ export function AppShell({
             {/* Drawer Brand Header */}
             <div className="flex h-16 items-center justify-between border-b border-border/40 px-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0071E3] via-indigo-600 to-purple-600 text-white shadow-xs">
-                  <Sparkles className="h-4 w-4" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 text-white shadow-xs">
+                  <GaugeCircle className="h-4 w-4" />
                 </div>
                 <div className="flex items-center gap-1.5 font-display text-sm font-bold">
                   <span>Visual Risk</span>
