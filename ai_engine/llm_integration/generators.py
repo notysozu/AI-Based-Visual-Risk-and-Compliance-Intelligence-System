@@ -1,6 +1,6 @@
 import json
 from typing import Dict, Any, List, Optional
-from .client import get_groq_client, AVAILABLE_GROQ_MODELS
+from .client import get_groq_client, AVAILABLE_GROQ_MODELS, get_active_groq_models
 
 
 def generate_digital_twin_advice(user: Dict[str, Any], baseline: Dict[str, Any], sim_results: Dict[str, Any]) -> str:
@@ -24,7 +24,7 @@ Include a structured Markdown table comparing:
 - Key Tradeoffs: {json.dumps(tradeoffs)}
 Provide clean bullet points and a concise strategic verdict in Markdown without emojis."""
 
-            for model in AVAILABLE_GROQ_MODELS:
+            for model in get_active_groq_models(client):
                 try:
                     resp = client.chat.completions.create(
                         model=model,
@@ -70,7 +70,7 @@ def generate_scenario_suggestions(user: Dict[str, Any], baseline: Dict[str, Any]
 Current Baseline: Sleep {baseline.get('sleep_hours', 7.5)}h/day, Study {baseline.get('study_hours_week', 10)}h/wk, Monthly Savings ${user.get('monthly_income', 5000) - user.get('monthly_expenses', 2900):,.2f}.
 Return ONLY a valid JSON array of 2 objects with keys: name, description, savings_delta, sleep_delta, study_delta."""
 
-            for model in AVAILABLE_GROQ_MODELS:
+            for model in get_active_groq_models(client):
                 try:
                     resp = client.chat.completions.create(
                         model=model,
@@ -138,7 +138,7 @@ def generate_analytics_summary(user: Dict[str, Any], baseline: Any) -> str:
 - Target Net Worth: ${user.get('target_net_worth', 1000000.0):,.2f}
 Provide clean, professional insights in Markdown without emojis."""
 
-            for model in AVAILABLE_GROQ_MODELS:
+            for model in get_active_groq_models(client):
                 try:
                     resp = client.chat.completions.create(
                         model=model,
@@ -233,7 +233,7 @@ def generate_wealth_advice(*args, **kwargs) -> str:
 - Probability of Reaching Target (${target_nw:,.2f}): {prob}%
 Include a clean Markdown table summarizing the percentiles and give 2-3 concise paragraphs with asset allocation advice without emojis."""
 
-            for model in AVAILABLE_GROQ_MODELS:
+            for model in get_active_groq_models(client):
                 try:
                     resp = client.chat.completions.create(
                         model=model,
@@ -302,7 +302,7 @@ Return ONLY valid JSON matching this schema:
     }}
   ]
 }}"""
-            for model in AVAILABLE_GROQ_MODELS:
+            for model in get_active_groq_models(client):
                 try:
                     resp = client.chat.completions.create(
                         model=model,
@@ -434,7 +434,7 @@ Return ONLY valid JSON matching this schema:
 }}
 Category must be one of: Focus, Vitality, Finance, Study, Leisure, Habits.
 """
-            for model in AVAILABLE_GROQ_MODELS:
+            for model in get_active_groq_models(client):
                 try:
                     resp = client.chat.completions.create(
                         model=model,

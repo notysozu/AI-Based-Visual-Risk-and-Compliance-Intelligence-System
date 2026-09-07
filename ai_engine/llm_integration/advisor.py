@@ -3,7 +3,7 @@ import json
 from typing import Dict, Any, List, Optional
 
 # Re-exports for 100% backwards compatibility
-from .client import get_groq_client, AVAILABLE_GROQ_MODELS
+from .client import get_groq_client, AVAILABLE_GROQ_MODELS, get_active_groq_models
 from .schedule_builder import build_smart_role_schedule
 from .generators import (
     generate_digital_twin_advice,
@@ -196,7 +196,7 @@ User Telemetry Baseline:
 
     ai_reply = None
     if client is not None:
-        for model in AVAILABLE_GROQ_MODELS:
+        for model in get_active_groq_models(client):
             try:
                 resp = client.chat.completions.create(
                     model=model,
