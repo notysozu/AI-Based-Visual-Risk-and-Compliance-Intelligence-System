@@ -12,13 +12,14 @@ def infer_task_category(title: str, text: str = "") -> str:
     if any(k in t_lower for k in [
         "workout", "gym", "exercise", "strength", "cardio", "hiit", "squat", "bench",
         "yoga", "stretch", "foam roll", "sleep", "nap", "walk", "vitality", "mobility",
-        "recovery", "health", "diet", "protein", "water", "nutrition", "fitness", "run", "bike"
+        "recovery", "health", "diet", "protein", "water", "nutrition", "fitness", "run", "bike",
+        "cold-shower", "breathwork", "shower"
     ]):
         return "Health"
     elif any(k in t_lower for k in [
         "study", "exam", "reading", "read", "lecture", "homework", "math", "course",
         "assignment", "revision", "flashcards", "spaced repetition", "quiz", "class",
-        "academic", "physics", "chemistry", "biology", "history", "algorithm"
+        "academic", "physics", "chemistry", "biology", "history", "algorithm", "learning"
     ]):
         return "Study"
     elif any(k in t_lower for k in [
@@ -27,12 +28,14 @@ def infer_task_category(title: str, text: str = "") -> str:
     ]):
         return "Money"
     elif any(k in t_lower for k in [
-        "routine", "meditation", "journal", "cleanup", "wind-down", "morning routine", "evening routine"
+        "routine", "meditation", "journal", "cleanup", "wind-down", "morning routine", "evening routine",
+        "curfew", "bedtime", "prep"
     ]):
         return "Routine"
     elif any(k in t_lower for k in [
         "work", "sprint", "client", "code", "architecture", "sync", "meeting", "review",
-        "strategy", "deliverable", "project", "deploy", "design", "deep work", "refactor"
+        "strategy", "deliverable", "project", "deploy", "design", "deep work", "refactor",
+        "outreach", "networking", "email"
     ]):
         return "Work"
 
@@ -41,13 +44,14 @@ def infer_task_category(title: str, text: str = "") -> str:
     if any(k in combined for k in [
         "workout", "gym", "exercise", "strength", "cardio", "hiit", "squat", "bench",
         "yoga", "stretch", "foam roll", "sleep", "nap", "walk", "vitality", "mobility",
-        "recovery", "health", "diet", "protein", "water", "nutrition", "fitness", "run", "bike"
+        "recovery", "health", "diet", "protein", "water", "nutrition", "fitness", "run", "bike",
+        "cold-shower", "breathwork"
     ]):
         return "Health"
     elif any(k in combined for k in [
         "study", "exam", "reading", "read", "lecture", "homework", "math", "course",
         "assignment", "revision", "flashcards", "spaced repetition", "quiz", "class",
-        "academic", "physics", "chemistry", "biology", "history", "algorithm"
+        "academic", "physics", "chemistry", "biology", "history", "algorithm", "learning"
     ]):
         return "Study"
     elif any(k in combined for k in [
@@ -96,6 +100,51 @@ def _extract_duration_minutes(val: str, default: int = 45) -> int:
     return default
 
 
+def _parse_time_to_minutes(time_str: str) -> Optional[int]:
+    """Convert time string e.g. '06:30', '7:00 PM', '14:00', '9am' to minutes from midnight."""
+    if not time_str:
+        return None
+    clean = _clean_markdown_text(time_str).upper().replace(" ", "")
+    is_pm = "PM" in clean
+    is_am = "AM" in clean
+    clean = clean.replace("AM", "").replace("PM", "")
+    
+    parts = clean.split(":")
+    try:
+        if len(parts) == 2:
+            hh, mm = int(parts[0]), int(parts[1])
+        elif len(parts) == 1 and parts[0].isdigit():
+            hh, mm = int(parts[0]), 0
+        else:
+            return None
+        
+        if is_pm and hh < 12:
+            hh += 12
+        elif is_am and hh == 12:
+            hh = 0
+            
+        return hh * 60 + mm
+    except Exception:
+        return None
+
+
+def _calculate_duration_from_range(start_str: str, end_str: str, default: int = 45) -> int:
+    """Calculate duration in minutes between two timestamp strings."""
+    m1 = _parse_time_to_minutes(start_str)
+    m2 = _parse_time_to_minutes(end_str)
+    if m1 is not None and m2 is not None:
+        if m2 > m1:
+            diff = m2 - m1
+            if 5 <= diff <= 600:
+                return diff
+        elif m2 < m1:
+            # Spans midnight
+            diff = (1440 - m1) + m2
+            if 5 <= diff <= 600:
+                return diff
+    return default
+
+
 def _extract_time_slot(val: str, fallback_idx: int) -> str:
     """Extract standard HH:MM time slot from cell string or fallback to default schedule."""
     if val:
@@ -132,15 +181,28 @@ def _extract_time_slot(val: str, fallback_idx: int) -> str:
 
 def parse_schedule_tasks_from_text(text: str, default_category: str = "Work") -> List[Dict[str, Any]]:
     """
-    Parses Markdown tables or bulleted lists in assistant responses into structured task dictionaries.
+    Parses Markdown tables, timestamp lines, or bulleted lists in assistant responses
+    into structured task dictionaries for the Daily Planner.
     """
     if not text:
         return []
 
+    # Strategy 1: Markdown table rows
     tasks = parse_markdown_table_rows(text, default_category)
     if tasks:
         return tasks
 
+    # Strategy 2: Timestamp-prefixed lines (e.g. 06:30 – 07:00 – Cold-shower + 5-min breathwork)
+    tasks = parse_timestamp_lines(text, default_category)
+    if tasks:
+        return tasks
+
+    # Strategy 3: Duration-labeled task items (e.g. Micro-Workout Blitz (15 min) – 3 rounds...)
+    tasks = parse_duration_labeled_items(text, default_category)
+    if tasks:
+        return tasks
+
+    # Strategy 4: Standard bullet or numbered list
     return parse_bullet_tasks(text, default_category)
 
 
@@ -243,6 +305,145 @@ def parse_markdown_table_rows(text: str, default_category: str = "Work") -> List
     return extracted_tasks
 
 
+def parse_timestamp_lines(text: str, default_category: str = "Work") -> List[Dict[str, Any]]:
+    """
+    Extracts structured tasks from lines with timestamp ranges (e.g. 06:30 – 07:00 – Cold-shower + 5-min breathwork)
+    or single timestamps (e.g. 09:00 - Deep Work Sprint).
+    """
+    lines = [line.strip() for line in text.split("\n") if line.strip()]
+    extracted_tasks = []
+    task_idx = 0
+
+    range_pattern = re.compile(
+        r"^(?:[-*•\d\.\)]\s*)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:–|-|—|to)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:–|-|—|:)?\s*(.+)$",
+        re.IGNORECASE
+    )
+    single_pattern = re.compile(
+        r"^(?:[-*•\d\.\)]\s*)?(\d{1,2}:\d{2}\s*(?:am|pm)?)\s*(?:–|-|—|:)\s*(.+)$",
+        re.IGNORECASE
+    )
+
+    for line in lines:
+        clean_line = _clean_markdown_text(line)
+        
+        # Check range pattern first
+        m_range = range_pattern.match(clean_line)
+        if m_range:
+            t1, t2, rest = m_range.group(1), m_range.group(2), m_range.group(3).strip()
+            start_time = _extract_time_slot(t1, task_idx)
+            duration_mins = _calculate_duration_from_range(t1, t2)
+            
+            # Extract category tag if explicitly present e.g. (Category: Health)
+            cat_match = re.search(r"\(Category:\s*([a-zA-Z]+)\)", rest, flags=re.IGNORECASE)
+            if cat_match:
+                category = cat_match.group(1).title()
+                rest = re.sub(r"\(Category:\s*[a-zA-Z]+\)", "", rest, flags=re.IGNORECASE).strip()
+            else:
+                category = infer_task_category(rest, text[:200])
+
+            # Extract title & impact
+            title_clean = re.sub(r"^[-–—:\s]+", "", rest).strip()
+            if not title_clean or len(title_clean) < 3:
+                continue
+
+            impact_desc = "+1.4 Vitality & Health" if category == "Health" else ("+1.2 Cognitive Focus" if category in ["Work", "Study"] else "+1.0 Routine Flow")
+
+            extracted_tasks.append({
+                "title": title_clean[:55],
+                "start": start_time,
+                "minutes": duration_mins,
+                "category": category,
+                "impact": impact_desc
+            })
+            task_idx += 1
+            continue
+
+        # Check single timestamp pattern
+        m_single = single_pattern.match(clean_line)
+        if m_single:
+            t1, rest = m_single.group(1), m_single.group(2).strip()
+            start_time = _extract_time_slot(t1, task_idx)
+            duration_mins = _extract_duration_minutes(rest, 45)
+
+            cat_match = re.search(r"\(Category:\s*([a-zA-Z]+)\)", rest, flags=re.IGNORECASE)
+            if cat_match:
+                category = cat_match.group(1).title()
+                rest = re.sub(r"\(Category:\s*[a-zA-Z]+\)", "", rest, flags=re.IGNORECASE).strip()
+            else:
+                category = infer_task_category(rest, text[:200])
+
+            title_clean = re.sub(r"^[-–—:\s]+", "", rest).strip()
+            if not title_clean or len(title_clean) < 3:
+                continue
+
+            impact_desc = "+1.4 Vitality & Health" if category == "Health" else ("+1.2 Cognitive Focus" if category in ["Work", "Study"] else "+1.0 Routine Flow")
+
+            extracted_tasks.append({
+                "title": title_clean[:55],
+                "start": start_time,
+                "minutes": duration_mins,
+                "category": category,
+                "impact": impact_desc
+            })
+            task_idx += 1
+
+    return extracted_tasks
+
+
+def parse_duration_labeled_items(text: str, default_category: str = "Work") -> List[Dict[str, Any]]:
+    """
+    Extracts structured tasks from duration-annotated named items (e.g. Micro-Workout Blitz (15 min) – 3 rounds...).
+    """
+    lines = [line.strip() for line in text.split("\n") if line.strip()]
+    extracted_tasks = []
+    task_idx = 0
+
+    item_pattern = re.compile(
+        r"^(?:[-*•\d\.\)]\s*)?([^\n\(]+?)\s*\(\s*(\d+(?:\.\d+)?)\s*(?:min|mins|minutes|m|hours?|hrs?|h)\s*\)\s*(?:–|-|—|:)?\s*(.*)$",
+        re.IGNORECASE
+    )
+
+    for line in lines:
+        clean_line = _clean_markdown_text(line)
+        m = item_pattern.match(clean_line)
+        if not m:
+            continue
+
+        raw_title = m.group(1).strip()
+        dur_val = m.group(2).strip()
+        rest = m.group(3).strip()
+
+        if len(raw_title) < 3 or raw_title.lower() in ["pick", "here", "let", "reply"]:
+            continue
+
+        duration_mins = _extract_duration_minutes(dur_val, 45)
+        start_time = DEFAULT_TIME_SLOTS[task_idx % len(DEFAULT_TIME_SLOTS)]
+
+        cat_match = re.search(r"\(Category:\s*([a-zA-Z]+)\)", rest, flags=re.IGNORECASE)
+        if cat_match:
+            category = cat_match.group(1).title()
+            rest = re.sub(r"\(Category:\s*[a-zA-Z]+\)", "", rest, flags=re.IGNORECASE).strip()
+        else:
+            category = infer_task_category(raw_title, f"{rest} {text[:200]}")
+
+        full_title = raw_title
+        if rest and len(rest) < 35 and rest.lower() not in raw_title.lower():
+            full_title = f"{raw_title}: {rest}"
+
+        impact_desc = "+1.4 Vitality & Health" if category == "Health" else ("+1.2 Cognitive Focus" if category in ["Work", "Study"] else "+1.0 Focus")
+
+        extracted_tasks.append({
+            "title": full_title[:55],
+            "start": start_time,
+            "minutes": duration_mins,
+            "category": category,
+            "impact": impact_desc
+        })
+        task_idx += 1
+
+    return extracted_tasks
+
+
 def parse_bullet_tasks(text: str, default_category: str = "Work") -> List[Dict[str, Any]]:
     """
     Extracts structured tasks from numbered or bulleted list items.
@@ -253,7 +454,7 @@ def parse_bullet_tasks(text: str, default_category: str = "Work") -> List[Dict[s
 
     for line in lines:
         # Match lines like: - 09:00: Deep Work Sprint (90m) or 1. [Health] Morning Cardio at 07:30 (45 mins)
-        if not (line.startswith("-") or line.startswith("*") or re.match(r"^\d+[\.\)]", line)):
+        if not (line.startswith("-") or line.startswith("*") or line.startswith("•") or re.match(r"^\d+[\.\)]", line)):
             continue
 
         clean_line = _clean_markdown_text(line)
@@ -263,8 +464,8 @@ def parse_bullet_tasks(text: str, default_category: str = "Work") -> List[Dict[s
         duration_mins = _extract_duration_minutes(clean_line, 45)
 
         # Extract title
-        title_text = re.sub(r"^[-*\d\.\)\s]+", "", clean_line)
-        title_text = re.sub(r"^(?:at\s+)?\d{1,2}(?::\d{2})?\s*(?:am|pm)?(?::|-)?\s*", "", title_text, flags=re.IGNORECASE)
+        title_text = re.sub(r"^[-*•\d\.\)\s]+", "", clean_line)
+        title_text = re.sub(r"^(?:at\s+)?\d{1,2}(?::\d{2})?\s*(?:am|pm)?(?::|-|—)?\s*", "", title_text, flags=re.IGNORECASE)
         title_text = re.sub(r"\(\s*\d+\s*(?:mins?|minutes?|m|hrs?|hours?)\s*\)", "", title_text, flags=re.IGNORECASE).strip()
 
         if not title_text or len(title_text) < 3:

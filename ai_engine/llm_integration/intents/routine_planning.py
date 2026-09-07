@@ -31,12 +31,16 @@ def handle_routine_planning_intent(
 
     # 1. Explicit multi-task routine & schedule request phrases
     explicit_schedule_requests = [
-        "plan my day", "plan today", "suggest a schedule", "suggest schedule",
+        "plan my day", "plan today", "plan some crazy tasks", "plan crazy tasks",
+        "plan some tasks", "plan tasks", "plan a day", "plan my routine", "plan routine",
+        "plan a schedule", "plan schedule", "suggest a schedule", "suggest schedule",
         "suggest a routine", "suggest routine", "daily routine", "suggest tasks",
-        "suggest some tasks", "schedule my day", "build a schedule", "optimize my day",
-        "routine for today", "plan a productive day", "boost my productivity",
+        "suggest some tasks", "schedule my day", "build a schedule", "build schedule",
+        "optimize my day", "routine for today", "plan a productive day", "boost my productivity",
         "productivity suggestions", "task suggestions", "tasks for productivity",
-        "recommend tasks", "fitness schedule", "workout schedule", "gym schedule",
+        "recommend tasks", "give me some tasks", "create a schedule", "create schedule",
+        "make a schedule", "make schedule", "organize my day", "organize schedule",
+        "fitness schedule", "workout schedule", "gym schedule",
         "exercise schedule", "fitness routine", "workout routine", "gym routine",
         "fitness plan", "workout plan", "training schedule", "cardio routine",
         "strength routine", "fitness blueprint", "workout blueprint",
@@ -46,6 +50,11 @@ def handle_routine_planning_intent(
         "generate schedule", "generate daily plan", "build my schedule"
     ]
 
+    schedule_intent_pattern = re.compile(
+        r"\b(?:plan|suggest|create|build|generate|make|organize|schedule)\s+(?:some\s+|a\s+|my\s+|our\s+)?(?:crazy\s+|productive\s+|daily\s+|smart\s+|calibrated\s+|fitness\s+|study\s+)?(?:tasks|day|schedule|routine|blueprint|timetable|blocks)\b",
+        re.IGNORECASE
+    )
+
     confirmation_phrases = [
         "plug it in", "plug in", "plug into planner", "plug into my planner",
         "plug in my daily planner", "plug it in my daily planner",
@@ -54,11 +63,28 @@ def handle_routine_planning_intent(
         "add all to planner", "add all tasks to planner", "add these to planner",
         "add this schedule", "apply schedule", "apply plan", "confirm plan",
         "yes schedule it", "schedule these", "commit to planner", "save to planner",
-        "yes plug it in", "yes add to planner", "plug all tasks"
+        "yes plug it in", "yes add to planner", "plug all tasks",
+        "add these in my tasks", "add these to my tasks", "add in my tasks",
+        "add to my tasks", "add to tasks", "add them to my tasks",
+        "add in my task", "add to my task", "can you add these in my tasks",
+        "can you add these to my tasks", "add these into my tasks",
+        "add these tasks", "add all", "add all of them", "add them all",
+        "yes add them", "yes add all", "add it", "add them", "plug them in"
     ]
 
-    is_explicit_request = any(k in p_lower for k in explicit_schedule_requests)
-    is_confirmation_turn = any(k in p_lower for k in confirmation_phrases)
+    number_select_match = re.search(
+        r"(?:^|\b)(?:add\s+)?([0-9]+(?:\s*,\s*[0-9]+)*(?:\s*(?:and|&)\s*[0-9]+)?)(?:\s+(?:add\s+it|add\s+them|add|to\s+tasks|to\s+planner|to\s+my\s+tasks))?(?:\b|$)",
+        p_lower
+    )
+
+    requested_indices: List[int] = []
+    if number_select_match:
+        digits = re.findall(r"\b\d+\b", p_lower)
+        if digits and any(k in p_lower for k in ["add", "plug", "task", "planner", ",", "and"]):
+            requested_indices = [int(d) for d in digits if int(d) > 0]
+
+    is_explicit_request = any(k in p_lower for k in explicit_schedule_requests) or bool(schedule_intent_pattern.search(p_lower))
+    is_confirmation_turn = any(k in p_lower for k in confirmation_phrases) or (len(requested_indices) > 0)
 
     if not is_explicit_request and not is_confirmation_turn:
         return None
@@ -74,11 +100,21 @@ def handle_routine_planning_intent(
                 content = prev_msg.get("content", "")
                 extracted = parse_schedule_tasks_from_text(content)
                 if extracted:
-                    tasks = extracted
+                    if requested_indices:
+                        selected = [extracted[idx - 1] for idx in requested_indices if 0 <= idx - 1 < len(extracted)]
+                        if selected:
+                            tasks = selected
+                        else:
+                            tasks = extracted
+                    else:
+                        tasks = extracted
+
                     if "fitness" in content.lower() or "workout" in content.lower() or "strength" in content.lower():
                         plan_title = "Calibrated Fitness & Vitality Routine"
                     elif "study" in content.lower() or "academic" in content.lower():
                         plan_title = "Calibrated Academic Deep Study Plan"
+                    else:
+                        plan_title = f"Calibrated Daily Routine for **{user_role_title}**"
                     break
 
     # Step 2: If no tasks extracted from history, generate domain-specific schedule
@@ -110,7 +146,7 @@ def handle_routine_planning_intent(
     )
 
     if is_confirmation_turn:
-        headline = f"### {plan_title} – Scheduled to Daily Planner\n\nI have calibrated and plugged these **{len(tasks)} focus blocks** directly into your **Daily Planner**:"
+        headline = f"### {plan_title} – Scheduled to Daily Planner\n\nI have added these **{len(tasks)} focus blocks** directly into your **Daily Planner**:"
     else:
         headline = f"### {plan_title}\n\nBased on your telemetry analysis (Sleep Baseline: **{active_logged_sleep or t_data['avg_sleep']:.1f}h** vs **{t_data['sleep_target']:.1f}h** target, Monthly Surplus: **+${t_data['monthly_savings']:,.2f}**, Goal: **{goal_name}** at **{goal_pct}%**), I have structured a circadian-optimized daily plan:"
 

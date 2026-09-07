@@ -244,15 +244,20 @@ Step 4 — Formulated Strategic Execution Plan:
         ai_reply = think_block + ai_reply
 
     # Dynamic Fallback Table & Task Extractor:
-    # Only propose task additions if the user explicitly asked for a routine or tasks in their query
-    is_explicit_planning_prompt = any(k in p_lower for k in [
-        "plan my day", "suggest tasks", "schedule", "routine", "daily plan",
-        "fitness schedule", "workout plan", "study plan schedule", "plug it in"
-    ]) and not any(p_lower.startswith(q) for q in ["what is", "how does", "explain", "why", "tell me about"])
+    # Propose task additions if the user explicitly asked for a routine or tasks in their query
+    is_explicit_planning_prompt = (
+        any(k in p_lower for k in [
+            "plan my day", "suggest tasks", "schedule", "routine", "daily plan",
+            "fitness schedule", "workout plan", "study plan schedule", "plug it in",
+            "plan some crazy tasks", "plan crazy tasks", "plan some tasks", "plan tasks",
+            "add in my tasks", "add to my tasks", "add these in my tasks", "add these to my tasks",
+            "1,2,3 add it", "add it", "add them", "tasks to me"
+        ]) or bool(re.search(r"\b(?:plan|schedule|routine|tasks|add\s+(?:these|them|all|\d+))\b", p_lower))
+    ) and not any(p_lower.startswith(q) for q in ["what is", "how does", "explain", "why", "tell me about"])
 
     if is_explicit_planning_prompt:
         extracted_fallback_tasks = parse_schedule_tasks_from_text(ai_reply)
-        if extracted_fallback_tasks and len(extracted_fallback_tasks) >= 2:
+        if extracted_fallback_tasks and len(extracted_fallback_tasks) >= 1:
             return {
                 "content": ai_reply,
                 "action_type": "add_multiple_tasks",
