@@ -15,6 +15,17 @@ async def execute_action_payload(user: models.UserDoc, action_type: str, payload
     if action_type in ["add_task", "add_multiple_tasks"]:
         tasks_to_add = payload.get("tasks") if action_type == "add_multiple_tasks" else [payload]
         created_list = []
+        today_str = datetime.utcnow().strftime("%Y-%m-%d")
+
+        current_tasks = []
+        if user.tasks_json:
+            try:
+                current_tasks = json.loads(user.tasks_json)
+                if not isinstance(current_tasks, list):
+                    current_tasks = []
+            except Exception:
+                current_tasks = []
+
         for idx, t in enumerate(tasks_to_add):
             sug_id = f"chat-task-{int(time.time())}-{idx}"
             saved_sug = models.UserSuggestionDoc(
@@ -22,7 +33,7 @@ async def execute_action_payload(user: models.UserDoc, action_type: str, payload
                 suggestion_id=sug_id,
                 title=t.get("title", "Focus Session"),
                 category=t.get("category", "Work"),
-                detail=f"Scheduled via Visual Risk Copilot at {t.get('start', '09:00')}",
+                detail=t.get("detail", f"Scheduled via Visual Risk Copilot at {t.get('start', '09:00')}"),
                 impact=t.get("impact", "+0.8 Focus"),
                 start_time=t.get("start", "09:00"),
                 duration_minutes=int(t.get("minutes", 45)),
@@ -30,13 +41,24 @@ async def execute_action_payload(user: models.UserDoc, action_type: str, payload
                 is_ai_generated=1
             )
             await saved_sug.insert()
-            created_list.append({
-                "task_id": sug_id,
+            task_dict = {
+                "id": sug_id,
                 "title": saved_sug.title,
                 "category": saved_sug.category,
                 "start": saved_sug.start_time,
-                "minutes": saved_sug.duration_minutes
-            })
+                "minutes": saved_sug.duration_minutes,
+                "impact": saved_sug.impact,
+                "detail": saved_sug.detail,
+                "done": False,
+                "date": t.get("date") or today_str,
+                "fromSuggestion": True,
+                "is_auto_planned": True
+            }
+            created_list.append(task_dict)
+            current_tasks.append(task_dict)
+
+        user.tasks_json = json.dumps(current_tasks)
+        await user.save()
         execution_result = {"tasks": created_list, "count": len(created_list)}
 
     elif action_type == "update_settings":

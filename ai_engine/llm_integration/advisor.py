@@ -25,6 +25,7 @@ from .intents import (
     handle_wealth_forecast_intent,
     handle_settings_update_intent
 )
+from .table_parser import parse_schedule_tasks_from_text
 
 
 class DigitalTwinAdvisor:
@@ -141,7 +142,10 @@ def process_twin_copilot_turn(
         return purchase_res
 
     # 4. Routine / Multi-task planning intent
-    routine_res = handle_routine_planning_intent(prompt, p_lower, user_info, t_data, goal_name, goal_pct, goal_gap, think_mode, active_logged_sleep, active_study_subject)
+    routine_res = handle_routine_planning_intent(
+        prompt, p_lower, user_info, t_data, goal_name, goal_pct, goal_gap,
+        think_mode, active_logged_sleep, active_study_subject, history=history
+    )
     if routine_res:
         return routine_res
 
@@ -238,6 +242,17 @@ Step 4 — Formulated Strategic Execution Plan:
 
 """
         ai_reply = think_block + ai_reply
+
+    # Dynamic Fallback Table & Task Extractor
+    # If the response contains a schedule table/list and the dialogue relates to routines/tasks/planning, extract into action payload
+    extracted_fallback_tasks = parse_schedule_tasks_from_text(ai_reply)
+    if extracted_fallback_tasks and len(extracted_fallback_tasks) >= 2:
+        return {
+            "content": ai_reply,
+            "action_type": "add_multiple_tasks",
+            "action_payload": json.dumps({"tasks": extracted_fallback_tasks}),
+            "action_status": "proposed"
+        }
 
     return {
         "content": ai_reply,

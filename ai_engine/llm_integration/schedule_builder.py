@@ -86,3 +86,53 @@ def build_smart_role_schedule(
                 {"title": f"Technical Skill Upgrading: {focus_area}", "start": "15:30", "minutes": 45, "category": "Study", "impact": "+0.8 Career Growth"},
                 {"title": "Physical Vitality & Decompression", "start": "18:00", "minutes": 45, "category": "Health", "impact": "+1.0 Vitality"},
             ]
+
+
+def build_fitness_schedule(
+    user_info: Optional[Dict[str, Any]] = None,
+    telemetry: Optional[Dict[str, Any]] = None,
+    active_logged_sleep: Optional[float] = None
+) -> List[Dict[str, Any]]:
+    """
+    Builds a calibrated fitness and vitality daily schedule.
+    """
+    t = telemetry or {}
+    logged_sleep = active_logged_sleep if active_logged_sleep is not None else float(t.get("avg_sleep", 7.5))
+    has_sleep_deficit = logged_sleep < 6.2
+
+    if has_sleep_deficit:
+        return [
+            {"title": "Morning Mobility & Dynamic Stretch", "start": "07:30", "minutes": 20, "category": "Health", "impact": "+1.2 Joint & Fascia Recovery"},
+            {"title": "Low-Impact Cardio & Zone 2 Aerobic Base", "start": "12:00", "minutes": 30, "category": "Health", "impact": "+1.0 Cardiovascular Flow"},
+            {"title": "Circadian Rest & 20-Min Restorative Nap", "start": "14:30", "minutes": 25, "category": "Health", "impact": "+1.5 Vitality & Fatigue Protection"},
+            {"title": "Moderate Strength Circuit (Core & Posterior Chain)", "start": "17:30", "minutes": 40, "category": "Health", "impact": "+1.3 Muscle Tone & Metabolic Rate"},
+            {"title": "Evening Foam Roll & Parasympathetic Breathing", "start": "21:30", "minutes": 20, "category": "Health", "impact": "+1.8 Sleep Quality & Deep Recovery"}
+        ]
+    else:
+        return [
+            {"title": "Morning Activation & Dynamic Warm-Up", "start": "07:00", "minutes": 20, "category": "Health", "impact": "+1.0 Alertness & Circulation"},
+            {"title": "High-Leverage Strength Training (Compound Movements)", "start": "08:00", "minutes": 50, "category": "Health", "impact": "+1.8 Strength & Anabolic Index"},
+            {"title": "Post-Workout Hydration & High-Protein Fuel", "start": "09:00", "minutes": 20, "category": "Health", "impact": "+1.2 Protein Synthesis"},
+            {"title": "Zone 2 Cardio / HIIT & Core Conditioning", "start": "17:30", "minutes": 35, "category": "Health", "impact": "+1.4 VO2 Max & Fat Oxidation"},
+            {"title": "Full-Body Mobility, Foam Rolling & Myofascial Release", "start": "21:00", "minutes": 25, "category": "Health", "impact": "+1.5 Parasympathetic Recovery"}
+        ]
+
+
+def build_study_schedule(
+    user_info: Optional[Dict[str, Any]] = None,
+    telemetry: Optional[Dict[str, Any]] = None,
+    active_study_subject: Optional[str] = None,
+    active_logged_sleep: Optional[float] = None
+) -> List[Dict[str, Any]]:
+    """
+    Builds a circadian-calibrated academic deep study routine.
+    """
+    t = telemetry or {}
+    subject = active_study_subject or (t.get("recent_subjects") and t["recent_subjects"][0]) or "Core Academic Focus"
+    return [
+        {"title": f"Morning Deep Study: {subject} (Theory & Concept)", "start": "09:00", "minutes": 90, "category": "Study", "impact": "+1.5 Cognitive Output"},
+        {"title": f"Active Problem Solving & Practice Exam ({subject})", "start": "11:30", "minutes": 75, "category": "Study", "impact": "+1.3 Retention"},
+        {"title": "Mid-Day Cognitive Reset & Walking Recharge", "start": "14:00", "minutes": 30, "category": "Health", "impact": "+1.1 Fatigue Protection"},
+        {"title": f"Spaced Repetition & Flashcard Review ({subject})", "start": "16:30", "minutes": 45, "category": "Study", "impact": "+1.0 Long-Term Recall"},
+        {"title": "Evening Synthesis & Next-Day Study Plan", "start": "20:30", "minutes": 30, "category": "Study", "impact": "+0.7 Metacognition"}
+    ]
