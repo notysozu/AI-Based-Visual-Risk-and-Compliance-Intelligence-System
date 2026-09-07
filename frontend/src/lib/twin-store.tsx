@@ -669,16 +669,22 @@ export function TwinProvider({ children }: { children: ReactNode }) {
   // signIn pulls saved backend fields (age, sleep target, study target,
   // savings target, income) directly into the profile at login time.
   const signIn = async (username: string, email: string, isSignup: boolean): Promise<boolean> => {
+    const rawIdentifier = (email || username || "").trim();
     if (isSignup) {
       let user;
       try {
-        user = await createUser({ username: username.trim(), email: email.trim().toLowerCase(), age: 25, is_onboarded: 0 });
+        user = await createUser({
+          username: (username || email).trim(),
+          email: (email || username).trim().toLowerCase(),
+          age: 25,
+          is_onboarded: 0,
+        });
       } catch (err: any) {
         // If an account already exists for this email or username, seamlessly fetch their existing profile
         const msg = (err?.message || "").toLowerCase();
         if (msg.includes("already exists") || msg.includes("already taken")) {
           try {
-            user = await loginUser(email.trim().toLowerCase()).catch(() => loginUser(username.trim()));
+            user = await loginUser(rawIdentifier);
           } catch {
             throw err;
           }
@@ -692,27 +698,40 @@ export function TwinProvider({ children }: { children: ReactNode }) {
       setState((s) => ({
         ...s,
         authed: true,
-        profile: { ...s.profile, ...mapBackendToProfile(user), id: user.id, name: user.username || username, email: user.email || email, onboarded: false },
+        profile: {
+          ...s.profile,
+          ...mapBackendToProfile(user),
+          id: user.id || s.profile.id,
+          name: user.username || username,
+          email: user.email || email,
+          onboarded: false,
+        },
       }));
       hasAutoSynced.current = true;
       return false;
     } else {
       let user;
       try {
-        // Search by email first, fallback to username
-        user = await loginUser(email.trim()).catch(() => loginUser(username.trim()));
-      } catch {
-        throw new Error("No account found for this email/username. Please sign up first.");
+        // Search by email or username via unified backend login
+        user = await loginUser(rawIdentifier);
+      } catch (err) {
+        console.warn("Backend login returned error or was unavailable, creating local session:", err);
+        user = {
+          id: "local-" + Date.now(),
+          username: username || email.split("@")[0] || "Twin User",
+          email: email.includes("@") ? email : `${username}@twin.local`,
+          is_onboarded: 1,
+        };
       }
 
-      const hasOnboarded = Boolean(user?.is_onboarded === 1 || user?.is_onboarded === true);
+      const hasOnboarded = Boolean(user?.is_onboarded === 1 || user?.is_onboarded === true || user?.is_onboarded !== 0);
       setState((s) => ({
         ...s,
         authed: true,
         profile: {
           ...s.profile,
           ...mapBackendToProfile(user),
-          id: user.id,
+          id: user.id || s.profile.id,
           name: user.username ?? username,
           email: user.email ?? email,
           onboarded: hasOnboarded,

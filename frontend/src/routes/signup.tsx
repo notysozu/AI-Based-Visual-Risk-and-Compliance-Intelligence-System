@@ -221,7 +221,7 @@ function SignUpPage() {
             </TabsContent>
 
             <TabsContent value="login" className="mt-6 space-y-4">
-              <Field id="email" label="Email" value={email} set={setEmail} type="email" />
+              <Field id="email" label="Email or Username" value={email} set={setEmail} type="text" />
               <Field id="password" label="Password" value={password} set={setPassword} type="password" />
               <Button className="w-full mt-2" size="lg" onClick={() => submit("login")}>
                 Log in to Twin

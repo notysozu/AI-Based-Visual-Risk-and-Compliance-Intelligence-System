@@ -27,16 +27,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useTwin, type UserRole } from "@/lib/twin-store";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -63,7 +53,6 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
-  const [showSignUpDialog, setShowSignUpDialog] = useState(false);
   const [loadingRole, setLoadingRole] = useState<string | null>(null);
 
   useEffect(() => {
@@ -88,11 +77,7 @@ function LoginPage() {
       toast.success(isLogin ? "Welcome back!" : "Twin profile created!");
       navigate({ to: onboarded ? "/dashboard" : "/setup" });
     } catch (e: any) {
-      if (e?.message?.includes("sign up first") || e?.message?.includes("No account found")) {
-        setShowSignUpDialog(true);
-      } else {
-        toast.error(e.message || "Failed to log in");
-      }
+      toast.error(e.message || "Failed to log in");
     }
   };
 
@@ -198,7 +183,7 @@ function LoginPage() {
             </TabsList>
 
             <TabsContent value="login" className="mt-6 space-y-4">
-              <Field id="login-email" label="Email" value={email} set={setEmail} type="email" />
+              <Field id="login-email" label="Email or Username" value={email} set={setEmail} type="text" />
               <Field id="login-password" label="Password" value={password} set={setPassword} type="password" />
               <Button className="w-full mt-2" size="lg" onClick={() => submit("login")}>
                 Log in to Twin
@@ -330,28 +315,6 @@ function LoginPage() {
           </div>
         </div>
       </div>
-
-      <AlertDialog open={showSignUpDialog} onOpenChange={setShowSignUpDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Account Not Found</AlertDialogTitle>
-            <AlertDialogDescription>
-              We couldn't find a digital twin profile registered under that email. Please sign up to get started!
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setShowSignUpDialog(false);
-                setActiveTab("signup");
-              }}
-            >
-              Sign Up Now
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

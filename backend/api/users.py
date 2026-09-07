@@ -72,21 +72,61 @@ async def create_user(user: schemas.UserCreate):
 @router.post("/login", response_model=schemas.UserResponse)
 async def login_user(req: schemas.UserLoginRequest):
     """
-    Unified login supporting either registered email address or username in MongoDB.
+    Unified login supporting registered email, username, demo role alias, or auto-provisioning.
+    Guarantees seamless authentication without dead-end 404s.
     """
     identifier = req.identifier.strip()
     if not identifier:
         raise HTTPException(status_code=400, detail="Please enter an email or username.")
 
+    # 1. Search by exact email or username
     user = await crud.get_user_by_email(email=identifier.lower())
     if not user:
         user = await crud.get_user_by_username(username=identifier)
 
+    # 2. Check for role aliases (student, pro, freelancer, founder, retiree, default)
     if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="No account found with this identifier. Please sign up first."
-        )
+        id_lower = identifier.lower()
+        if any(k in id_lower for k in ["student", "alex"]):
+            user = await crud.get_or_create_demo_user("student")
+        elif any(k in id_lower for k in ["pro", "professional", "jordan"]):
+            user = await crud.get_or_create_demo_user("professional")
+        elif any(k in id_lower for k in ["freelance", "samira"]):
+            user = await crud.get_or_create_demo_user("freelancer")
+        elif any(k in id_lower for k in ["entrepreneur", "founder", "elena"]):
+            user = await crud.get_or_create_demo_user("entrepreneur")
+        elif any(k in id_lower for k in ["retiree", "senior", "arthur"]):
+            user = await crud.get_or_create_demo_user("retiree")
+        elif any(k in id_lower for k in ["default", "twin"]):
+            user = await get_default_user()
+
+    # 3. If identifier is a new email or username, auto-provision and seed profile immediately
+    if not user:
+        clean_username = identifier.split("@")[0].lower().replace(" ", "_")
+        clean_email = identifier.lower() if "@" in identifier else f"{clean_username}@twin.local"
+
+        # Check collisions before creation
+        existing_u = await crud.get_user_by_username(clean_username)
+        if existing_u:
+            user = existing_u
+        else:
+            existing_e = await crud.get_user_by_email(clean_email)
+            if existing_e:
+                user = existing_e
+            else:
+                user_create = schemas.UserCreate(
+                    username=clean_username,
+                    email=clean_email,
+                    role="professional",
+                    age=28,
+                    monthly_income=5000.0,
+                    monthly_expenses=3200.0,
+                    net_worth=35000.0,
+                    sleep_target_hours=8.0,
+                    study_target_hours_week=10.0,
+                    is_onboarded=1
+                )
+                user = await crud.create_user(user_create)
 
     return user
 
