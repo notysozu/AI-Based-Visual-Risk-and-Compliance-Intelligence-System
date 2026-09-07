@@ -10,9 +10,9 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/setup")({
   head: () => ({
     meta: [
-      { title: "Set up your intelligence — Visual Risk AI" },
+      { title: "Set up your intelligence — Digital Twin AI" },
       { name: "description", content: "Answer a few questions so your twin can model your life." },
-      { property: "og:title", content: "Set up your intelligence — Visual Risk AI" },
+      { property: "og:title", content: "Set up your intelligence — Digital Twin AI" },
       {
         property: "og:description",
         content: "Answer a few questions so your twin can model your life.",

@@ -47,9 +47,9 @@ import {
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — Visual Risk AI (VRCI)" },
+      { title: "Settings — Digital Twin AI" },
       { name: "description", content: "Configure your twin persona, telemetry baselines, financial compounding, and AI intelligence." },
-      { property: "og:title", content: "Settings — Visual Risk AI (VRCI)" },
+      { property: "og:title", content: "Settings — Digital Twin AI" },
     ],
   }),
   component: SettingsPage,

@@ -169,7 +169,7 @@ function SignUpPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.4)]">
                 <GaugeCircle className="h-4 w-4" />
               </div>
-              <span className="font-display text-base font-bold">Visual Risk AI</span>
+              <span className="font-display text-base font-bold">Digital Twin AI</span>
             </Link>
             <Button
               variant="outline"

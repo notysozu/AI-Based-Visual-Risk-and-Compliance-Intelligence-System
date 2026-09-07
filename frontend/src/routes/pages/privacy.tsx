@@ -44,7 +44,7 @@ function PrivacyPage() {
               <GaugeCircle className="h-5 w-5" />
             </div>
             <span className="font-display text-lg font-bold tracking-tight">
-              Visual Risk <span className="text-indigo-500 font-mono text-xs px-1.5 py-0.5 rounded-md bg-indigo-500/10">AI</span>
+              Digital Twin <span className="text-indigo-500 font-mono text-xs px-1.5 py-0.5 rounded-md bg-indigo-500/10">AI</span>
             </span>
           </Link>
 
