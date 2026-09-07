@@ -18,6 +18,15 @@ def _to_object_id(val: Any) -> Optional[ObjectId]:
     return None
 
 
+async def _sync_disk():
+    """Trigger background persistence snapshot for embedded database engine."""
+    try:
+        from .database import save_persistence_snapshot
+        await save_persistence_snapshot()
+    except Exception:
+        pass
+
+
 # ──────────────────────────────────────────────
 # User Operations
 # ──────────────────────────────────────────────
@@ -84,6 +93,7 @@ async def create_user(user: schemas.UserCreate) -> models.UserDoc:
 
     db_user = models.UserDoc(**user_dict)
     await db_user.insert()
+    await _sync_disk()
     return db_user
 
 
@@ -102,6 +112,7 @@ async def update_user(user_id: Union[str, int], user_update: schemas.UserUpdate)
 
     db_user.updated_at = datetime.utcnow()
     await db_user.save()
+    await _sync_disk()
     return db_user
 
 
@@ -121,6 +132,7 @@ async def delete_user(user_id: Union[str, int]) -> bool:
     await models.PasswordResetTokenDoc.find(models.PasswordResetTokenDoc.user_id == u_id_str).delete()
     await models.EmailVerificationTokenDoc.find(models.EmailVerificationTokenDoc.user_id == u_id_str).delete()
     await db_user.delete()
+    await _sync_disk()
     return True
 
 
@@ -147,6 +159,7 @@ async def save_refresh_token(
         expires_at=expires_at
     )
     await doc.insert()
+    await _sync_disk()
     return doc
 
 
@@ -163,6 +176,7 @@ async def revoke_refresh_token(token_hash: str, revoked_by_ip: Optional[str] = N
         doc.revoked_at = datetime.utcnow()
         doc.revoked_by_ip = revoked_by_ip
         await doc.save()
+        await _sync_disk()
     return doc
 
 
@@ -181,6 +195,8 @@ async def revoke_refresh_token_family(token_family: str, revoked_by_ip: Optional
             tok.revoked_by_ip = revoked_by_ip
             await tok.save()
             count += 1
+    if count > 0:
+        await _sync_disk()
     return count
 
 
@@ -201,6 +217,8 @@ async def revoke_all_user_refresh_tokens(user_id: Union[str, int]) -> int:
         tok.revoked_at = now
         await tok.save()
         count += 1
+    if count > 0:
+        await _sync_disk()
     return count
 
 
@@ -214,6 +232,7 @@ async def create_password_reset_token(user_id: Union[str, int], raw_token: str, 
         expires_at=datetime.utcnow() + timedelta(minutes=expires_minutes)
     )
     await doc.insert()
+    await _sync_disk()
     return doc
 
 
@@ -228,6 +247,7 @@ async def mark_password_reset_token_used(token_doc: models.PasswordResetTokenDoc
     token_doc.is_used = True
     token_doc.used_at = datetime.utcnow()
     await token_doc.save()
+    await _sync_disk()
     return token_doc
 
 
@@ -241,6 +261,7 @@ async def create_email_verification_token(user_id: Union[str, int], raw_token: s
         expires_at=datetime.utcnow() + timedelta(hours=expires_hours)
     )
     await doc.insert()
+    await _sync_disk()
     return doc
 
 
@@ -255,6 +276,7 @@ async def mark_email_verification_token_used(token_doc: models.EmailVerification
     token_doc.is_used = True
     token_doc.used_at = datetime.utcnow()
     await token_doc.save()
+    await _sync_disk()
     return token_doc
 
 
@@ -281,6 +303,7 @@ async def create_financial_record(record: schemas.FinancialRecordCreate, user_id
         record_date=record.record_date or datetime.utcnow()
     )
     await doc.insert()
+    await _sync_disk()
     return doc
 
 
@@ -299,6 +322,7 @@ async def update_financial_record(record_id: Union[str, int], record_update: Any
     for k, v in data.items():
         setattr(doc, k, v)
     await doc.save()
+    await _sync_disk()
     return doc
 
 
@@ -307,6 +331,7 @@ async def delete_financial_record(record_id: Union[str, int]) -> bool:
     if not doc:
         return False
     await doc.delete()
+    await _sync_disk()
     return True
 
 
@@ -333,6 +358,7 @@ async def create_habit_record(record: schemas.HabitRecordCreate, user_id: Union[
         created_at=record.created_at or datetime.utcnow()
     )
     await doc.insert()
+    await _sync_disk()
     return doc
 
 
@@ -351,6 +377,7 @@ async def update_habit_record(record_id: Union[str, int], record_update: Any) ->
     for k, v in data.items():
         setattr(doc, k, v)
     await doc.save()
+    await _sync_disk()
     return doc
 
 
@@ -359,6 +386,7 @@ async def delete_habit_record(record_id: Union[str, int]) -> bool:
     if not doc:
         return False
     await doc.delete()
+    await _sync_disk()
     return True
 
 
@@ -388,6 +416,7 @@ async def create_study_record(record: schemas.StudyRecordCreate, user_id: Union[
         created_at=record.created_at or datetime.utcnow()
     )
     await doc.insert()
+    await _sync_disk()
     return doc
 
 
@@ -406,6 +435,7 @@ async def update_study_record(record_id: Union[str, int], record_update: Any) ->
     for k, v in data.items():
         setattr(doc, k, v)
     await doc.save()
+    await _sync_disk()
     return doc
 
 
@@ -414,6 +444,7 @@ async def delete_study_record(record_id: Union[str, int]) -> bool:
     if not doc:
         return False
     await doc.delete()
+    await _sync_disk()
     return True
 
 
@@ -577,6 +608,7 @@ async def save_auto_planned_tasks(
     user.last_auto_planned_date = plan_date
     user.last_auto_plan_briefing = briefing
     await user.save()
+    await _sync_disk()
 
     return {
         "user_id": u_id_str,
@@ -603,6 +635,7 @@ async def update_user_autonomy_mode(
         user.auto_planner_enabled = auto_planner_enabled
 
     await user.save()
+    await _sync_disk()
     return user
 
 
@@ -635,6 +668,7 @@ async def create_chat_session(user_id: Union[str, int], title: str = "New Conver
         messages=[]
     )
     await session.insert()
+    await _sync_disk()
     return session
 
 
@@ -660,6 +694,7 @@ async def create_chat_message(
     session.messages.append(msg)
     session.updated_at = datetime.utcnow()
     await session.save()
+    await _sync_disk()
     return msg
 
 
@@ -673,6 +708,7 @@ async def delete_chat_session(session_id: Union[str, int], user_id: Optional[Uni
         if session.user_id != u_id_str:
             return False
     await session.delete()
+    await _sync_disk()
     return True
 
 
@@ -702,6 +738,7 @@ async def update_chat_message_status(
     if target_msg:
         session.updated_at = datetime.utcnow()
         await session.save()
+        await _sync_disk()
     return target_msg
 
 

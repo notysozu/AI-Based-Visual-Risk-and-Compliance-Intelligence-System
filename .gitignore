@@ -38,6 +38,7 @@ ENV/
 # Database
 *.db
 *.sqlite3
+data/
 
 # Streamlit
 .streamlit/

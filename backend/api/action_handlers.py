@@ -136,4 +136,10 @@ async def execute_action_payload(user: models.UserDoc, action_type: str, payload
             "impact_score": impact_score
         }
 
+    try:
+        from database.database import save_persistence_snapshot
+        await save_persistence_snapshot()
+    except Exception:
+        pass
+
     return execution_result

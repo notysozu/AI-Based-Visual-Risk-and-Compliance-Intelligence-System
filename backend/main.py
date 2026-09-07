@@ -20,6 +20,12 @@ async def lifespan(app: FastAPI):
         print(f"[FastAPI] Default persona startup seeding notice: {e}")
     yield
     print("[FastAPI] Shutting down Visual Risk AI backend...")
+    try:
+        from database.database import save_persistence_snapshot
+        await save_persistence_snapshot()
+        print("[FastAPI] Persistent state snapshot saved successfully.")
+    except Exception as e:
+        print(f"[FastAPI] Shutdown snapshot notice: {e}")
 
 
 app = FastAPI(
