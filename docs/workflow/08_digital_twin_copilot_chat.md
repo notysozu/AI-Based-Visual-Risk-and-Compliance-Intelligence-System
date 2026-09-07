@@ -148,13 +148,56 @@ classDiagram
 
 ---
 
-## 9. REST API Reference for Chat
+## 9. Persistent Tutorial Guide Thread & User Lifecycle Recovery
+
+Every user account in Visual Risk AI is initialized with a dedicated, persistent **Tutorial** conversational thread upon creation or login:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor User as User
+  participant FE as Frontend (/chat)
+  participant API as FastAPI Gateway (/chat/sessions)
+  participant DB as MongoDB (ChatSessionDoc)
+  participant Disk as Local Snapshot Engine
+
+  User->>FE: Mount /chat (or switch account / login)
+  FE->>API: GET /chat/sessions/{user_id}
+  API->>DB: Query ChatSessionDoc.find(user_id)
+  alt No sessions exist
+    API->>DB: Seed "Tutorial" ChatSessionDoc with Welcome Onboarding Guide
+    API->>Disk: Trigger save_persistence_snapshot() to data/mongodb_persistence.json
+  end
+  DB-->>API: Return [TutorialSessionDoc, ...UserSessions]
+  API-->>FE: Return JSON session array
+  FE->>FE: Auto-select Tutorial session & fetch full message history
+  FE-->>User: Render Welcome Guide and ready for user inquiries
+```
+
+### Key Lifecycle Guarantees:
+1. **Eager Tutorial Seeding**: When `crud.create_user()` or `crud.get_or_create_demo_user()` is executed, the Tutorial thread is immediately written to MongoDB and persisted to disk.
+2. **Account Switch / Logout Isolation**: When a user logs out and a different user logs in, the active session state and message history reset cleanly, loading the new user's threads without ghost state.
+3. **Lossless Recovery**: If a user logs out and logs back in, all custom conversation threads and the Tutorial thread are restored with intact `<think>` reasoning trees and action statuses.
+
+---
+
+## 10. Embedded Database & Local Disk Persistence Engine
+
+For standalone deployments and offline environments, Visual Risk AI features an embedded MongoDB document engine paired with an automatic JSON snapshot persistence layer (`data/mongodb_persistence.json`):
+
+- **Automatic Snapshotting**: Every create, update, and delete operation on `UserDoc`, `ChatSessionDoc`, `HabitRecordDoc`, `StudyRecordDoc`, `FinancialRecordDoc`, and `UserSuggestionDoc` invokes `save_persistence_snapshot()`.
+- **Atomic File Swapping**: Persistence snapshots write to a temporary file (`.tmp`) and atomically replace the destination file to prevent corruption.
+- **Auto-Rehydration on Startup**: Upon backend boot, `load_persistence_snapshot()` restores all collections, users, and conversational histories into the active document store.
+
+---
+
+## 11. REST API Reference for Chat
 
 ```mermaid
 flowchart TB
   subgraph ChatEndpoints["Chat Endpoints (/chat)"]
     direction TB
-    C1["GET /chat/sessions/{user_id}<br/>• Lists chronological threads with preview"]
+    C1["GET /chat/sessions/{user_id}<br/>• Lists chronological threads with preview and ensures Tutorial seed"]
     C2["POST /chat/sessions/{user_id}<br/>• Creates blank thread"]
     C3["DELETE /chat/sessions/{session_id}<br/>• Deletes thread with ownership verification"]
     C4["GET /chat/messages/{session_id}<br/>• Retrieves full message history"]

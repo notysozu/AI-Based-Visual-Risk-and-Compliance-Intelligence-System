@@ -92,25 +92,7 @@ async def list_user_chat_sessions(user_id: str):
     u_id_str = str(user.id)
     sessions = await crud.get_chat_sessions(u_id_str)
     if not sessions:
-        tutorial_session = await crud.create_chat_session(u_id_str, title="Tutorial")
-        await crud.create_chat_message(
-            session_id=str(tutorial_session.id),
-            role="assistant",
-            content="""### 👋 Welcome to your **Digital Twin AI Copilot**!
-
-I am your personal AI connected in real time to your daily routines, academic focus, and financial engine.
-
-#### 🚀 What you can do here:
-1. **Simulate Purchases & Financial Tradeoffs**: Ask *"If I buy a $1,200 laptop today, how does that affect my emergency fund goal?"* to see exact milestone delays and 5-year opportunity costs.
-2. **Stress-Test Habits & Routines**: Type *"What if I study 5 more hours a week and sleep 30 mins less?"* to evaluate vitality and cognitive focus elasticity.
-3. **Automate Daily Scheduling**: Type *"Add a 45 min deep work sprint at 10:00 AM"* to schedule focus blocks directly into your Daily Planner.
-4. **Explore the Website & Architecture**: Ask me anything about the **Planner**, **Simulator**, **Wealth Engine**, or **Analytics** modules.
-
-Feel free to ask your first question below!""",
-            action_type="none",
-            action_payload=None,
-            action_status="none"
-        )
+        await crud.ensure_user_tutorial_session(u_id_str)
         sessions = await crud.get_chat_sessions(u_id_str)
 
     res = []
@@ -144,7 +126,7 @@ async def create_new_chat_session(
     await crud.create_chat_message(
         session_id=str(session.id),
         role="assistant",
-        content="✨ New conversation thread started. What life decision or schedule adjustment would you like to simulate?",
+        content="New conversation thread started. What life decision or schedule adjustment would you like to simulate?",
         action_type="none",
         action_payload=None,
         action_status="none"
@@ -157,7 +139,7 @@ async def create_new_chat_session(
         created_at=session.created_at,
         updated_at=session.updated_at,
         message_count=1,
-        last_message_preview="✨ New conversation thread started."
+        last_message_preview="New conversation thread started."
     )
 
 

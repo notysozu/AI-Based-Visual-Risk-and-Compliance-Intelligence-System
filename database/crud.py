@@ -93,6 +93,7 @@ async def create_user(user: schemas.UserCreate) -> models.UserDoc:
 
     db_user = models.UserDoc(**user_dict)
     await db_user.insert()
+    await ensure_user_tutorial_session(str(db_user.id))
     await _sync_disk()
     return db_user
 
@@ -644,18 +645,95 @@ async def update_user_autonomy_mode(
 # Chat Operations
 # ──────────────────────────────────────────────
 
+TUTORIAL_WELCOME_MESSAGE = """### Welcome to your **Digital Twin AI Copilot**!
+
+I am your personal AI connected in real time to your daily routines, academic focus, and financial engine.
+
+#### What you can do here:
+1. **Simulate Purchases & Financial Tradeoffs**: Ask *"If I buy a $1,200 laptop today, how does that affect my emergency fund goal?"* to see exact milestone delays and 5-year opportunity costs.
+2. **Stress-Test Habits & Routines**: Type *"What if I study 5 more hours a week and sleep 30 mins less?"* to evaluate vitality and cognitive focus elasticity.
+3. **Automate Daily Scheduling**: Type *"Add a 45 min deep work sprint at 10:00 AM"* to schedule focus blocks directly into your Daily Planner.
+4. **Explore the Website & Architecture**: Ask me anything about the **Planner**, **Simulator**, **Wealth Engine**, or **Analytics** modules.
+
+Feel free to ask your first question below!"""
+
+
+async def ensure_user_tutorial_session(user_id: Union[str, int]) -> models.ChatSessionDoc:
+    """Ensure a user has at least the default Tutorial conversation session seeded and persisted."""
+    user = await get_user(user_id)
+    u_id_str = str(user.id) if user else str(user_id)
+
+    existing_tutorial = await models.ChatSessionDoc.find_one(
+        models.ChatSessionDoc.user_id == u_id_str,
+        models.ChatSessionDoc.title == "Tutorial"
+    )
+    if existing_tutorial:
+        return existing_tutorial
+
+    all_sessions = await models.ChatSessionDoc.find(
+        models.ChatSessionDoc.user_id == u_id_str
+    ).to_list()
+    if all_sessions:
+        return all_sessions[0]
+
+    session = models.ChatSessionDoc(
+        user_id=u_id_str,
+        title="Tutorial",
+        messages=[
+            models.ChatMessageDoc(
+                role="assistant",
+                content=TUTORIAL_WELCOME_MESSAGE,
+                action_type="none",
+                action_payload=None,
+                action_status="none"
+            )
+        ]
+    )
+    await session.insert()
+    await _sync_disk()
+    return session
+
+
 async def get_chat_sessions(user_id: Union[str, int]) -> List[models.ChatSessionDoc]:
     user = await get_user(user_id)
     u_id_str = str(user.id) if user else str(user_id)
-    return await models.ChatSessionDoc.find(
+    sessions = await models.ChatSessionDoc.find(
         models.ChatSessionDoc.user_id == u_id_str
     ).sort(-models.ChatSessionDoc.updated_at).to_list()
 
+    if not sessions:
+        await ensure_user_tutorial_session(u_id_str)
+        sessions = await models.ChatSessionDoc.find(
+            models.ChatSessionDoc.user_id == u_id_str
+        ).sort(-models.ChatSessionDoc.updated_at).to_list()
+
+    return sessions
+
 
 async def get_chat_session(session_id: Union[str, int]) -> Optional[models.ChatSessionDoc]:
-    oid = _to_object_id(session_id)
+    if not session_id:
+        return None
+    s = str(session_id).strip()
+    oid = _to_object_id(s)
     if oid:
-        return await models.ChatSessionDoc.get(oid)
+        try:
+            doc = await models.ChatSessionDoc.get(oid)
+            if doc:
+                return doc
+        except Exception:
+            pass
+    try:
+        doc = await models.ChatSessionDoc.find_one({"_id": s})
+        if doc:
+            return doc
+    except Exception:
+        pass
+    try:
+        doc = await models.ChatSessionDoc.find_one(models.ChatSessionDoc.id == s)
+        if doc:
+            return doc
+    except Exception:
+        pass
     return None
 
 
@@ -893,6 +971,7 @@ async def get_or_create_demo_user(role: str = "professional") -> models.UserDoc:
         existing_habits = await models.HabitRecordDoc.find_one(models.HabitRecordDoc.user_id == u_id_str)
         if not existing_habits:
             await seed_mock_data(user.id, role=norm_role)
+        await ensure_user_tutorial_session(u_id_str)
 
     return user
 

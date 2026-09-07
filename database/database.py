@@ -117,10 +117,30 @@ async def load_persistence_snapshot():
         # Restore chat sessions
         for c_data in data.get("chat_sessions", []):
             cid = c_data.get("id") or c_data.get("_id")
-            if not await ChatSessionDoc.find_one(ChatSessionDoc.id == cid):
+            existing = None
+            if cid:
+                try:
+                    from bson import ObjectId
+                    if ObjectId.is_valid(str(cid)):
+                        existing = await ChatSessionDoc.get(ObjectId(str(cid)))
+                except Exception:
+                    pass
+            if not existing:
+                try:
+                    existing = await ChatSessionDoc.find_one(ChatSessionDoc.id == cid)
+                except Exception:
+                    pass
+            if not existing:
                 chat = ChatSessionDoc(**c_data)
                 if cid:
-                    chat.id = cid
+                    try:
+                        from bson import ObjectId
+                        if ObjectId.is_valid(str(cid)):
+                            chat.id = ObjectId(str(cid))
+                        else:
+                            chat.id = cid
+                    except Exception:
+                        chat.id = cid
                 await chat.insert()
 
         # Restore habits

@@ -122,7 +122,9 @@ export function TwinChat({
 
   // Load sessions on mount or user change
   useEffect(() => {
-    loadSessions();
+    setActiveSessionId(selectedSessionId ?? null);
+    setMessages([]);
+    loadSessions(true);
   }, [userId]);
 
   // Listen to global events for New Chat Draft and Thread Switching without URL params
@@ -192,12 +194,19 @@ export function TwinChat({
       if (data && data.length > 0) {
         setSessions(data);
         if (setDefault) {
+          let targetSessionId = data[0].id;
           if (selectedSessionId && data.some((s) => s.id === selectedSessionId)) {
-            setActiveSessionId(selectedSessionId);
-          } else if (!activeSessionId || !data.some((s) => s.id === activeSessionId)) {
-            setActiveSessionId(data[0].id);
+            targetSessionId = selectedSessionId;
+          } else if (activeSessionId && data.some((s) => s.id === activeSessionId)) {
+            targetSessionId = activeSessionId;
           }
+          setActiveSessionId(targetSessionId);
+          await loadMessages(targetSessionId);
         }
+      } else {
+        setSessions([]);
+        setActiveSessionId(null);
+        setMessages([]);
       }
     } catch (err) {
       console.error("Failed to load chat sessions:", err);
@@ -209,8 +218,8 @@ export function TwinChat({
   const loadMessages = async (sessionId: string | number) => {
     try {
       const data = await getChatMessages(sessionId, userId);
-      setMessages(data);
-      prevMsgCountRef.current = data.length;
+      setMessages(data || []);
+      prevMsgCountRef.current = (data || []).length;
     } catch (err) {
       console.error("Failed to load messages:", err);
     }

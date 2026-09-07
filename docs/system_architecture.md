@@ -281,4 +281,38 @@ classDiagram
 
 ---
 
+## 6. Local Disk Persistence Engine & State Rehydration
+
+To guarantee durability and zero data loss across user logouts, account switches, and server restarts, Visual Risk AI integrates a synchronous disk persistence snapshot engine:
+
+```mermaid
+flowchart LR
+  subgraph Operations["Mutating Operations"]
+    O1["User Registration / Profile Edit"]
+    O2["Chat Messages & Action Proposals"]
+    O3["Planner Tasks & Suggestions"]
+    O4["Habit / Study / Financial Logs"]
+  end
+
+  subgraph Ingest["Beanie ODM & Mongo Engine"]
+    B1["Live MongoDB / Mongomock Collections"]
+  end
+
+  subgraph PersistenceStore["Disk Snapshot Engine"]
+    S1["save_persistence_snapshot()"]
+    S2["data/mongodb_persistence.json.tmp"]
+    S3["data/mongodb_persistence.json (Atomic Replace)"]
+  end
+
+  O1 & O2 & O3 & O4 --> B1
+  B1 --> S1 --> S2 --> S3
+```
+
+### Key Architectural Capabilities:
+1. **Tutorial Thread Auto-Seeding**: Every new profile eagerly receives the standard "Tutorial" thread with interactive onboarding guidance.
+2. **Deterministic Startup Rehydration**: On application startup, `load_persistence_snapshot()` populates all document collections before network requests are served.
+3. **Lossless Conversation State**: Chat messages, proposed action payloads, execution statuses, and multi-turn planner history persist across sessions.
+
+---
+
 *Back to [README.md](../README.md)*
