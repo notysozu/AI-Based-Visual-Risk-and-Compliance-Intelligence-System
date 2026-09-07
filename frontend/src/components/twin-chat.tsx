@@ -420,7 +420,7 @@ export function TwinChat({
         window.dispatchEvent(new Event("chat-sessions-updated"));
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to communicate with Digital Twin AI");
+      toast.error(err.message || "Failed to communicate with Visual Risk AI (VRCI)");
     } finally {
       setLoading(false);
     }

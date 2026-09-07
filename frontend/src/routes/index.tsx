@@ -132,7 +132,7 @@ function LandingPage() {
               <GaugeCircle className="h-4 w-4" />
             </div>
             <span className="text-sm font-semibold tracking-tight">
-              Digital Twin <span className="text-xs font-mono text-muted-foreground ml-1 font-normal">AI</span>
+              Visual Risk <span className="text-xs font-mono text-muted-foreground ml-1 font-normal">AI</span>
             </span>
           </Link>
 
