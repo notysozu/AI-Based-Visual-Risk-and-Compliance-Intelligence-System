@@ -1,6 +1,6 @@
 # Workflow Step 8: Visual Risk Copilot & Conversational Agent
 
-This document details the architecture, 4-stage agentic reasoning pipeline, multi-action proposal system, voice recognition, database persistence, and API specification for the **Visual Risk Copilot** (`/chat`).
+This document details the architecture, 4-stage agentic reasoning pipeline, dynamic schedule table parser, multi-action proposal system, voice recognition, database persistence, and API specification for the **Visual Risk Copilot** (`/chat`).
 
 ---
 
@@ -16,40 +16,76 @@ Unlike generic chatbots, the Copilot is deeply integrated with the user's live d
 
 Whenever a user prompts the Copilot, the AI execution engine processes the turn through four distinct phases:
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  Step 1: Goal Definition                                                 │
-│  • Decomposes user inquiry into explicit optimization targets (e.g.         │
-│    circadian productivity boost, purchase milestone friction, sleep shifts).│
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │
-┌──────────────────────────────────────▼──────────────────────────────────────┐
-│  Step 2: Telemetry Search & Data Gathering                               │
-│  • Queries DB habit logs (average sleep, sleep debt, screen time, exercise).│
-│  • Gathers study session records, focus subjects, and weekly consistency.   │
-│  • Extracts financial cash flow (income, expenses, surplus, savings rate).  │
-│  • Pulls active milestone targets (e.g. Emergency Fund $20k, % progress).   │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │
-┌──────────────────────────────────────▼──────────────────────────────────────┐
-│  Step 3: Multi-Criteria Analysis & Optimization                          │
-│  • Maps daily cortisol & alertness curves (08:30–11:30 peak cognitive sprint)│
-│  • Models biological elasticity tradeoffs (Sleep vs Health Index vs Focus). │
-│  • Runs deterministic compound growth and stochastic Monte Carlo forecasts. │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │
-┌──────────────────────────────────────▼──────────────────────────────────────┐
-│  Step 4: Strategic Execution Plan & Action Proposal                      │
-│  • Synthesizes executive summary and unbroken GitHub-Flavored Markdown table│
-│  • Attaches interactive 1-click Action Proposal Card for direct DB commit.  │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+  S1["Step 1: Goal Definition<br/>• Decomposes user inquiry into explicit optimization targets<br/>• Identifies domain: circadian productivity boost, purchase milestone friction, sleep shifts"]
+  S2["Step 2: Telemetry Search & Data Gathering<br/>• Queries DB habit logs (average sleep, sleep debt, screen time, exercise)<br/>• Gathers study records, focus subjects, cash flow surplus & milestones"]
+  S3["Step 3: Multi-Criteria Analysis & Optimization<br/>• Maps daily cortisol & alertness curves (08:30–11:30 peak cognitive sprint)<br/>• Models biological elasticity tradeoffs (Sleep vs Health Index vs Focus)<br/>• Runs deterministic compound growth & stochastic Monte Carlo forecasts"]
+  S4["Step 4: Strategic Execution Plan & Action Proposal<br/>• Synthesizes executive summary and unbroken GitHub-Flavored Markdown table<br/>• Attaches interactive 1-click Action Proposal Card for direct DB commit"]
+
+  S1 --> S2 --> S3 --> S4
 ```
 
 ---
 
-## 3. Interactive Multi-Action Proposal System
+## 3. Dynamic Schedule Table & List Parsing Engine
 
-Copilot responses can attach structured actionable payloads (`action_type`, `action_payload`, `action_status`) that require explicit user approval before execution:
+The system features a dedicated parsing engine (`ai_engine/llm_integration/table_parser.py`) that extracts structured tasks from any Markdown table or bulleted list generated in dialogue turns:
+
+```mermaid
+flowchart LR
+  subgraph InputFormats["Dialogue Inputs"]
+    T1["Markdown Schedule Table<br/>| Mon | Strength | 45 min |"]
+    T2["Circadian Daily Table<br/>| 09:00 | Deep Work | 90m |"]
+    T3["Bulleted Schedule List<br/>- 08:00 AM: Cardio (30m)"]
+  end
+
+  subgraph Parser["Table & Schedule Parser"]
+    P1["Column Identification<br/>Time · Title · Duration · Category · Impact"]
+    P2["Category Inference<br/>Health · Work · Study · Money · Routine"]
+    P3["Normalization<br/>Standard HH:MM times & Integer minutes"]
+  end
+
+  subgraph Output["Action Payload"]
+    O1["action_type: add_multiple_tasks<br/>action_payload: {tasks: [...]}"]
+  end
+
+  T1 & T2 & T3 --> P1 --> P2 --> P3 --> O1
+```
+
+---
+
+## 4. Multi-Turn Planning Dialogue Flow
+
+When users ask to plan a routine across multiple dialogue turns, the Copilot seamlessly tracks context, extracts history tables, and commits tasks to the Daily Planner:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor User as User
+  participant Copilot as Visual Risk Copilot
+  participant Parser as Table Parser
+  participant DB as MongoDB (UserDoc.tasks_json)
+
+  User->>Copilot: "let's plan something"
+  Copilot-->>User: "Hey! What would you like to plan — financial, fitness, or study routine?"
+
+  User->>Copilot: "lets say fitness schedule"
+  Copilot->>Parser: build_fitness_schedule()
+  Copilot-->>User: Fitness Blueprint Table + action_type: "add_multiple_tasks"
+
+  User->>Copilot: "yes plug it in my daily plannar"
+  Copilot->>Parser: parse_schedule_tasks_from_text(history)
+  Parser-->>Copilot: 7 Calibrated Fitness Tasks (Health, Start Times, Durations)
+  Copilot->>DB: Append tasks to UserDoc.tasks_json & UserSuggestionDoc (status: executed)
+  Copilot-->>User: "I have calibrated and plugged these 7 focus blocks directly into your Daily Planner."
+```
+
+---
+
+## 5. Interactive Multi-Action Proposal System
+
+Copilot responses can attach structured actionable payloads (`action_type`, `action_payload`, `action_status`) that execute directly or await 1-click user approval based on the active autonomy mode:
 
 ```mermaid
 flowchart LR
@@ -65,7 +101,7 @@ flowchart LR
 
 ---
 
-## 4. Collapsible Step-by-Step Reasoning (`<think>`)
+## 6. Collapsible Step-by-Step Reasoning (`<think>`)
 
 When **Think Mode** is active, the model generates an explicit reasoning block wrapped in `<think>...</think>` tags:
 - Formats step-by-step mathematical computations, baseline deltas, and probability variance.
@@ -74,7 +110,7 @@ When **Think Mode** is active, the model generates an explicit reasoning block w
 
 ---
 
-## 5. Voice Input & Speech Recognition
+## 7. Voice Input & Speech Recognition
 
 - **Web Speech API Integration**: Built-in voice dictation allowing hands-free interaction with the Copilot.
 - **Audio Waveform Feedback**: Visual listening indicator pulsing in real time while capturing speech.
@@ -82,7 +118,7 @@ When **Think Mode** is active, the model generates an explicit reasoning block w
 
 ---
 
-## 6. Database Models & Schema
+## 8. Database Models & Schema
 
 Chat interactions are persisted in MongoDB through Beanie Document models with embedded messages:
 
@@ -99,62 +135,36 @@ classDiagram
 
   class ChatMessageDoc {
     +String id
-    +String role ("user | assistant")
+    +String role
     +String content
     +String action_type
     +String action_payload
-    +String action_status ("proposed | executed | rejected")
+    +String action_status
     +DateTime created_at
   }
 
-  ChatSessionDoc *-- ChatMessageDoc : embedded sub-documents
+  ChatSessionDoc *-- ChatMessageDoc
 ```
 
 ---
 
-## 7. REST API Endpoints Specification
+## 9. REST API Reference for Chat
 
-### 1. List User Chat Sessions
-- **Endpoint**: `GET /chat/sessions/{user_id}`
-- **Description**: Returns all conversation sessions belonging to the user with message count and preview.
-
-### 2. Create Thread & Send First Message
-- **Endpoint**: `POST /chat/message/create_thread`
-- **Request Body**:
-  ```json
-  {
-    "user_id": 1,
-    "prompt": "can you add some suggestion for my task to boost my productivity",
-    "think_mode": true,
-    "client_context": { "goalName": "Emergency Fund", "goalTarget": 20000, "goalCurrent": 8500 }
-  }
-  ```
-- **Response**: Generates a new `ChatSession` with an AI-summarized title, creates the user message, and returns the assistant response with action proposals.
-
-### 3. Send Turn Message in Existing Session
-- **Endpoint**: `POST /chat/message/{session_id}`
-- **Authorization**: Enforces user ownership (`403 Forbidden` if `session.user_id != req.user_id`).
-
-### 4. Approve & Execute Proposed Action
-- **Endpoint**: `POST /chat/action/execute/{message_id}`
-- **Request Body**:
-  ```json
-  {
-    "user_id": 1,
-    "action_type": "add_multiple_tasks",
-    "action_payload": { "tasks": [...] }
-  }
-  ```
-- **Effect**: Persists tasks or profile updates into the database and updates `action_status` to `"executed"`.
-
-### 5. Dismiss Proposed Action
-- **Endpoint**: `POST /chat/action/reject/{message_id}`
-- **Effect**: Updates `action_status` to `"rejected"` in the database.
+```mermaid
+flowchart TB
+  subgraph ChatEndpoints["Chat Endpoints (/chat)"]
+    direction TB
+    C1["GET /chat/sessions/{user_id}<br/>• Lists chronological threads with preview"]
+    C2["POST /chat/sessions/{user_id}<br/>• Creates blank thread"]
+    C3["DELETE /chat/sessions/{session_id}<br/>• Deletes thread with ownership verification"]
+    C4["GET /chat/messages/{session_id}<br/>• Retrieves full message history"]
+    C5["POST /chat/message/create_thread<br/>• Creates thread & processes turn 1"]
+    C6["POST /chat/message/{session_id}<br/>• Processes follow-up turn in thread"]
+    C7["POST /chat/action/execute/{msg_id}<br/>• Executes proposed action in MongoDB"]
+    C8["POST /chat/action/reject/{msg_id}<br/>• Dismisses proposed action"]
+  end
+```
 
 ---
 
-## 8. Markdown & Table Rendering Engine
-
-In [`frontend/src/components/twin-chat.tsx`](../../frontend/src/components/twin-chat.tsx), the chat interface utilizes `ReactMarkdown` with `remark-gfm`:
-- **Contiguous Table Normalization**: Strips disruptive empty lines inside markdown tables so rows remain contiguous.
-- **Native GFM Styling**: Styled `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<th>`, and `<td>` components with responsive horizontal scrolling, dark-mode borders, and row hover states.
+*Back to [README.md](../../README.md)*

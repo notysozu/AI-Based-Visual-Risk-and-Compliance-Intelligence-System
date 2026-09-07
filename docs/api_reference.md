@@ -34,10 +34,16 @@ flowchart TB
       U6["GET /users/demo/{role} (Dedicated Persona Seed)"]
     end
 
+    subgraph PlannerSvc["Autonomous AI Daily Planner (/planner)"]
+      PL1["POST /planner/auto-plan/{user_id} (Synthesize & Commit Circadian Plan)"]
+      PL2["GET /planner/auto-plan/status/{user_id} (Check Today's Planning Status)"]
+      PL3["PUT /planner/autonomy-mode/{user_id} (Configure Autonomy Governance)"]
+    end
+
     subgraph ChatSvc["Copilot Conversational AI (/chat)"]
       C1["GET /chat/sessions/{user_id} (List Threads)"]
-      C2["POST /chat/message/create_thread (New Thread)"]
-      C3["POST /chat/message/{session_id} (4-Stage Reasoning Turn)"]
+      C2["POST /chat/message/create_thread (New Thread & Turn 1)"]
+      C3["POST /chat/message/{session_id} (Multi-Turn Reasoning Turn)"]
       C4["POST /chat/action/execute/{msg_id} (Commit Action)"]
       C5["POST /chat/action/reject/{msg_id} (Dismiss Action)"]
       C6["DELETE /chat/sessions/{session_id} (Delete Thread)"]
@@ -1416,6 +1422,166 @@ curl -X DELETE http://127.0.0.1:8000/cache/forecast_cache_user_123 \
 {
   "status": "success",
   "message": "Cache key 'forecast_cache_user_123' deleted."
+}
+```
+
+---
+
+## Autonomous AI Daily Planner Endpoints (`/planner`)
+
+---
+
+### 30. Synthesize Autonomous Daily Schedule — `POST /planner/auto-plan/{user_id}`
+
+Synthesizes a circadian-optimized daily task routine (4–5 calibrated time blocks) adapted to recent sleep debt, study goals, and cash flow surplus. Generates a Morning Intelligence Briefing and immediately commits the tasks to `UserDoc.tasks_json` and `UserSuggestionDoc`.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X POST "http://127.0.0.1:8000/planner/auto-plan/6a9a8f942b032e1a5bddbacf?plan_date=2026-09-07" \
+  -H "Accept: application/json"
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "user_id": "6a9a8f942b032e1a5bddbacf",
+  "plan_date": "2026-09-07",
+  "task_count": 5,
+  "auto_committed": true,
+  "briefing": "Good morning Alex! You logged 6.5h sleep vs your 8.0h target (Sleep deficit of 1.5h detected). We've scheduled an afternoon power recharge and aligned your deep work sprint to peak cortisol hours.",
+  "tasks": [
+    {
+      "id": "autoplan-1788786088-0",
+      "title": "Core Academic Focus: Advanced Calculus",
+      "category": "Study",
+      "start": "09:00",
+      "minutes": 90,
+      "impact": "+1.5 Cognitive Output",
+      "detail": "High-leverage theoretical focus scheduled during morning cortisol alertness peak.",
+      "done": false,
+      "date": "2026-09-07",
+      "fromSuggestion": true,
+      "is_auto_planned": true
+    },
+    {
+      "id": "autoplan-1788786088-1",
+      "title": "Deep Problem Solving & Assignment Sprint",
+      "category": "Study",
+      "start": "11:30",
+      "minutes": 75,
+      "impact": "+1.2 Retention",
+      "detail": "Focused assignment sprint before mid-day cognitive dip.",
+      "done": false,
+      "date": "2026-09-07",
+      "fromSuggestion": true,
+      "is_auto_planned": true
+    },
+    {
+      "id": "autoplan-1788786088-2",
+      "title": "Circadian Recharge & 20-Min Restorative Walk",
+      "category": "Health",
+      "start": "14:00",
+      "minutes": 30,
+      "impact": "+1.4 Fatigue Protection",
+      "detail": "Restorative biological recovery to reset alertness.",
+      "done": false,
+      "date": "2026-09-07",
+      "fromSuggestion": true,
+      "is_auto_planned": true
+    },
+    {
+      "id": "autoplan-1788786088-3",
+      "title": "Cardio & Physical Vitality",
+      "category": "Health",
+      "start": "17:00",
+      "minutes": 45,
+      "impact": "+0.9 Vitality Stability",
+      "detail": "Aerobic conditioning to elevate baseline dopamine and sleep readiness.",
+      "done": false,
+      "date": "2026-09-07",
+      "fromSuggestion": true,
+      "is_auto_planned": true
+    },
+    {
+      "id": "autoplan-1788786088-4",
+      "title": "Spaced Repetition & Daily Synthesis",
+      "category": "Study",
+      "start": "20:30",
+      "minutes": 30,
+      "impact": "+0.7 Long-Term Recall",
+      "detail": "Active recall review to consolidate long-term memory before sleep.",
+      "done": false,
+      "date": "2026-09-07",
+      "fromSuggestion": true,
+      "is_auto_planned": true
+    }
+  ],
+  "synced_at": "2026-09-07T08:00:00"
+}
+```
+
+</details>
+
+---
+
+### 31. Retrieve Auto-Plan Status — `GET /planner/auto-plan/status/{user_id}`
+
+Retrieves the current day's auto-planning status, active morning intelligence briefing, and scheduled task count.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X GET "http://127.0.0.1:8000/planner/auto-plan/status/6a9a8f942b032e1a5bddbacf?plan_date=2026-09-07" \
+  -H "Accept: application/json"
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "user_id": "6a9a8f942b032e1a5bddbacf",
+  "plan_date": "2026-09-07",
+  "has_auto_plan": true,
+  "task_count": 5,
+  "autonomy_mode": "semi_autonomous",
+  "auto_planner_enabled": true,
+  "briefing": "Good morning Alex! You logged 6.5h sleep vs your 8.0h target (Sleep deficit of 1.5h detected). We've scheduled an afternoon power recharge and aligned your deep work sprint to peak cortisol hours."
+}
+```
+
+</details>
+
+---
+
+### 32. Update Autonomy Governance Mode — `PUT /planner/autonomy-mode/{user_id}`
+
+Configures the user's Autonomy Mode (`supervised`, `semi_autonomous`, or `full_autonomous`) and toggles automatic morning schedule synthesis.
+
+<details>
+<summary><b>Show Example Request & Response</b></summary>
+
+**Example Request:**
+```bash
+curl -X PUT "http://127.0.0.1:8000/planner/autonomy-mode/6a9a8f942b032e1a5bddbacf" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "autonomy_mode": "full_autonomous",
+    "auto_planner_enabled": true
+  }'
+```
+
+**Example Response (200 OK):**
+```json
+{
+  "status": "success",
+  "user_id": "6a9a8f942b032e1a5bddbacf",
+  "autonomy_mode": "full_autonomous",
+  "auto_planner_enabled": true,
+  "message": "Autonomy mode updated to full_autonomous."
 }
 ```
 

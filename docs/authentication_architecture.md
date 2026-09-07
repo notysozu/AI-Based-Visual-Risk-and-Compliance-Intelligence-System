@@ -43,17 +43,12 @@ sequenceDiagram
 * **Storage**: Passwords are never stored in plaintext or reversible formats. Stored exclusively as `password_hash` in the `users` MongoDB collection.
 * **Verification**: Constant-time comparison prevents timing attacks.
 
-```text
-Plaintext Password
-  |
-  v
-UTF-8 Encoding (max 72 bytes)
-  |
-  v
-bcrypt.gensalt(rounds=12)
-  |
-  v
-Stored in MongoDB users.password_hash: $2b$12$...
+```mermaid
+flowchart TD
+  P1["Plaintext Password (e.g. 'SecurePassword123!')"] --> P2["UTF-8 Encoding (Safe 72-Byte Boundary Check)"]
+  P2 --> P3["bcrypt.gensalt(rounds=12) Cryptographic Salt"]
+  P3 --> P4["Argon2id / Bcrypt Constant-Time Hash Digest"]
+  P4 --> P5["Stored in MongoDB UserDoc.password_hash ($2b$12$...)"]
 ```
 
 ---
@@ -283,12 +278,33 @@ erDiagram
 
 ## 15. Threat Modeling and Mitigation Matrix
 
-| Threat Vector | Potential Impact | Architecture Mitigation |
-| :--- | :--- | :--- |
-| **XSS Token Exfiltration** | Complete session hijack | Refresh token stored in `HttpOnly` cookie; Access token in memory only. |
-| **Refresh Token Theft** | Persistent unauthorized API access | Automatic token rotation + Token Family Cascade Revocation on reuse. |
-| **Replay Attacks** | Replay of old authentication payloads | Unique `jti` in JWT access tokens; Single-use refresh and reset tokens. |
-| **User Enumeration** | Attacker maps registered emails | Generic responses for login and password reset endpoints. |
-| **Credential Stuffing / Brute Force** | Account takeover via dictionary attack | `bcrypt` (12 rounds) high compute cost + account status validation. |
-| **JWT Tampering** | Privilege escalation / role spoofing | Cryptographic HMAC-SHA256 signature verification with secret key. |
-| **Stale Session Abuse** | Access retained after password change | Instant cascade invalidation of all user refresh tokens on password reset/change. |
+```mermaid
+flowchart LR
+  subgraph ThreatVectors["Threat Vectors"]
+    T1["XSS Token Exfiltration"]
+    T2["Refresh Token Theft"]
+    T3["Replay Attacks"]
+    T4["User Enumeration"]
+    T5["Credential Stuffing"]
+    T6["JWT Tampering"]
+    T7["Stale Session Abuse"]
+  end
+
+  subgraph Mitigations["Architecture Mitigations"]
+    M1["HttpOnly, Secure, SameSite=Lax Cookie (Access Token in Memory Only)"]
+    M2["Single-Use Token Rotation + Token Family Cascade Revocation"]
+    M3["Unique jti Claim in JWT + Single-Use SHA-256 Token Digests"]
+    M4["Uniform Enumeration-Safe 401 & 200 Generic Messages"]
+    M5["Argon2id / Bcrypt (12 Rounds) High Computational Cost"]
+    M6["Cryptographic HMAC-SHA256 Signature Verification with Secret Key"]
+    M7["Instant Invalidation of All User Refresh Tokens on Credential Mutation"]
+  end
+
+  T1 --> M1
+  T2 --> M2
+  T3 --> M3
+  T4 --> M4
+  T5 --> M5
+  T6 --> M6
+  T7 --> M7
+```
