@@ -284,6 +284,73 @@ export function TwinChat({
     }
   };
 
+  const syncExecutedActionToLocalStore = (asst: ChatMessageData) => {
+    if (asst.action_status !== "executed" || !asst.action_payload) return;
+    try {
+      const payload = typeof asst.action_payload === "string" ? JSON.parse(asst.action_payload) : asst.action_payload;
+      if (asst.action_type === "add_task") {
+        addTask({
+          title: payload.title || "Focus Sprint",
+          start: payload.start || "09:00",
+          minutes: Number(payload.minutes || 45),
+          category: payload.category || "Work",
+          done: false,
+          date: today(),
+        });
+        toast.success(`✓ Added "${payload.title}" directly to your Daily Planner`);
+      } else if (asst.action_type === "add_multiple_tasks") {
+        const tasks = payload.tasks || [];
+        for (const t of tasks) {
+          addTask({
+            title: t.title || "Focus Block",
+            start: t.start || "09:00",
+            minutes: Number(t.minutes || 45),
+            category: t.category || "Work",
+            done: false,
+            date: today(),
+          });
+        }
+        if (tasks.length > 0) {
+          toast.success(`✓ Added ${tasks.length} tasks directly to your Daily Planner`);
+        }
+      } else if (asst.action_type === "update_settings") {
+        updateProfile(payload);
+        toast.success("✓ Profile settings updated successfully");
+      } else if (asst.action_type === "simulate_what_if") {
+        saveScenarioPresets(
+          { savings: 0, sleep: 0, study: 0 },
+          {
+            savings: Number(payload.savings_delta || 0),
+            sleep: Number(payload.sleep_delta || 0),
+            study: Number(payload.study_delta || 0),
+          }
+        );
+        toast.success("✓ What-If scenario preset applied to Scenario B");
+      } else if (asst.action_type === "purchase_impact") {
+        const cost = Number(payload.cost || 0);
+        if (cost > 0) {
+          addTxn({
+            date: today(),
+            label: `Purchase: ${payload.item_name || "Major Purchase"}`,
+            amount: cost,
+            kind: "expense",
+          });
+          toast.success(`✓ Recorded $${cost.toLocaleString()} expense transaction`);
+        }
+      } else if (asst.action_type === "log_study") {
+        const durHours = Number(payload.hours || (payload.duration_minutes ? payload.duration_minutes / 60 : 1));
+        logStudyActivity(payload.subject || "Study", durHours);
+        toast.success(`✓ Logged ${payload.duration_minutes || 60} mins of ${payload.subject || "Study"} to academic records`);
+      } else if (asst.action_type === "log_habit") {
+        const durHours = Number(payload.hours || (payload.duration_minutes ? payload.duration_minutes / 60 : 1));
+        logHabitActivity(payload.habit_name || "Exercise", durHours);
+        toast.success(`✓ Logged ${payload.habit_name || "Habit"} (${durHours.toFixed(1)}h) to biometric records`);
+      }
+    } catch (e) {
+      console.warn("Failed to sync executed action to local store:", e);
+    }
+  };
+
   const handleSend = async (customPrompt?: string) => {
     const promptToSend = (customPrompt || inputPrompt).trim();
     if (!promptToSend || loading) return;
@@ -330,6 +397,7 @@ export function TwinChat({
         setActiveSessionId(res.session.id);
         setMessages([res.user_message, res.assistant_message]);
         setSessions((prev) => [res.session, ...prev.filter((s) => s.id !== res.session.id)]);
+        syncExecutedActionToLocalStore(res.assistant_message);
         window.dispatchEvent(new Event("chat-sessions-updated"));
       } else {
         // Case B: Existing session
@@ -345,6 +413,7 @@ export function TwinChat({
           res.user_message,
           res.assistant_message
         ]);
+        syncExecutedActionToLocalStore(res.assistant_message);
 
         const updatedSessions = await getChatSessions(userId);
         setSessions(updatedSessions);

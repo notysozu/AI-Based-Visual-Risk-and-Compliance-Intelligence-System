@@ -141,7 +141,12 @@ def process_twin_copilot_turn(
     if purchase_res:
         return purchase_res
 
-    # 4. Routine / Multi-task planning intent
+    # 4. Single task addition intent (checked before routine planning to catch explicit task commands)
+    single_task_res = handle_single_task_intent(prompt, p_lower, user_info, t_data, think_mode)
+    if single_task_res:
+        return single_task_res
+
+    # 5. Routine / Multi-task planning intent (only triggered on explicit schedule requests or confirmations)
     routine_res = handle_routine_planning_intent(
         prompt, p_lower, user_info, t_data, goal_name, goal_pct, goal_gap,
         think_mode, active_logged_sleep, active_study_subject, history=history
@@ -149,15 +154,10 @@ def process_twin_copilot_turn(
     if routine_res:
         return routine_res
 
-    # 5. What-If comparison intent
+    # 6. What-If comparison intent
     what_if_res = handle_what_if_intent(prompt, p_lower, user_id, user_info, baseline, think_mode)
     if what_if_res:
         return what_if_res
-
-    # 6. Single task addition intent
-    single_task_res = handle_single_task_intent(prompt, p_lower, user_info, t_data, think_mode)
-    if single_task_res:
-        return single_task_res
 
     # 7. Wealth Monte Carlo forecast intent
     wealth_res = handle_wealth_forecast_intent(prompt, p_lower, user_info, t_data, think_mode)
@@ -243,16 +243,22 @@ Step 4 — Formulated Strategic Execution Plan:
 """
         ai_reply = think_block + ai_reply
 
-    # Dynamic Fallback Table & Task Extractor
-    # If the response contains a schedule table/list and the dialogue relates to routines/tasks/planning, extract into action payload
-    extracted_fallback_tasks = parse_schedule_tasks_from_text(ai_reply)
-    if extracted_fallback_tasks and len(extracted_fallback_tasks) >= 2:
-        return {
-            "content": ai_reply,
-            "action_type": "add_multiple_tasks",
-            "action_payload": json.dumps({"tasks": extracted_fallback_tasks}),
-            "action_status": "proposed"
-        }
+    # Dynamic Fallback Table & Task Extractor:
+    # Only propose task additions if the user explicitly asked for a routine or tasks in their query
+    is_explicit_planning_prompt = any(k in p_lower for k in [
+        "plan my day", "suggest tasks", "schedule", "routine", "daily plan",
+        "fitness schedule", "workout plan", "study plan schedule", "plug it in"
+    ]) and not any(p_lower.startswith(q) for q in ["what is", "how does", "explain", "why", "tell me about"])
+
+    if is_explicit_planning_prompt:
+        extracted_fallback_tasks = parse_schedule_tasks_from_text(ai_reply)
+        if extracted_fallback_tasks and len(extracted_fallback_tasks) >= 2:
+            return {
+                "content": ai_reply,
+                "action_type": "add_multiple_tasks",
+                "action_payload": json.dumps({"tasks": extracted_fallback_tasks}),
+                "action_status": "proposed"
+            }
 
     return {
         "content": ai_reply,

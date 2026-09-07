@@ -22,53 +22,46 @@ def handle_routine_planning_intent(
     active_study_subject: Optional[str] = None,
     history: Optional[List[Dict[str, Any]]] = None
 ) -> Optional[Dict[str, Any]]:
-    # 1. Multi-task schedule & confirmation keywords
-    multi_task_keywords = [
-        # Direct routine / schedule requests
+    # Guard: Do not trigger schedule generation on informational questions
+    if any(p_lower.startswith(q) for q in [
+        "what is", "what does", "how does", "how do", "why is", "why does",
+        "why are", "explain", "tell me about", "can you explain", "what can"
+    ]):
+        return None
+
+    # 1. Explicit multi-task routine & schedule request phrases
+    explicit_schedule_requests = [
         "plan my day", "plan today", "suggest a schedule", "suggest schedule",
-        "suggest routine", "daily routine", "suggest tasks", "suggest task",
+        "suggest a routine", "suggest routine", "daily routine", "suggest tasks",
         "suggest some tasks", "schedule my day", "build a schedule", "optimize my day",
-        "schedule sprints", "routine for today", "plan a productive day",
-        "boost my productivity", "boost productivity", "increase productivity",
-        "improve productivity", "productivity suggestions", "suggestion for my task",
-        "suggestions for my task", "task suggestions", "tasks for productivity",
-        "recommend tasks", "suggest some suggestion", "productivity boost",
-        "fitness schedule", "workout schedule", "gym schedule", "exercise schedule",
-        "fitness routine", "workout routine", "gym routine", "exercise routine",
+        "routine for today", "plan a productive day", "boost my productivity",
+        "productivity suggestions", "task suggestions", "tasks for productivity",
+        "recommend tasks", "fitness schedule", "workout schedule", "gym schedule",
+        "exercise schedule", "fitness routine", "workout routine", "gym routine",
         "fitness plan", "workout plan", "training schedule", "cardio routine",
         "strength routine", "fitness blueprint", "workout blueprint",
         "lets say fitness schedule", "let's say fitness schedule", "say fitness schedule",
         "study schedule", "study routine", "exam routine", "learning schedule",
-        "plan something", "let's plan", "lets plan", "help me plan",
-        # Confirmation & Planner Integration phrases
-        "plug it in", "plug in", "plug into planner", "plug into my planner",
-        "plug in my daily plannar", "plug it in my daily plannar",
-        "plug in my daily planner", "plug it in my daily planner",
-        "plug it into my daily planner", "plug it into daily planner",
-        "add to planner", "add this to planner", "add to my planner",
-        "add this to my planner", "put it in my planner", "put in planner",
-        "put into planner", "save to planner", "apply schedule", "apply plan",
-        "yes plug it in", "yes add to planner", "yes add it", "confirm plan",
-        "yes schedule it", "schedule this", "schedule these", "commit to planner",
-        "add all to planner", "plug tasks", "add tasks to planner",
-        "plug into my daily plannar", "plug it to planner", "yes plug it"
+        "study plan schedule", "full schedule", "daily timetable", "timetable for today",
+        "generate schedule", "generate daily plan", "build my schedule"
     ]
 
-    is_multi_task_intent = any(k in p_lower for k in multi_task_keywords) or (
-        ("schedule" in p_lower or "add" in p_lower or "plan" in p_lower or "suggest" in p_lower or "plug" in p_lower or "apply" in p_lower) and
-        ("task" in p_lower or "tasks" in p_lower or "sprint" in p_lower or "sprints" in p_lower or "routine" in p_lower or "productivity" in p_lower or "blocks" in p_lower or "planner" in p_lower or "plannar" in p_lower or "fitness" in p_lower or "workout" in p_lower or "gym" in p_lower)
-    )
+    confirmation_phrases = [
+        "plug it in", "plug in", "plug into planner", "plug into my planner",
+        "plug in my daily planner", "plug it in my daily planner",
+        "plug in my daily plannar", "plug it in my daily plannar",
+        "plug it into my daily planner", "plug it into daily planner",
+        "add all to planner", "add all tasks to planner", "add these to planner",
+        "add this schedule", "apply schedule", "apply plan", "confirm plan",
+        "yes schedule it", "schedule these", "commit to planner", "save to planner",
+        "yes plug it in", "yes add to planner", "plug all tasks"
+    ]
 
-    if not is_multi_task_intent:
+    is_explicit_request = any(k in p_lower for k in explicit_schedule_requests)
+    is_confirmation_turn = any(k in p_lower for k in confirmation_phrases)
+
+    if not is_explicit_request and not is_confirmation_turn:
         return None
-
-    # Check if this is a follow-up confirmation ("plug it in", "add to planner", etc.)
-    is_confirmation_turn = any(k in p_lower for k in [
-        "plug", "add to planner", "add this to planner", "add to my planner",
-        "put in planner", "save to planner", "apply schedule", "apply plan",
-        "yes plug", "confirm plan", "schedule this", "schedule these", "commit to planner",
-        "plannar"
-    ])
 
     user_role_title = user_info.get("role", "professional").title()
     tasks: List[Dict[str, Any]] = []

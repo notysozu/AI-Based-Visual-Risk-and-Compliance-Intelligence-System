@@ -33,6 +33,17 @@ def handle_habit_logging_intent(
     t_data: Dict[str, Any],
     think_mode: bool = False
 ) -> Optional[Dict[str, Any]]:
+    # Guard: Do not intercept explicit task scheduling commands (handled by handle_single_task_intent)
+    task_schedule_triggers = [
+        "add to planner", "add in my planner", "add to my planner", "add in my plannar",
+        "add to my plannar", "add in my task", "add to task", "add to my tasks",
+        "schedule a task", "schedule task", "add task", "create task", "put in planner",
+        "put in my planner", "put in my plannar", "put in task", "insert into planner",
+        "schedule a sprint", "add sprint"
+    ]
+    if any(trigger in p_lower for trigger in task_schedule_triggers):
+        return None
+
     # Triggers for Exercise / Workouts
     exercise_keywords = [
         "exercise", "excercise", "workout", "worked out", "working out", 

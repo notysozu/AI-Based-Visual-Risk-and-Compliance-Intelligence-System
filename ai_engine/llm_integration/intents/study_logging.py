@@ -11,6 +11,16 @@ def handle_study_logging_intent(
     think_mode: bool = False,
     active_study_subject: Optional[str] = None
 ) -> Optional[Dict[str, Any]]:
+    # Guard: Do not intercept explicit task scheduling commands (handled by handle_single_task_intent)
+    task_schedule_triggers = [
+        "add to planner", "add in my planner", "add to my planner", "add in my plannar",
+        "add in my task", "add to task", "add to my tasks", "schedule a task",
+        "schedule task", "add task", "create task", "put in planner", "put in my planner",
+        "put in task", "insert into planner"
+    ]
+    if any(trigger in p_lower for trigger in task_schedule_triggers):
+        return None
+
     study_log_triggers = ["i studied", "studied for", "studied ", "log study", "log my study", "log academic", "recorded study", "track study", "completed study", "finished studying"]
     if not (any(k in p_lower for k in study_log_triggers) and any(w in p_lower for w in ["hour", "hours", "hr", "hrs", "min", "mins", "minute", "minutes"])):
         return None

@@ -3,6 +3,34 @@ import json
 from typing import Dict, Any, Optional
 
 
+def parse_time_to_24h(time_str: Optional[str]) -> str:
+    """Normalizes 5pm, 5:30pm, 5 PM, 17:00 to HH:MM format."""
+    if not time_str:
+        return "09:00"
+    time_str = time_str.strip().lower()
+
+    # Match 12-hour format e.g., 5pm, 5:30pm, 05:30 pm
+    m_12h = re.search(r"(\d{1,2})(?::(\d{2}))?\s*(am|pm)", time_str)
+    if m_12h:
+        hour = int(m_12h.group(1))
+        minute = int(m_12h.group(2)) if m_12h.group(2) else 0
+        meridiem = m_12h.group(3)
+        if meridiem == "pm" and hour < 12:
+            hour += 12
+        elif meridiem == "am" and hour == 12:
+            hour = 0
+        return f"{hour:02d}:{minute:02d}"
+
+    # Match 24-hour format e.g., 17:00, 09:30
+    m_24h = re.search(r"(\d{1,2}):(\d{2})", time_str)
+    if m_24h:
+        hour = int(m_24h.group(1))
+        minute = int(m_24h.group(2))
+        return f"{hour:02d}:{minute:02d}"
+
+    return "09:00"
+
+
 def handle_single_task_intent(
     prompt: str,
     p_lower: str,
@@ -10,12 +38,44 @@ def handle_single_task_intent(
     t_data: Dict[str, Any],
     think_mode: bool = False
 ) -> Optional[Dict[str, Any]]:
-    task_keywords = ["add task", "add a task", "schedule a task", "create task", "add habit", "schedule habit", "block time", "add deep work", "add study sprint", "remind me to", "schedule a sprint", "focus sprint", "plan a sprint", "plan task"]
-    is_single_task_intent = any(k in p_lower for k in task_keywords) or (("add" in p_lower or "schedule" in p_lower or "plan" in p_lower) and ("min" in p_lower or "minute" in p_lower or "hour" in p_lower or "am" in p_lower or "pm" in p_lower))
+    """
+    Parses explicit commands to add a single task to the user's planner/tasks.
+    Examples:
+    - 'add in my task and planner workout at 5pm for 45 min'
+    - 'add to planner 30 min reading at 10am'
+    - 'schedule a 90 min deep work sprint at 09:00'
+    - 'add task: Finish budget analysis at 2pm'
+    """
+    single_add_triggers = [
+        "add task", "add a task", "schedule a task", "schedule task", "create task",
+        "create a task", "add habit", "schedule habit", "block time", "add deep work",
+        "add study", "remind me to", "schedule a sprint", "focus sprint", "plan a sprint",
+        "plan task", "add in my task", "add in my tasks", "add in my planner",
+        "add in my plannar", "add to my task", "add to my tasks", "add to my planner",
+        "add to my plannar", "add to task", "add to tasks", "add to planner", "add to plannar",
+        "put in my task", "put in my tasks", "put in my planner", "put in my plannar",
+        "put in planner", "put in task", "insert into planner", "schedule into planner",
+        "add this task", "add a focus block", "schedule a focus block"
+    ]
 
-    if not is_single_task_intent:
+    has_trigger = any(trigger in p_lower for trigger in single_add_triggers)
+
+    has_pattern = bool(re.search(
+        r"\b(?:add|schedule|create|insert|put)\b.*\b(?:at\s+\d{1,2}|\d+\s*(?:min|minute|hour|hr)|\b(?:to|in|into)\s+(?:my\s+)?(?:task|plann(?:er|ar)|schedule))\b",
+        p_lower
+    ))
+
+    # Guard: Do not intercept whole-day routine requests (handled by routine_planning)
+    is_whole_day_routine_request = any(k in p_lower for k in [
+        "plan my day", "plan today", "suggest a schedule", "suggest schedule",
+        "suggest routine", "daily routine", "suggest tasks", "workout schedule",
+        "fitness schedule", "study schedule", "routine for today"
+    ]) and not has_trigger
+
+    if (not has_trigger and not has_pattern) or is_whole_day_routine_request:
         return None
 
+    # 1. Extract Duration
     min_m = re.search(r"(\d+)\s*(?:min|minute|minutes|m\b)", p_lower)
     hrs_m = re.search(r"(\d+(?:\.\d+)?)\s*(?:hour|hours|hr|hrs|h\b)", p_lower)
     if min_m:
@@ -25,33 +85,44 @@ def handle_single_task_intent(
     else:
         duration = 45
 
-    time_m = re.search(r"(\d{1,2}(?::\d{2})?\s*(?:am|pm)|\d{1,2}:\d{2})", p_lower)
-    start_time = time_m.group(1).upper() if time_m else "09:00"
+    # 2. Extract Time
+    time_raw = re.search(r"(\d{1,2}(?::\d{2})?\s*(?:am|pm)|\b\d{1,2}:\d{2}\b)", p_lower)
+    start_time = parse_time_to_24h(time_raw.group(1) if time_raw else None)
 
+    # 3. Classify Category
     category = "Work"
-    if any(w in p_lower for w in ["study", "syllabus", "exam", "reading", "learn", "course", "lecture"]):
+    if any(w in p_lower for w in ["study", "syllabus", "exam", "reading", "learn", "course", "lecture", "homework", "math", "history", "physics"]):
         category = "Study"
-    elif any(w in p_lower for w in ["gym", "workout", "sleep", "cardio", "walk", "meditat", "health", "water"]):
+    elif any(w in p_lower for w in ["gym", "workout", "sleep", "cardio", "walk", "meditat", "health", "water", "exercise", "run", "yoga", "stretch"]):
         category = "Health"
-    elif any(w in p_lower for w in ["budget", "invest", "crypto", "tax", "finance", "money", "savings"]):
+    elif any(w in p_lower for w in ["budget", "invest", "crypto", "tax", "finance", "money", "savings", "bill", "invoice", "portfolio"]):
         category = "Money"
-    elif any(w in p_lower for w in ["family", "hobby", "social", "clean", "personal"]):
+    elif any(w in p_lower for w in ["family", "hobby", "social", "clean", "personal", "errand", "dinner", "lunch"]):
         category = "Personal"
 
-    clean_title = re.sub(r"^(?:please\s+)?(?:can\s+you\s+)?(?:add\s+a?\s*|create\s+a?\s*|schedule\s+a?\s*)", "", prompt, flags=re.IGNORECASE).strip()
-    clean_title = re.sub(r"(?:at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?|\b\d+\s*min(?:ute)?s?|\b\d+\s*hours?|\bto\s+my\s+(?:tasks?|planner|schedule))", "", clean_title, flags=re.IGNORECASE).strip()
-    if not clean_title or len(clean_title) < 3:
-        clean_title = f"{category} Sprint Block"
+    # 4. Clean and Extract Title
+    clean_title = re.sub(r"^(?:please\s+)?(?:can\s+you\s+)?(?:add\s+a?\s*|create\s+a?\s*|schedule\s+a?\s*|put\s+a?\s*|insert\s+a?\s*|remind\s+me\s+to\s+)", "", prompt, flags=re.IGNORECASE).strip()
+    clean_title = re.sub(r"(?:in|to|into)\s+my\s+(?:tasks?|plann(?:er|ar)|schedule)(?:\s+and\s+(?:tasks?|plann(?:er|ar)|schedule))?", "", clean_title, flags=re.IGNORECASE).strip()
+    clean_title = re.sub(r"(?:in|to|into)\s+(?:the\s+)?(?:tasks?|plann(?:er|ar)|schedule)", "", clean_title, flags=re.IGNORECASE).strip()
+    clean_title = re.sub(r"^task(?:\s*:|\s+is)?", "", clean_title, flags=re.IGNORECASE).strip()
+    clean_title = re.sub(r"(?:at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?|\b\d{1,2}(?::\d{2})?\s*(?:am|pm)\b|\b\d{1,2}:\d{2}\b)", "", clean_title, flags=re.IGNORECASE).strip()
+    clean_title = re.sub(r"(?:for\s+)?\b\d+\s*(?:mins?|minutes?|hours?|hrs?|h)\b", "", clean_title, flags=re.IGNORECASE).strip()
+    clean_title = clean_title.strip(" :.-,?!")
+    clean_title = re.sub(r"\s+", " ", clean_title).strip()
 
-    clean_title = clean_title.strip(" .?!,")
-    if len(clean_title) > 50:
-        clean_title = clean_title[:47] + "..."
+    if not clean_title or len(clean_title) < 2 or clean_title.lower() in ["task", "planner", "plannar", "schedule", "my", "a", "an", "the"]:
+        clean_title = f"{category} Focus Session"
+
+    if len(clean_title) <= 30:
+        clean_title = clean_title.title()
+    else:
+        clean_title = clean_title[:1].upper() + clean_title[1:]
 
     impact_desc = "+0.8 Focus & Cognitive Output" if category in ["Work", "Study"] else ("+0.6 Vitality Index" if category == "Health" else "+2% Capital Control")
 
-    advice_text = f"""### Proposed Schedule Addition: **{clean_title}**
+    advice_text = f"""### Scheduled Task: **{clean_title}**
 
-Based on your telemetry profile and current daily routine, I have structured this calibrated focus block:
+I have configured this focus block for your Daily Planner:
 
 | Attribute | Scheduled Value |
 | :--- | :--- |
@@ -61,7 +132,7 @@ Based on your telemetry profile and current daily routine, I have structured thi
 | **Category** | `{category}` |
 | **Predicted Impact** | {impact_desc} |
 
-Click **Approve & Add Task** below to append this directly to your Daily Planner."""
+Task scheduled and ready in your Daily Planner."""
 
     if think_mode:
         think_block = f"""<think>
