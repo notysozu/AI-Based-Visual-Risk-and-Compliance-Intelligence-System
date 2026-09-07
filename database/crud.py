@@ -1,4 +1,5 @@
 import uuid
+import json
 import random
 from datetime import datetime, timedelta
 from typing import List, Optional, Union, Dict, Any
@@ -517,6 +518,93 @@ async def create_user_suggestion(user_id: Union[str, int], item: Dict[str, Any])
     )
     await doc.insert()
     return doc
+
+
+async def save_auto_planned_tasks(
+    user_id: Union[str, int],
+    tasks: List[Dict[str, Any]],
+    briefing: str,
+    plan_date: str
+) -> Dict[str, Any]:
+    """
+    Persists autonomous daily tasks directly to MongoDB UserSuggestionDoc and UserDoc.tasks_json.
+    """
+    user = await get_user(user_id)
+    if not user:
+        user = await get_or_create_demo_user("professional")
+    u_id_str = str(user.id)
+
+    # Persist tasks as adopted suggestions for persistence & synchronization
+    for t in tasks:
+        sug_id = t.get("id") or f"autoplan-{plan_date}-{uuid.uuid4().hex[:6]}"
+        existing = await models.UserSuggestionDoc.find_one(
+            models.UserSuggestionDoc.user_id == u_id_str,
+            models.UserSuggestionDoc.suggestion_id == sug_id
+        )
+        if not existing:
+            doc = models.UserSuggestionDoc(
+                user_id=u_id_str,
+                suggestion_id=sug_id,
+                title=t.get("title", "Focus Session"),
+                category=t.get("category", "Work"),
+                detail=t.get("detail", f"Auto-scheduled by AI Twin for {t.get('start', '09:00')}"),
+                impact=t.get("impact", "+1.0 Focus"),
+                start_time=t.get("start", "09:00"),
+                duration_minutes=int(t.get("minutes", 45)),
+                is_adopted=1,
+                is_ai_generated=1
+            )
+            await doc.insert()
+
+    # Parse and update tasks_json on UserDoc
+    current_tasks = []
+    if user.tasks_json:
+        try:
+            current_tasks = json.loads(user.tasks_json)
+            if not isinstance(current_tasks, list):
+                current_tasks = []
+        except Exception:
+            current_tasks = []
+
+    # Filter out any older auto-planned tasks for this specific date to avoid duplicates
+    preserved_tasks = [
+        item for item in current_tasks
+        if not (item.get("date") == plan_date and (item.get("is_auto_planned") or str(item.get("id", "")).startswith("autoplan-")))
+    ]
+    merged_tasks = preserved_tasks + tasks
+
+    user.tasks_json = json.dumps(merged_tasks)
+    user.last_auto_planned_date = plan_date
+    user.last_auto_plan_briefing = briefing
+    await user.save()
+
+    return {
+        "user_id": u_id_str,
+        "tasks": tasks,
+        "briefing": briefing,
+        "plan_date": plan_date,
+        "auto_committed": True
+    }
+
+
+async def update_user_autonomy_mode(
+    user_id: Union[str, int],
+    mode: str,
+    auto_planner_enabled: Optional[bool] = None
+) -> Optional[models.UserDoc]:
+    """Updates user autonomy mode and proactive auto-planner status."""
+    user = await get_user(user_id)
+    if not user:
+        return None
+
+    if mode in ["supervised", "semi_autonomous", "full_autonomous"]:
+        user.autonomy_mode = mode
+    if auto_planner_enabled is not None:
+        user.auto_planner_enabled = auto_planner_enabled
+
+    await user.save()
+    return user
+
 
 
 # ──────────────────────────────────────────────

@@ -47,6 +47,10 @@ class UserBase(BaseModel):
     goal_target: Optional[float] = 50000.0
     theme_preference: Optional[str] = "dark"
     tasks_json: Optional[str] = None
+    autonomy_mode: Optional[str] = "semi_autonomous"
+    auto_planner_enabled: Optional[bool] = True
+    last_auto_planned_date: Optional[str] = None
+    last_auto_plan_briefing: Optional[str] = None
     scenario_a_preset: Optional[str] = None
     scenario_b_preset: Optional[str] = None
     last_success_odds: Optional[float] = None
@@ -103,6 +107,10 @@ class UserUpdate(BaseModel):
     goal_target: Optional[float] = None
     theme_preference: Optional[str] = None
     tasks_json: Optional[str] = None
+    autonomy_mode: Optional[str] = None
+    auto_planner_enabled: Optional[bool] = None
+    last_auto_planned_date: Optional[str] = None
+    last_auto_plan_briefing: Optional[str] = None
     scenario_a_preset: Optional[str] = None
     scenario_b_preset: Optional[str] = None
     last_success_odds: Optional[float] = None
@@ -396,3 +404,41 @@ class ChatActionExecuteRequest(BaseModel):
 
 class ChatActionRejectRequest(BaseModel):
     user_id: Any
+
+
+# Autonomous Planner Schemas
+class AutoPlanTaskItem(BaseModel):
+    id: str
+    title: str
+    category: str
+    start: str
+    minutes: int
+    impact: Optional[str] = "+1.0 focus"
+    detail: Optional[str] = ""
+    done: bool = False
+    date: str
+    fromSuggestion: bool = True
+    is_auto_planned: bool = True
+
+
+class AutoPlanRequest(BaseModel):
+    force: Optional[bool] = False
+    plan_date: Optional[str] = None
+
+
+class AutoPlanResponse(BaseModel):
+    user_id: str
+    role: str
+    plan_date: str
+    autonomy_mode: str
+    briefing: str
+    tasks: List[AutoPlanTaskItem]
+    task_count: int
+    auto_committed: bool
+    status: str = "success"
+
+
+class AutonomyModeUpdateRequest(BaseModel):
+    autonomy_mode: str = Field(..., description="'supervised' | 'semi_autonomous' | 'full_autonomous'")
+    auto_planner_enabled: Optional[bool] = None
+

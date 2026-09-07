@@ -10,8 +10,8 @@ def handle_single_task_intent(
     t_data: Dict[str, Any],
     think_mode: bool = False
 ) -> Optional[Dict[str, Any]]:
-    task_keywords = ["add task", "add a task", "schedule a task", "create task", "add habit", "schedule habit", "block time", "add deep work", "add study sprint", "remind me to", "schedule a sprint", "focus sprint"]
-    is_single_task_intent = any(k in p_lower for k in task_keywords) or (("add" in p_lower or "schedule" in p_lower) and ("min" in p_lower or "minute" in p_lower or "hour" in p_lower or "am" in p_lower or "pm" in p_lower))
+    task_keywords = ["add task", "add a task", "schedule a task", "create task", "add habit", "schedule habit", "block time", "add deep work", "add study sprint", "remind me to", "schedule a sprint", "focus sprint", "plan a sprint", "plan task"]
+    is_single_task_intent = any(k in p_lower for k in task_keywords) or (("add" in p_lower or "schedule" in p_lower or "plan" in p_lower) and ("min" in p_lower or "minute" in p_lower or "hour" in p_lower or "am" in p_lower or "pm" in p_lower))
 
     if not is_single_task_intent:
         return None

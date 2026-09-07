@@ -1,6 +1,6 @@
 import json
 import re
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from fastapi import APIRouter, HTTPException, Query
 from database import crud, models, schemas
 from ai_engine.simulation import simulator
@@ -212,10 +212,44 @@ async def get_session_messages(
     ]
 
 
-@router.post("/message/create_thread")
-async def create_thread_and_send_message(req: schemas.ChatPromptRequest):
+async def _maybe_auto_execute_chat_action(
+    user: models.UserDoc,
+    bot_result: Dict[str, Any]
+) -> Tuple[Dict[str, Any], models.UserDoc]:
     """
-    Creates a new session with an AI-summarized title and processes the first message in MongoDB.
+    Evaluates autonomy mode and automatically executes proposed actions directly to MongoDB.
+    """
+    autonomy_mode = user.autonomy_mode or "semi_autonomous"
+    act_type = bot_result.get("action_type", "none")
+    act_status = bot_result.get("action_status", "none")
+    act_payload_str = bot_result.get("action_payload")
+
+    should_auto_execute = False
+    if act_type != "none" and act_status == "proposed" and act_payload_str:
+        if autonomy_mode == "full_autonomous":
+            should_auto_execute = True
+        elif autonomy_mode == "semi_autonomous":
+            if act_type in ["add_task", "add_multiple_tasks", "log_study", "log_habit", "update_settings", "simulate_what_if"]:
+                should_auto_execute = True
+
+    if should_auto_execute:
+        try:
+            payload_dict = json.loads(act_payload_str)
+            await execute_action_payload(user, act_type, payload_dict)
+            bot_result["action_status"] = "executed"
+            refreshed_user = await crud.get_user(str(user.id))
+            if refreshed_user:
+                user = refreshed_user
+        except Exception as e:
+            print(f"[Autonomous Execution] Notice: {e}")
+
+    return bot_result, user
+
+
+@router.post("/message/create_thread")
+async def create_chat_thread(req: schemas.ChatPromptRequest):
+    """
+    Creates a new conversational thread in MongoDB and processes the first turn.
     """
     user = await crud.get_user(req.user_id)
     if not user:
@@ -261,6 +295,8 @@ async def create_thread_and_send_message(req: schemas.ChatPromptRequest):
         client_context=req.client_context,
         think_mode=bool(getattr(req, "think_mode", False))
     )
+
+    bot_result, user = await _maybe_auto_execute_chat_action(user, bot_result)
 
     assistant_msg = await crud.create_chat_message(
         session_id=str(session.id),
@@ -372,6 +408,8 @@ async def send_chat_message(
         client_context=req.client_context,
         think_mode=bool(getattr(req, "think_mode", False))
     )
+
+    bot_result, user = await _maybe_auto_execute_chat_action(user, bot_result)
 
     assistant_msg = await crud.create_chat_message(
         session_id=current_session_id,

@@ -1,6 +1,25 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { createUser, loginUser, getUserByUsername, getDefaultUser, getDemoUser, getForecast, getUser, updateUser, adoptSuggestionApi, postHabitRecord, postStudyRecord, postFinancialRecord, getHabitRecords, getStudyRecords, getFinancialRecords } from "@/lib/api";
+import {
+  createUser,
+  loginUser,
+  getUserByUsername,
+  getDefaultUser,
+  getDemoUser,
+  getForecast,
+  getUser,
+  updateUser,
+  adoptSuggestionApi,
+  postHabitRecord,
+  postStudyRecord,
+  postFinancialRecord,
+  getHabitRecords,
+  getStudyRecords,
+  getFinancialRecords,
+  autoPlanTodayApi,
+  getAutoPlanStatusApi,
+  updateAutonomyModeApi,
+} from "@/lib/api";
 
 // Re-export all models from types for 100% backwards compatibility
 export type {
@@ -327,6 +346,10 @@ function mapProfileToBackend(profile: Profile) {
     last_analytics_updated: profile.lastAnalyticsUpdated,
     last_study_plan: profile.lastStudyPlan,
     last_study_plan_updated: profile.lastStudyPlanUpdated,
+    autonomy_mode: profile.autonomyMode,
+    auto_planner_enabled: profile.autoPlannerEnabled,
+    last_auto_plan_briefing: profile.lastAutoPlanBriefing,
+    last_auto_planned_date: profile.lastAutoPlannedDate,
   };
 }
 
@@ -358,6 +381,10 @@ function mapBackendToProfile(user: any): Partial<Profile> {
     lastAnalyticsUpdated: user.last_analytics_updated ?? null,
     lastStudyPlan: user.last_study_plan ?? null,
     lastStudyPlanUpdated: user.last_study_plan_updated ?? null,
+    autonomyMode: user.autonomy_mode ?? "semi_autonomous",
+    autoPlannerEnabled: user.auto_planner_enabled ?? true,
+    lastAutoPlanBriefing: user.last_auto_plan_briefing ?? null,
+    lastAutoPlannedDate: user.last_auto_planned_date ?? null,
   };
 }
 
@@ -404,6 +431,8 @@ type TwinContextValue = {
   syncProfile: () => Promise<void>;
   saveScenarioPresets: (a: ScenarioPreset, b: ScenarioPreset) => Promise<void>;
   loadScenarioPresets: () => Promise<{ a: ScenarioPreset | null; b: ScenarioPreset | null }>;
+  autoPlanToday: (force?: boolean) => Promise<void>;
+  updateAutonomyMode: (mode: "supervised" | "semi_autonomous" | "full_autonomous", autoPlannerEnabled?: boolean) => Promise<void>;
 };
 
 
@@ -846,11 +875,22 @@ export function TwinProvider({ children }: { children: ReactNode }) {
           }));
         }
 
+        let nextTasks = s.tasks;
+        if (user.tasks_json) {
+          try {
+            const parsedTasks = JSON.parse(user.tasks_json);
+            if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
+              nextTasks = parsedTasks;
+            }
+          } catch {}
+        }
+
         return {
           ...s,
           profile: nextProfile,
           logs: nextLogs.length > 0 ? nextLogs : s.logs,
           txns: nextTxns.length > 0 ? nextTxns : s.txns,
+          tasks: nextTasks,
           profileSyncing: false,
         };
       });
@@ -861,6 +901,67 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         profileSyncError: err instanceof Error ? err.message : "Failed to sync profile",
       }));
       throw err;
+    }
+  };
+
+  const autoPlanToday = async (force: boolean = false) => {
+    const userId = state.profile.id ?? 1;
+    try {
+      const res = await autoPlanTodayApi(userId, force);
+      if (res && res.tasks) {
+        const todayDate = today();
+        const newTasks: Task[] = res.tasks.map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          category: t.category,
+          start: t.start,
+          minutes: t.minutes,
+          impact: t.impact,
+          detail: t.detail,
+          done: Boolean(t.done),
+          date: t.date || todayDate,
+          fromSuggestion: true,
+          isAutoPlanned: true,
+        }));
+
+        setState((s) => {
+          const existingManual = s.tasks.filter(
+            (t) => !(t.date === todayDate && (t.isAutoPlanned || String(t.id).startsWith("autoplan-")))
+          );
+          return {
+            ...s,
+            tasks: [...existingManual, ...newTasks],
+            profile: {
+              ...s.profile,
+              lastAutoPlannedDate: res.plan_date || todayDate,
+              lastAutoPlanBriefing: res.briefing,
+            },
+          };
+        });
+      }
+    } catch (err) {
+      console.error("Failed to auto-plan today's tasks:", err);
+    }
+  };
+
+  const updateAutonomyMode = async (
+    mode: "supervised" | "semi_autonomous" | "full_autonomous",
+    autoPlannerEnabled?: boolean
+  ) => {
+    const userId = state.profile.id ?? 1;
+    setState((s) => ({
+      ...s,
+      profile: {
+        ...s.profile,
+        autonomyMode: mode,
+        autoPlannerEnabled: autoPlannerEnabled !== undefined ? autoPlannerEnabled : s.profile.autoPlannerEnabled,
+      },
+    }));
+
+    try {
+      await updateAutonomyModeApi(userId, mode, autoPlannerEnabled);
+    } catch (err) {
+      console.error("Failed to sync autonomy mode to backend:", err);
     }
   };
 
@@ -928,6 +1029,8 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         syncProfile,
         saveScenarioPresets,
         loadScenarioPresets,
+        autoPlanToday,
+        updateAutonomyMode,
       }}
 
     >

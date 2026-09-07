@@ -775,6 +775,87 @@ function SettingsPage() {
                 </div>
               </div>
 
+              {/* AI Autonomy & Self-Execution Mode */}
+              <div className="panel p-6 space-y-4 lg:col-span-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground">AI Autonomy & Database Implementation Mode</h4>
+                      <p className="text-xs text-muted-foreground">Governs whether the twin asks for confirmation or self-implements changes directly</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-purple-500 font-mono">
+                    {(draft.autonomyMode || "semi_autonomous").replace("_", " ")}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  {(
+                    [
+                      {
+                        id: "supervised",
+                        title: "Supervised (HITL)",
+                        tag: "Manual Confirmation",
+                        desc: "AI creates proposal cards in chat. You review and click Approve before any changes are written to the database."
+                      },
+                      {
+                        id: "semi_autonomous",
+                        title: "Semi-Autonomous",
+                        tag: "Recommended Default",
+                        desc: "Routines, habits, and study logs are auto-committed directly. Major financial deductions require 1-click confirmation."
+                      },
+                      {
+                        id: "full_autonomous",
+                        title: "Full Autonomy",
+                        tag: "Self-Driving Twin",
+                        desc: "AI autonomously formulates daily schedules upon morning load and immediately executes all chat actions into MongoDB."
+                      }
+                    ] as const
+                  ).map((item) => {
+                    const isSelected = (draft.autonomyMode || "semi_autonomous") === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setDraft({ ...draft, autonomyMode: item.id });
+                          toast.info(`Autonomy mode switched to ${item.title}`);
+                        }}
+                        className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-purple-500/10 border-purple-500/40 text-foreground ring-1 ring-purple-500/20 shadow-sm"
+                            : "bg-muted/40 dark:bg-white/5 border-border/60 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-xs text-foreground block">{item.title}</span>
+                          {isSelected && <Check className="h-3.5 w-3.5 text-purple-500" />}
+                        </div>
+                        <span className="text-[10px] font-medium text-purple-500/90 dark:text-purple-400/90 mt-0.5 block">{item.tag}</span>
+                        <span className="text-[11px] text-muted-foreground mt-2 block leading-snug">{item.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-2 border-t border-border/30 flex items-center justify-between">
+                  <div>
+                    <h5 className="text-xs font-semibold text-foreground">Proactive Morning Auto-Planner</h5>
+                    <p className="text-[11px] text-muted-foreground">Automatically synthesize and commit today's circadian schedule on app startup</p>
+                  </div>
+                  <Switch
+                    checked={draft.autoPlannerEnabled !== false}
+                    onCheckedChange={(val) => {
+                      setDraft({ ...draft, autoPlannerEnabled: val });
+                      toast.success(val ? "Morning Auto-Planner activated" : "Morning Auto-Planner paused");
+                    }}
+                  />
+                </div>
+              </div>
+
               {/* Proactive Task & Routine Scheduling Sensitivity */}
               <div className="panel p-6 space-y-4 lg:col-span-2">
                 <div className="flex items-center justify-between">

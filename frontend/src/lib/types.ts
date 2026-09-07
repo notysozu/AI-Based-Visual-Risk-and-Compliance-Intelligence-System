@@ -27,6 +27,10 @@ export type Profile = {
   lastAnalyticsUpdated?: string | null;
   lastStudyPlan?: string | null;
   lastStudyPlanUpdated?: string | null;
+  autonomyMode?: "supervised" | "semi_autonomous" | "full_autonomous";
+  autoPlannerEnabled?: boolean;
+  lastAutoPlanBriefing?: string | null;
+  lastAutoPlannedDate?: string | null;
 };
 
 export type Log = {
@@ -51,10 +55,13 @@ export type Task = {
   title: string;
   start: string;
   minutes: number;
-  category: "Work" | "Study" | "Health" | "Money" | "Personal";
+  category: "Work" | "Study" | "Health" | "Money" | "Personal" | "Career" | "Exams" | "Campus" | "Social" | "Client Work" | "Projects" | "Invoices" | "Admin" | "Upskilling" | "Product" | "Growth" | "Fundraising" | "Operations" | "Team" | "Hobbies" | "Family" | "Home" | "Leisure" | string;
   done: boolean;
   date: string;
   fromSuggestion?: boolean;
+  impact?: string;
+  detail?: string;
+  isAutoPlanned?: boolean;
 };
 
 export type Suggestion = {

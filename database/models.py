@@ -44,6 +44,12 @@ class UserDoc(Document):
     theme_preference: Optional[str] = "dark"
     tasks_json: Optional[str] = None
 
+    # Autonomous AI Planning & Implementation Engine
+    autonomy_mode: str = "semi_autonomous"  # "supervised" | "semi_autonomous" | "full_autonomous"
+    auto_planner_enabled: bool = True
+    last_auto_planned_date: Optional[str] = None
+    last_auto_plan_briefing: Optional[str] = None
+
     # Decision Sandbox scenario slider presets (JSON: {"savings": 0, "sleep": 0, "study": 0})
     scenario_a_preset: Optional[str] = None
     scenario_b_preset: Optional[str] = None

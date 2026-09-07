@@ -57,32 +57,59 @@ classDiagram
 
 ---
 
-## 4. Suggestion Actions & REST Endpoints
+## 6. Autonomous AI Daily Planner & Self-Implementation Engine
 
-### 1. Retrieve Suggestions (`GET /suggestions/{user_id}`)
-Returns all saved suggestions for the user. If the user is new, automatically initializes pre-calibrated baseline templates for their role.
+The system features an autonomous, proactive circadian planning engine (`ai_engine/auto_planner.py`) and dedicated REST endpoints (`/planner/auto-plan/{user_id}`) that synthesize and commit daily focus routines directly into MongoDB without requiring manual prompts.
 
-### 2. Generate Suggestions (`POST /suggestions/generate/{user_id}`)
-Accepts `GenerateSuggestionsRequest(mode="regenerate" | "more")`:
-- **`mode: "regenerate"`**: Clears previous AI recommendations, re-runs full metric analysis, and persists a fresh set of 4 tailored suggestions.
-- **`mode: "more"`**: Synthesizes 3–4 extra complementary suggestions without repeating existing titles and appends them to the user's library.
+### A. Circadian Optimization Architecture
 
-### 3. Adopt Suggestion (`POST /suggestions/adopt/{user_id}`)
-Toggles `is_adopted` in the database, ensuring state synchronization between local browser memory and backend databases.
+```mermaid
+flowchart TD
+  T1["Telemetry Baseline Analysis<br/>• Sleep Debt & Cortisol Window<br/>• Study Deficit & Savings Surplus"] --> S1["Circadian Slot Synthesizer"]
+  S1 --> W1["08:30–11:30: Peak Cognitive Sprint"]
+  S1 --> W2["13:30–15:30: Tactical Milestone Delivery"]
+  S1 --> W3["16:30–19:30: Recovery, Movement & Budget Audit"]
+  
+  W1 & W2 & W3 --> E1["Direct Database Implementation<br/>• UserSuggestionDoc is_adopted=1<br/>• UserDoc.tasks_json auto-synced"]
+  E1 --> B1["Morning Intelligence Briefing Callout Banner"]
+```
 
-### 4. Reset Suggestions (`POST /suggestions/reset/{user_id}`)
-Clears custom AI suggestions and restores the standard baseline templates for the active role persona.
+### B. 3-Tier Autonomy Governance
+
+Users configure their desired autonomy level in `/settings`:
+
+| Autonomy Mode | Description | Direct DB Execution |
+| :--- | :--- | :--- |
+| **`supervised`** | Human-in-the-loop: Copilot generates proposal cards awaiting 1-click user approval. | Requires user click |
+| **`semi_autonomous`** | Recommended Default: Routine schedules, habit entries, and study sessions auto-commit directly; major financial deductions require approval. | Auto for routines & logs |
+| **`full_autonomous`** | Self-Driving Twin: Morning schedules auto-plan on app startup; all chat turns immediately write to MongoDB. | Full auto-commit |
 
 ---
 
-## 5. One-Click Adoption Pipeline
+## 7. Suggestion Actions & REST Endpoints
 
-When a user clicks **"Add to tasks"** on any suggestion card:
-1. The suggestion is marked as adopted in the frontend store and synced to the database via `adoptSuggestionApi()`.
-2. A corresponding `Task` item is created with matching title, start time, duration, and category.
-3. The task is injected into **Today's Plan** (`/planner`), allowing the user to mark it done as part of their daily schedule.
+### 1. Autonomous Auto-Plan (`POST /planner/auto-plan/{user_id}`)
+Synthesizes 4–5 circadian tasks, generates the Morning Intelligence Briefing, and commits them to `UserDoc.tasks_json` and `UserSuggestionDoc`.
 
+### 2. Auto-Plan Status (`GET /planner/auto-plan/status/{user_id}`)
+Returns today's auto-planning status, active briefing text, and scheduled task count.
 
-## 7. Task Board Injection Lifecycle
+### 3. Autonomy Mode Update (`PUT /planner/autonomy-mode/{user_id}`)
+Updates `autonomy_mode` (`supervised` | `semi_autonomous` | `full_autonomous`) and `auto_planner_enabled`.
+
+### 4. Retrieve Suggestions (`GET /suggestions/{user_id}`)
+Returns all saved suggestions for the user.
+
+### 5. Generate Suggestions (`POST /suggestions/generate/{user_id}`)
+Synthesizes custom suggestions based on role and 30-day baseline.
+
+### 6. Adopt Suggestion (`POST /suggestions/adopt/{user_id}`)
+Toggles `is_adopted` in MongoDB.
+
+---
+
+## 8. Task Board Injection Lifecycle
 - Adopted suggestions instantiate Task models in the daily planner.
+- Autonomous planning injects calibrated items marked with `isAutoPlanned: true` and category badges.
 - Completion toggles sync progress back to the twin intelligence engine.
+

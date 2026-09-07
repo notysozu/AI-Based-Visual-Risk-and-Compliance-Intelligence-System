@@ -173,6 +173,10 @@ export const DEFAULT_PROFILE: Profile = {
   lastWealthPrediction: null,
   lastAnalyticsSummary: null,
   lastAnalyticsUpdated: null,
+  autonomyMode: "semi_autonomous",
+  autoPlannerEnabled: true,
+  lastAutoPlanBriefing: null,
+  lastAutoPlannedDate: null,
 };
 
 export const DEFAULT_STATE: TwinState = {

@@ -291,3 +291,27 @@ export function deleteCache(cacheKey: string) {
     method: "DELETE",
   });
 }
+
+// --- Autonomous AI Daily Planner & Autonomy Engine APIs ---
+
+export function autoPlanTodayApi(userId: string | number, force: boolean = false, planDate?: string) {
+  return request(`/planner/auto-plan/${userId}`, {
+    method: "POST",
+    body: JSON.stringify({ force, plan_date: planDate }),
+  });
+}
+
+export function getAutoPlanStatusApi(userId: string | number) {
+  return request(`/planner/auto-plan/status/${userId}`);
+}
+
+export function updateAutonomyModeApi(
+  userId: string | number,
+  mode: "supervised" | "semi_autonomous" | "full_autonomous",
+  autoPlannerEnabled?: boolean
+) {
+  return request(`/planner/autonomy-mode/${userId}`, {
+    method: "PUT",
+    body: JSON.stringify({ autonomy_mode: mode, auto_planner_enabled: autoPlannerEnabled }),
+  });
+}
