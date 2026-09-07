@@ -16,6 +16,7 @@ import {
   getHabitRecords,
   getStudyRecords,
   getFinancialRecords,
+  getUserSuggestions,
   autoPlanTodayApi,
   getAutoPlanStatusApi,
   updateAutonomyModeApi,
@@ -321,7 +322,7 @@ export const SUGGESTIONS = WORKER_SUGGESTIONS;
 // until the backend schema is extended to support them.
 
 /** Maps frontend profile state to backend schema payload */
-function mapProfileToBackend(profile: Profile) {
+function mapProfileToBackend(profile: Profile, tasks?: Task[], theme?: "light" | "dark") {
   return {
     role: profile.role,
     age: profile.age,
@@ -339,6 +340,8 @@ function mapProfileToBackend(profile: Profile) {
     goal_name: profile.goalName,
     goal_current: profile.goalCurrent,
     goal_target: profile.goalTarget,
+    theme_preference: theme,
+    tasks_json: tasks ? JSON.stringify(tasks) : undefined,
     is_onboarded: profile.onboarded ? 1 : 0,
     last_success_odds: profile.lastSuccessOdds,
     last_wealth_prediction: profile.lastWealthPrediction,
@@ -428,7 +431,7 @@ type TwinContextValue = {
   loadForecast: () => Promise<void>;
   signOut: () => void;
   saveProfile: () => Promise<void>;
-  syncProfile: () => Promise<void>;
+  syncProfile: (targetUserId?: string | number) => Promise<void>;
   saveScenarioPresets: (a: ScenarioPreset, b: ScenarioPreset) => Promise<void>;
   loadScenarioPresets: () => Promise<{ a: ScenarioPreset | null; b: ScenarioPreset | null }>;
   autoPlanToday: (force?: boolean) => Promise<void>;
@@ -614,7 +617,14 @@ export function TwinProvider({ children }: { children: ReactNode }) {
   };
 
   const setTheme = (theme: "light" | "dark") => {
-    setState((s) => ({ ...s, theme }));
+    setState((s) => {
+      if (s.profile.id) {
+        updateUser(s.profile.id, { theme_preference: theme }).catch((e) =>
+          console.warn("Failed to persist theme to MongoDB:", e)
+        );
+      }
+      return { ...s, theme };
+    });
   };
 
   const addTask = (task: Omit<Task, "id">) => {
@@ -624,18 +634,39 @@ export function TwinProvider({ children }: { children: ReactNode }) {
       date: taskDate,
       id: `${taskDate}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     };
-    setState((s) => ({ ...s, tasks: [...s.tasks, withId] }));
+    setState((s) => {
+      const nextTasks = [...s.tasks, withId];
+      if (s.profile.id) {
+        updateUser(s.profile.id, { tasks_json: JSON.stringify(nextTasks) }).catch((e) =>
+          console.warn("Failed to persist tasks to MongoDB:", e)
+        );
+      }
+      return { ...s, tasks: nextTasks };
+    });
   };
 
   const toggleTask = (id: string) => {
-    setState((s) => ({
-      ...s,
-      tasks: s.tasks.map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
-    }));
+    setState((s) => {
+      const nextTasks = s.tasks.map((t) => (t.id === id ? { ...t, done: !t.done } : t));
+      if (s.profile.id) {
+        updateUser(s.profile.id, { tasks_json: JSON.stringify(nextTasks) }).catch((e) =>
+          console.warn("Failed to persist task status to MongoDB:", e)
+        );
+      }
+      return { ...s, tasks: nextTasks };
+    });
   };
 
   const removeTask = (id: string) => {
-    setState((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) }));
+    setState((s) => {
+      const nextTasks = s.tasks.filter((t) => t.id !== id);
+      if (s.profile.id) {
+        updateUser(s.profile.id, { tasks_json: JSON.stringify(nextTasks) }).catch((e) =>
+          console.warn("Failed to persist task deletion to MongoDB:", e)
+        );
+      }
+      return { ...s, tasks: nextTasks };
+    });
   };
 
   const adopt = (suggestion: Suggestion) => {
@@ -651,23 +682,30 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         date: today(),
         fromSuggestion: true,
       };
+      const nextAdopted = [...s.adopted, suggestion.id];
+      const nextTasks = [...s.tasks, task];
+
+      if (s.profile.id) {
+        adoptSuggestionApi(s.profile.id, {
+          suggestion_id: suggestion.id,
+          is_adopted: true,
+        }).catch((e) => console.warn("Failed to persist suggestion adoption to DB:", e));
+
+        updateUser(s.profile.id, { tasks_json: JSON.stringify(nextTasks) }).catch((e) =>
+          console.warn("Failed to persist tasks to MongoDB:", e)
+        );
+      }
+
       return {
         ...s,
-        adopted: [...s.adopted, suggestion.id],
-        tasks: [...s.tasks, task],
+        adopted: nextAdopted,
+        tasks: nextTasks,
       };
     });
-
-    if (state.profile.id) {
-      adoptSuggestionApi(state.profile.id, {
-        suggestion_id: suggestion.id,
-        is_adopted: true,
-      }).catch((e) => console.warn("Failed to persist suggestion adoption to DB:", e));
-    }
   };
 
   // signIn pulls saved backend fields (age, sleep target, study target,
-  // savings target, income) directly into the profile at login time.
+  // savings target, income, tasks, records) directly into the profile at login time.
   const signIn = async (username: string, email: string, isSignup: boolean): Promise<boolean> => {
     const rawIdentifier = (email || username || "").trim();
     if (isSignup) {
@@ -708,6 +746,9 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         },
       }));
       hasAutoSynced.current = true;
+      if (user?.id) {
+        syncProfile(user.id).catch((e) => console.warn("Background sync on signup:", e));
+      }
       return false;
     } else {
       let user;
@@ -738,6 +779,9 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         },
       }));
       hasAutoSynced.current = true;
+      if (user?.id) {
+        syncProfile(user.id).catch((e) => console.warn("Background sync on login:", e));
+      }
       return hasOnboarded;
     }
   };
@@ -847,23 +891,26 @@ export function TwinProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Pull backend profile and records state from MongoDB, synchronizing store with database
-  const syncProfile = async () => {
-    const userId = state.profile.id;
+  // Pull backend profile, tasks, suggestions, habits, study, and financial records from MongoDB
+  const syncProfile = async (targetUserId?: string | number) => {
+    const userId = targetUserId ?? state.profile.id;
     if (userId === null || userId === undefined) return;
     setState((s) => ({ ...s, profileSyncing: true, profileSyncError: null }));
     try {
-      const user = await getUser(userId);
-      const [habitsData, finData] = await Promise.all([
+      const [user, habitsData, finData, studyData, suggestionsData] = await Promise.all([
+        getUser(userId),
         getHabitRecords(userId).catch(() => []),
         getFinancialRecords(userId).catch(() => []),
+        getStudyRecords(userId).catch(() => []),
+        getUserSuggestions(userId).catch(() => []),
       ]);
 
       setState((s) => {
         const nextProfile = { ...s.profile, ...mapBackendToProfile(user) };
-        let nextLogs = s.logs;
+        const nextTheme = user.theme_preference === "light" || user.theme_preference === "dark" ? user.theme_preference : s.theme;
+
+        const dateMap: Record<string, Log> = {};
         if (Array.isArray(habitsData) && habitsData.length > 0) {
-          const dateMap: Record<string, Log> = {};
           habitsData.forEach((rec: any) => {
             const dateStr = (rec.created_at || "").slice(0, 10) || today();
             if (!dateMap[dateStr]) {
@@ -881,8 +928,29 @@ export function TwinProvider({ children }: { children: ReactNode }) {
               if (rec.habit_name === "Exercise") dateMap[dateStr].exercise = Math.round(rec.duration_minutes);
             }
           });
-          nextLogs = Object.values(dateMap);
         }
+
+        if (Array.isArray(studyData) && studyData.length > 0) {
+          studyData.forEach((rec: any) => {
+            const dateStr = (rec.created_at || "").slice(0, 10) || today();
+            const hrs = +(rec.duration_minutes / 60).toFixed(1);
+            if (!dateMap[dateStr]) {
+              dateMap[dateStr] = {
+                id: `${dateStr}-${rec.id || Math.random()}`,
+                date: dateStr,
+                sleep: nextProfile.sleepHours || 8.0,
+                screen: 3.5,
+                study: hrs,
+                exercise: 0,
+                mood: 8,
+              };
+            } else {
+              dateMap[dateStr].study = +((dateMap[dateStr].study || 0) + hrs).toFixed(1);
+            }
+          });
+        }
+
+        const nextLogs = Object.keys(dateMap).length > 0 ? Object.values(dateMap) : s.logs;
 
         let nextTxns = s.txns;
         if (Array.isArray(finData) && finData.length > 0) {
@@ -898,18 +966,32 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         if (user.tasks_json) {
           try {
             const parsedTasks = JSON.parse(user.tasks_json);
-            if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
+            if (Array.isArray(parsedTasks)) {
               nextTasks = parsedTasks;
             }
           } catch {}
         }
 
+        let nextAdopted = s.adopted;
+        const sugsList = Array.isArray(suggestionsData)
+          ? suggestionsData
+          : Array.isArray(suggestionsData?.suggestions)
+          ? suggestionsData.suggestions
+          : [];
+        if (sugsList.length > 0) {
+          nextAdopted = sugsList
+            .filter((sug: any) => sug.is_adopted === 1 || sug.is_adopted === true)
+            .map((sug: any) => sug.suggestion_id);
+        }
+
         return {
           ...s,
           profile: nextProfile,
-          logs: nextLogs.length > 0 ? nextLogs : s.logs,
-          txns: nextTxns.length > 0 ? nextTxns : s.txns,
+          theme: nextTheme,
+          logs: nextLogs,
+          txns: nextTxns,
           tasks: nextTasks,
+          adopted: nextAdopted,
           profileSyncing: false,
         };
       });
@@ -919,7 +1001,6 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         profileSyncing: false,
         profileSyncError: err instanceof Error ? err.message : "Failed to sync profile",
       }));
-      throw err;
     }
   };
 
@@ -947,9 +1028,17 @@ export function TwinProvider({ children }: { children: ReactNode }) {
           const existingManual = s.tasks.filter(
             (t) => !(t.date === todayDate && (t.isAutoPlanned || String(t.id).startsWith("autoplan-")))
           );
+          const nextTasks = [...existingManual, ...newTasks];
+          if (s.profile.id) {
+            updateUser(s.profile.id, {
+              tasks_json: JSON.stringify(nextTasks),
+              last_auto_planned_date: res.plan_date || todayDate,
+              last_auto_plan_briefing: res.briefing,
+            }).catch((e) => console.warn("Failed to persist auto planned tasks to MongoDB:", e));
+          }
           return {
             ...s,
-            tasks: [...existingManual, ...newTasks],
+            tasks: nextTasks,
             profile: {
               ...s.profile,
               lastAutoPlannedDate: res.plan_date || todayDate,
