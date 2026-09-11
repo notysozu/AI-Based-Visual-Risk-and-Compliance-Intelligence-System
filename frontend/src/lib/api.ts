@@ -1,24 +1,51 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+let activeBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+
+const CANDIDATE_URLS = Array.from(new Set([
+  import.meta.env.VITE_API_BASE_URL,
+  "http://127.0.0.1:8000",
+  "http://127.0.0.1:8001",
+  "http://localhost:8000",
+  "http://localhost:8001",
+].filter(Boolean))) as string[];
 
 async function request(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
-  if (!res.ok) {
-    let errorDetail = res.statusText;
+  let lastError: any = null;
+  const urlsToTry = [activeBaseUrl, ...CANDIDATE_URLS.filter((u) => u !== activeBaseUrl)];
+
+  for (const baseUrl of urlsToTry) {
     try {
-      const errorJson = await res.json();
-      if (errorJson?.detail) {
-        errorDetail = errorJson.detail;
+      const res = await fetch(`${baseUrl}${path}`, {
+        headers: { "Content-Type": "application/json" },
+        ...options,
+      });
+
+      if (!res.ok) {
+        let errorDetail = res.statusText;
+        try {
+          const errorJson = await res.json();
+          if (errorJson?.detail) {
+            errorDetail = errorJson.detail;
+          }
+        } catch {
+          const text = await res.text().catch(() => "");
+          if (text) errorDetail = text;
+        }
+        throw new Error(errorDetail || `API error ${res.status}`);
       }
-    } catch {
-      const text = await res.text().catch(() => "");
-      if (text) errorDetail = text;
+
+      activeBaseUrl = baseUrl;
+      return await res.json();
+    } catch (err: any) {
+      lastError = err;
+      // If it's a network connection failure, try next port candidate
+      if (err instanceof TypeError || (err.message && (err.message.includes("fetch") || err.message.includes("Failed") || err.message.includes("NetworkError")))) {
+        continue;
+      }
+      throw err;
     }
-    throw new Error(errorDetail || `API error ${res.status}`);
   }
-  return res.json();
+
+  throw lastError || new Error("Failed to connect to backend API server.");
 }
 
 export function createUser(payload: Record<string, unknown>) {
