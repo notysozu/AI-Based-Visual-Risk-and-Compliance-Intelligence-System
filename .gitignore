@@ -40,5 +40,5 @@ ENV/
 *.sqlite3
 data/
 
-# Streamlit
-.streamlit/
+# OS
+.DS_Store

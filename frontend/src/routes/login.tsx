@@ -12,6 +12,7 @@ import {
   HeartHandshake,
   Dices,
   Sparkles,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,7 @@ function LoginPage() {
   const [name, setName] = useState("");
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [loadingRole, setLoadingRole] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     if (ready && state.authed) {
@@ -66,8 +68,11 @@ function LoginPage() {
   }, [ready, state.authed, state.profile.onboarded, navigate]);
 
   const submit = async (mode: "login" | "signup") => {
+    setAuthError(null);
     if (!email || !password || (mode === "signup" && !name)) {
-      toast.error("Fill in every field to continue");
+      const msg = "Fill in every field to continue";
+      setAuthError(msg);
+      toast.error(msg);
       return;
     }
     const isLogin = mode === "login";
@@ -77,12 +82,20 @@ function LoginPage() {
       toast.success(isLogin ? "Welcome back!" : "Twin profile created!");
       navigate({ to: onboarded ? "/dashboard" : "/setup" });
     } catch (e: any) {
-      toast.error(e.message || "Failed to log in");
+      const errDetail = e.message || (isLogin ? "No account found with this email or username. Please sign up first." : "Failed to create account.");
+      setAuthError(errDetail);
+      toast.error(errDetail);
     }
+  };
+
+  const handleTabChange = (val: "login" | "signup") => {
+    setActiveTab(val);
+    setAuthError(null);
   };
 
   const handleLoadDemoRole = async (role: UserRole, randomize = false) => {
     setLoadingRole(role + (randomize ? "-rand" : ""));
+    setAuthError(null);
     try {
       await loadDemo(role, randomize);
       const roleName =
@@ -99,6 +112,7 @@ function LoginPage() {
       toast.success(`${randomize ? "Randomized " : ""}${roleName} demo twin loaded!`);
       navigate({ to: "/dashboard" });
     } catch (e: any) {
+      setAuthError(e.message || "Failed to load demo twin");
       toast.error(e.message || "Failed to load demo twin");
     } finally {
       setLoadingRole(null);
@@ -176,15 +190,56 @@ function LoginPage() {
             </Button>
           </div>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <Tabs value={activeTab} onValueChange={(v) => handleTabChange(v as any)}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Log in</TabsTrigger>
               <TabsTrigger value="signup">Sign up</TabsTrigger>
             </TabsList>
 
+            {authError && (
+              <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs text-rose-300 animate-in fade-in-50 duration-200">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 space-y-1">
+                    <p className="font-semibold text-rose-200">{authError}</p>
+                    {activeTab === "login" && (
+                      <p className="text-muted-foreground text-[11px]">
+                        Don't have an account yet?{" "}
+                        <button
+                          type="button"
+                          onClick={() => handleTabChange("signup")}
+                          className="font-bold text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
+                        >
+                          Create an account here
+                        </button>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <TabsContent value="login" className="mt-6 space-y-4">
-              <Field id="login-email" label="Email or Username" value={email} set={setEmail} type="text" />
-              <Field id="login-password" label="Password" value={password} set={setPassword} type="password" />
+              <Field
+                id="login-email"
+                label="Email or Username"
+                value={email}
+                set={(v) => {
+                  setEmail(v);
+                  if (authError) setAuthError(null);
+                }}
+                type="text"
+              />
+              <Field
+                id="login-password"
+                label="Password"
+                value={password}
+                set={(v) => {
+                  setPassword(v);
+                  if (authError) setAuthError(null);
+                }}
+                type="password"
+              />
               <Button className="w-full mt-2" size="lg" onClick={() => submit("login")}>
                 Log in to Twin
               </Button>
@@ -193,10 +248,36 @@ function LoginPage() {
             <TabsContent value="signup" className="mt-6 space-y-4">
               <div className="grid gap-1.5">
                 <Label className="label-xs" htmlFor="name">Name</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Alice" />
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (authError) setAuthError(null);
+                  }}
+                  placeholder="Alice"
+                />
               </div>
-              <Field id="email" label="Email" value={email} set={setEmail} type="email" />
-              <Field id="password" label="Password" value={password} set={setPassword} type="password" />
+              <Field
+                id="email"
+                label="Email"
+                value={email}
+                set={(v) => {
+                  setEmail(v);
+                  if (authError) setAuthError(null);
+                }}
+                type="email"
+              />
+              <Field
+                id="password"
+                label="Password"
+                value={password}
+                set={(v) => {
+                  setPassword(v);
+                  if (authError) setAuthError(null);
+                }}
+                type="password"
+              />
               <Button className="w-full mt-2" size="lg" onClick={() => submit("signup")}>
                 Create Twin Profile
               </Button>

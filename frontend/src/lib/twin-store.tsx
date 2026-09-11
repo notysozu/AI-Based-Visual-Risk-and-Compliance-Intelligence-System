@@ -751,19 +751,8 @@ export function TwinProvider({ children }: { children: ReactNode }) {
       }
       return false;
     } else {
-      let user;
-      try {
-        // Search by email or username via unified backend login
-        user = await loginUser(rawIdentifier);
-      } catch (err) {
-        console.warn("Backend login returned error or was unavailable, creating local session:", err);
-        user = {
-          id: "local-" + Date.now(),
-          username: username || email.split("@")[0] || "Twin User",
-          email: email.includes("@") ? email : `${username}@twin.local`,
-          is_onboarded: 1,
-        };
-      }
+      // Search by email or username via unified backend login
+      const user = await loginUser(rawIdentifier);
 
       const hasOnboarded = Boolean(user?.is_onboarded === 1 || user?.is_onboarded === true || user?.is_onboarded !== 0);
       setState((s) => ({

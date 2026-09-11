@@ -87,46 +87,25 @@ async def login_user(req: schemas.UserLoginRequest):
     # 2. Check for role aliases (student, pro, freelancer, founder, retiree, default)
     if not user:
         id_lower = identifier.lower()
-        if any(k in id_lower for k in ["student", "alex"]):
+        if id_lower in ["student", "alex", "student_demo"]:
             user = await crud.get_or_create_demo_user("student")
-        elif any(k in id_lower for k in ["pro", "professional", "jordan"]):
+        elif id_lower in ["pro", "professional", "jordan", "pro_demo"]:
             user = await crud.get_or_create_demo_user("professional")
-        elif any(k in id_lower for k in ["freelance", "samira"]):
+        elif id_lower in ["freelance", "freelancer", "samira", "freelancer_demo"]:
             user = await crud.get_or_create_demo_user("freelancer")
-        elif any(k in id_lower for k in ["entrepreneur", "founder", "elena"]):
+        elif id_lower in ["entrepreneur", "founder", "elena", "founder_demo"]:
             user = await crud.get_or_create_demo_user("entrepreneur")
-        elif any(k in id_lower for k in ["retiree", "senior", "arthur"]):
+        elif id_lower in ["retiree", "senior", "arthur", "retiree_demo"]:
             user = await crud.get_or_create_demo_user("retiree")
-        elif any(k in id_lower for k in ["default", "twin"]):
+        elif id_lower in ["default", "twin", "default_twin"]:
             user = await get_default_user()
 
-    # 3. If identifier is a new email or username, auto-provision and seed profile immediately
+    # 3. If user is not found, return 404 with clear message
     if not user:
-        clean_username = identifier.split("@")[0].lower().replace(" ", "_")
-        clean_email = identifier.lower() if "@" in identifier else f"{clean_username}@twin.local"
-
-        # Check collisions before creation
-        existing_u = await crud.get_user_by_username(clean_username)
-        if existing_u:
-            user = existing_u
-        else:
-            existing_e = await crud.get_user_by_email(clean_email)
-            if existing_e:
-                user = existing_e
-            else:
-                user_create = schemas.UserCreate(
-                    username=clean_username,
-                    email=clean_email,
-                    role="professional",
-                    age=28,
-                    monthly_income=5000.0,
-                    monthly_expenses=3200.0,
-                    net_worth=35000.0,
-                    sleep_target_hours=8.0,
-                    study_target_hours_week=10.0,
-                    is_onboarded=1
-                )
-                user = await crud.create_user(user_create)
+        raise HTTPException(
+            status_code=404,
+            detail=f"No account found for '{identifier}'. Please check your credentials or create a new account."
+        )
 
     return user
 
