@@ -1,29 +1,35 @@
-import { useEffect, useState, useRef, useMemo, useCallback } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
-  BookOpen,
   Clock,
-  Flame,
+  BookOpen,
+  TrendingUp,
   Sparkles,
-  CheckCircle2,
+  ArrowLeft,
+  Settings,
   Play,
   Pause,
   RotateCcw,
   SkipForward,
   Volume2,
-  Maximize2,
-  Minimize2,
-  Music,
-  Image as ImageIcon,
-  Calendar,
+  VolumeX,
+  Check,
   Plus,
   Trash2,
-  ArrowUpRight,
+  Calendar,
+  Music,
+  ListChecks,
+  CheckCircle2,
+  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Maximize2,
+  Minimize2,
   GraduationCap,
-  Check,
-  AlertCircle,
+  Flame,
   HelpCircle,
-  TrendingUp,
+  Video,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +46,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
   ResponsiveContainer,
@@ -54,7 +59,6 @@ import {
   Line,
 } from "recharts";
 import { Gauge } from "@/components/gauge";
-import { AppShell } from "@/components/app-shell";
 import { useTwin, today } from "@/lib/twin-store";
 import { useGuard } from "@/lib/use-guard";
 import {
@@ -74,94 +78,49 @@ import {
   type SoundscapeType,
   soundscapeEngine,
 } from "@/components/pomodoro-soundscapes";
+import {
+  STUDY_WALLPAPERS,
+  type WallpaperItem,
+  StudySettingsDialog,
+} from "@/components/study-settings-dialog";
 import { tooltipStyle } from "@/routes/dashboard";
 
 export const Route = createFileRoute("/study")({
   head: () => ({
     meta: [
-      { title: "Study & Academic Intelligence — Visual Risk AI" },
+      { title: "Study Cockpit — Visual Risk AI" },
       {
         name: "description",
-        content: "Interactive Pomodoro focus, ambient soundscapes, exam countdowns, and adaptive AI schedules.",
+        content: "Full-screen study mode cockpit with 4K wallpapers, ambient video loops, Pomodoro focus, live clock, and tasks planner.",
       },
     ],
   }),
-  component: StudyIntelligencePage,
+  component: StudyCockpitPage,
 });
 
-interface WallpaperOption {
-  id: string;
-  name: string;
-  url: string;
-  thumb: string;
-  accent: string;
-}
+type SidebarTab = "tasks" | "habits" | "exams" | "plan";
 
-const WALLPAPERS: WallpaperOption[] = [
-  {
-    id: "cyberpunk",
-    name: "Cyberpunk Glow",
-    url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1920&auto=format&fit=crop",
-    thumb: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=200&auto=format&fit=crop",
-    accent: "#a855f7",
-  },
-  {
-    id: "library",
-    name: "Midnight Library",
-    url: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=1920&auto=format&fit=crop",
-    thumb: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=200&auto=format&fit=crop",
-    accent: "#38bdf8",
-  },
-  {
-    id: "lofi-cafe",
-    name: "Cozy Lo-Fi Cafe",
-    url: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=1920&auto=format&fit=crop",
-    thumb: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=200&auto=format&fit=crop",
-    accent: "#f59e0b",
-  },
-  {
-    id: "rainy-tokyo",
-    name: "Rainy Tokyo Alley",
-    url: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?q=80&w=1920&auto=format&fit=crop",
-    thumb: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?q=80&w=200&auto=format&fit=crop",
-    accent: "#06b6d4",
-  },
-  {
-    id: "space",
-    name: "Nebula Observatory",
-    url: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1920&auto=format&fit=crop",
-    thumb: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=200&auto=format&fit=crop",
-    accent: "#8b5cf6",
-  },
-  {
-    id: "minimal-dusk",
-    name: "Minimalist Dusk",
-    url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1920&auto=format&fit=crop",
-    thumb: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=200&auto=format&fit=crop",
-    accent: "#10b981",
-  },
-];
-
-function StudyIntelligencePage() {
+function StudyCockpitPage() {
   const ok = useGuard();
-  const { state, addTask, addLog } = useTwin();
+  const navigate = useNavigate();
+  const { state, addTask, toggleTask, removeTask, addLog } = useTwin();
   const p = state.profile;
 
-  const [activeTab, setActiveTab] = useState<"session" | "analytics" | "forecast" | "plan">("session");
+  // Clock & Timezone state
+  const [currentTime, setCurrentTime] = useState("");
+  const [timeZoneName, setTimeZoneName] = useState("");
 
-  // Onboarding state
+  // UI state
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("tasks");
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
-  const [userCurriculum, setUserCurriculum] = useState<any>(null);
+  const [zenMode, setZenMode] = useState(false);
 
-  // Data states
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [forecast, setForecast] = useState<any>(null);
-  const [studyPlan, setStudyPlan] = useState<any>(null);
-  const [exams, setExams] = useState<any[]>([]);
-  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
-  const [adoptedSprints, setAdoptedSprints] = useState<Set<string>>(new Set());
+  // Wallpaper state
+  const [activeWallpaper, setActiveWallpaper] = useState<WallpaperItem>(STUDY_WALLPAPERS[0]);
 
-  // Pomodoro timer states
+  // Pomodoro timer state
   const [timerMode, setTimerMode] = useState<"focus" | "shortBreak" | "longBreak">("focus");
   const [focusLengthMins, setFocusLengthMins] = useState(25);
   const [breakLengthMins, setBreakLengthMins] = useState(5);
@@ -177,39 +136,74 @@ function StudyIntelligencePage() {
   const [activeSoundscape, setActiveSoundscape] = useState<SoundscapeType>("none");
   const [soundVolume, setSoundVolume] = useState(0.5);
 
-  // Wallpaper & Zen
-  const [activeWallpaper, setActiveWallpaper] = useState<WallpaperOption>(WALLPAPERS[0]);
-  const [zenMode, setZenMode] = useState(false);
+  // Telemetry & Academic Data
+  const [userCurriculum, setUserCurriculum] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [forecast, setForecast] = useState<any>(null);
+  const [studyPlan, setStudyPlan] = useState<any>(null);
+  const [exams, setExams] = useState<any[]>([]);
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [adoptedSprints, setAdoptedSprints] = useState<Set<string>>(new Set());
+
+  // Inline quick task form
+  const [quickTaskTitle, setQuickTaskTitle] = useState("");
+  const [quickTaskMinutes, setQuickTaskMinutes] = useState(45);
 
   // Modals
   const [saveModalOpen, setSaveModalOpen] = useState(false);
-  const [logModalOpen, setLogModalOpen] = useState(false);
   const [addExamOpen, setAddExamOpen] = useState(false);
 
-  // Save/Log modal fields
+  // Save session fields
   const [logSubject, setLogSubject] = useState("");
   const [logMinutes, setLogMinutes] = useState(25);
   const [logFocusScore, setLogFocusScore] = useState(8);
-  const [logExamScore, setLogExamScore] = useState<string>("");
+  const [logExamScore, setLogExamScore] = useState("");
   const [logNotes, setLogNotes] = useState("");
   const [addReviewTask, setAddReviewTask] = useState(true);
 
-  // Add exam modal fields
+  // Add exam fields
   const [examTitle, setExamTitle] = useState("");
   const [examSubject, setExamSubject] = useState("");
   const [examDate, setExamDate] = useState("");
   const [examTargetScore, setExamTargetScore] = useState(85);
 
-  // Refresh all study data from MongoDB
+  // Live Digital Clock & Timezone
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(
+        now.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      );
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const offsetMins = -now.getTimezoneOffset();
+        const sign = offsetMins >= 0 ? "+" : "-";
+        const hrs = String(Math.floor(Math.abs(offsetMins) / 60)).padStart(2, "0");
+        const mins = String(Math.abs(offsetMins) % 60).padStart(2, "0");
+        setTimeZoneName(`${tz} (UTC${sign}${hrs}:${mins})`);
+      } catch {
+        setTimeZoneName("Local Time");
+      }
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Refresh study records, analytics, and exams
   const refreshAllData = useCallback(() => {
     if (!p.id) return;
     getStudyAnalytics(p.id)
       .then((data) => setAnalytics(data))
-      .catch((err) => console.error("Error loading study analytics:", err));
+      .catch(() => {});
 
     getStudyForecast(p.id)
       .then((data) => setForecast(data))
-      .catch((err) => console.error("Error loading study forecast:", err));
+      .catch(() => {});
 
     getSavedStudyPlan(p.id)
       .then((data) => {
@@ -231,13 +225,11 @@ function StudyIntelligencePage() {
       .then((res: any) => {
         if (res && !res.onboarded) {
           setOnboardingOpen(true);
-        } else if (res && res.profile) {
-          setUserCurriculum(res.profile);
-          if (res.profile.subjects && res.profile.subjects.length > 0) {
-            setSelectedSubject(res.profile.subjects[0]);
-            setLogSubject(res.profile.subjects[0]);
-            setExamSubject(res.profile.subjects[0]);
-          }
+        } else if (res && res.subjects && res.subjects.length > 0) {
+          setUserCurriculum(res);
+          setSelectedSubject(res.subjects[0]);
+          setLogSubject(res.subjects[0]);
+          setExamSubject(res.subjects[0]);
         }
       })
       .catch(() => {});
@@ -287,7 +279,7 @@ function StudyIntelligencePage() {
     return () => clearInterval(interval);
   }, [isTimerRunning, handleTimerCompleted]);
 
-  // Soundscape handlers
+  // Audio controls
   const handleSelectSoundscape = (type: SoundscapeType) => {
     setActiveSoundscape(type);
     if (isTimerRunning && type !== "none") {
@@ -324,7 +316,7 @@ function StudyIntelligencePage() {
 
   const handleAddFiveMinutes = () => {
     setSecondsLeft((prev) => prev + 300);
-    toast.info("Added +5 minutes to current sprint.");
+    toast.info("Added +5 minutes to sprint.");
   };
 
   const handleSwitchMode = (mode: "focus" | "shortBreak" | "longBreak") => {
@@ -336,7 +328,7 @@ function StudyIntelligencePage() {
     else setSecondsLeft(longBreakLengthMins * 60);
   };
 
-  // Save session to MongoDB & twin-store
+  // Save session to MongoDB
   const handleSaveSession = async () => {
     if (!p.id) return;
     try {
@@ -344,7 +336,7 @@ function StudyIntelligencePage() {
         subject: logSubject || selectedSubject,
         duration_minutes: logMinutes,
         focus_score: logFocusScore,
-        notes: logNotes || "Pomodoro sprint completed in Focus Studio",
+        notes: logNotes || "Study session completed in Focus Studio",
       };
       if (logExamScore && !isNaN(Number(logExamScore))) {
         payload.exam_score = Number(logExamScore);
@@ -383,42 +375,7 @@ function StudyIntelligencePage() {
     }
   };
 
-  // Manual session log
-  const handleManualLog = async () => {
-    if (!p.id) return;
-    try {
-      const payload: Record<string, unknown> = {
-        subject: logSubject || selectedSubject,
-        duration_minutes: logMinutes,
-        focus_score: logFocusScore,
-        notes: logNotes || "Manual session log",
-      };
-      if (logExamScore && !isNaN(Number(logExamScore))) {
-        payload.exam_score = Number(logExamScore);
-      }
-
-      await logStudySession(p.id, payload);
-
-      addLog({
-        date: today(),
-        sleep: 7.5,
-        screen: 3.5,
-        study: +(logMinutes / 60).toFixed(1),
-        exercise: 0,
-        mood: logFocusScore,
-      });
-
-      toast.success("Past session recorded successfully!");
-      setLogModalOpen(false);
-      setLogNotes("");
-      setLogExamScore("");
-      refreshAllData();
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to log session");
-    }
-  };
-
-  // Exam handlers
+  // Add exam
   const handleAddExamSubmit = async () => {
     if (!p.id || !examTitle.trim() || !examDate) {
       toast.error("Please provide exam title and date");
@@ -451,7 +408,7 @@ function StudyIntelligencePage() {
     }
   };
 
-  // AI Plan Generation & Adoption
+  // AI Plan
   const handleGeneratePlan = async () => {
     if (!p.id) return;
     setIsGeneratingPlan(true);
@@ -459,7 +416,7 @@ function StudyIntelligencePage() {
       const res = await generateStudyPlan(p.id, { force_refresh: true });
       if (res && res.plan) {
         setStudyPlan(res.plan);
-        toast.success("AI Twin generated a fresh 7-day adaptive study plan!");
+        toast.success("AI Twin generated a fresh 7-day adaptive plan!");
       }
     } catch (err: any) {
       toast.error(err?.message || "Failed to generate study plan");
@@ -503,8 +460,27 @@ function StudyIntelligencePage() {
     toast.success(`All sprints for ${dayPlan.day_name || `Day ${dayIndex + 1}`} adopted into Planner!`);
   };
 
+  // Quick Task form submit
+  const handleAddQuickTask = () => {
+    if (!quickTaskTitle.trim()) {
+      toast.error("Please enter a task name");
+      return;
+    }
+    addTask({
+      title: quickTaskTitle.trim(),
+      start: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      minutes: quickTaskMinutes,
+      category: "study",
+      done: false,
+      date: today(),
+    });
+    setQuickTaskTitle("");
+    toast.success("Task added to Today's Planner!");
+  };
+
   if (!ok) return null;
 
+  // Available subjects
   const availableSubjects = useMemo(() => {
     const list: string[] = [];
     if (userCurriculum?.subjects) list.push(...userCurriculum.subjects);
@@ -516,6 +492,17 @@ function StudyIntelligencePage() {
     return list.length > 0 ? list : ["Computer Science", "Mathematics"];
   }, [userCurriculum, analytics]);
 
+  // Today's tasks from Planner
+  const todaysTasks = useMemo(() => {
+    return state.tasks
+      .filter((t) => t.date === today())
+      .slice()
+      .sort((a, b) => a.start.localeCompare(b.start));
+  }, [state.tasks]);
+
+  const tasksDoneCount = todaysTasks.filter((t) => t.done).length;
+
+  // Timer math
   const formatTime = (totalSecs: number) => {
     const m = Math.floor(totalSecs / 60);
     const s = totalSecs % 60;
@@ -534,6 +521,11 @@ function StudyIntelligencePage() {
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - timerProgress);
 
+  const readinessProb = forecast?.readiness_analysis?.readiness_probability ?? 0.0;
+  const readinessPercent = Math.round(readinessProb * 100);
+  const totalStudyHours = analytics?.total_study_hours ?? 0.0;
+  const avgWeeklyHours = analytics?.avg_weekly_hours ?? 0.0;
+
   const weeklyChartData = analytics?.weekly_distribution || [
     { day: "Mon", hours: 0.0, focus: 0.0 },
     { day: "Tue", hours: 0.0, focus: 0.0 },
@@ -551,39 +543,800 @@ function StudyIntelligencePage() {
     confidence: 0.0,
   };
 
-  const readinessProb = forecast?.readiness_analysis?.readiness_probability ?? 0.0;
-  const readinessPercent = Math.round(readinessProb * 100);
-  const projectedScore = forecast?.readiness_analysis?.projected_score ?? 0.0;
-  const retentionScore = forecast?.retention_health_score ?? 100;
-  const totalStudyHours = analytics?.total_study_hours ?? 0.0;
-  const avgWeeklyHours = analytics?.avg_weekly_hours ?? 0.0;
-
   return (
-    <AppShell
-      title="Study & Academic Intelligence"
-      subtitle="Interactive Pomodoro focus, ambient soundscapes, exam countdowns, and adaptive AI schedules."
-      actions={
-        <div className="flex items-center gap-2">
+    <div className="h-screen w-screen overflow-hidden relative select-none bg-black text-white flex flex-col font-sans">
+      {/* 1. FULL-SCREEN 4K WALLPAPER / LOOPING VIDEO BACKGROUND */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        {activeWallpaper.type === "video" ? (
+          <video
+            key={activeWallpaper.url}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source src={activeWallpaper.url} type="video/mp4" />
+          </video>
+        ) : (
+          <img
+            key={activeWallpaper.url}
+            src={activeWallpaper.url}
+            alt={activeWallpaper.name}
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+          />
+        )}
+        {/* Subtle dark vignette overlay for high UI readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/75" />
+      </div>
+
+      {/* 2. TOP IMMERSIVE APP BAR */}
+      <header className="relative z-30 h-16 px-4 sm:px-6 flex items-center justify-between border-b border-white/10 bg-black/40 backdrop-blur-md">
+        {/* Left: Exit Study Mode + Settings */}
+        <div className="flex items-center gap-2.5">
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setOnboardingOpen(true)}
-            className="gap-1.5 border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+            onClick={() => navigate({ to: "/dashboard" })}
+            className="gap-2 bg-black/50 border-white/20 hover:bg-white/15 text-white shadow-lg text-xs font-semibold h-9"
           >
-            <HelpCircle className="h-3.5 w-3.5" />
-            <span>Tour & Curriculum</span>
+            <ArrowLeft className="h-4 w-4" />
+            <span>Exit Study Mode</span>
           </Button>
+
           <Button
             size="sm"
-            onClick={() => setLogModalOpen(true)}
-            className="gap-1.5 bg-purple-600 hover:bg-purple-500 text-white"
+            variant="outline"
+            onClick={() => setSettingsOpen(true)}
+            className="gap-1.5 bg-black/50 border-white/20 hover:bg-white/15 text-white shadow-lg text-xs font-medium h-9"
           >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Log Study</span>
+            <Settings className="h-4 w-4 text-purple-400" />
+            <span>Settings</span>
+          </Button>
+
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setOnboardingOpen(true)}
+            className="text-xs text-white/70 hover:text-white hover:bg-white/10 h-9 hidden md:flex items-center gap-1.5"
+          >
+            <HelpCircle className="h-3.5 w-3.5 text-purple-400" />
+            <span>Curriculum</span>
           </Button>
         </div>
-      }
-    >
+
+        {/* Center: Live Animated Clock + Timezone */}
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-base sm:text-lg font-black tracking-widest text-white drop-shadow-md">
+              {currentTime || "00:00:00"}
+            </span>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+          </div>
+          <div className="text-[10px] text-white/60 font-medium tracking-wide">
+            {timeZoneName || "Coordinated Universal Time"}
+          </div>
+        </div>
+
+        {/* Right: Sidebar Toggle & Zen Mode */}
+        <div className="flex items-center gap-2">
+          {/* Quick Soundscape volume pill */}
+          <div className="hidden lg:flex items-center gap-2 bg-black/50 border border-white/15 px-3 py-1 rounded-full text-xs">
+            <button
+              type="button"
+              onClick={() => handleSelectSoundscape(activeSoundscape === "none" ? "lofi" : "none")}
+              className="text-cyan-400 hover:text-cyan-300"
+              title="Toggle Audio"
+            >
+              {activeSoundscape === "none" ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+            </button>
+            <select
+              value={activeSoundscape}
+              onChange={(e) => handleSelectSoundscape(e.target.value as SoundscapeType)}
+              className="bg-transparent border-0 text-[11px] text-white/90 focus:outline-none cursor-pointer"
+            >
+              {SOUNDSCAPES.map((sc) => (
+                <option key={sc.id} value={sc.id} className="bg-zinc-900 text-white">
+                  {sc.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setZenMode(!zenMode)}
+            className="h-9 px-2.5 bg-black/50 border-white/20 hover:bg-white/15 text-white/80 hover:text-white"
+            title={zenMode ? "Exit Zen Mode" : "Enter Zen Mode"}
+          >
+            {zenMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className={`gap-1.5 border-white/20 text-xs font-semibold h-9 ${
+              sidebarOpen
+                ? "bg-purple-600/80 text-white border-purple-500/50"
+                : "bg-black/50 text-white hover:bg-white/15"
+            }`}
+          >
+            {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+            <span className="hidden sm:inline">{sidebarOpen ? "Hide Panel" : "Study Panel"}</span>
+          </Button>
+        </div>
+      </header>
+
+      {/* 3. MAIN WORKSPACE WITH COLLAPSIBLE SIDEBAR & CENTER FOCUS ARENA */}
+      <main className="relative z-20 flex-1 flex overflow-hidden p-4 sm:p-6 gap-6">
+        {/* COLLAPSIBLE ANIMATED STUDY SIDEBAR */}
+        <aside
+          className={`shrink-0 z-30 w-full sm:w-[380px] lg:w-[420px] rounded-2xl border border-white/15 bg-zinc-950/80 backdrop-blur-xl shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden ${
+            sidebarOpen ? "translate-x-0 opacity-100" : "-translate-x-[110%] opacity-0 pointer-events-none hidden"
+          }`}
+        >
+          {/* Sidebar Nav Tabs */}
+          <div className="grid grid-cols-4 p-1.5 bg-black/50 border-b border-white/10 gap-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setSidebarTab("tasks")}
+              className={`py-2 px-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                sidebarTab === "tasks"
+                  ? "bg-purple-600 text-white shadow-md"
+                  : "text-white/60 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <ListChecks className="h-3.5 w-3.5" />
+              <span>Planner</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarTab("habits")}
+              className={`py-2 px-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                sidebarTab === "habits"
+                  ? "bg-purple-600 text-white shadow-md"
+                  : "text-white/60 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              <span>Habits</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarTab("exams")}
+              className={`py-2 px-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                sidebarTab === "exams"
+                  ? "bg-purple-600 text-white shadow-md"
+                  : "text-white/60 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Calendar className="h-3.5 w-3.5" />
+              <span>Exams</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarTab("plan")}
+              className={`py-2 px-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                sidebarTab === "plan"
+                  ? "bg-purple-600 text-white shadow-md"
+                  : "text-white/60 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>AI Plan</span>
+            </button>
+          </div>
+
+          {/* Sidebar Body */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* TAB 1: TASKS & PLANNER */}
+            {sidebarTab === "tasks" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-1 border-b border-white/10">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                      <ListChecks className="h-4 w-4 text-purple-400" />
+                      <span>Today's Study & Planner Tasks</span>
+                    </h3>
+                    <p className="text-[11px] text-white/60">
+                      {tasksDoneCount} of {todaysTasks.length} completed
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-300">
+                    Synced
+                  </Badge>
+                </div>
+
+                {/* Inline Add Quick Task Form */}
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add sprint or review task..."
+                      value={quickTaskTitle}
+                      onChange={(e) => setQuickTaskTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddQuickTask();
+                        }
+                      }}
+                      className="bg-black/50 border-white/20 text-xs h-8 text-white"
+                    />
+                    <select
+                      value={quickTaskMinutes}
+                      onChange={(e) => setQuickTaskMinutes(Number(e.target.value))}
+                      className="bg-black/50 border border-white/20 rounded-md px-2 text-xs text-white focus:outline-none"
+                    >
+                      <option value={15}>15m</option>
+                      <option value={25}>25m</option>
+                      <option value={45}>45m</option>
+                      <option value={60}>60m</option>
+                    </select>
+                    <Button
+                      size="sm"
+                      onClick={handleAddQuickTask}
+                      className="bg-purple-600 hover:bg-purple-500 text-white h-8 px-2.5"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Tasks List */}
+                <div className="space-y-2">
+                  {todaysTasks.length > 0 ? (
+                    todaysTasks.map((t) => (
+                      <div
+                        key={t.id}
+                        className={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2.5 ${
+                          t.done
+                            ? "bg-emerald-500/10 border-emerald-500/20 text-white/50"
+                            : "bg-white/5 border-white/10 text-white hover:bg-white/10"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                          <Checkbox
+                            checked={t.done}
+                            onCheckedChange={() => toggleTask(t.id)}
+                            className="border-white/30 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={`text-xs font-semibold truncate ${
+                                t.done ? "line-through text-white/50" : "text-white"
+                              }`}
+                            >
+                              {t.title}
+                            </p>
+                            <p className="text-[10px] text-white/50 font-mono">
+                              {t.start} · {t.minutes}m · {t.category}
+                            </p>
+                          </div>
+                        </div>
+
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => removeTask(t.id)}
+                          className="h-7 w-7 text-white/40 hover:text-red-400 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-6 text-center text-xs text-white/50 border border-dashed border-white/10 rounded-xl space-y-1">
+                      <ListChecks className="h-6 w-6 mx-auto opacity-40" />
+                      <p>No tasks scheduled for today yet.</p>
+                      <p className="text-[10px]">Type above to add a study sprint.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: SCHEDULE & HABITS */}
+            {sidebarTab === "habits" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-1 border-b border-white/10">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                    <BookOpen className="h-4 w-4 text-purple-400" />
+                    <span>Academic Telemetry & Habits</span>
+                  </h3>
+                  <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-300">
+                    MongoDB
+                  </Badge>
+                </div>
+
+                {/* 3 Quick KPI Badges */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
+                    <p className="text-[10px] text-white/60">Total Hours</p>
+                    <p className="text-sm font-black text-purple-400">{totalStudyHours.toFixed(1)}h</p>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
+                    <p className="text-[10px] text-white/60">Weekly Pace</p>
+                    <p className="text-sm font-black text-cyan-400">{avgWeeklyHours.toFixed(1)}h</p>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
+                    <p className="text-[10px] text-white/60">Avg Focus</p>
+                    <p className="text-sm font-black text-emerald-400">
+                      {analytics?.avg_focus_score ? `${analytics.avg_focus_score.toFixed(1)}/10` : "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Weekly Chart */}
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                  <p className="text-xs font-semibold text-white/80">Weekly Distribution</p>
+                  <div className="h-36 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={weeklyChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                        <XAxis dataKey="day" stroke="#888888" fontSize={10} tickLine={false} />
+                        <YAxis stroke="#888888" fontSize={10} tickLine={false} unit="h" />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Bar dataKey="hours" fill="#8b5cf6" radius={[3, 3, 0, 0]} name="Study Hours" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Subjects breakdown */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-white/80">Curriculum Subjects</p>
+                  {analytics?.subjects && analytics.subjects.length > 0 ? (
+                    analytics.subjects.map((s: any) => (
+                      <div
+                        key={s.subject}
+                        className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs"
+                      >
+                        <div>
+                          <p className="font-semibold text-white">{s.subject}</p>
+                          <p className="text-[10px] text-white/50">
+                            {s.sessions_count} sessions · {s.total_hours.toFixed(1)}h
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 text-[10px]">
+                          {s.avg_focus > 0 ? `${s.avg_focus.toFixed(1)} Focus` : "Fresh"}
+                        </Badge>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-xs text-white/50 border border-dashed border-white/10 rounded-xl">
+                      No subjects logged yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: EXAMS & TRENDS */}
+            {sidebarTab === "exams" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-1 border-b border-white/10">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                      <Calendar className="h-4 w-4 text-purple-400" />
+                      <span>Exams & Milestones</span>
+                    </h3>
+                    <p className="text-[11px] text-white/60">Live date countdowns</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => setAddExamOpen(true)}
+                    className="bg-purple-600 hover:bg-purple-500 text-white text-xs h-7 px-2.5 gap-1"
+                  >
+                    <Plus className="h-3 w-3" />
+                    <span>Add Exam</span>
+                  </Button>
+                </div>
+
+                {/* Target Exam Readiness Gauge */}
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center justify-center text-center space-y-1">
+                  <Gauge
+                    size={140}
+                    value={readinessProb * 10}
+                    display={`${readinessPercent}%`}
+                    label="Readiness Odds"
+                    sublabel="Target Score Probability"
+                    colorScheme="purple"
+                  />
+                  <p className="text-[10px] text-white/60">
+                    {readinessPercent >= 75
+                      ? "Pacing on track to achieve target score."
+                      : "Complete daily Pomodoro blocks to reach optimal readiness."}
+                  </p>
+                </div>
+
+                {/* Exams List */}
+                <div className="space-y-2">
+                  {exams.length > 0 ? (
+                    exams.map((ex: any) => {
+                      const daysLeft = ex.days_left;
+                      const isUrgent = daysLeft !== null && daysLeft <= 7;
+                      return (
+                        <div
+                          key={ex.id}
+                          className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-2"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-white truncate">{ex.title}</p>
+                            <p className="text-[10px] text-white/60 font-mono">
+                              {ex.subject} · {ex.exam_date} · Target {ex.target_score}%
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              className={`text-[10px] font-bold ${
+                                isUrgent
+                                  ? "bg-rose-500/20 text-rose-300 border-rose-500/30"
+                                  : "bg-purple-500/20 text-purple-300 border-purple-500/30"
+                              }`}
+                            >
+                              {daysLeft === 0 ? "Today!" : `${daysLeft}d left`}
+                            </Badge>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDeleteExam(ex.id)}
+                              className="h-6 w-6 text-white/40 hover:text-red-400"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="p-4 text-center text-xs text-white/50 border border-dashed border-white/10 rounded-xl space-y-1">
+                      <p>No upcoming exams scheduled.</p>
+                      <p className="text-[10px]">Click "+ Add Exam" to activate countdowns.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: AI STUDY OPTIMIZER */}
+            {sidebarTab === "plan" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-1 border-b border-white/10">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                      <Sparkles className="h-4 w-4 text-purple-400" />
+                      <span>7-Day Adaptive Plan</span>
+                    </h3>
+                    <p className="text-[11px] text-white/60">Spaced repetition schedule</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleGeneratePlan}
+                    disabled={isGeneratingPlan}
+                    className="bg-purple-600 hover:bg-purple-500 text-white text-xs h-7 px-2.5"
+                  >
+                    {isGeneratingPlan ? "..." : "Regenerate"}
+                  </Button>
+                </div>
+
+                {studyPlan?.schedule && studyPlan.schedule.length > 0 ? (
+                  <div className="space-y-3">
+                    {studyPlan.schedule.map((dayItem: any, dIdx: number) => {
+                      const dayName = dayItem.day_name || `Day ${dIdx + 1}`;
+                      const blocks = dayItem.blocks || [];
+                      return (
+                        <div key={dIdx} className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-white">{dayName}</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleAdoptDayPlan(dIdx, dayItem)}
+                              className="text-[10px] text-purple-300 hover:text-white h-6 px-1.5 gap-1"
+                            >
+                              <Plus className="h-2.5 w-2.5" />
+                              <span>Adopt All</span>
+                            </Button>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            {blocks.map((b: any, bIdx: number) => {
+                              const sprintKey = `${dIdx}-${bIdx}`;
+                              const isAdopted = adoptedSprints.has(sprintKey);
+                              return (
+                                <div
+                                  key={bIdx}
+                                  className="p-2 rounded-lg bg-black/40 border border-white/5 flex items-center justify-between text-xs"
+                                >
+                                  <div>
+                                    <p className="font-semibold text-white/90 truncate">{b.subject || "Study"}</p>
+                                    <p className="text-[10px] text-white/50">
+                                      {b.start_time || "14:00"} · {b.duration_minutes || 45}m
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleAdoptSprint(sprintKey, b)}
+                                    disabled={isAdopted}
+                                    className={`h-6 px-2 text-[10px] ${
+                                      isAdopted ? "text-emerald-400" : "text-purple-300 hover:text-white"
+                                    }`}
+                                  >
+                                    {isAdopted ? "Added" : "+ Add"}
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-xs text-white/50 border border-dashed border-white/10 rounded-xl space-y-2">
+                    <Sparkles className="h-6 w-6 mx-auto opacity-40 text-purple-400" />
+                    <p>No active AI schedule.</p>
+                    <Button
+                      size="sm"
+                      onClick={handleGeneratePlan}
+                      disabled={isGeneratingPlan}
+                      className="bg-purple-600 text-white text-xs h-8 px-4"
+                    >
+                      Synthesize Schedule
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* CENTER STAGE: FOCUS POMODORO ARENA */}
+        <section className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="w-full max-w-xl flex flex-col items-center justify-center text-center space-y-6">
+            {/* Subject selector */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 border border-white/20 backdrop-blur-md shadow-xl">
+              <GraduationCap className="h-4 w-4 text-purple-400" />
+              <select
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+                className="bg-transparent text-xs font-bold text-white border-0 focus:outline-none cursor-pointer tracking-wide"
+              >
+                {availableSubjects.map((sub) => (
+                  <option key={sub} value={sub} className="bg-zinc-950 text-white">
+                    {sub}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Mode buttons */}
+            <div className="inline-flex items-center p-1 rounded-2xl bg-black/60 border border-white/15 backdrop-blur-md gap-1 shadow-2xl">
+              <button
+                type="button"
+                onClick={() => handleSwitchMode("focus")}
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  timerMode === "focus"
+                    ? "bg-purple-600 text-white shadow-lg ring-1 ring-purple-400/50"
+                    : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                Deep Work ({focusLengthMins}m)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSwitchMode("shortBreak")}
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  timerMode === "shortBreak"
+                    ? "bg-cyan-600 text-white shadow-lg ring-1 ring-cyan-400/50"
+                    : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                Short Break ({breakLengthMins}m)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSwitchMode("longBreak")}
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  timerMode === "longBreak"
+                    ? "bg-emerald-600 text-white shadow-lg ring-1 ring-emerald-400/50"
+                    : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                Long Break ({longBreakLengthMins}m)
+              </button>
+            </div>
+
+            {/* Circular Timer Ring */}
+            <div className="relative flex items-center justify-center my-2">
+              <svg className="w-80 h-80 transform -rotate-90 filter drop-shadow-2xl" viewBox="0 0 240 240">
+                <circle
+                  cx="120"
+                  cy="120"
+                  r={radius}
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  className="text-white/10"
+                  fill="transparent"
+                />
+                <circle
+                  cx="120"
+                  cy="120"
+                  r={radius}
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round"
+                  className={`transition-all duration-1000 ${
+                    timerMode === "focus"
+                      ? "text-purple-500"
+                      : timerMode === "shortBreak"
+                      ? "text-cyan-400"
+                      : "text-emerald-400"
+                  }`}
+                  fill="transparent"
+                />
+              </svg>
+
+              <div className="absolute inset-0 flex flex-col items-center justify-center space-y-1.5 text-white">
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] uppercase tracking-widest font-black bg-white/15 border-white/20 text-white"
+                >
+                  {timerMode === "focus" ? "Focus Sprint" : "Recovery Window"}
+                </Badge>
+                <div className="font-mono text-6xl sm:text-7xl font-black tracking-tight drop-shadow-2xl">
+                  {formatTime(secondsLeft)}
+                </div>
+                <div className="text-xs text-white/80 font-semibold tracking-wide">
+                  {selectedSubject}
+                </div>
+                <div className="text-[11px] text-white/50 pt-0.5 font-mono">
+                  Sprint {completedSprints + 1} of 4 · {Math.round(timerProgress * 100)}%
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Control Buttons */}
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button
+                size="lg"
+                onClick={handleTogglePlay}
+                className={`h-14 px-8 rounded-full font-bold text-base shadow-2xl gap-2.5 transition-all ${
+                  isTimerRunning
+                    ? "bg-amber-600 hover:bg-amber-500 text-white ring-4 ring-amber-500/20"
+                    : "bg-purple-600 hover:bg-purple-500 text-white ring-4 ring-purple-500/20"
+                }`}
+              >
+                {isTimerRunning ? (
+                  <>
+                    <Pause className="h-5 w-5" />
+                    <span>Pause Sprint</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-5 w-5 fill-current" />
+                    <span>Start Sprint</span>
+                  </>
+                )}
+              </Button>
+
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={handleResetTimer}
+                className="h-12 w-12 rounded-full border-white/20 bg-black/60 text-white hover:bg-white/20 shadow-xl"
+                title="Reset Sprint"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={handleAddFiveMinutes}
+                className="h-12 w-12 rounded-full border-white/20 bg-black/60 text-white hover:bg-white/20 shadow-xl text-xs font-bold"
+                title="+5 Minutes"
+              >
+                +5m
+              </Button>
+
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={handleTimerCompleted}
+                className="h-12 w-12 rounded-full border-white/20 bg-black/60 text-white hover:bg-white/20 shadow-xl"
+                title="Skip to Break"
+              >
+                <SkipForward className="h-4 w-4" />
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setLogSubject(selectedSubject);
+                  setLogMinutes(Math.max(5, Math.round((totalModeSeconds - secondsLeft) / 60) || 25));
+                  setSaveModalOpen(true);
+                }}
+                className="h-12 px-5 rounded-full border-white/20 bg-black/60 text-purple-300 hover:bg-white/20 shadow-xl text-xs font-semibold gap-1.5"
+              >
+                <Check className="h-4 w-4" />
+                <span>Save to Database</span>
+              </Button>
+            </div>
+
+            {/* Quick Wallpaper Picker Thumbnails Bar */}
+            {!zenMode && (
+              <div className="w-full pt-2 flex items-center justify-center gap-2 overflow-x-auto py-1">
+                {STUDY_WALLPAPERS.slice(0, 7).map((wp) => (
+                  <button
+                    key={wp.id}
+                    type="button"
+                    onClick={() => setActiveWallpaper(wp)}
+                    className={`relative h-12 w-20 rounded-lg overflow-hidden border transition-all shrink-0 ${
+                      activeWallpaper.id === wp.id
+                        ? "border-purple-400 ring-2 ring-purple-400/50 scale-105"
+                        : "border-white/15 opacity-60 hover:opacity-100"
+                    }`}
+                    title={wp.name}
+                  >
+                    <img src={wp.thumb} alt={wp.name} className="h-full w-full object-cover" />
+                    {wp.type === "video" && (
+                      <span className="absolute top-1 left-1 bg-purple-600/90 rounded-full p-0.5 text-white">
+                        <Video className="h-2 w-2" />
+                      </span>
+                    )}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setSettingsOpen(true)}
+                  className="h-12 px-3 rounded-lg border border-dashed border-white/20 text-white/70 hover:text-white hover:border-white/40 text-[11px] font-semibold flex items-center gap-1 bg-black/40"
+                >
+                  <span>More</span>
+                  <ChevronRight className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
+
+      {/* 4. SETTINGS & WALLPAPER GALLERY DIALOG */}
+      <StudySettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        activeWallpaper={activeWallpaper}
+        onSelectWallpaper={setActiveWallpaper}
+        focusMinutes={focusLengthMins}
+        onFocusMinutesChange={(mins) => {
+          setFocusLengthMins(mins);
+          if (timerMode === "focus" && !isTimerRunning) setSecondsLeft(mins * 60);
+        }}
+        breakMinutes={breakLengthMins}
+        onBreakMinutesChange={(mins) => {
+          setBreakLengthMins(mins);
+          if (timerMode === "shortBreak" && !isTimerRunning) setSecondsLeft(mins * 60);
+        }}
+        longBreakMinutes={longBreakLengthMins}
+        onLongBreakMinutesChange={(mins) => {
+          setLongBreakLengthMins(mins);
+          if (timerMode === "longBreak" && !isTimerRunning) setSecondsLeft(mins * 60);
+        }}
+        activeSoundscape={activeSoundscape}
+        onSoundscapeChange={handleSelectSoundscape}
+        soundVolume={soundVolume}
+        onVolumeChange={handleVolumeChange}
+      />
+
+      {/* 5. ONBOARDING MODAL */}
       <StudyOnboardingModal
         open={onboardingOpen}
         userId={p.id}
@@ -599,800 +1352,26 @@ function StudyIntelligencePage() {
         }}
       />
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 max-w-2xl bg-muted/60 p-1 border border-border">
-          <TabsTrigger value="session" className="gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-            <Clock className="h-4 w-4" />
-            <span className="hidden sm:inline">Study Session</span>
-            <span className="sm:hidden">Session</span>
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-            <BookOpen className="h-4 w-4" />
-            <span className="hidden sm:inline">Schedule & Habits</span>
-            <span className="sm:hidden">Habits</span>
-          </TabsTrigger>
-          <TabsTrigger value="forecast" className="gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-            <TrendingUp className="h-4 w-4" />
-            <span className="hidden sm:inline">Exams & Trends</span>
-            <span className="sm:hidden">Exams</span>
-          </TabsTrigger>
-          <TabsTrigger value="plan" className="gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-            <Sparkles className="h-4 w-4" />
-            <span className="hidden sm:inline">AI Study Optimizer</span>
-            <span className="sm:hidden">AI Plan</span>
-          </TabsTrigger>
-        </TabsList>
-
-        {/* TAB 1: STUDY SESSION WORKSPACE */}
-        <TabsContent value="session" className="space-y-6">
-          <div
-            className="relative rounded-2xl overflow-hidden border border-border transition-all duration-700 shadow-2xl bg-zinc-950"
-            style={{
-              backgroundImage: `linear-gradient(to bottom, rgba(10, 10, 15, 0.75), rgba(10, 10, 15, 0.95)), url('${activeWallpaper.url}')`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          >
-            {/* Top Toolbar */}
-            <div className="p-4 sm:p-6 border-b border-white/10 flex flex-wrap items-center justify-between gap-4 backdrop-blur-md bg-black/30">
-              <div className="flex items-center gap-2 min-w-[220px]">
-                <GraduationCap className="h-5 w-5 text-purple-400" />
-                <div className="flex-1">
-                  <label className="text-[11px] font-semibold text-purple-300 block uppercase tracking-wider">
-                    Active Study Subject
-                  </label>
-                  <select
-                    value={selectedSubject}
-                    onChange={(e) => setSelectedSubject(e.target.value)}
-                    className="w-full bg-black/40 border border-white/20 rounded-md px-2.5 py-1 text-sm font-semibold text-white focus:outline-none focus:ring-1 focus:ring-purple-400"
-                  >
-                    {availableSubjects.map((sub) => (
-                      <option key={sub} value={sub} className="bg-zinc-900 text-white">
-                        {sub}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Soundscape controls */}
-              <div className="flex items-center gap-2">
-                <Music className="h-4 w-4 text-cyan-400" />
-                <select
-                  value={activeSoundscape}
-                  onChange={(e) => handleSelectSoundscape(e.target.value as SoundscapeType)}
-                  className="bg-black/40 border border-white/20 rounded-md px-2.5 py-1 text-xs font-medium text-white focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                >
-                  {SOUNDSCAPES.map((sc) => (
-                    <option key={sc.id} value={sc.id} className="bg-zinc-900 text-white">
-                      {sc.name}
-                    </option>
-                  ))}
-                </select>
-
-                {activeSoundscape !== "none" && (
-                  <div className="flex items-center gap-1.5 pl-2 border-l border-white/10">
-                    <Volume2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    <Slider
-                      min={0}
-                      max={1}
-                      step={0.05}
-                      value={[soundVolume]}
-                      onValueChange={(v) => handleVolumeChange(v[0])}
-                      className="w-16"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Wallpaper & Zen Mode */}
-              <div className="flex items-center gap-2">
-                <ImageIcon className="h-4 w-4 text-amber-400" />
-                <select
-                  value={activeWallpaper.id}
-                  onChange={(e) => {
-                    const found = WALLPAPERS.find((w) => w.id === e.target.value);
-                    if (found) setActiveWallpaper(found);
-                  }}
-                  className="bg-black/40 border border-white/20 rounded-md px-2.5 py-1 text-xs font-medium text-white focus:outline-none focus:ring-1 focus:ring-amber-400"
-                >
-                  {WALLPAPERS.map((wp) => (
-                    <option key={wp.id} value={wp.id} className="bg-zinc-900 text-white">
-                      Theme: {wp.name}
-                    </option>
-                  ))}
-                </select>
-
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setZenMode(!zenMode)}
-                  className="text-white/80 hover:text-white hover:bg-white/10 h-8 px-2"
-                  title={zenMode ? "Exit Zen Mode" : "Zen Mode"}
-                >
-                  {zenMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
-
-            {/* Focus Ring & Controls */}
-            <div className={`p-6 sm:p-12 flex flex-col items-center justify-center text-center space-y-8 backdrop-blur-sm ${zenMode ? "py-16 sm:py-24" : ""}`}>
-              {/* Mode Selectors */}
-              <div className="inline-flex items-center p-1 rounded-xl bg-black/50 border border-white/15 backdrop-blur-md gap-1">
-                <button
-                  type="button"
-                  onClick={() => handleSwitchMode("focus")}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    timerMode === "focus"
-                      ? "bg-purple-600 text-white shadow-lg"
-                      : "text-white/70 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  Deep Work ({focusLengthMins}m)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSwitchMode("shortBreak")}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    timerMode === "shortBreak"
-                      ? "bg-cyan-600 text-white shadow-lg"
-                      : "text-white/70 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  Short Break ({breakLengthMins}m)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSwitchMode("longBreak")}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    timerMode === "longBreak"
-                      ? "bg-emerald-600 text-white shadow-lg"
-                      : "text-white/70 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  Long Break ({longBreakLengthMins}m)
-                </button>
-              </div>
-
-              {/* Glowing circular timer */}
-              <div className="relative flex items-center justify-center">
-                <svg className="w-72 h-72 transform -rotate-90" viewBox="0 0 240 240">
-                  <circle
-                    cx="120"
-                    cy="120"
-                    r={radius}
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    className="text-white/10"
-                    fill="transparent"
-                  />
-                  <circle
-                    cx="120"
-                    cy="120"
-                    r={radius}
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                    strokeLinecap="round"
-                    className={`transition-all duration-1000 ${
-                      timerMode === "focus"
-                        ? "text-purple-500"
-                        : timerMode === "shortBreak"
-                        ? "text-cyan-400"
-                        : "text-emerald-400"
-                    }`}
-                    fill="transparent"
-                  />
-                </svg>
-
-                <div className="absolute inset-0 flex flex-col items-center justify-center space-y-1 text-white">
-                  <Badge
-                    variant="secondary"
-                    className="text-[11px] uppercase tracking-wider font-bold bg-white/10 border-white/20 text-white mb-1"
-                  >
-                    {timerMode === "focus" ? "Focus Sprint" : "Recovery Window"}
-                  </Badge>
-                  <div className="font-mono text-6xl font-black tracking-tight drop-shadow-lg">
-                    {formatTime(secondsLeft)}
-                  </div>
-                  <div className="text-xs text-white/70 font-medium">
-                    {selectedSubject || "Select Subject"}
-                  </div>
-                  <div className="text-[11px] text-white/50 pt-1">
-                    Sprint {completedSprints + 1} of 4 · {Math.round(timerProgress * 100)}%
-                  </div>
-                </div>
-              </div>
-
-              {/* Interactive buttons */}
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                <Button
-                  size="lg"
-                  onClick={handleTogglePlay}
-                  className={`h-14 px-8 rounded-full font-bold text-base shadow-xl gap-2 transition-all ${
-                    isTimerRunning
-                      ? "bg-amber-600 hover:bg-amber-500 text-white ring-4 ring-amber-500/20"
-                      : "bg-purple-600 hover:bg-purple-500 text-white ring-4 ring-purple-500/20"
-                  }`}
-                >
-                  {isTimerRunning ? (
-                    <>
-                      <Pause className="h-5 w-5" />
-                      <span>Pause Session</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-5 w-5 fill-current" />
-                      <span>Start Focus Sprint</span>
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={handleResetTimer}
-                  className="h-12 w-12 rounded-full border-white/20 bg-black/40 text-white hover:bg-white/20"
-                  title="Reset Sprint"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={handleAddFiveMinutes}
-                  className="h-12 w-12 rounded-full border-white/20 bg-black/40 text-white hover:bg-white/20 text-xs font-bold"
-                  title="+5 Minutes"
-                >
-                  +5m
-                </Button>
-
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={handleTimerCompleted}
-                  className="h-12 w-12 rounded-full border-white/20 bg-black/40 text-white hover:bg-white/20"
-                  title="Complete / Skip to Break"
-                >
-                  <SkipForward className="h-4 w-4" />
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setLogSubject(selectedSubject);
-                    setLogMinutes(Math.max(5, Math.round((totalModeSeconds - secondsLeft) / 60) || 25));
-                    setSaveModalOpen(true);
-                  }}
-                  className="h-12 px-4 rounded-full border-white/20 bg-black/40 text-purple-300 hover:bg-white/20 text-xs font-semibold gap-1.5"
-                >
-                  <Check className="h-4 w-4" />
-                  <span>Finish & Save to Database</span>
-                </Button>
-              </div>
-
-              {/* Wallpaper Gallery Thumbnails (if not zen) */}
-              {!zenMode && (
-                <div className="w-full max-w-xl pt-4 border-t border-white/10 space-y-2">
-                  <div className="flex items-center justify-between text-xs text-white/70">
-                    <span className="font-semibold flex items-center gap-1.5">
-                      <ImageIcon className="h-3.5 w-3.5 text-amber-400" /> Focus Studio Wallpaper Gallery
-                    </span>
-                    <span className="text-[11px] text-white/50">Click to change backdrop</span>
-                  </div>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                    {WALLPAPERS.map((wp) => (
-                      <button
-                        key={wp.id}
-                        type="button"
-                        onClick={() => setActiveWallpaper(wp)}
-                        className={`group relative rounded-lg overflow-hidden border transition-all h-14 ${
-                          activeWallpaper.id === wp.id
-                            ? "border-purple-400 ring-2 ring-purple-400/40 scale-105"
-                            : "border-white/15 opacity-70 hover:opacity-100"
-                        }`}
-                      >
-                        <img src={wp.thumb} alt={wp.name} className="h-full w-full object-cover" />
-                        <span className="absolute inset-x-0 bottom-0 bg-black/70 text-[9px] text-white font-medium truncate px-1 py-0.5 text-center">
-                          {wp.name}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="panel p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-500">
-                <Clock className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Study Hours</p>
-                <p className="text-lg font-bold text-foreground">{totalStudyHours.toFixed(1)}h</p>
-              </div>
-            </div>
-
-            <div className="panel p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-500">
-                <Flame className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Sprints Completed</p>
-                <p className="text-lg font-bold text-foreground">{completedSprints}</p>
-              </div>
-            </div>
-
-            <div className="panel p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
-                <CheckCircle2 className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Weekly Target</p>
-                <p className="text-lg font-bold text-foreground">
-                  {avgWeeklyHours.toFixed(1)}h / {userCurriculum?.weekly_target ?? 15}h
-                </p>
-              </div>
-            </div>
-
-            <div className="panel p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
-                <Calendar className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Upcoming Exams</p>
-                <p className="text-lg font-bold text-foreground">{exams.length} Registered</p>
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* TAB 2: SCHEDULE & HABITS */}
-        <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="panel p-5 space-y-1">
-              <p className="label-xs">Total Academic Study</p>
-              <div className="text-2xl font-bold font-display text-foreground">
-                {totalStudyHours.toFixed(1)} hrs
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {totalStudyHours === 0
-                  ? "No sessions logged yet. Complete a Pomodoro sprint to start!"
-                  : "Logged in MongoDB study records"}
-              </p>
-            </div>
-
-            <div className="panel p-5 space-y-1">
-              <p className="label-xs">Weekly Pace vs Target</p>
-              <div className="text-2xl font-bold font-display text-purple-400">
-                {avgWeeklyHours.toFixed(1)}h / {userCurriculum?.weekly_target ?? 15}h
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {Math.round((avgWeeklyHours / Math.max(1, userCurriculum?.weekly_target ?? 15)) * 100)}% of goal
-              </p>
-            </div>
-
-            <div className="panel p-5 space-y-1">
-              <p className="label-xs">Average Focus Rating</p>
-              <div className="text-2xl font-bold font-display text-cyan-400">
-                {analytics?.avg_focus_score ? `${analytics.avg_focus_score.toFixed(1)} / 10` : "N/A"}
-              </div>
-              <p className="text-xs text-muted-foreground">Self-rated cognitive depth</p>
-            </div>
-
-            <div className="panel p-5 space-y-1">
-              <p className="label-xs">Retention Health Index</p>
-              <div className="text-2xl font-bold font-display text-emerald-400">
-                {retentionScore}%
-              </div>
-              <p className="text-xs text-muted-foreground">Spaced repetition freshness</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Weekly Pace Chart */}
-            <div className="panel p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-foreground text-sm">Weekly Study Pace by Day</h3>
-                  <p className="text-xs text-muted-foreground">Hours dedicated across the week</p>
-                </div>
-                <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-400">
-                  Real Activity
-                </Badge>
-              </div>
-
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={weeklyChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="day" stroke="#888888" fontSize={12} tickLine={false} />
-                    <YAxis stroke="#888888" fontSize={12} tickLine={false} unit="h" />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Bar dataKey="hours" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Study Hours" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Subject Breakdown */}
-            <div className="panel p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-foreground text-sm">Subject Allocation & Mastery</h3>
-                  <p className="text-xs text-muted-foreground">Hours spent per curriculum domain</p>
-                </div>
-                <Button size="sm" variant="ghost" onClick={() => setLogModalOpen(true)} className="text-xs text-purple-400 h-7">
-                  + Log Session
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                {analytics?.subjects && analytics.subjects.length > 0 ? (
-                  analytics.subjects.map((sub: any) => (
-                    <div key={sub.subject} className="p-3 rounded-lg bg-muted/30 border border-border flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{sub.subject}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {sub.sessions_count} sessions · {sub.total_hours.toFixed(1)} hrs total
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant="secondary" className="bg-purple-500/10 text-purple-300 border-purple-500/20 text-xs font-semibold">
-                          {sub.avg_focus > 0 ? `${sub.avg_focus.toFixed(1)} Focus` : "Fresh Subject"}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-8 text-center text-xs text-muted-foreground border border-dashed border-border rounded-lg space-y-2">
-                    <BookOpen className="h-8 w-8 mx-auto opacity-40" />
-                    <p className="font-medium text-foreground">No subject records logged yet</p>
-                    <p>Start your first sprint in the Study Session tab or click "Log Study" above.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* TAB 3: EXAMS & TRENDS */}
-        <TabsContent value="forecast" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Registered Exams List */}
-            <div className="lg:col-span-2 panel p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-purple-400" />
-                    <span>Registered Upcoming Exams & Milestones</span>
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Real-time countdown tracking and milestone readiness
-                  </p>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => setAddExamOpen(true)}
-                  className="gap-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs h-8"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Add Exam</span>
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                {exams.length > 0 ? (
-                  exams.map((ex: any) => {
-                    const daysLeft = ex.days_left;
-                    const isUrgent = daysLeft !== null && daysLeft <= 7;
-                    const isPast = daysLeft !== null && daysLeft < 0;
-
-                    return (
-                      <div
-                        key={ex.id}
-                        className="p-4 rounded-xl bg-muted/30 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-foreground">{ex.title}</span>
-                            <Badge variant="outline" className="text-[11px] border-purple-500/30 text-purple-400">
-                              {ex.subject}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Date: <strong>{ex.exam_date}</strong> · Target Score: <strong>{ex.target_score}%</strong>
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          {isPast ? (
-                            <Badge variant="secondary" className="text-xs bg-zinc-700/50 text-zinc-300">
-                              Completed
-                            </Badge>
-                          ) : (
-                            <Badge
-                              className={`text-xs font-bold ${
-                                isUrgent
-                                  ? "bg-rose-500/20 text-rose-300 border-rose-500/30"
-                                  : "bg-purple-500/20 text-purple-300 border-purple-500/30"
-                              }`}
-                            >
-                              {daysLeft === 0 ? "Today!" : `${daysLeft} days left`}
-                            </Badge>
-                          )}
-
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleDeleteExam(ex.id)}
-                            className="h-8 w-8 text-muted-foreground hover:text-red-400"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="p-8 text-center text-xs text-muted-foreground border border-dashed border-border rounded-lg space-y-2">
-                    <Calendar className="h-8 w-8 mx-auto opacity-40" />
-                    <p className="font-medium text-foreground">No upcoming exams scheduled</p>
-                    <p>Click "Add Exam" to set up exam date countdowns and readiness forecasts.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Target Exam Readiness Gauge */}
-            <div className="panel p-6 space-y-5 flex flex-col justify-between">
-              <div className="space-y-1">
-                <h3 className="font-semibold text-foreground text-sm">Target Exam Readiness</h3>
-                <p className="text-xs text-muted-foreground">
-                  Stochastic readiness score modeled from study volume and focus
-                </p>
-              </div>
-
-              <div className="py-4 flex flex-col items-center justify-center space-y-2">
-                <Gauge
-                  size={170}
-                  value={readinessProb * 10}
-                  display={`${readinessPercent}%`}
-                  label="Readiness Odds"
-                  sublabel="Target Score Mastery"
-                  colorScheme="purple"
-                />
-                <p className="text-xs text-muted-foreground text-center">
-                  {readinessPercent >= 75
-                    ? "Pacing on track to achieve target scores."
-                    : "Increase weekly Pomodoro blocks to reach optimal readiness."}
-                </p>
-              </div>
-
-              <div className="pt-3 border-t border-border space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Projected Score:</span>
-                  <span className="font-bold text-foreground">{projectedScore > 0 ? `${projectedScore.toFixed(1)}%` : "Awaiting Data"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Daily Focus Target:</span>
-                  <span className="font-bold text-purple-400">
-                    {forecast?.readiness_analysis?.recommended_daily_minutes ?? 90} mins/day
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Academic Trajectory Chart */}
-          <div className="panel p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-foreground text-sm">Academic Performance Trajectory</h3>
-                <p className="text-xs text-muted-foreground">Historical scores and 4-week forward projection</p>
-              </div>
-              <Badge variant="secondary" className="text-xs bg-purple-500/10 text-purple-300">
-                Trend: {trendData.trend.toUpperCase()}
-              </Badge>
-            </div>
-
-            <div className="h-64 w-full">
-              {trendData.projected_scores && trendData.projected_scores.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={[
-                      { period: "Week -2", score: Math.max(50, Math.round(trendData.current_average - 4)) },
-                      { period: "Week -1", score: Math.max(50, Math.round(trendData.current_average - 2)) },
-                      { period: "Current", score: Math.round(trendData.current_average) },
-                      ...trendData.projected_scores.map((sc: number, idx: number) => ({
-                        period: `Week +${idx + 1}`,
-                        projected: sc,
-                      })),
-                    ]}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="period" stroke="#888888" fontSize={12} tickLine={false} />
-                    <YAxis stroke="#888888" fontSize={12} tickLine={false} domain={[40, 100]} unit="%" />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Line type="monotone" dataKey="score" stroke="#a78bfa" strokeWidth={2} name="Past Score" />
-                    <Line type="monotone" dataKey="projected" stroke="#38bdf8" strokeWidth={2} strokeDasharray="5 5" name="AI Projected" />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center text-xs text-muted-foreground space-y-2">
-                  <TrendingUp className="h-8 w-8 opacity-40" />
-                  <p>Log 2 or more study sessions with exam scores to generate forward statistical score trajectories.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* TAB 4: AI STUDY OPTIMIZER */}
-        <TabsContent value="plan" className="space-y-6">
-          <div className="panel p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-semibold text-foreground text-base flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-400" />
-                  <span>AI Twin 7-Day Adaptive Curriculum & Spaced Repetition Plan</span>
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Synthesizes exam milestones, retention health degradation curves, and your peak cognitive energy windows.
-                </p>
-              </div>
-
-              <Button
-                onClick={handleGeneratePlan}
-                disabled={isGeneratingPlan}
-                className="bg-purple-600 hover:bg-purple-500 text-white gap-2 text-xs font-semibold shadow-lg shadow-purple-600/20"
-              >
-                <Sparkles className="h-4 w-4" />
-                <span>{isGeneratingPlan ? "Synthesizing Schedule..." : "Generate AI Plan"}</span>
-              </Button>
-            </div>
-
-            {studyPlan?.schedule && studyPlan.schedule.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
-                {studyPlan.schedule.map((dayItem: any, dIdx: number) => {
-                  const dayName = dayItem.day_name || `Day ${dIdx + 1}`;
-                  const blocks = dayItem.blocks || [];
-                  const peakEnergy = dayItem.peak_energy || userCurriculum?.peak_energy || "Morning (09:00 - 12:00)";
-
-                  return (
-                    <div
-                      key={dayName}
-                      className="panel p-4 border border-border/80 bg-card/60 flex flex-col justify-between space-y-4 rounded-xl shadow-sm hover:border-purple-500/40 transition-all"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
-                          <div>
-                            <h4 className="font-bold text-sm text-foreground flex items-center gap-2">
-                              <span>{dayName}</span>
-                            </h4>
-                            <p className="text-[11px] text-purple-400 font-medium">
-                              ⚡ Peak Window: {peakEnergy}
-                            </p>
-                          </div>
-                          <Badge variant="outline" className="text-[10px] border-purple-500/30 text-purple-300">
-                            {blocks.length} Sprints
-                          </Badge>
-                        </div>
-
-                        <div className="space-y-2.5">
-                          {blocks.map((b: any, bIdx: number) => {
-                            const sprintKey = `${dIdx}-${bIdx}`;
-                            const isAdopted = adoptedSprints.has(sprintKey);
-
-                            return (
-                              <div
-                                key={bIdx}
-                                className="p-2.5 rounded-lg bg-muted/40 border border-border/60 flex items-start justify-between gap-2 hover:bg-muted/70 transition-all"
-                              >
-                                <div className="space-y-0.5">
-                                  <div className="flex items-center gap-1.5">
-                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-purple-500/15 text-purple-300">
-                                      {b.subject || "Subject"}
-                                    </Badge>
-                                    <span className="text-[11px] font-mono text-muted-foreground">
-                                      {b.start_time || "10:00"} ({b.duration_minutes || 45}m)
-                                    </span>
-                                  </div>
-                                  <p className="text-xs font-medium text-foreground line-clamp-1">
-                                    {b.topic || b.objective || "Curriculum deep work"}
-                                  </p>
-                                </div>
-
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleAdoptSprint(sprintKey, b)}
-                                  disabled={isAdopted}
-                                  className={`h-7 px-2 text-[11px] gap-1 font-semibold ${
-                                    isAdopted
-                                      ? "text-emerald-400 bg-emerald-500/10"
-                                      : "text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
-                                  }`}
-                                >
-                                  {isAdopted ? (
-                                    <>
-                                      <Check className="h-3 w-3" />
-                                      <span>Added</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Plus className="h-3 w-3" />
-                                      <span>Planner</span>
-                                    </>
-                                  )}
-                                </Button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="pt-2 border-t border-border/50">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleAdoptDayPlan(dIdx, dayItem)}
-                          className="w-full text-xs border-purple-500/30 text-purple-300 hover:bg-purple-500/10 gap-1.5"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          <span>Adopt All into Planner</span>
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="p-12 text-center border border-dashed border-border rounded-xl space-y-3">
-                <Sparkles className="h-10 w-10 mx-auto text-purple-400 opacity-60" />
-                <h4 className="font-bold text-foreground text-sm">No Adaptive Plan Active</h4>
-                <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                  Click "Generate AI Plan" above. Your AI twin will cross-reference upcoming exam dates, weekly study targets, and cognitive energy peaks to formulate a customized 7-day schedule.
-                </p>
-                <Button
-                  onClick={handleGeneratePlan}
-                  disabled={isGeneratingPlan}
-                  className="bg-purple-600 hover:bg-purple-500 text-white gap-2 text-xs font-semibold"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>Synthesize 7-Day Plan</span>
-                </Button>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* MODAL 1: SAVE COMPLETED SESSION */}
+      {/* 6. SAVE SESSION MODAL */}
       <Dialog open={saveModalOpen} onOpenChange={setSaveModalOpen}>
-        <DialogContent className="sm:max-w-[440px] bg-zinc-950 border border-purple-500/30 text-foreground">
+        <DialogContent className="sm:max-w-[420px] bg-zinc-950/95 border border-purple-500/30 text-white backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-purple-400">
               <CheckCircle2 className="h-5 w-5 text-emerald-400" />
               <span>Record Completed Study Sprint</span>
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Sync this focus block directly into MongoDB study records, habit streaks, and analytics.
+            <DialogDescription className="text-xs text-white/60">
+              Sync this focus block to MongoDB study records, habit telemetry, and analytics.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Subject</Label>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label className="text-xs text-white/80">Subject</Label>
               <select
                 value={logSubject}
                 onChange={(e) => setLogSubject(e.target.value)}
-                className="w-full bg-muted/50 border border-border rounded-md px-3 py-1.5 text-sm font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="w-full bg-zinc-900 border border-white/20 rounded-md px-3 py-1.5 text-xs text-white focus:outline-none"
               >
                 {availableSubjects.map((sub) => (
                   <option key={sub} value={sub}>
@@ -1403,34 +1382,34 @@ function StudyIntelligencePage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Duration (Minutes)</Label>
+              <div className="space-y-1">
+                <Label className="text-xs text-white/80">Duration (Minutes)</Label>
                 <Input
                   type="number"
                   min={5}
                   max={240}
                   value={logMinutes}
                   onChange={(e) => setLogMinutes(Number(e.target.value))}
-                  className="bg-muted/50"
+                  className="bg-zinc-900 border-white/20 text-xs text-white"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Exam Score (Optional %)</Label>
+              <div className="space-y-1">
+                <Label className="text-xs text-white/80">Exam / Quiz Score (%)</Label>
                 <Input
                   type="number"
-                  placeholder="e.g. 92"
+                  placeholder="Optional %"
                   min={0}
                   max={100}
                   value={logExamScore}
                   onChange={(e) => setLogExamScore(e.target.value)}
-                  className="bg-muted/50"
+                  className="bg-zinc-900 border-white/20 text-xs text-white"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between text-xs">
-                <Label>Focus & Cognitive Depth</Label>
+                <Label className="text-white/80">Cognitive Focus Depth</Label>
                 <span className="font-bold text-purple-400">{logFocusScore} / 10</span>
               </div>
               <Slider
@@ -1442,27 +1421,25 @@ function StudyIntelligencePage() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs">Session Notes / Topics Covered</Label>
+            <div className="space-y-1">
+              <Label className="text-xs text-white/80">Session Notes</Label>
               <Textarea
                 placeholder="What did you accomplish during this focus block?"
                 rows={2}
                 value={logNotes}
                 onChange={(e) => setLogNotes(e.target.value)}
-                className="bg-muted/50 text-xs"
+                className="bg-zinc-900 border-white/20 text-xs text-white"
               />
             </div>
 
             <div className="flex items-center space-x-2 pt-1">
               <Checkbox
-                id="review-task"
+                id="review-task-check"
                 checked={addReviewTask}
                 onCheckedChange={(checked) => setAddReviewTask(Boolean(checked))}
+                className="border-white/30 data-[state=checked]:bg-purple-600"
               />
-              <label
-                htmlFor="review-task"
-                className="text-xs text-muted-foreground font-medium cursor-pointer"
-              >
+              <label htmlFor="review-task-check" className="text-xs text-white/70 cursor-pointer">
                 Schedule 15m review sprint in Planner this evening
               </label>
             </div>
@@ -1483,132 +1460,36 @@ function StudyIntelligencePage() {
         </DialogContent>
       </Dialog>
 
-      {/* MODAL 2: MANUAL LOG PAST SESSION */}
-      <Dialog open={logModalOpen} onOpenChange={setLogModalOpen}>
-        <DialogContent className="sm:max-w-[440px] bg-zinc-950 border border-border text-foreground">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-purple-400" />
-              <span>Log Study Session</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Manually add past library time, lecture review, or study sessions to your MongoDB records.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Subject</Label>
-              <select
-                value={logSubject}
-                onChange={(e) => setLogSubject(e.target.value)}
-                className="w-full bg-muted/50 border border-border rounded-md px-3 py-1.5 text-sm font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500"
-              >
-                {availableSubjects.map((sub) => (
-                  <option key={sub} value={sub}>
-                    {sub}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Duration (Minutes)</Label>
-                <Input
-                  type="number"
-                  min={5}
-                  max={360}
-                  value={logMinutes}
-                  onChange={(e) => setLogMinutes(Number(e.target.value))}
-                  className="bg-muted/50"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Quiz / Exam Score (%)</Label>
-                <Input
-                  type="number"
-                  placeholder="Optional"
-                  min={0}
-                  max={100}
-                  value={logExamScore}
-                  onChange={(e) => setLogExamScore(e.target.value)}
-                  className="bg-muted/50"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <Label>Focus Rating</Label>
-                <span className="font-bold text-purple-400">{logFocusScore} / 10</span>
-              </div>
-              <Slider
-                min={1}
-                max={10}
-                step={1}
-                value={[logFocusScore]}
-                onValueChange={(v) => setLogFocusScore(v[0])}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">Notes / Chapter References</Label>
-              <Textarea
-                placeholder="e.g. Completed problem set #3 on linear algebra"
-                rows={2}
-                value={logNotes}
-                onChange={(e) => setLogNotes(e.target.value)}
-                className="bg-muted/50 text-xs"
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setLogModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleManualLog}
-              className="bg-purple-600 hover:bg-purple-500 text-white font-semibold"
-            >
-              Save Record
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* MODAL 3: REGISTER UPCOMING EXAM */}
+      {/* 7. ADD EXAM MODAL */}
       <Dialog open={addExamOpen} onOpenChange={setAddExamOpen}>
-        <DialogContent className="sm:max-w-[420px] bg-zinc-950 border border-border text-foreground">
+        <DialogContent className="sm:max-w-[400px] bg-zinc-950 border border-white/20 text-white">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-purple-400" />
+            <DialogTitle className="flex items-center gap-2 text-purple-400">
+              <Calendar className="h-5 w-5" />
               <span>Register Upcoming Exam Target</span>
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Set an exam date to activate countdown timers, readiness gauges, and adaptive pacing.
+            <DialogDescription className="text-xs text-white/60">
+              Set exam dates to calculate live countdowns and stochastic readiness.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Exam Title</Label>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label className="text-xs text-white/80">Exam Title</Label>
               <Input
-                placeholder="e.g. Midterm Examination / Final Exam"
+                placeholder="e.g. Machine Learning Midterm"
                 value={examTitle}
                 onChange={(e) => setExamTitle(e.target.value)}
-                className="bg-muted/50"
+                className="bg-zinc-900 border-white/20 text-xs text-white"
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs">Subject</Label>
+            <div className="space-y-1">
+              <Label className="text-xs text-white/80">Subject</Label>
               <select
                 value={examSubject}
                 onChange={(e) => setExamSubject(e.target.value)}
-                className="w-full bg-muted/50 border border-border rounded-md px-3 py-1.5 text-sm font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="w-full bg-zinc-900 border border-white/20 rounded-md px-3 py-1.5 text-xs text-white focus:outline-none"
               >
                 {availableSubjects.map((sub) => (
                   <option key={sub} value={sub}>
@@ -1619,25 +1500,25 @@ function StudyIntelligencePage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Exam Date</Label>
+              <div className="space-y-1">
+                <Label className="text-xs text-white/80">Exam Date</Label>
                 <Input
                   type="date"
                   value={examDate}
                   onChange={(e) => setExamDate(e.target.value)}
-                  className="bg-muted/50"
+                  className="bg-zinc-900 border-white/20 text-xs text-white"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">Target Score (%)</Label>
+              <div className="space-y-1">
+                <Label className="text-xs text-white/80">Target Score (%)</Label>
                 <Input
                   type="number"
                   min={50}
                   max={100}
                   value={examTargetScore}
                   onChange={(e) => setExamTargetScore(Number(e.target.value))}
-                  className="bg-muted/50"
+                  className="bg-zinc-900 border-white/20 text-xs text-white"
                 />
               </div>
             </div>
@@ -1652,11 +1533,11 @@ function StudyIntelligencePage() {
               onClick={handleAddExamSubmit}
               className="bg-purple-600 hover:bg-purple-500 text-white font-semibold"
             >
-              Add Exam Target
+              Add Exam
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AppShell>
+    </div>
   );
 }
