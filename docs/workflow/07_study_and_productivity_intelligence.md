@@ -54,6 +54,18 @@ where $\bar{G}$ is average day gap and $G_{\text{max}}$ is maximum day gap betwe
    - **One-Click Task Adoption**: Click `+ Add to Tasks` on any study block to inject it directly into Today's Planner (`/planner`).
    - High-impact cognitive study recommendations.
 
+4. **Study Cockpit Preferences & Video Atmosphere**:
+   - **Immersive Video Wallpapers**: High-resolution looping ambient backgrounds (Nature Ocean loop, Earth Orbit loop) rendered with subtle `scale-110` zoom for full bleed coverage.
+   - **Custom Video Support**: Local video file selector (`.mp4`, `.webm`, `.mov`) with custom label tag, dynamic HTML5 canvas thumbnail capture on load, and persistent browser storage.
+   - **Adjustable Video Blur**: Configurable 0–16px Gaussian filter slider with 4 fast presets: *Off (0px)*, *Subtle (2px)*, *Soft (4px - default)*, and *Bokeh (8px)*.
+   - **Ultra-Slow Playback Motion**: Precision speed slider from 0.05x to 2.0x (0.01x increments) and 9 curated presets (*Zen Freeze 0.05x*, *Dream 0.08x*, *Ultra 0.1x*, *Slow-Mo 0.15x*, *Drift 0.25x*, *Half 0.5x*, *Chill 0.75x*, *Normal 1.0x*, *Fast 1.5x*).
+   - **Loop-Reset Protection**: Employs native DOM event listener locks (`ratechange`, `play`, `playing`, `seeked`, `canplay`) ensuring Chromium never resets playback speed upon loop wrap.
+
+5. **Zero-Friction Pomodoro Auto-Save Engine**:
+   - **Automatic Background Persistence**: When a focus sprint countdown completes, the session is logged directly to MongoDB via `logStudySession` without interrupting the student with popup modal forms.
+   - **Seamless Chime & Break Transition**: Directly triggers the completion audio cue, displays an instant confirmation toast, and smoothly transitions to short/long break timers.
+   - **Streamlined Capsule Controls**: Eliminates manual "Save" buttons and save confirmation dialogs to maintain uninterrupted deep work flow.
+
 ---
 
 ## 4. Endpoints & Data Flow Reference

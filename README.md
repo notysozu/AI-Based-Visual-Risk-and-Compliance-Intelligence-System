@@ -85,6 +85,7 @@ flowchart TB
 
   subgraph AI["Simulation & AI Intelligence (Groq + NumPy)"]
     direction TB
+    AI_Agents["Multi-Agent Orchestrator (Router + 6 Sub-Agents)<br/>Goal · Finance · Settings · Planner · Study · Habit"]:::aiStyle
     AI_Reasoner["4-Stage Reasoning Pipeline<br/>Goal -> Telemetry -> Analysis -> Plan"]:::aiStyle
     AI_Parser["Dynamic Schedule Table Parser<br/>Markdown & Dialogue History Task Extractor"]:::aiStyle
     AI_AutoPlan["Circadian Auto-Planner Engine<br/>Sleep Deficit Alignment & Alertness Window"]:::aiStyle
@@ -112,17 +113,24 @@ flowchart TB
 ```mermaid
 mindmap
   root((Visual Risk AI))
-    Autonomous Daily Planner
-      Circadian Schedule Synthesis
-      Morning Intelligence Briefings
-      3-Tier Autonomy Governance
-      Direct MongoDB Synchronization
-    Conversational Copilot
+    Multi-Agent Conversational Copilot
+      Multi-Agent Router & 6 Sub-Agents
+      Instant Chat Mutations auto_execute
       4-Stage Agentic Reasoning
       Collapsible Think Disclosure
       Voice Speech-to-Text Input
       Dynamic Table & Schedule Parser
       1-Click Action Proposals
+    Study Cockpit & Academics
+      Zero-Friction Pomodoro Auto-Save
+      Loop-Locked Video Wallpapers
+      Precision Motion & Blur Control
+      Exam Readiness & Trend Modeling
+    Autonomous Daily Planner
+      Circadian Schedule Synthesis
+      Morning Intelligence Briefings
+      3-Tier Autonomy Governance
+      Direct MongoDB Synchronization
     Stochastic Wealth Engine
       500 Geometric Brownian Paths
       p10 p50 p90 Percentile Bounds

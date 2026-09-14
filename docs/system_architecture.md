@@ -34,6 +34,17 @@ flowchart TB
     end
 
     subgraph Intelligence["3. Simulation & AI Inference Engine (Groq + NumPy)"]
+        subgraph MultiAgentLayer["Multi-Agent Orchestrator (ai_engine/agents)"]
+            AgentRouter["Router Agent (router.py)<br/>• Priority-Based Intent Dispatch<br/>• Direct Mutation auto_execute Dispatch"]:::aiStyle
+            GoalAgent["GoalAgent (update_goal)<br/>• Milestones & Price Calibration"]:::aiStyle
+            FinAgent["FinanceAgent (update_user_fields)<br/>• Cashflows & Net Worth"]:::aiStyle
+            SetAgent["SettingsAgent (update_user_fields)<br/>• Targets, Roles, Themes"]:::aiStyle
+            PlanAgent["PlannerAgent (add_task)<br/>• Single Task Time Parser"]:::aiStyle
+            StudyAgent["StudyAgent (log_study)<br/>• Coursework Deep Work Log"]:::aiStyle
+            HabitAgent["HabitAgent (log_habits_batch)<br/>• Sleep, Exercise, Screen, Mood"]:::aiStyle
+            AgentRouter --> GoalAgent & FinAgent & SetAgent & PlanAgent & StudyAgent & HabitAgent
+        end
+
         subgraph Pipeline["4-Stage Agentic Reasoning Pipeline"]
             Step1["Step 1: Goal Definition"] --> Step2["Step 2: Telemetry Gathering"]
             Step2 --> Step3["Step 3: Multi-Criteria Analysis"]
@@ -149,6 +160,37 @@ sequenceDiagram
   ChatAPI->>ActionExec: _maybe_auto_execute_chat_action() (autonomy_mode check)
   ActionExec->>DB: Append tasks to UserDoc.tasks_json & UserSuggestionDoc
   ChatAPI-->>ChatUI: "I have calibrated and plugged these 7 focus blocks into your Daily Planner." (status: executed)
+```
+
+---
+
+### 3.1 Direct Natural-Language Chat Mutation Sequence (auto_execute)
+
+When a user issues an explicit profile, goal, financial, or habit instruction (e.g. *"change my goal to MacBook Pro"*), the Multi-Agent Router dispatches the request to the domain sub-agent, commits to MongoDB immediately, and synchronizes the frontend:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor User as User
+  participant ChatUI as Copilot Chat (/chat)
+  participant ChatAPI as FastAPI (/chat/message/{session_id})
+  participant Router as Router Agent (ai_engine/agents/router.py)
+  participant GoalAgent as GoalAgent (goal_agent.py)
+  participant ActionExec as Action Executor (action_handlers.py)
+  participant DB as MongoDB (UserDoc)
+  participant LocalStore as Frontend TwinStore (useTwin)
+
+  User->>ChatUI: "change my goal to MacBook Pro"
+  ChatUI->>ChatAPI: POST /chat/message/{session_id} (prompt + client_context)
+  ChatAPI->>Router: route_to_agents(prompt, p_lower, user_info, t_data)
+  Router->>GoalAgent: handle_goal_agent()
+  GoalAgent-->>Router: action_type: "update_goal", action_payload: {goal_name, goal_target}, action_status: "auto_execute"
+  Router-->>ChatAPI: Returns agent response with auto_execute status
+  ChatAPI->>ActionExec: _maybe_auto_execute_chat_action() [auto_execute detected]
+  ActionExec->>DB: user.goal_name = "MacBook Pro", user.goal_target = 2500; await user.save()
+  ChatAPI-->>ChatUI: 200 OK + assistant_message (status: "executed")
+  ChatUI->>LocalStore: syncExecutedActionToLocalStore() -> updateProfile({ goalName, goalTarget })
+  ChatUI-->>User: Renders confirmation markdown table + displays instant toast notification
 ```
 
 ---

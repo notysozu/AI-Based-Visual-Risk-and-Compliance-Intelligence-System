@@ -652,39 +652,81 @@ curl -X POST http://127.0.0.1:8000/chat/message/create_thread \
 
 ### 8. Send Message in Existing Session — `POST /chat/message/{session_id}`
 
-Appends a user prompt to an existing thread, incorporates the conversation history, and returns the Copilot's reasoning and action proposal.
+Appends a user prompt to an existing thread, incorporates the conversation history, and routes through the **Multi-Agent Orchestrator** (`ai_engine/agents/router.py`). 
+
+- **Direct Mutation Commands** (e.g. *"change my goal to MacBook Pro"*, *"set my income to 6000"*, *"I slept 7 hours"*): Handled immediately by specialized sub-agents (`GoalAgent`, `FinanceAgent`, `SettingsAgent`, `PlannerAgent`, `StudyAgent`, `HabitAgent`) with `action_status: "executed"` without requiring confirmation.
+- **Exploratory / Proposal Commands** (e.g. *"plan my day"*, purchase simulations): Return `action_status: "proposed"` for interactive 1-click confirmation.
 
 <details>
-<summary><b>Show Example Request & Response</b></summary>
+<summary><b>Show Example Request & Response (Direct Goal Mutation Example)</b></summary>
 
 **Example Request:**
 ```bash
 curl -X POST http://127.0.0.1:8000/chat/message/102 \
   -H "Content-Type: application/json" \
   -d '{
-    "user_id": 1,
-    "prompt": "Add a 45 min deep work sprint at 10:00 AM",
+    "user_id": "6a9bfe9a0a0137f87f8fc425",
+    "prompt": "change my goal to MacBook Pro",
     "think_mode": true
   }'
 ```
 
-**Example Response (200 OK):**
+**Example Response (200 OK — Automatically Executed):**
 ```json
 {
   "user_message": {
-    "id": 503,
-    "session_id": 102,
+    "id": "msg_user_503",
+    "session_id": "102",
     "role": "user",
-    "content": "Add a 45 min deep work sprint at 10:00 AM"
+    "content": "change my goal to MacBook Pro",
+    "action_type": "none",
+    "action_status": "none"
   },
   "assistant_message": {
-    "id": 504,
-    "session_id": 102,
+    "id": "msg_asst_504",
+    "session_id": "102",
     "role": "assistant",
-    "content": "### Focus Block Scheduled: Deep Work Sprint (45 mins)\n\nScheduled 45 minutes of Deep Work Sprint from 10:00 AM to 10:45 AM during your peak circadian cortisol window.",
+    "content": "### ✓ Goal Updated\n\nYour primary financial target has been changed from **Emergency Fund** to **MacBook Pro** ($2,500 target).\n\n| Field | Previous | New |\n| :--- | :--- | :--- |\n| **Goal Name** | Emergency Fund | **MacBook Pro** |\n| **Target Amount** | $50,000 | **$2,500** |",
+    "action_type": "update_goal",
+    "action_payload": "{\"goal_name\":\"MacBook Pro\",\"goal_target\":2500.0}",
+    "action_status": "executed"
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Show Example Request & Response (Planner Task Example)</b></summary>
+
+**Example Request:**
+```bash
+curl -X POST http://127.0.0.1:8000/chat/message/102 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "6a9bfe9a0a0137f87f8fc425",
+    "prompt": "add a task: Morning Run at 07:00 for 30 minutes",
+    "think_mode": false
+  }'
+```
+
+**Example Response (200 OK — Automatically Executed):**
+```json
+{
+  "user_message": {
+    "id": "msg_user_505",
+    "session_id": "102",
+    "role": "user",
+    "content": "add a task: Morning Run at 07:00 for 30 minutes"
+  },
+  "assistant_message": {
+    "id": "msg_asst_506",
+    "session_id": "102",
+    "role": "assistant",
+    "content": "### ✓ Task Added to Planner\n\n- **Morning Run**\n  - Time: 07:00 | Duration: 30 min | Category: Fitness\n\nYour planner has been updated.",
     "action_type": "add_task",
-    "action_payload": "{\"title\":\"Deep Work Sprint\",\"category\":\"focus\",\"start_time\":\"10:00\",\"duration_minutes\":45}",
-    "action_status": "proposed"
+    "action_payload": "{\"id\":\"chat-task-1726315800\",\"title\":\"Morning Run\",\"category\":\"Fitness\",\"start\":\"07:00\",\"minutes\":30}",
+    "action_status": "executed"
   }
 }
 ```

@@ -83,21 +83,44 @@ sequenceDiagram
 
 ---
 
-## 5. Interactive Multi-Action Proposal System
+## 5. Multi-Agent Orchestration & Action Execution Engine
 
-Copilot responses can attach structured actionable payloads (`action_type`, `action_payload`, `action_status`) that execute directly or await 1-click user approval based on the active autonomy mode:
+The Visual Risk Copilot features a dedicated **Multi-Agent Router Layer** (`ai_engine/agents/router.py`) that dispatches natural-language instructions to specialized sub-agents. When an instruction represents a direct user configuration or log mutation, the agent returns an `auto_execute` status that commits immediately to MongoDB without modal friction.
 
 ```mermaid
-flowchart LR
-  CopilotTurn["Copilot Reasoning Turn"] --> ActionRouter{"Action Type Proposal"}
+flowchart TD
+  UserMsg["User Natural Language Message"] --> RouterAgent["Router Agent (ai_engine/agents/router.py)"]
   
-  ActionRouter -->|add_multiple_tasks| Act1["add_multiple_tasks<br/>• Plans whole day with calibrated blocks<br/>• Injects into /planner"]
-  ActionRouter -->|add_task| Act2["add_task<br/>• Creates single deep work block<br/>• Categorized with impact tag"]
-  ActionRouter -->|purchase_impact| Act3["purchase_impact<br/>• Simulates capital friction<br/>• Computes 5-Yr CAGR loss"]
-  ActionRouter -->|simulate_what_if| Act4["simulate_what_if<br/>• Sandboxes lifestyle tradeoffs<br/>• Updates slider presets"]
-  ActionRouter -->|wealth_forecast| Act5["wealth_forecast<br/>• Runs 500 Monte Carlo paths<br/>• Computes percentile floor/ceiling"]
-  ActionRouter -->|update_settings| Act6["update_settings<br/>• Modifies income/sleep targets<br/>• Persists to MongoDB UserDoc"]
+  subgraph SpecializedAgents["Specialized Sub-Agents (Priority Order)"]
+    RouterAgent -->|1. Goal Request| GoalAgent["GoalAgent<br/>• Sets goal_name & goal_target<br/>• Smart price auto-estimation (MacBook, Tesla, etc.)<br/>• action_type: update_goal"]
+    RouterAgent -->|2. Financial Shift| FinanceAgent["FinanceAgent<br/>• Sets monthly_income, expenses, net_worth<br/>• Recalculates cash surplus & savings rate<br/>• action_type: update_user_fields"]
+    RouterAgent -->|3. Profile / Target| SettingsAgent["SettingsAgent<br/>• Sets sleep/study targets, retirement age, role, theme<br/>• action_type: update_user_fields"]
+    RouterAgent -->|4. Single Task Add| PlannerAgent["PlannerAgent<br/>• Parses title, time & duration<br/>• Injects into Daily Planner<br/>• action_type: add_task"]
+    RouterAgent -->|5. Study Log| StudyAgent["StudyAgent<br/>• Logs coursework subject, minutes & score<br/>• action_type: log_study"]
+    RouterAgent -->|6. Biometrics / Mood| HabitAgent["HabitAgent<br/>• Logs sleep, workout, screen time & mood<br/>• action_type: log_habits_batch"]
+  end
+
+  subgraph Fallback["Intent & Reasoning Fallback"]
+    RouterAgent -->|No Direct Mutation Match| IntentPipeline["Legacy Intent Dispatcher & Groq LLM<br/>• purchase_impact (with opportunity cost)<br/>• simulate_what_if (scenario comparison)<br/>• routine_planning (multi-task blueprint)"]
+  end
+
+  SpecializedAgents -->|action_status: auto_execute| AutoExec["Direct MongoDB Mutation (_maybe_auto_execute_chat_action)<br/>• Bypasses manual confirmation<br/>• Reactive frontend store synchronization<br/>• Instant toast notifications"]
+  IntentPipeline -->|action_status: proposed| ApprovalCard["Interactive Action Card<br/>• Requires 1-click user confirmation in supervised mode"]
 ```
+
+### Action Types & Handlers Reference
+
+| `action_type` | Agent / Source | Target Collection / Model | Execution Behavior |
+| :--- | :--- | :--- | :--- |
+| `update_goal` | `GoalAgent` | `UserDoc` (`goal_name`, `goal_target`, `goal_current`) | Direct auto-execute: Updates primary financial milestone and preserves progress |
+| `update_user_fields` | `FinanceAgent` / `SettingsAgent` | `UserDoc` (income, expenses, sleep/study targets, role, theme) | Direct auto-execute: Updates parameters, recalculates baselines and surplus |
+| `log_habits_batch` | `HabitAgent` | `HabitRecordDoc` | Direct auto-execute: Inserts multiple biometric records (sleep, exercise, screen time, mood) |
+| `log_study` | `StudyAgent` | `StudyRecordDoc` + `HabitRecordDoc` | Direct auto-execute: Records coursework, duration, focus & exam score |
+| `add_task` | `PlannerAgent` | `UserDoc.tasks_json` + `UserSuggestionDoc` | Direct auto-execute: Direct single task insertion into planner |
+| `add_multiple_tasks` | `routine_planning.py` / Fallback | `UserDoc.tasks_json` + `UserSuggestionDoc` | Proposed: 1-click card for full daily schedule blueprints |
+| `purchase_impact` | `purchase_impact.py` | `FinancialRecordDoc` + `UserDoc.net_worth` | Proposed / Supervised: Simulates 5-Yr CAGR loss before deduction |
+| `simulate_what_if` | `what_if.py` | `UserDoc.scenario_b_preset` | Proposed: Sandboxes lifestyle tradeoffs into Scenario B |
+| `wealth_forecast` | `wealth_forecast.py` | `UserDoc` (`last_wealth_prediction`, odds) | Proposed: Runs Monte Carlo simulation cache |
 
 ---
 
