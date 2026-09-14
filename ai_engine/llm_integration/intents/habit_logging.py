@@ -44,6 +44,14 @@ def handle_habit_logging_intent(
     if any(trigger in p_lower for trigger in task_schedule_triggers):
         return None
 
+    # Guard: Do not intercept What-If sandbox simulations
+    if any(q in p_lower for q in ["what if", "simulate", "if i ", "what happens if", "hypothetically"]):
+        return None
+
+    # Guard: Do not intercept profile goal or settings updates
+    if "target" in p_lower or any(w in p_lower for w in ["update my", "change my", "set my", "my income is", "my expense is"]):
+        return None
+
     # Triggers for Exercise / Workouts
     exercise_keywords = [
         "exercise", "excercise", "workout", "worked out", "working out", 
@@ -95,9 +103,14 @@ Step 1 — Goal Definition:
 Step 2 — Telemetry Search & Gathered User Data:
 • Current Active Days: {curr_active_days}d/wk -> {new_active_days}d/wk | Stress Buffer Index: High
 • Persona: {user_info.get('role', 'professional').title()} | Cash Flow Surplus: +${t_data['monthly_savings']:,.2f}/mo
+• Sleep Baseline: {t_data.get('avg_sleep', 7.5):.1f}h | Screen Time: {t_data.get('avg_screen', 4.0):.1f}h/day
 
-Step 3 — Formulated Concise Response:
-• Formatted concise biometric summary table and prepared 1-click habit record logging proposal.
+Step 3 — Multi-Criteria Analysis & Optimization:
+• Physical Vitality Elasticity: +0.8 stress resilience buffer, promoting deeper slow-wave REM sleep.
+• Cognitive Energy Balance: Physical activity timed to clear metabolic and screen fatigue.
+
+Step 4 — Formulated Strategic Execution Plan:
+• Formatted biometric summary table and prepared 1-click habit record logging proposal for user confirmation.
 </think>
 
 """
@@ -144,10 +157,14 @@ Step 1 — Goal Definition:
 
 Step 2 — Telemetry Search & Gathered User Data:
 • Logged Sleep: {logged_hours:.1f}h | Target Baseline: {baseline_target:.1f}h | Sleep Debt: {max(0.0, deficit):.1f}h
-• Role Persona: {user_info.get('role', 'professional').title()}
+• Role Persona: {user_info.get('role', 'professional').title()} | Active Days: {t_data.get('exercise_days_count', 4)}d/wk
 
-Step 3 — Formulated Concise Response:
-• Formatted biometric summary table and prepared 1-click habit record logging proposal.
+Step 3 — Multi-Criteria Analysis & Optimization:
+• Biological Circadian Curve: Peak morning cortisol window (08:30–11:30) protected for cognitive focus.
+• Sleep Debt Recovery: {'Schedule 20-min recharge nap or early bedtime to clear deficit' if deficit > 0 else 'Optimal restorative sleep achieved'}.
+
+Step 4 — Formulated Strategic Execution Plan:
+• Formatted biometric summary table and prepared 1-click habit record logging proposal for user confirmation.
 </think>
 
 """
@@ -185,8 +202,19 @@ Click **Confirm & Save to Biometric Records** below to commit this entry to your
 
         if think_mode:
             think_block = f"""<think>
-Step 1 — Objective: Log {logged_hours:.1f}h screen time.
-Step 2 — Formulate concise table with 1-click confirmation.
+Step 1 — Goal Definition:
+• Objective: Log {logged_hours:.1f}h recreational screen time and analyze digital fatigue risk.
+
+Step 2 — Telemetry Search & Gathered User Data:
+• Logged Screen Time: {logged_hours:.1f}h | Baseline Screen Time: {t_data.get('avg_screen', 4.0):.1f}h/day
+• Role Persona: {user_info.get('role', 'professional').title()} | Sleep Baseline: {t_data.get('avg_sleep', 7.5):.1f}h
+
+Step 3 — Multi-Criteria Analysis & Optimization:
+• Dopamine & Attention Span Elasticity: {('Elevated screen fatigue detected; implement 20-20-20 rule and evening blue-light cutoff' if logged_hours > 5.0 else 'Screen exposure within sustainable cognitive bounds')}.
+• Circadian Rhythm Protection: Enforce screen curfew 60 minutes before scheduled bedtime.
+
+Step 4 — Formulated Strategic Execution Plan:
+• Formatted screen fatigue analysis table and prepared 1-click habit record logging proposal for user confirmation.
 </think>
 
 """

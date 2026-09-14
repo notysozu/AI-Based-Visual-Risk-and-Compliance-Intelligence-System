@@ -10,6 +10,10 @@ async def execute_action_payload(user: models.UserDoc, action_type: str, payload
     Dispatches and executes validated interactive action proposals approved by the user in MongoDB.
     """
     execution_result: Dict[str, Any] = {}
+    if user and user.id and isinstance(user.id, str):
+        from bson import ObjectId
+        if ObjectId.is_valid(user.id):
+            user.id = ObjectId(user.id)
     u_id_str = str(user.id)
 
     if action_type in ["add_task", "add_multiple_tasks"]:
@@ -134,6 +138,16 @@ async def execute_action_payload(user: models.UserDoc, action_type: str, payload
             "habit_name": h_name,
             "duration_minutes": dur_mins,
             "impact_score": impact_score
+        }
+
+    elif action_type == "wealth_forecast":
+        user.last_wealth_prediction = json.dumps(payload)
+        prob_val = float(payload.get("prob_success") or payload.get("prob") or 75.0)
+        user.last_success_odds = prob_val
+        await user.save()
+        execution_result = {
+            "cached_wealth_prediction": True,
+            "prob_success": prob_val
         }
 
     try:

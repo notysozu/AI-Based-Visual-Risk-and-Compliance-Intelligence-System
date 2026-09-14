@@ -141,6 +141,7 @@ Step 1 — Goal Definition:
 
 Step 2 — Telemetry Search & Gathered User Data:
 • Role Persona: {user_info.get('role', 'professional').title()} | Target Work/Study Hours: {t_data.get('study_target_week', 10.0)}h/wk
+• Temporal / Geo Context: {t_data.get('local_date', 'Today')} at {t_data.get('local_time', 'Current Time')} ({t_data.get('time_zone', 'UTC')})
 • Target Execution Time: {start_time} | Duration: {duration} minutes | Category: {category}
 
 Step 3 — Multi-Criteria Analysis & Optimization:

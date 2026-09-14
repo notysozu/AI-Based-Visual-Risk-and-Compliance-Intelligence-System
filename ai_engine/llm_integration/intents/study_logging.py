@@ -21,6 +21,10 @@ def handle_study_logging_intent(
     if any(trigger in p_lower for trigger in task_schedule_triggers):
         return None
 
+    # Guard: Do not intercept What-If sandbox simulations
+    if any(q in p_lower for q in ["what if", "simulate", "if i ", "what happens if", "hypothetically"]):
+        return None
+
     study_log_triggers = ["i studied", "studied for", "studied ", "log study", "log my study", "log academic", "recorded study", "track study", "completed study", "finished studying"]
     if not (any(k in p_lower for k in study_log_triggers) and any(w in p_lower for w in ["hour", "hours", "hr", "hrs", "min", "mins", "minute", "minutes"])):
         return None
@@ -84,6 +88,7 @@ Step 1 — Goal Definition:
 
 Step 2 — Telemetry Search & Gathered User Data:
 • Academic Subject: {subject} | Session Duration: {study_hrs:.1f}h ({study_mins} mins) | Focus Score: {focus_score}/10
+• Temporal / Geo Context: {t_data.get('local_date', 'Today')} at {t_data.get('local_time', 'Current Time')} ({t_data.get('time_zone', 'UTC')})
 • Weekly Target Progression: {current_weekly_study:.1f}h -> {new_weekly_study:.1f}h / {weekly_target:.1f}h ({weekly_pct}% achieved).
 • Baseline Telemetry: Sleep = {t_data['avg_sleep']:.1f}h | Cash Flow Surplus = +${t_data['monthly_savings']:,.2f}/mo
 

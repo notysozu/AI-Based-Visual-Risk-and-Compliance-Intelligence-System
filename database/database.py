@@ -111,7 +111,11 @@ async def load_persistence_snapshot():
             if not await UserDoc.find_one(UserDoc.username == u_data.get("username")):
                 user = UserDoc(**u_data)
                 if uid:
-                    user.id = uid
+                    from bson import ObjectId
+                    if ObjectId.is_valid(str(uid)):
+                        user.id = ObjectId(str(uid))
+                    else:
+                        user.id = uid
                 await user.insert()
 
         # Restore chat sessions

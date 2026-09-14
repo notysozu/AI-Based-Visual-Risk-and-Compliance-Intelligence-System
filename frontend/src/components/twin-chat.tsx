@@ -354,6 +354,8 @@ export function TwinChat({
         const durHours = Number(payload.hours || (payload.duration_minutes ? payload.duration_minutes / 60 : 1));
         logHabitActivity(payload.habit_name || "Exercise", durHours);
         toast.success(`✓ Logged ${payload.habit_name || "Habit"} (${durHours.toFixed(1)}h) to biometric records`);
+      } else if (asst.action_type === "wealth_forecast") {
+        toast.success("✓ Monte Carlo wealth forecast projection applied");
       }
     } catch (e) {
       console.warn("Failed to sync executed action to local store:", e);
@@ -384,6 +386,7 @@ export function TwinChat({
     setLoading(true);
 
     try {
+      const now = new Date();
       const clientContext = {
         goalName: state.profile.goalName,
         goalTarget: state.profile.goalTarget,
@@ -391,7 +394,12 @@ export function TwinChat({
         role: state.profile.role,
         monthlyIncome: state.profile.monthlyIncome,
         monthlyExpenses: state.profile.monthlyExpenses,
-        netWorth: state.profile.netWorth
+        netWorth: state.profile.netWorth,
+        localTime: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        localDate: now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        dayOfWeek: now.toLocaleDateString("en-US", { weekday: "long" }),
+        location: Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, " "),
       };
 
       // Case A: Draft mode (no active session yet)
@@ -503,6 +511,8 @@ export function TwinChat({
         const durHours = Number(payload.hours || (payload.duration_minutes ? payload.duration_minutes / 60 : 1));
         logHabitActivity(payload.habit_name || "Exercise", durHours);
         toast.success(`✓ Logged ${payload.habit_name || "Habit"} (${durHours.toFixed(1)}h) to biometric records and /analytics`);
+      } else if (msg.action_type === "wealth_forecast") {
+        toast.success("✓ Monte Carlo wealth forecast projection cached to database");
       }
 
       setMessages((prev) =>
@@ -1407,6 +1417,11 @@ function InteractiveActionCard({
 
   // WEALTH PROJECTION FORECAST
   if (action_type === "wealth_forecast") {
+    const probVal = data.prob_success ?? data.prob ?? 75;
+    const p10Val = data.p10_final ?? data.p10 ?? 0;
+    const medianVal = data.median_final ?? data.median ?? 0;
+    const p90Val = data.p90_final ?? data.p90 ?? 0;
+
     return (
       <div className="mt-3.5 p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 space-y-3 text-xs shadow-md">
         <div className="flex items-center justify-between border-b border-emerald-500/15 pb-2.5">
@@ -1414,33 +1429,52 @@ function InteractiveActionCard({
             <TrendingUp className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
             Monte Carlo Wealth Projection
           </span>
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono">
-            {data.prob}% Success Odds
-          </span>
+          {isExecuted ? (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3" /> Cached to Profile
+            </span>
+          ) : isRejected ? (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-muted dark:bg-white/10 text-muted-foreground dark:text-white/40 flex items-center gap-1">
+              <XCircle className="h-3 w-3" /> Dismissed
+            </span>
+          ) : (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono">
+              {probVal}% Success Odds
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-2 pt-1">
           <div className="p-2.5 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5">
             <span className="text-[10px] text-muted-foreground dark:text-white/50 block">P10 Bear Floor</span>
             <span className="font-semibold font-mono text-rose-500 dark:text-rose-400">
-              ${Number(data.p10_final).toLocaleString()}
+              ${Number(p10Val).toLocaleString()}
             </span>
           </div>
           <div className="p-2.5 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5">
             <span className="text-[10px] text-muted-foreground dark:text-white/50 block">Median Outcome</span>
             <span className="font-semibold font-mono text-emerald-500 dark:text-emerald-400">
-              ${Number(data.median_final).toLocaleString()}
+              ${Number(medianVal).toLocaleString()}
             </span>
           </div>
           <div className="p-2.5 rounded-xl bg-background/80 dark:bg-black/40 border border-border/50 dark:border-white/5">
             <span className="text-[10px] text-muted-foreground dark:text-white/50 block">P90 Bull Ceiling</span>
             <span className="font-semibold font-mono text-indigo-500 dark:text-indigo-400">
-              ${Number(data.p90_final).toLocaleString()}
+              ${Number(p90Val).toLocaleString()}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-2 pt-1">
+          {!isExecuted && !isRejected && (
+            <button
+              type="button"
+              onClick={onApprove}
+              className="h-8 px-3.5 rounded-xl text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" /> Approve & Cache to Wealth
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onNavigate("/wealth")}

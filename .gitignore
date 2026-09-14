@@ -40,5 +40,19 @@ ENV/
 *.sqlite3
 data/
 
+# Testing & Cache
+.pytest_cache/
+scratch/
+
+# Frontend & Dependencies
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+.output/
+frontend/.output/
+.wrangler/
+frontend/.wrangler/
+
 # OS
 .DS_Store

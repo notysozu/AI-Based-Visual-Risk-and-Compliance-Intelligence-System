@@ -60,6 +60,7 @@ Step 1 — Goal Definition:
 
 Step 2 — Telemetry Search & Gathered User Data:
 • Baseline Telemetry: Current Net Worth = ${current_net_worth:,.2f} | Monthly Savings = ${monthly_savings:,.2f}/mo
+• Temporal / Geo Context: {t_data.get('local_date', 'Today')} at {t_data.get('local_time', 'Current Time')} ({t_data.get('time_zone', 'UTC')} / {t_data.get('location', 'Local')})
 • Horizon: Age {curr_age} -> Age {ret_age} ({ret_age - curr_age} years) | Target Net Worth = ${target_nw:,.2f}
 
 Step 3 — Multi-Criteria Analysis & Optimization:
@@ -78,6 +79,10 @@ Step 4 — Formulated Strategic Execution Plan:
         "median": p50,
         "p90": p90,
         "prob_success": prob_success,
+        "prob": prob_success,
+        "p10_final": p10,
+        "median_final": p50,
+        "p90_final": p90,
         "target_nw": target_nw,
         "monthly_savings": monthly_savings
     }

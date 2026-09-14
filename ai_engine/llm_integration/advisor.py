@@ -102,6 +102,18 @@ def process_twin_copilot_turn(
         "target_retirement_age": int(user_info.get("retirement_goal_age", 60) or 60),
     }
 
+    local_time = client_ctx.get("localTime") or client_ctx.get("local_time") or (telemetry.get("local_time") if telemetry else None) or "Current Local Time"
+    local_date = client_ctx.get("localDate") or client_ctx.get("local_date") or (telemetry.get("local_date") if telemetry else None) or "Today"
+    time_zone = client_ctx.get("timeZone") or client_ctx.get("time_zone") or (telemetry.get("time_zone") if telemetry else None) or "UTC"
+    location = client_ctx.get("location") or (telemetry.get("location") if telemetry else None) or "Local Environment"
+    day_of_week = client_ctx.get("dayOfWeek") or client_ctx.get("day_of_week") or (telemetry.get("day_of_week") if telemetry else None) or ""
+
+    t_data["local_time"] = local_time
+    t_data["local_date"] = local_date
+    t_data["time_zone"] = time_zone
+    t_data["location"] = location
+    t_data["day_of_week"] = day_of_week
+
     goal_name = client_ctx.get("goalName") or "Emergency Fund"
     goal_target = float(client_ctx.get("goalTarget") or 20000.0)
     goal_current = float(client_ctx.get("goalCurrent") or (min(goal_target, t_data["net_worth"] * 0.4)))
@@ -112,62 +124,62 @@ def process_twin_copilot_turn(
     combined_user_text = " ".join([h.get("content", "") for h in history if h.get("role") == "user"] + [prompt]).lower()
 
     # Check for recent sleep statements in dialogue
-    recent_sleep_matches = re.findall(r"(?:slept\s*(?:for\s*)?|only\s*got\s*|had\s*|sleep\s*(?:was\s*)?|slept\s*)([0-9]+(?:\.[0-9]+)?)\s*(?:hours?|hrs?|h)", combined_user_text)
+    recent_sleep_matches = re.findall(r"(?:slept\s*(?:for\s*)?|only\s*got\s*|had\s*|sleep\s*(?:was\s*)?|slept\s*)([0-9]+(?:\.[0-9]+)?)\s*(?:hours?|hrs?|h )", combined_user_text)
     active_logged_sleep = float(recent_sleep_matches[-1]) if recent_sleep_matches else t_data["avg_sleep"]
 
     # Check for recent study statements in dialogue
-    recent_study_matches = re.findall(r"(?:studied|revised|learning|completed)\s*(?:a\s*)?([0-9]+(?:\.[0-9]+)?\s*(?:hours?|hrs?|h|mins?|minutes?))?\s*(?:of|for|in)?\s*([a-zA-Z0-9\s\-]+)?", combined_user_text)
+    recent_study_matches = re.findall(r"(?:studied|revised|learning|completed)\s*(?:a\s*)?([0-9]+(?:\.[0-9]+)?\s*(?:hours?|hrs?|h |mins?|minutes?))?\s*(?:of|for|in)?\s*([a-zA-Z0-9\s\-]+)?", combined_user_text)
     active_study_subject = None
     if recent_study_matches:
         for match_item in reversed(recent_study_matches):
             cand_subject = match_item[1].strip() if len(match_item) > 1 and match_item[1] else ""
-            cand_subject = re.sub(r"(?:today|yesterday|score|test|exam|with|and|hours?|mins?|for|of|in).*", "", cand_subject, flags=re.IGNORECASE).strip()
+            cand_subject = re.sub(r" (?:today|yesterday|score|test|exam|with|and|hours?|mins?|for|of|in) .*", "", cand_subject, flags=re.IGNORECASE).strip()
             if cand_subject and len(cand_subject) >= 3 and cand_subject.lower() not in ["study", "tasks", "routine", "planner", "my", "hours", "mins"]:
                 active_study_subject = cand_subject.title()
                 break
 
-    # 1. Study logging intent
+    # 1. Settings update intent (checked early to prevent "sleep target" or "income" matching habit logging)
+    settings_res = handle_settings_update_intent(prompt, p_lower, user_info, t_data, think_mode)
+    if settings_res:
+        return settings_res
+
+    # 2. Study logging intent
     study_res = handle_study_logging_intent(prompt, p_lower, user_info, t_data, think_mode, active_study_subject)
     if study_res:
         return study_res
 
-    # 2. Habit logging intent
+    # 3. Habit logging intent
     habit_res = handle_habit_logging_intent(prompt, p_lower, user_info, t_data, think_mode)
     if habit_res:
         return habit_res
 
-    # 3. Purchase impact intent
+    # 4. Purchase impact intent
     purchase_res = handle_purchase_impact_intent(prompt, p_lower, user_info, t_data, goal_name, goal_target, goal_current, think_mode)
     if purchase_res:
         return purchase_res
 
-    # 4. Single task addition intent (checked before routine planning to catch explicit task commands)
+    # 5. What-If comparison intent
+    what_if_res = handle_what_if_intent(prompt, p_lower, user_id, user_info, baseline, think_mode)
+    if what_if_res:
+        return what_if_res
+
+    # 6. Wealth Monte Carlo forecast intent
+    wealth_res = handle_wealth_forecast_intent(prompt, p_lower, user_info, t_data, think_mode)
+    if wealth_res:
+        return wealth_res
+
+    # 7. Single task addition intent (checked before routine planning to catch explicit task commands)
     single_task_res = handle_single_task_intent(prompt, p_lower, user_info, t_data, think_mode)
     if single_task_res:
         return single_task_res
 
-    # 5. Routine / Multi-task planning intent (only triggered on explicit schedule requests or confirmations)
+    # 8. Routine / Multi-task planning intent (only triggered on explicit schedule requests or confirmations)
     routine_res = handle_routine_planning_intent(
         prompt, p_lower, user_info, t_data, goal_name, goal_pct, goal_gap,
         think_mode, active_logged_sleep, active_study_subject, history=history
     )
     if routine_res:
         return routine_res
-
-    # 6. What-If comparison intent
-    what_if_res = handle_what_if_intent(prompt, p_lower, user_id, user_info, baseline, think_mode)
-    if what_if_res:
-        return what_if_res
-
-    # 7. Wealth Monte Carlo forecast intent
-    wealth_res = handle_wealth_forecast_intent(prompt, p_lower, user_info, t_data, think_mode)
-    if wealth_res:
-        return wealth_res
-
-    # 8. Settings update intent
-    settings_res = handle_settings_update_intent(prompt, p_lower, user_info, t_data, think_mode)
-    if settings_res:
-        return settings_res
 
     # 9. Conversational Groq fallback
     client = get_groq_client()
@@ -186,7 +198,9 @@ User Telemetry Baseline:
 - Net Worth: ${t_data['net_worth']:,.2f} | Target Net Worth: ${t_data['target_net_worth']:,.2f} by age {t_data['target_retirement_age']}
 - Sleep: {active_logged_sleep:.1f}h/day vs {t_data['sleep_target']:.1f}h target (Sleep Debt: {t_data['sleep_debt']:.1f}h)
 - Screen Time: {t_data['avg_screen']:.1f}h/day | Active Days: {t_data['exercise_days_count']}d/wk
-- Goal: {goal_name} (${goal_current:,.2f} / ${goal_target:,.2f}, {goal_pct}% achieved)"""
+- Goal: {goal_name} (${goal_current:,.2f} / ${goal_target:,.2f}, {goal_pct}% achieved)
+- Temporal & Physical Context: {local_date} ({local_time}), Timezone: {time_zone}, Location: {location}
+{'- When think_mode is active, begin with <think> following the 4 stages: Step 1 — Goal Definition, Step 2 — Telemetry Search & Gathered User Data, Step 3 — Multi-Criteria Analysis & Optimization, Step 4 — Formulated Strategic Execution Plan.' if think_mode else ''}"""
         }
     ]
 
@@ -231,6 +245,7 @@ Step 1 — Goal Definition:
 
 Step 2 — Telemetry Search & Gathered User Data:
 • Profile: {user_info.get('role', 'professional').title()} (Age: {user_info.get('age', 25)}) | Monthly Surplus: +${t_data['monthly_savings']:,.2f}/mo
+• Temporal / Geo Context: {local_date} at {local_time} ({time_zone} / {location})
 • Sleep Baseline: {active_logged_sleep:.1f}h | Milestone Progress: {goal_pct}% of {goal_name}
 
 Step 3 — Multi-Criteria Analysis & Optimization:

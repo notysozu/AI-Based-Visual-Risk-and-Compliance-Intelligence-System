@@ -25,7 +25,8 @@ def handle_routine_planning_intent(
     # Guard: Do not trigger schedule generation on informational questions
     if any(p_lower.startswith(q) for q in [
         "what is", "what does", "how does", "how do", "why is", "why does",
-        "why are", "explain", "tell me about", "can you explain", "what can"
+        "why are", "explain", "tell me about", "can you explain", "what can",
+        "what if", "simulate"
     ]):
         return None
 
@@ -170,6 +171,7 @@ Step 1 — Goal Definition:
 
 Step 2 — Telemetry Search & Gathered User Data:
 • Role Persona: {user_role_title} (Age: {user_info.get('age', 25)} | Retirement Target: Age {t_data['target_retirement_age']})
+• Temporal / Geo Context: {t_data.get('local_date', 'Today')} at {t_data.get('local_time', 'Current Time')} ({t_data.get('time_zone', 'UTC')} / {t_data.get('location', 'Local')})
 • Biometrics & Baseline: Sleep = {active_logged_sleep or t_data['avg_sleep']:.1f}h (Target: {t_data['sleep_target']:.1f}h | Sleep Debt: {t_data['sleep_debt']:.1f}h), Screen Time = {t_data['avg_screen']:.1f}h/day, Active Days = {t_data['exercise_days_count']}d/wk
 • Financial Health: Cash flow surplus = +${t_data['monthly_savings']:,.2f}/mo ({t_data['savings_rate']}% Savings Rate) | Net Worth = ${t_data['net_worth']:,.2f}
 • Active Milestone: "{goal_name}" ({goal_pct}% complete, ${goal_gap:,.2f} gap remaining)

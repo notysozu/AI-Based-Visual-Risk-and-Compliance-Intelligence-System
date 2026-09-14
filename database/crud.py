@@ -52,8 +52,29 @@ async def get_user(user_id: Union[str, int, ObjectId, None]) -> Optional[models.
         if user:
             return user
 
+    # Direct query by string/ObjectId representation for mongomock persistence compatibility
+    try:
+        user = await models.UserDoc.find_one(models.UserDoc.id == s_val)
+        if user:
+            return user
+    except Exception:
+        pass
+
+    if oid:
+        try:
+            user = await models.UserDoc.find_one(models.UserDoc.id == oid)
+            if user:
+                return user
+        except Exception:
+            pass
+
     # Fallback search by username
     user = await models.UserDoc.find_one(models.UserDoc.username == s_val)
+    if user:
+        return user
+
+    # Fallback search by email
+    user = await models.UserDoc.find_one(models.UserDoc.email == s_val.lower())
     if user:
         return user
 

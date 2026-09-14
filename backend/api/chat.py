@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import datetime
 from typing import List, Optional, Dict, Any, Tuple
 from fastapi import APIRouter, HTTPException, Query
 from database import crud, models, schemas
@@ -34,7 +35,10 @@ def generate_chat_title_summary(prompt: str) -> str:
     return " ".join(words[:4]).title()
 
 
-async def build_user_telemetry_bundle(user: models.UserDoc) -> Dict[str, Any]:
+async def build_user_telemetry_bundle(
+    user: models.UserDoc,
+    client_context: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     """Search and aggregate all recent telemetry logs and baseline stats for the user from MongoDB."""
     u_id_str = str(user.id)
     baseline = await simulator.get_user_baseline_metrics(u_id_str)
@@ -57,6 +61,14 @@ async def build_user_telemetry_bundle(user: models.UserDoc) -> Dict[str, Any]:
     monthly_savings = max(0.0, float(user.monthly_income or 0.0) - float(user.monthly_expenses or 0.0))
     savings_rate = round((monthly_savings / float(user.monthly_income)) * 100) if user.monthly_income and user.monthly_income > 0 else 0
 
+    c_ctx = client_context or {}
+    now_utc = datetime.utcnow()
+    local_time = c_ctx.get("localTime") or now_utc.strftime("%I:%M %p")
+    local_date = c_ctx.get("localDate") or now_utc.strftime("%A, %B %d, %Y")
+    time_zone = c_ctx.get("timeZone") or "UTC"
+    location = c_ctx.get("location") or time_zone.replace("_", " ")
+    day_of_week = c_ctx.get("dayOfWeek") or now_utc.strftime("%A")
+
     return {
         "baseline": baseline,
         "avg_sleep": avg_sleep,
@@ -76,6 +88,11 @@ async def build_user_telemetry_bundle(user: models.UserDoc) -> Dict[str, Any]:
         "target_net_worth": float(user.target_net_worth or 1000000.0),
         "target_retirement_age": int(user.retirement_goal_age or 60),
         "active_adopted_tasks": len([s for s in user_suggestions if s.is_adopted == 1]),
+        "local_time": local_time,
+        "local_date": local_date,
+        "time_zone": time_zone,
+        "location": location,
+        "day_of_week": day_of_week,
     }
 
 
@@ -196,23 +213,32 @@ async def get_session_messages(
 
 async def _maybe_auto_execute_chat_action(
     user: models.UserDoc,
-    bot_result: Dict[str, Any]
+    bot_result: Dict[str, Any],
+    prompt: str = ""
 ) -> Tuple[Dict[str, Any], models.UserDoc]:
     """
-    Evaluates autonomy mode and automatically executes proposed actions directly to MongoDB.
+    Evaluates autonomy mode and explicit confirmation directives to decide whether
+    to auto-execute actions or present an interactive approval card in chat.
     """
     autonomy_mode = user.autonomy_mode or "semi_autonomous"
     act_type = bot_result.get("action_type", "none")
     act_status = bot_result.get("action_status", "none")
     act_payload_str = bot_result.get("action_payload")
 
+    p_lower = prompt.lower().strip()
+    is_explicit_confirmation = any(k in p_lower for k in [
+        "yes confirm", "yes apply", "yes plug it in", "plug it into planner",
+        "confirm plan", "apply plan", "approve plan", "confirm changes",
+        "approve changes", "approve", "confirm", "plug it in", "add them",
+        "add it", "1,2,3 add it", "1, 2, 3 add it", "commit to planner", "yes add them", "yes add all"
+    ])
+
     should_auto_execute = False
     if act_type != "none" and act_status == "proposed" and act_payload_str:
         if autonomy_mode == "full_autonomous":
             should_auto_execute = True
-        elif autonomy_mode == "semi_autonomous":
-            if act_type in ["add_task", "add_multiple_tasks", "log_study", "log_habit", "update_settings", "simulate_what_if"]:
-                should_auto_execute = True
+        elif is_explicit_confirmation:
+            should_auto_execute = True
 
     if should_auto_execute:
         try:
@@ -265,7 +291,7 @@ async def create_chat_thread(req: schemas.ChatPromptRequest):
         "study_target_hours_week": user.study_target_hours_week,
     }
 
-    telemetry = await build_user_telemetry_bundle(user)
+    telemetry = await build_user_telemetry_bundle(user, client_context=req.client_context)
 
     bot_result = process_twin_copilot_turn(
         user_id=u_id_str,
@@ -278,7 +304,7 @@ async def create_chat_thread(req: schemas.ChatPromptRequest):
         think_mode=bool(getattr(req, "think_mode", False))
     )
 
-    bot_result, user = await _maybe_auto_execute_chat_action(user, bot_result)
+    bot_result, user = await _maybe_auto_execute_chat_action(user, bot_result, prompt=req.prompt)
 
     assistant_msg = await crud.create_chat_message(
         session_id=str(session.id),
@@ -378,7 +404,7 @@ async def send_chat_message(
         for m in (session.messages[:-1] if session.messages else [])
     ]
 
-    telemetry = await build_user_telemetry_bundle(user)
+    telemetry = await build_user_telemetry_bundle(user, client_context=req.client_context)
 
     bot_result = process_twin_copilot_turn(
         user_id=u_id_str,
@@ -391,7 +417,7 @@ async def send_chat_message(
         think_mode=bool(getattr(req, "think_mode", False))
     )
 
-    bot_result, user = await _maybe_auto_execute_chat_action(user, bot_result)
+    bot_result, user = await _maybe_auto_execute_chat_action(user, bot_result, prompt=req.prompt)
 
     assistant_msg = await crud.create_chat_message(
         session_id=current_session_id,
