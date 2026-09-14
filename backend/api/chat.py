@@ -240,11 +240,15 @@ async def _maybe_auto_execute_chat_action(
     ])
 
     should_auto_execute = False
-    if act_type != "none" and act_status == "proposed" and act_payload_str:
-        if autonomy_mode == "full_autonomous":
+    if act_type != "none" and act_payload_str:
+        if act_status == "auto_execute":
+            # Multi-agent direct mutations — always execute immediately
             should_auto_execute = True
-        elif is_explicit_confirmation:
-            should_auto_execute = True
+        elif act_status == "proposed":
+            if autonomy_mode == "full_autonomous":
+                should_auto_execute = True
+            elif is_explicit_confirmation:
+                should_auto_execute = True
 
     if should_auto_execute:
         try:

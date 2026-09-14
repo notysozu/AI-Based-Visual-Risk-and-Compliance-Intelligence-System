@@ -72,6 +72,40 @@ async def execute_action_payload(user: models.UserDoc, action_type: str, payload
         await user.save()
         execution_result = {"updated_fields": list(payload.keys())}
 
+    elif action_type == "update_goal":
+        # Direct goal mutation from GoalAgent — updates goal_name, goal_target, goal_current
+        allowed_goal_fields = {"goal_name", "goal_target", "goal_current"}
+        for key, val in payload.items():
+            if key in allowed_goal_fields and hasattr(user, key):
+                setattr(user, key, val)
+        await user.save()
+        execution_result = {"updated_fields": list(payload.keys()), "goal_name": user.goal_name}
+
+    elif action_type == "update_user_fields":
+        # Generic UserDoc field patcher used by FinanceAgent and SettingsAgent
+        protected_fields = {"id", "password_hash", "email", "username", "tasks_json",
+                            "study_profile", "created_at", "is_active", "status"}
+        for key, val in payload.items():
+            if key not in protected_fields and hasattr(user, key):
+                setattr(user, key, val)
+        await user.save()
+        execution_result = {"updated_fields": list(payload.keys())}
+
+    elif action_type == "log_habits_batch":
+        # Batch habit logging from HabitAgent — inserts multiple HabitRecordDoc entries
+        habits_list = payload.get("habits", [])
+        created_ids = []
+        for h in habits_list:
+            habit_rec = models.HabitRecordDoc(
+                user_id=u_id_str,
+                habit_name=h.get("habit_name", "Habit"),
+                duration_minutes=int(h.get("duration_minutes", 0)),
+                impact_score=int(h.get("impact_score", 5))
+            )
+            await habit_rec.insert()
+            created_ids.append(str(habit_rec.id))
+        execution_result = {"logged_habits": len(created_ids), "ids": created_ids}
+
     elif action_type == "simulate_what_if":
         preset_payload = {
             "savings": float(payload.get("savings_delta", 0.0)),

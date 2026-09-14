@@ -558,7 +558,7 @@ function StudyCockpitPage() {
     refreshAllData();
   }, [p.id, refreshAllData]);
 
-  // Handle timer completion
+  // Handle timer completion (Direct MongoDB Save)
   const handleTimerCompleted = useCallback(() => {
     setIsTimerRunning(false);
     soundscapeEngine.stop();
@@ -567,10 +567,32 @@ function StudyCockpitPage() {
     if (timerMode === "focus") {
       const nextCount = completedSprints + 1;
       setCompletedSprints(nextCount);
-      toast.success("Focus sprint completed! Great job.");
-      setLogSubject(selectedSubject);
-      setLogMinutes(focusLengthMins);
-      setSaveModalOpen(true);
+
+      // Auto-save completed Pomodoro sprint directly to MongoDB
+      if (p.id) {
+        logStudySession(p.id, {
+          subject: selectedSubject,
+          duration_minutes: focusLengthMins,
+          focus_score: 8,
+          notes: "Automated Pomodoro Focus Sprint",
+          create_review_task: false,
+        })
+          .then((res) => {
+            if (res && res.status === "ok") {
+              toast.success(
+                `Pomodoro completed! ${focusLengthMins}m in ${selectedSubject} saved directly to analytics.`
+              );
+              refreshAllData();
+            } else {
+              toast.success("Focus sprint completed! Great job.");
+            }
+          })
+          .catch(() => {
+            toast.success("Focus sprint completed! Great job.");
+          });
+      } else {
+        toast.success("Focus sprint completed! Great job.");
+      }
 
       // Auto switch to break
       if (nextCount % 4 === 0) {
@@ -585,7 +607,16 @@ function StudyCockpitPage() {
       setTimerMode("focus");
       setSecondsLeft(focusLengthMins * 60);
     }
-  }, [timerMode, completedSprints, selectedSubject, focusLengthMins, longBreakLengthMins, breakLengthMins]);
+  }, [
+    p.id,
+    timerMode,
+    completedSprints,
+    selectedSubject,
+    focusLengthMins,
+    longBreakLengthMins,
+    breakLengthMins,
+    refreshAllData,
+  ]);
 
   // Timer Tick
   useEffect(() => {
@@ -1712,21 +1743,6 @@ function StudyCockpitPage() {
             title="Skip to next mode"
           >
             <SkipForward className="h-3.5 w-3.5" />
-          </Button>
-
-          {/* "Save" Button */}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setLogSubject(selectedSubject);
-              setLogMinutes(Math.max(5, Math.round((totalModeSeconds - secondsLeft) / 60) || 25));
-              setSaveModalOpen(true);
-            }}
-            className="h-8 px-3 rounded-full border-white/20 bg-black/40 text-purple-300 hover:bg-white/20 text-xs font-semibold gap-1"
-          >
-            <Check className="h-3 w-3" />
-            <span>Save</span>
           </Button>
         </div>
       </div>

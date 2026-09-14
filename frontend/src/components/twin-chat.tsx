@@ -354,6 +354,56 @@ export function TwinChat({
         const durHours = Number(payload.hours || (payload.duration_minutes ? payload.duration_minutes / 60 : 1));
         logHabitActivity(payload.habit_name || "Exercise", durHours);
         toast.success(`✓ Logged ${payload.habit_name || "Habit"} (${durHours.toFixed(1)}h) to biometric records`);
+      } else if (asst.action_type === "log_habits_batch") {
+        // HabitAgent: batch habit logging
+        const habits = payload.habits || [];
+        for (const h of habits) {
+          const durHours = Number(h.duration_minutes ? h.duration_minutes / 60 : 0);
+          if (durHours > 0 || h.habit_name === "Mood") {
+            logHabitActivity(h.habit_name || "Habit", durHours);
+          }
+        }
+        const habitNames = habits.map((h: any) => h.habit_name).join(", ");
+        toast.success(`✓ Logged ${habitNames} to biometric records`);
+      } else if (asst.action_type === "update_goal") {
+        // GoalAgent: update primary financial goal
+        const goalUpdates: Record<string, any> = {};
+        if (payload.goal_name !== undefined) goalUpdates.goalName = payload.goal_name;
+        if (payload.goal_target !== undefined) goalUpdates.goalTarget = payload.goal_target;
+        if (payload.goal_current !== undefined) goalUpdates.goalCurrent = payload.goal_current;
+        updateProfile(goalUpdates);
+        toast.success(`✓ Goal updated to "${payload.goal_name || "New Goal"}"`, {
+          description: payload.goal_target ? `Target: $${Number(payload.goal_target).toLocaleString()}` : undefined,
+          duration: 4000,
+        });
+      } else if (asst.action_type === "update_user_fields") {
+        // FinanceAgent / SettingsAgent: generic profile field patch
+        const profileUpdates: Record<string, any> = {};
+        const fieldMap: Record<string, string> = {
+          monthly_income: "monthlyIncome",
+          monthly_expenses: "monthlyExpenses",
+          net_worth: "netWorth",
+          sleep_target_hours: "sleepTargetHours",
+          study_target_hours_week: "studyTargetHoursWeek",
+          exercise_target_days: "exerciseTargetDays",
+          screen_time_target_hours: "screenTimeTargetHours",
+          retirement_goal_age: "retirementGoalAge",
+          target_net_worth: "targetNetWorth",
+          role: "role",
+          autonomy_mode: "autonomyMode",
+          theme_preference: "themePreference",
+          age: "age",
+        };
+        for (const [pythonKey, tsKey] of Object.entries(fieldMap)) {
+          if (payload[pythonKey] !== undefined) {
+            profileUpdates[tsKey] = payload[pythonKey];
+          }
+        }
+        if (Object.keys(profileUpdates).length > 0) {
+          updateProfile(profileUpdates);
+        }
+        const updatedFields = Object.keys(payload).join(", ").replace(/_/g, " ");
+        toast.success(`✓ Profile updated: ${updatedFields}`);
       } else if (asst.action_type === "wealth_forecast") {
         toast.success("✓ Monte Carlo wealth forecast projection applied");
       }

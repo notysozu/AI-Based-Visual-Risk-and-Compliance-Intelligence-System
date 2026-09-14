@@ -138,6 +138,16 @@ def process_twin_copilot_turn(
                 active_study_subject = cand_subject.title()
                 break
 
+    # 0. Multi-Agent Router — direct mutations (goal, finance, settings, habit, study, planner)
+    # These return action_status="auto_execute" so chat.py executes them immediately without approval.
+    try:
+        from ai_engine.agents.router import route_to_agents
+        agent_res = route_to_agents(prompt, p_lower, user_info, t_data, think_mode)
+        if agent_res:
+            return agent_res
+    except Exception as _agent_err:
+        print(f"[AgentRouter] Non-fatal error: {_agent_err}")
+
     # 1. Settings update intent (checked early to prevent "sleep target" or "income" matching habit logging)
     settings_res = handle_settings_update_intent(prompt, p_lower, user_info, t_data, think_mode)
     if settings_res:
