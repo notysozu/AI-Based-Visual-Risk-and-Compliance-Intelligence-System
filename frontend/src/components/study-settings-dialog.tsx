@@ -374,45 +374,56 @@ export function StudySettingsDialog({
                           {videoSpeed.toFixed(2)}x
                         </span>
                         <span className="text-[10px] text-white/50">
-                          {videoSpeed <= 0.2 ? "Ultra Slow" : videoSpeed <= 0.5 ? "Slow-Mo" : videoSpeed < 1.0 ? "Gentle" : videoSpeed === 1.0 ? "Normal" : "Fast"}
+                          {videoSpeed <= 0.08
+                            ? "Zen Freeze"
+                            : videoSpeed <= 0.2
+                            ? "Ultra Slow"
+                            : videoSpeed <= 0.5
+                            ? "Slow-Mo"
+                            : videoSpeed < 1.0
+                            ? "Gentle"
+                            : videoSpeed === 1.0
+                            ? "Normal"
+                            : "Fast"}
                         </span>
                       </div>
                     </div>
 
                     <Slider
-                      min={0.1}
+                      min={0.05}
                       max={2.0}
-                      step={0.05}
+                      step={0.01}
                       value={[videoSpeed]}
                       onValueChange={(val) => onVideoSpeedChange(Number(val[0].toFixed(2)))}
                       className="py-1"
                     />
 
                     {/* Quick Speed Presets with more slow options */}
-                    <div className="grid grid-cols-4 sm:grid-cols-8 gap-1 pt-1">
+                    <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-1 pt-1">
                       {[
+                        { label: "0.05x", sub: "Zen", val: 0.05 },
+                        { label: "0.08x", sub: "Dream", val: 0.08 },
                         { label: "0.1x", sub: "Ultra", val: 0.1 },
+                        { label: "0.15x", sub: "Slow-Mo", val: 0.15 },
                         { label: "0.25x", sub: "Drift", val: 0.25 },
-                        { label: "0.4x", sub: "Mellow", val: 0.4 },
                         { label: "0.5x", sub: "Half", val: 0.5 },
                         { label: "0.75x", sub: "Chill", val: 0.75 },
                         { label: "1.0x", sub: "Normal", val: 1.0 },
-                        { label: "1.25x", sub: "Swift", val: 1.25 },
                         { label: "1.5x", sub: "Fast", val: 1.5 },
                       ].map((preset) => (
                         <button
                           key={preset.label}
                           type="button"
                           onClick={() => onVideoSpeedChange(preset.val)}
-                          className={`py-1 px-0.5 rounded text-[10px] flex flex-col items-center transition-all ${
-                            Math.abs(videoSpeed - preset.val) < 0.02
-                              ? "bg-cyan-600 text-white shadow-sm font-semibold"
+                          className={`py-1.5 px-1 rounded text-[10px] flex flex-col items-center justify-center transition-all ${
+                            Math.abs(videoSpeed - preset.val) < 0.015
+                              ? "bg-cyan-600 text-white shadow-sm font-semibold ring-1 ring-cyan-400"
                               : "bg-white/5 text-white/65 hover:bg-white/15 hover:text-white"
                           }`}
                           title={`Set video speed to ${preset.val}x (${preset.sub})`}
                         >
-                          <span>{preset.label}</span>
-                          <span className="text-[8px] opacity-70 leading-none">{preset.sub}</span>
+                          <span className="font-mono font-bold leading-tight">{preset.label}</span>
+                          <span className="text-[8px] opacity-70 leading-none mt-0.5">{preset.sub}</span>
                         </button>
                       ))}
                     </div>

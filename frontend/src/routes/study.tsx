@@ -308,33 +308,79 @@ function StudyCockpitPage() {
   }, []);
 
   // 2. Video Playback & Autoplay handling
-  const applyVideoSpeed = useCallback((speed: number) => {
-    if (videoRef.current) {
+  const safeSetPlaybackRate = useCallback((element: HTMLVideoElement | null, targetSpeed: number) => {
+    if (!element) return;
+    const clampedSpeed = Math.min(16.0, Math.max(0.0625, targetSpeed));
+    try {
+      element.defaultPlaybackRate = targetSpeed;
+      element.playbackRate = targetSpeed;
+    } catch {
       try {
-        videoRef.current.defaultPlaybackRate = speed;
-        videoRef.current.playbackRate = speed;
-      } catch {}
+        element.defaultPlaybackRate = clampedSpeed;
+        element.playbackRate = clampedSpeed;
+      } catch (err) {
+        console.warn("Unable to set playback rate:", err);
+      }
     }
   }, []);
 
+  const applyVideoSpeed = useCallback(
+    (speed: number) => {
+      safeSetPlaybackRate(videoRef.current, speed);
+    },
+    [safeSetPlaybackRate]
+  );
+
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.defaultMuted = true;
-      videoRef.current.muted = true;
-      videoRef.current.defaultPlaybackRate = videoSpeed;
-      videoRef.current.playbackRate = videoSpeed;
-      videoRef.current.load();
-      const p = videoRef.current.play();
+    const vid = videoRef.current;
+    if (vid) {
+      vid.defaultMuted = true;
+      vid.muted = true;
+      safeSetPlaybackRate(vid, videoSpeed);
+      vid.load();
+      const p = vid.play();
       if (p !== undefined) {
         p.catch(() => {});
       }
-      applyVideoSpeed(videoSpeed);
+      safeSetPlaybackRate(vid, videoSpeed);
     }
-  }, [activeWallpaper.url, videoSpeed, applyVideoSpeed]);
+  }, [activeWallpaper.url, videoSpeed, safeSetPlaybackRate]);
 
   useEffect(() => {
-    applyVideoSpeed(videoSpeed);
-  }, [videoSpeed, applyVideoSpeed]);
+    const vid = videoRef.current;
+    if (!vid) return;
+
+    const enforceSpeed = () => {
+      safeSetPlaybackRate(vid, videoSpeed);
+    };
+
+    enforceSpeed();
+
+    vid.addEventListener("play", enforceSpeed);
+    vid.addEventListener("playing", enforceSpeed);
+    vid.addEventListener("loadedmetadata", enforceSpeed);
+    vid.addEventListener("canplay", enforceSpeed);
+    vid.addEventListener("seeked", enforceSpeed);
+    const onRateChange = () => {
+      const minSafe = Math.max(0.0625, videoSpeed);
+      if (
+        Math.abs(vid.playbackRate - videoSpeed) > 0.01 &&
+        Math.abs(vid.playbackRate - minSafe) > 0.01
+      ) {
+        enforceSpeed();
+      }
+    };
+    vid.addEventListener("ratechange", onRateChange);
+
+    return () => {
+      vid.removeEventListener("play", enforceSpeed);
+      vid.removeEventListener("playing", enforceSpeed);
+      vid.removeEventListener("loadedmetadata", enforceSpeed);
+      vid.removeEventListener("canplay", enforceSpeed);
+      vid.removeEventListener("seeked", enforceSpeed);
+      vid.removeEventListener("ratechange", onRateChange);
+    };
+  }, [videoSpeed, activeWallpaper.url, safeSetPlaybackRate]);
 
   // Cleanup on unmount (sound stops, wallpaper stops)
   useEffect(() => {
@@ -860,36 +906,19 @@ function StudyCockpitPage() {
           muted
           playsInline
           preload="auto"
-          onPlay={(e) => {
-            const v = e.currentTarget;
-            v.defaultPlaybackRate = videoSpeed;
-            v.playbackRate = videoSpeed;
-          }}
-          onPlaying={(e) => {
-            const v = e.currentTarget;
-            v.defaultPlaybackRate = videoSpeed;
-            v.playbackRate = videoSpeed;
-          }}
-          onLoadedMetadata={(e) => {
-            const v = e.currentTarget;
-            v.defaultPlaybackRate = videoSpeed;
-            v.playbackRate = videoSpeed;
-          }}
-          onCanPlay={(e) => {
-            const v = e.currentTarget;
-            v.defaultPlaybackRate = videoSpeed;
-            v.playbackRate = videoSpeed;
-          }}
-          onSeeked={(e) => {
-            const v = e.currentTarget;
-            v.defaultPlaybackRate = videoSpeed;
-            v.playbackRate = videoSpeed;
-          }}
+          onPlay={(e) => safeSetPlaybackRate(e.currentTarget, videoSpeed)}
+          onPlaying={(e) => safeSetPlaybackRate(e.currentTarget, videoSpeed)}
+          onLoadedMetadata={(e) => safeSetPlaybackRate(e.currentTarget, videoSpeed)}
+          onCanPlay={(e) => safeSetPlaybackRate(e.currentTarget, videoSpeed)}
+          onSeeked={(e) => safeSetPlaybackRate(e.currentTarget, videoSpeed)}
           onTimeUpdate={(e) => {
             const v = e.currentTarget;
-            if (Math.abs(v.playbackRate - videoSpeed) > 0.01) {
-              v.defaultPlaybackRate = videoSpeed;
-              v.playbackRate = videoSpeed;
+            const minSafe = Math.max(0.0625, videoSpeed);
+            if (
+              Math.abs(v.playbackRate - videoSpeed) > 0.01 &&
+              Math.abs(v.playbackRate - minSafe) > 0.01
+            ) {
+              safeSetPlaybackRate(v, videoSpeed);
             }
           }}
           style={{
