@@ -23,6 +23,9 @@ import {
   Upload,
   FolderOpen,
   Sparkles,
+  Sliders,
+  Eye,
+  Gauge,
 } from "lucide-react";
 import {
   SOUNDSCAPES,
@@ -70,6 +73,10 @@ interface StudySettingsDialogProps {
   onOpenChange: (open: boolean) => void;
   activeWallpaper: WallpaperItem;
   onSelectWallpaper: (wp: WallpaperItem) => void;
+  videoBlur: number;
+  onVideoBlurChange: (blur: number) => void;
+  videoSpeed: number;
+  onVideoSpeedChange: (speed: number) => void;
   focusMinutes: number;
   onFocusMinutesChange: (mins: number) => void;
   breakMinutes: number;
@@ -87,6 +94,10 @@ export function StudySettingsDialog({
   onOpenChange,
   activeWallpaper,
   onSelectWallpaper,
+  videoBlur,
+  onVideoBlurChange,
+  videoSpeed,
+  onVideoSpeedChange,
   focusMinutes,
   onFocusMinutesChange,
   breakMinutes,
@@ -295,6 +306,110 @@ export function StudySettingsDialog({
           {/* TAB 1: WALLPAPERS (1 NATURE, 1 EARTH + CUSTOM VIDEO UPLOADER) */}
           {activeTab === "wallpapers" && (
             <div className="space-y-6">
+              {/* VIDEO ATMOSPHERE & PLAYBACK (BLUR & SPEED) */}
+              <div className="p-4 rounded-2xl bg-black/40 border border-white/15 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="h-4 w-4 text-cyan-400" />
+                    <h4 className="text-xs font-bold text-white">Video Atmosphere & Motion</h4>
+                  </div>
+                  <span className="text-[10px] text-white/50 font-mono">Live Background Controls</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                  {/* Blur Control */}
+                  <div className="space-y-2 p-3 rounded-xl bg-white/[0.03] border border-white/10">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-medium text-white/90 flex items-center gap-1.5">
+                        <Eye className="h-3.5 w-3.5 text-purple-400" />
+                        <span>Background Blur</span>
+                      </Label>
+                      <span className="text-xs font-mono font-bold text-purple-300">
+                        {videoBlur === 0 ? "Off (0px)" : `${videoBlur}px`}
+                      </span>
+                    </div>
+
+                    <Slider
+                      min={0}
+                      max={16}
+                      step={1}
+                      value={[videoBlur]}
+                      onValueChange={(val) => onVideoBlurChange(val[0])}
+                      className="py-1"
+                    />
+
+                    {/* Quick Blur Presets */}
+                    <div className="grid grid-cols-4 gap-1.5 pt-1">
+                      {[
+                        { label: "Off", val: 0 },
+                        { label: "Subtle", val: 3 },
+                        { label: "Soft", val: 6 },
+                        { label: "Bokeh", val: 12 },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => onVideoBlurChange(preset.val)}
+                          className={`py-1 px-1.5 rounded text-[10px] font-medium transition-all ${
+                            videoBlur === preset.val
+                              ? "bg-purple-600 text-white shadow-sm"
+                              : "bg-white/5 text-white/65 hover:bg-white/15 hover:text-white"
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Playback Speed Control */}
+                  <div className="space-y-2 p-3 rounded-xl bg-white/[0.03] border border-white/10">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-medium text-white/90 flex items-center gap-1.5">
+                        <Gauge className="h-3.5 w-3.5 text-cyan-400" />
+                        <span>Playback Speed</span>
+                      </Label>
+                      <span className="text-xs font-mono font-bold text-cyan-300">
+                        {videoSpeed.toFixed(2)}x
+                      </span>
+                    </div>
+
+                    <Slider
+                      min={0.25}
+                      max={2.0}
+                      step={0.05}
+                      value={[videoSpeed]}
+                      onValueChange={(val) => onVideoSpeedChange(Number(val[0].toFixed(2)))}
+                      className="py-1"
+                    />
+
+                    {/* Quick Speed Presets */}
+                    <div className="grid grid-cols-5 gap-1 pt-1">
+                      {[
+                        { label: "0.5x", val: 0.5 },
+                        { label: "0.75x", val: 0.75 },
+                        { label: "1.0x", val: 1.0 },
+                        { label: "1.25x", val: 1.25 },
+                        { label: "1.5x", val: 1.5 },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => onVideoSpeedChange(preset.val)}
+                          className={`py-1 px-1 rounded text-[10px] font-medium transition-all ${
+                            Math.abs(videoSpeed - preset.val) < 0.02
+                              ? "bg-cyan-600 text-white shadow-sm"
+                              : "bg-white/5 text-white/65 hover:bg-white/15 hover:text-white"
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Wallpaper Grid */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">

@@ -207,6 +207,29 @@ function StudyCockpitPage() {
     return 0.5;
   });
 
+  // Restore video blur & speed from localStorage
+  const [videoBlur, setVideoBlur] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("study_video_blur");
+      if (saved !== null) {
+        const parsed = parseFloat(saved);
+        if (!isNaN(parsed) && parsed >= 0 && parsed <= 24) return parsed;
+      }
+    }
+    return 3; // "abit blur" by default (3px)
+  });
+
+  const [videoSpeed, setVideoSpeed] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("study_video_speed");
+      if (saved !== null) {
+        const parsed = parseFloat(saved);
+        if (!isNaN(parsed) && parsed >= 0.25 && parsed <= 3) return parsed;
+      }
+    }
+    return 1.0;
+  });
+
   // Pomodoro Timer State
   const [timerMode, setTimerMode] = useState<"focus" | "shortBreak" | "longBreak">("focus");
   const [focusLengthMins, setFocusLengthMins] = useState(25);
@@ -289,6 +312,7 @@ function StudyCockpitPage() {
     if (videoRef.current) {
       videoRef.current.defaultMuted = true;
       videoRef.current.muted = true;
+      videoRef.current.playbackRate = videoSpeed;
       videoRef.current.load();
       const p = videoRef.current.play();
       if (p !== undefined) {
@@ -296,6 +320,12 @@ function StudyCockpitPage() {
       }
     }
   }, [activeWallpaper.url]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = videoSpeed;
+    }
+  }, [videoSpeed]);
 
   // Cleanup on unmount (sound stops, wallpaper stops)
   useEffect(() => {
@@ -589,6 +619,25 @@ function StudyCockpitPage() {
     } catch {}
   };
 
+  // Video blur change
+  const handleVideoBlurChange = (blur: number) => {
+    setVideoBlur(blur);
+    try {
+      localStorage.setItem("study_video_blur", String(blur));
+    } catch {}
+  };
+
+  // Video playback speed change
+  const handleVideoSpeedChange = (speed: number) => {
+    setVideoSpeed(speed);
+    if (videoRef.current) {
+      videoRef.current.playbackRate = speed;
+    }
+    try {
+      localStorage.setItem("study_video_speed", String(speed));
+    } catch {}
+  };
+
   // Save study session to backend
   const handleSaveSession = async () => {
     if (!p.id) return;
@@ -802,7 +851,15 @@ function StudyCockpitPage() {
           muted
           playsInline
           preload="auto"
-          className="absolute inset-0 w-full h-full object-cover transform scale-110 transition-transform duration-700 pointer-events-none"
+          onLoadedMetadata={() => {
+            if (videoRef.current) {
+              videoRef.current.playbackRate = videoSpeed;
+            }
+          }}
+          style={{
+            filter: videoBlur > 0 ? `blur(${videoBlur}px)` : "none",
+          }}
+          className="absolute inset-0 w-full h-full object-cover transform scale-110 transition-[filter] duration-300 pointer-events-none"
         >
           <source
             src={activeWallpaper.url}
@@ -1615,6 +1672,10 @@ function StudyCockpitPage() {
         onOpenChange={setSettingsOpen}
         activeWallpaper={activeWallpaper}
         onSelectWallpaper={handleSelectWallpaper}
+        videoBlur={videoBlur}
+        onVideoBlurChange={handleVideoBlurChange}
+        videoSpeed={videoSpeed}
+        onVideoSpeedChange={handleVideoSpeedChange}
         focusMinutes={focusLengthMins}
         onFocusMinutesChange={(mins) => {
           setFocusLengthMins(mins);
