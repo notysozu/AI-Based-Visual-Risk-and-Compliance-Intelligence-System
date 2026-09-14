@@ -55,8 +55,12 @@ async def build_user_telemetry_bundle(
     avg_sleep = round(sum(sleep_logs) / len(sleep_logs), 1) if sleep_logs else float(baseline.get("sleep_hours", 7.5))
     avg_screen = round(sum(screen_logs) / len(screen_logs), 1) if screen_logs else 4.0
     study_mins = sum(s.duration_minutes for s in recent_studies)
-    study_hours_week = round((study_mins / 60.0) * (7.0 / max(1, len(recent_habits) or 1)), 1) if recent_studies else float(baseline.get("study_hours_week", 10.0))
-    subjects = list({s.subject for s in recent_studies if s.subject})[:4]
+    study_hours_week = round((study_mins / 60.0) * (7.0 / max(1, len(recent_habits) or 1)), 1) if recent_studies else float(baseline.get("study_hours_week", 0.0))
+
+    study_prof = await crud.get_user_study_profile(u_id_str)
+    onboarded_subjects = study_prof.get("subjects", [])
+    subjects = list({s.subject for s in recent_studies if s.subject}) or onboarded_subjects
+    upcoming_exams = study_prof.get("exams", [])
 
     monthly_savings = max(0.0, float(user.monthly_income or 0.0) - float(user.monthly_expenses or 0.0))
     savings_rate = round((monthly_savings / float(user.monthly_income)) * 100) if user.monthly_income and user.monthly_income > 0 else 0
@@ -80,6 +84,8 @@ async def build_user_telemetry_bundle(
         "study_hours_week": study_hours_week,
         "study_target_week": float(user.study_target_hours_week or 10.0),
         "recent_subjects": subjects,
+        "onboarded_subjects": onboarded_subjects,
+        "upcoming_exams": upcoming_exams,
         "monthly_income": float(user.monthly_income or 0.0),
         "monthly_expenses": float(user.monthly_expenses or 0.0),
         "monthly_savings": monthly_savings,

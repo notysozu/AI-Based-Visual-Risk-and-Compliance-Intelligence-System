@@ -114,6 +114,18 @@ async def execute_action_payload(user: models.UserDoc, action_type: str, payload
             session_type="study"
         )
         await study_rec.insert()
+
+        try:
+            habit_rec = models.HabitRecordDoc(
+                user_id=u_id_str,
+                habit_name="Study",
+                duration_minutes=dur_mins,
+                impact_score=focus_score
+            )
+            await habit_rec.insert()
+        except Exception:
+            pass
+
         execution_result = {
             "study_record_id": str(study_rec.id),
             "subject": subject,

@@ -72,7 +72,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     defaultNetWorth: 35000,
     defaultTargetNetWorth: 1000000,
     taskCategories: ["Work", "Career", "Finance", "Health", "Upskilling", "Personal"],
-    hasStudyIntelligence: false,
+    hasStudyIntelligence: true,
   },
   freelancer: {
     role: "freelancer",
@@ -96,7 +96,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     defaultNetWorth: 25000,
     defaultTargetNetWorth: 800000,
     taskCategories: ["Client Work", "Projects", "Invoices", "Admin", "Health", "Upskilling"],
-    hasStudyIntelligence: false,
+    hasStudyIntelligence: true,
   },
   entrepreneur: {
     role: "entrepreneur",
@@ -120,7 +120,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     defaultNetWorth: 60000,
     defaultTargetNetWorth: 2500000,
     taskCategories: ["Product", "Growth", "Fundraising", "Operations", "Team", "Health"],
-    hasStudyIntelligence: false,
+    hasStudyIntelligence: true,
   },
   retiree: {
     role: "retiree",
@@ -144,7 +144,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     defaultNetWorth: 450000,
     defaultTargetNetWorth: 600000,
     taskCategories: ["Vitality", "Health", "Family", "Hobbies", "Finance", "Social"],
-    hasStudyIntelligence: false,
+    hasStudyIntelligence: true,
   },
 };
 

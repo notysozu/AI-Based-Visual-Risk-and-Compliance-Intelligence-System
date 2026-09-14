@@ -62,6 +62,10 @@ class UserDoc(Document):
     last_study_plan: Optional[str] = None
     last_study_plan_updated: Optional[str] = None
 
+    # Academic & Study Intelligence
+    study_onboarded: bool = False
+    study_profile: Optional[str] = None  # JSON string with curriculum, subjects, target score, exams, etc.
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:

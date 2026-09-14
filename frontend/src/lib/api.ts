@@ -173,6 +173,39 @@ export function logStudySession(userId: string | number, payload: Record<string,
   });
 }
 
+/** Check academic study onboarding status and profile */
+export function getStudyOnboardingStatus(userId: string | number) {
+  return request(`/study/onboarding-status/${userId}`);
+}
+
+/** Submit mandatory study onboarding curriculum setup */
+export function submitStudyOnboarding(userId: string | number, payload: Record<string, unknown>) {
+  return request(`/study/onboarding/${userId}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Fetch registered upcoming exams with countdowns */
+export function getStudyExams(userId: string | number) {
+  return request(`/study/exams/${userId}`);
+}
+
+/** Register a new upcoming exam target */
+export function addStudyExam(userId: string | number, payload: Record<string, unknown>) {
+  return request(`/study/exams/${userId}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Remove or complete an upcoming exam */
+export function deleteStudyExam(userId: string | number, examId: string) {
+  return request(`/study/exams/${userId}/${encodeURIComponent(examId)}`, {
+    method: "DELETE",
+  });
+}
+
 export function getUserSuggestions(userId: string | number) {
   return request(`/suggestions/${userId}`);
 }

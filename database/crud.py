@@ -438,6 +438,20 @@ async def create_study_record(record: schemas.StudyRecordCreate, user_id: Union[
         created_at=record.created_at or datetime.utcnow()
     )
     await doc.insert()
+
+    # Automatically sync a corresponding habit record so analytics immediately captures study time
+    try:
+        habit_doc = models.HabitRecordDoc(
+            user_id=u_id_str,
+            habit_name="Study",
+            duration_minutes=record.duration_minutes,
+            impact_score=record.focus_score,
+            created_at=record.created_at or datetime.utcnow()
+        )
+        await habit_doc.insert()
+    except Exception:
+        pass
+
     await _sync_disk()
     return doc
 
@@ -468,6 +482,98 @@ async def delete_study_record(record_id: Union[str, int]) -> bool:
     await doc.delete()
     await _sync_disk()
     return True
+
+
+async def get_user_study_profile(user_id: Union[str, int]) -> Dict[str, Any]:
+    """Retrieve the user's academic onboarding profile, curriculum subjects, and exams."""
+    user = await get_user(user_id)
+    if not user:
+        return {"onboarded": False, "subjects": [], "weekly_target": 15.0, "target_score": 85.0, "exams": []}
+
+    profile_data = {}
+    if user.study_profile:
+        try:
+            profile_data = json.loads(user.study_profile)
+        except Exception:
+            profile_data = {}
+
+    return {
+        "onboarded": bool(user.study_onboarded),
+        "subjects": profile_data.get("subjects", []),
+        "weekly_target": profile_data.get("weekly_target", getattr(user, "study_target_hours_week", 15.0) or 15.0),
+        "target_score": profile_data.get("target_score", 85.0),
+        "preferred_time": profile_data.get("preferred_time", "Morning (08:00 - 11:30)"),
+        "exams": profile_data.get("exams", [])
+    }
+
+
+async def save_user_study_onboarding(user_id: Union[str, int], data: Dict[str, Any]) -> Optional[models.UserDoc]:
+    """Commit initial study onboarding questionnaire data and mark study_onboarded as True."""
+    user = await get_user(user_id)
+    if not user:
+        return None
+
+    user.study_onboarded = True
+    if "weekly_target" in data:
+        user.study_target_hours_week = float(data["weekly_target"])
+
+    user.study_profile = json.dumps(data)
+    await user.save()
+    await _sync_disk()
+    return user
+
+
+async def add_user_exam(user_id: Union[str, int], exam: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Add a new upcoming exam target with countdown tracking."""
+    user = await get_user(user_id)
+    if not user:
+        return None
+
+    profile_data = {}
+    if user.study_profile:
+        try:
+            profile_data = json.loads(user.study_profile)
+        except Exception:
+            profile_data = {}
+
+    exams = profile_data.get("exams", [])
+    import uuid
+    exam_item = {
+        "id": exam.get("id") or f"exam-{uuid.uuid4().hex[:8]}",
+        "subject": exam.get("subject", "General"),
+        "title": exam.get("title", "Exam / Test"),
+        "target_score": float(exam.get("target_score", 85.0)),
+        "actual_score": float(exam["actual_score"]) if exam.get("actual_score") is not None else None,
+        "exam_date": exam.get("exam_date", datetime.utcnow().strftime("%Y-%m-%d")),
+        "notes": exam.get("notes", "")
+    }
+    exams.append(exam_item)
+    profile_data["exams"] = exams
+    user.study_profile = json.dumps(profile_data)
+    await user.save()
+    await _sync_disk()
+    return exam_item
+
+
+async def delete_user_exam(user_id: Union[str, int], exam_id: str) -> bool:
+    """Delete or complete an upcoming exam."""
+    user = await get_user(user_id)
+    if not user or not user.study_profile:
+        return False
+
+    try:
+        profile_data = json.loads(user.study_profile)
+        exams = profile_data.get("exams", [])
+        new_exams = [e for e in exams if e.get("id") != exam_id]
+        if len(new_exams) != len(exams):
+            profile_data["exams"] = new_exams
+            user.study_profile = json.dumps(profile_data)
+            await user.save()
+            await _sync_disk()
+            return True
+    except Exception:
+        pass
+    return False
 
 
 # ──────────────────────────────────────────────

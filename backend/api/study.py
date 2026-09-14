@@ -49,16 +49,108 @@ async def get_study_forecast(
     readiness_data = study.predict_exam_readiness(
         score_records,
         target_score=target_score,
-        weekly_study_hours=habits_data.get("avg_weekly_hours", 18.0)
+        weekly_study_hours=habits_data.get("avg_weekly_hours", 0.0)
     )
 
     return {
         "trend_analysis": trend_data,
         "readiness_analysis": readiness_data,
-        "retention_health_score": habits_data.get("retention_health_score", 82),
-        "avg_weekly_hours": habits_data.get("avg_weekly_hours", 18.0),
-        "total_study_hours": habits_data.get("total_study_hours", 36.0)
+        "retention_health_score": habits_data.get("retention_health_score", 100),
+        "avg_weekly_hours": habits_data.get("avg_weekly_hours", 0.0),
+        "total_study_hours": habits_data.get("total_study_hours", 0.0)
     }
+
+
+@router.get("/onboarding-status/{user_id}")
+async def get_study_onboarding_status(user_id: str):
+    """
+    Check if the user has completed study & academic onboarding and retrieve their study profile.
+    """
+    user = await crud.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return await crud.get_user_study_profile(user_id)
+
+
+@router.post("/onboarding/{user_id}")
+async def submit_study_onboarding(user_id: str, payload: Dict[str, Any]):
+    """
+    Submit mandatory onboarding questionnaire, register subjects, and save to MongoDB.
+    """
+    user = await crud.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    updated_user = await crud.save_user_study_onboarding(user_id, payload)
+    if not updated_user:
+        raise HTTPException(status_code=500, detail="Failed to save onboarding data")
+
+    return {
+        "status": "success",
+        "message": "Study onboarding completed and persisted to MongoDB",
+        "study_onboarded": True,
+        "profile": await crud.get_user_study_profile(user_id)
+    }
+
+
+@router.get("/exams/{user_id}")
+async def get_study_exams(user_id: str):
+    """
+    Retrieve user's registered upcoming exams with days-remaining countdown.
+    """
+    user = await crud.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    prof = await crud.get_user_study_profile(user_id)
+    exams = prof.get("exams", [])
+
+    now_date = datetime.utcnow().date()
+    enriched_exams = []
+    for ex in exams:
+        item = dict(ex)
+        exam_date_str = item.get("exam_date")
+        days_left = None
+        if exam_date_str:
+            try:
+                ex_d = datetime.strptime(exam_date_str, "%Y-%m-%d").date()
+                days_left = (ex_d - now_date).days
+            except Exception:
+                days_left = None
+        item["days_left"] = days_left
+        enriched_exams.append(item)
+
+    enriched_exams.sort(key=lambda x: (x.get("days_left") is None, x.get("days_left") if x.get("days_left") is not None else 999))
+    return enriched_exams
+
+
+@router.post("/exams/{user_id}")
+async def add_study_exam_endpoint(user_id: str, exam: Dict[str, Any]):
+    """
+    Register a new upcoming exam in MongoDB.
+    """
+    user = await crud.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    saved_exam = await crud.add_user_exam(user_id, exam)
+    return saved_exam
+
+
+@router.delete("/exams/{user_id}/{exam_id}")
+async def delete_study_exam_endpoint(user_id: str, exam_id: str):
+    """
+    Remove or mark an exam completed.
+    """
+    user = await crud.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    deleted = await crud.delete_user_exam(user_id, exam_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Exam not found")
+    return {"status": "deleted", "exam_id": exam_id}
 
 
 @router.get("/plan/{user_id}")

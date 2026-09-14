@@ -198,6 +198,7 @@ User Telemetry Baseline:
 - Net Worth: ${t_data['net_worth']:,.2f} | Target Net Worth: ${t_data['target_net_worth']:,.2f} by age {t_data['target_retirement_age']}
 - Sleep: {active_logged_sleep:.1f}h/day vs {t_data['sleep_target']:.1f}h target (Sleep Debt: {t_data['sleep_debt']:.1f}h)
 - Screen Time: {t_data['avg_screen']:.1f}h/day | Active Days: {t_data['exercise_days_count']}d/wk
+- Academic & Study: Enrolled in {", ".join(t_data.get("onboarded_subjects") or t_data.get("recent_subjects") or ["General"])}, Study Pace: {t_data.get("study_hours_week", 0.0):.1f}h / {t_data.get("study_target_week", 15.0):.1f}h week, Upcoming Exams: {len(t_data.get("upcoming_exams", []))}
 - Goal: {goal_name} (${goal_current:,.2f} / ${goal_target:,.2f}, {goal_pct}% achieved)
 - Temporal & Physical Context: {local_date} ({local_time}), Timezone: {time_zone}, Location: {location}
 {'- When think_mode is active, begin with <think> following the 4 stages: Step 1 — Goal Definition, Step 2 — Telemetry Search & Gathered User Data, Step 3 — Multi-Criteria Analysis & Optimization, Step 4 — Formulated Strategic Execution Plan.' if think_mode else ''}"""
@@ -230,7 +231,43 @@ User Telemetry Baseline:
                 continue
 
     if not ai_reply:
-        ai_reply = f"""Based on your {user_info.get('role', 'professional').title()} persona baseline (Sleep: **{active_logged_sleep:.1f}h**, Monthly Surplus: **+${t_data['monthly_savings']:,.2f}**, Goal: **{goal_name}** at **{goal_pct}%**), your life simulation trajectory remains sound.
+        if any(w in p_lower for w in ["exam", "test", "quiz", "exams", "study trend", "academic trend", "how ready am i", "exam readiness"]):
+            exams = t_data.get("upcoming_exams", [])
+            subjects_str = ", ".join(t_data.get("onboarded_subjects") or t_data.get("recent_subjects") or ["Core Curriculum"])
+            weekly_study = float(t_data.get("study_hours_week", 0.0))
+            target_weekly = float(t_data.get("study_target_week", 15.0))
+
+            exam_lines = []
+            if exams:
+                for ex in exams:
+                    title = ex.get("title", "Exam")
+                    subj = ex.get("subject", "Coursework")
+                    date_str = ex.get("exam_date", "Upcoming")
+                    target_sc = ex.get("target_score", 85)
+                    exam_lines.append(f"- **{subj}** ({title}) on **{date_str}** | Target: **{target_sc:.0f}%**")
+            else:
+                exam_lines.append("- *No upcoming exams currently registered. You can add your next exam in the **Study & Academic > Exam & Trends** tab!*")
+
+            exams_formatted = "\n".join(exam_lines)
+            readiness_pct = min(98, max(20, round((weekly_study / max(1.0, target_weekly)) * 85)))
+
+            ai_reply = f"""### Academic Readiness & Exam Intelligence
+
+Here is your synthesized academic pacing and exam readiness analysis:
+
+| Metric | Current Value | Target Baseline | Status |
+| :--- | :--- | :--- | :--- |
+| **Active Subjects** | **{subjects_str}** | Enrolled Courses | Calibrated |
+| **Weekly Study Pace** | **{weekly_study:.1f}h** | **{target_weekly:.1f}h / week** | {round((weekly_study / max(1.0, target_weekly)) * 100)}% of Target |
+| **Readiness Probability** | **{readiness_pct}%** | >= 80% Target | {"On Track" if readiness_pct >= 75 else "Needs Focus"} |
+
+#### Registered Upcoming Exams:
+{exams_formatted}
+
+#### Strategic Optimization Recommendation:
+- To boost your retention and exam confidence, launch a **Pomodoro Focus Sprint** in the **Study Session** tab or ask me to schedule a targeted revision block in your Planner."""
+        else:
+            ai_reply = f"""Based on your {user_info.get('role', 'professional').title()} persona baseline (Sleep: **{active_logged_sleep:.1f}h**, Monthly Surplus: **+${t_data['monthly_savings']:,.2f}**, Goal: **{goal_name}** at **{goal_pct}%**), your life simulation trajectory remains sound.
 
 To explore specific optimizations, you can:
 - Ask to **simulate tradeoffs** (e.g. *"What if I study 4 more hours?"*)

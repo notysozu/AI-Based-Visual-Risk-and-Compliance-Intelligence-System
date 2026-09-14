@@ -22,14 +22,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BookOpen, Check, Dumbbell, MoonStar, Smartphone, Smile } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { BookOpen, Check, Dumbbell, MoonStar, Smartphone, Smile, GraduationCap, Clock, Flame, Award } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { AIIntelligenceCard } from "@/components/ai-intelligence-card";
 import { HabitDrawer, tooltipStyle } from "@/routes/dashboard";
 import { useGuard } from "@/lib/use-guard";
 import { baseline, focusIndex, useTwin, getRoleConfig } from "@/lib/twin-store";
-import { getAnalyticsSummary } from "@/lib/api";
+import { getAnalyticsSummary, getStudyAnalytics, getStudyRecords } from "@/lib/api";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({
@@ -53,6 +54,20 @@ function AnalyticsPage() {
   const [drawer, setDrawer] = useState(false);
   const [summary, setSummary] = useState<string>(p.lastAnalyticsSummary ?? "");
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [studyAnalytics, setStudyAnalytics] = useState<any>(null);
+  const [studyRecords, setStudyRecords] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!p.id) return;
+    getStudyAnalytics(p.id)
+      .then((data) => setStudyAnalytics(data))
+      .catch(() => {});
+    getStudyRecords(p.id)
+      .then((records) => {
+        if (Array.isArray(records)) setStudyRecords(records);
+      })
+      .catch(() => {});
+  }, [p.id]);
 
   // Request/Update the AI Analytics narrative based on the 12:00 PM internal time rule
   useEffect(() => {
@@ -378,6 +393,203 @@ function AnalyticsPage() {
               ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Academic & Study Analytics (MongoDB Synced) */}
+      <div className="panel mt-6 p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5 text-purple-400" />
+              <h3 className="font-bold text-base text-foreground">Academic Intelligence & Study Records</h3>
+              <Badge variant="outline" className="border-purple-500/30 text-purple-400 text-xs">
+                MongoDB Synced
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Synchronized telemetry from Pomodoro focus sessions, curriculum subjects, and cognitive depth ratings.
+            </p>
+          </div>
+        </div>
+
+        {/* 4 Study KPI Badges */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="p-4 rounded-xl bg-muted/40 border border-border flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+              <Clock className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Total Study Hours</p>
+              <p className="text-lg font-bold text-foreground">
+                {(studyAnalytics?.total_study_hours ?? 0).toFixed(1)} hrs
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-muted/40 border border-border flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+              <Flame className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Weekly Study Pace</p>
+              <p className="text-lg font-bold text-foreground">
+                {(studyAnalytics?.avg_weekly_hours ?? 0).toFixed(1)} hrs/wk
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-muted/40 border border-border flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <Award className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Avg Focus Rating</p>
+              <p className="text-lg font-bold text-foreground">
+                {studyAnalytics?.avg_focus_score ? `${studyAnalytics.avg_focus_score.toFixed(1)} / 10` : "N/A"}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-muted/40 border border-border flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Logged Sessions</p>
+              <p className="text-lg font-bold text-foreground">{studyRecords.length} Sessions</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Two Visual Panels: Chart + Subject Breakdown */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+          {/* Subject Allocation Chart */}
+          <div className="p-5 rounded-xl bg-muted/30 border border-border space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-semibold text-sm text-foreground">Subject Study Volume</h4>
+                <p className="text-xs text-muted-foreground">Hours dedicated across subjects</p>
+              </div>
+            </div>
+            <div className="h-56 w-full">
+              {studyAnalytics?.subjects && studyAnalytics.subjects.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={studyAnalytics.subjects.map((s: any) => ({
+                      subject: s.subject,
+                      hours: s.total_hours,
+                    }))}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="subject" stroke="#888888" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#888888" fontSize={11} tickLine={false} unit="h" />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Bar dataKey="hours" fill="#8b5cf6" radius={[6, 6, 0, 0]} name="Study Hours" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-xs text-muted-foreground space-y-1">
+                  <BookOpen className="h-6 w-6 opacity-40" />
+                  <p>No subject telemetry recorded yet.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Subject Mastery Breakdown */}
+          <div className="p-5 rounded-xl bg-muted/30 border border-border space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-semibold text-sm text-foreground">Curriculum Domain Breakdown</h4>
+                <p className="text-xs text-muted-foreground">Session count and cognitive focus ratings</p>
+              </div>
+            </div>
+            <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+              {studyAnalytics?.subjects && studyAnalytics.subjects.length > 0 ? (
+                studyAnalytics.subjects.map((s: any) => (
+                  <div
+                    key={s.subject}
+                    className="p-3 rounded-lg bg-card/60 border border-border/80 flex items-center justify-between"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{s.subject}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {s.sessions_count} sessions · {s.total_hours.toFixed(1)} hrs total
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="bg-purple-500/15 text-purple-300 border-purple-500/20 text-xs font-semibold">
+                      {s.avg_focus > 0 ? `${s.avg_focus.toFixed(1)} / 10 Focus` : "Fresh"}
+                    </Badge>
+                  </div>
+                ))
+              ) : (
+                <div className="py-8 text-center text-xs text-muted-foreground space-y-1">
+                  <p>No curriculum subjects registered yet.</p>
+                  <p className="text-[11px] text-muted-foreground/80">Complete onboarding in Study & Academic to begin.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* MongoDB Study Records Table */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between">
+            <h4 className="font-semibold text-sm text-foreground">Recent Academic Focus Sessions (MongoDB)</h4>
+            <span className="text-xs text-muted-foreground">{studyRecords.length} records</span>
+          </div>
+
+          {studyRecords.length > 0 ? (
+            <div className="overflow-x-auto rounded-xl border border-border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date / Time</TableHead>
+                    <TableHead>Subject</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Focus Depth</TableHead>
+                    <TableHead>Exam / Quiz Score</TableHead>
+                    <TableHead>Session Notes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {studyRecords.slice(0, 10).map((rec: any, idx: number) => (
+                    <TableRow key={rec.id || idx}>
+                      <TableCell className="font-mono text-xs">
+                        {rec.timestamp ? new Date(rec.timestamp).toLocaleDateString() : "Today"}
+                      </TableCell>
+                      <TableCell className="font-semibold text-purple-300">
+                        {rec.subject}
+                      </TableCell>
+                      <TableCell>{rec.duration_minutes} mins</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="text-xs bg-cyan-500/10 text-cyan-300">
+                          {rec.focus_score} / 10
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {rec.exam_score !== null && rec.exam_score !== undefined ? (
+                          <Badge variant="secondary" className="text-xs bg-emerald-500/10 text-emerald-300">
+                            {rec.exam_score}%
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                        {rec.notes || "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="p-6 text-center text-xs text-muted-foreground border border-dashed border-border rounded-xl">
+              No individual study session records found in MongoDB yet. Complete a Pomodoro session in the Study tab to log your first session.
+            </div>
+          )}
+        </div>
       </div>
 
       <HabitDrawer open={drawer} onOpenChange={setDrawer} onSave={addLog} />

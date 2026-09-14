@@ -16,12 +16,21 @@ def predict_performance_trend(records: List[Dict[str, Any]]) -> Dict[str, Any]:
     Analyzes historical study scores to calculate slope, trend direction,
     and projected score trajectories over upcoming 4 weeks.
     """
-    if not records or len(records) < 2:
+    if not records:
         return {
-            "trend": "insufficient data",
+            "trend": "no records",
             "slope": 0.0,
             "current_average": 0.0,
             "projected_scores": [],
+            "confidence": 0.0
+        }
+    if len(records) < 2:
+        score_val = float(records[0].get("performance_score") or (records[0].get("focus_score", 7) * 10))
+        return {
+            "trend": "insufficient data",
+            "slope": 0.0,
+            "current_average": round(score_val, 1),
+            "projected_scores": [round(score_val, 1)],
             "confidence": 0.3
         }
 
@@ -63,20 +72,19 @@ def predict_performance_trend(records: List[Dict[str, Any]]) -> Dict[str, Any]:
 def predict_exam_readiness(
     records: List[Dict[str, Any]],
     target_score: float = 85.0,
-    weekly_study_hours: float = 15.0
+    weekly_study_hours: float = 0.0
 ) -> Dict[str, Any]:
     """
     Calculates student's readiness probability (0.0 - 1.0) of hitting target exam/coursework score,
     projected final exam score, and recommended daily sprint minutes.
     """
     if not records:
-        readiness = min(0.95, max(0.2, (weekly_study_hours / 20.0) * 0.85))
         return {
-            "readiness_probability": round(readiness, 2),
-            "projected_score": round(min(98.0, 65.0 + (weekly_study_hours * 1.5)), 1),
-            "target_score": target_score,
-            "recommended_daily_minutes": 120,
-            "status": "on_track" if readiness >= 0.75 else "needs_focus"
+            "readiness_probability": 0.0 if weekly_study_hours <= 0 else min(0.95, round((weekly_study_hours / 20.0) * 0.7, 2)),
+            "projected_score": 0.0 if weekly_study_hours <= 0 else round(min(98.0, 60.0 + (weekly_study_hours * 1.5)), 1),
+            "target_score": float(target_score),
+            "recommended_daily_minutes": 90,
+            "status": "not_started"
         }
 
     scores = [float(r.get("performance_score") or (r.get("focus_score", 7) * 10)) for r in records]
@@ -114,29 +122,25 @@ async def analyze_study_habits(user_id: Union[str, int]) -> Dict[str, Any]:
     habit_records = await crud.get_habit_records(user_id, limit=100)
 
     if not study_records:
-        default_subjects = [
-            {"subject": "Computer Science", "total_hours": 12.5, "avg_focus": 8.4, "sessions_count": 8},
-            {"subject": "Mathematics & Algorithms", "total_hours": 10.0, "avg_focus": 7.8, "sessions_count": 6},
-            {"subject": "Database Systems", "total_hours": 7.5, "avg_focus": 8.1, "sessions_count": 5},
-            {"subject": "Web Engineering", "total_hours": 6.0, "avg_focus": 8.5, "sessions_count": 4}
+        user_prof = await crud.get_user_study_profile(user_id)
+        registered_subjects = user_prof.get("subjects", [])
+        subjects = [
+            {"subject": s, "total_hours": 0.0, "avg_focus": 0.0, "sessions_count": 0}
+            for s in registered_subjects
         ]
         return {
-            "total_study_hours": 36.0,
-            "avg_weekly_hours": 18.0,
-            "avg_focus_score": 8.2,
-            "retention_health_score": 84,
-            "subjects": default_subjects,
+            "total_study_hours": 0.0,
+            "avg_weekly_hours": 0.0,
+            "avg_focus_score": 0.0,
+            "retention_health_score": 100,
+            "subjects": subjects,
             "weekly_distribution": [
-                {"day": "Mon", "hours": 3.5, "focus": 8.2},
-                {"day": "Tue", "hours": 4.0, "focus": 8.5},
-                {"day": "Wed", "hours": 3.0, "focus": 7.9},
-                {"day": "Thu", "hours": 4.5, "focus": 8.6},
-                {"day": "Fri", "hours": 3.0, "focus": 7.8},
-                {"day": "Sat", "hours": 2.0, "focus": 8.0},
-                {"day": "Sun", "hours": 2.5, "focus": 8.1},
+                {"day": d, "hours": 0.0, "focus": 0.0}
+                for d in ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
             ],
-            "sleep_focus_correlation": 0.68,
-            "peak_focus_time": "09:00 - 11:30"
+            "sleep_focus_correlation": 0.0,
+            "peak_focus_time": user_prof.get("preferred_time") or "Morning (08:00 - 11:30)",
+            "status": "no_records"
         }
 
     # Subject aggregation
