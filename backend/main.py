@@ -55,6 +55,12 @@ app.include_router(chat.router)
 app.include_router(cache.router)
 app.include_router(planner.router)
 
+import os
+from fastapi.staticfiles import StaticFiles
+_wallpapers_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "public", "wallpapers")
+if os.path.exists(_wallpapers_dir):
+    app.mount("/wallpapers", StaticFiles(directory=_wallpapers_dir), name="wallpapers")
+
 
 @app.get("/")
 async def read_root():

@@ -6,12 +6,16 @@
 export type SoundscapeType =
   | "none"
   | "lofi"
+  | "piano"
   | "rain"
   | "cafe"
   | "binaural"
+  | "theta"
   | "library"
   | "campfire"
   | "forest"
+  | "ocean"
+  | "crickets"
   | "keyboard"
   | "pinknoise";
 
@@ -39,6 +43,13 @@ export const SOUNDSCAPES: SoundscapeInfo[] = [
     icon: "Music",
   },
   {
+    id: "piano",
+    name: "Dreamy Piano",
+    description: "Minimalist acoustic piano notes drifting in gentle reverberation",
+    category: "music",
+    icon: "Piano",
+  },
+  {
     id: "rain",
     name: "Rain & Thunder",
     description: "Atmospheric rainfall and gentle low thunder rumbles",
@@ -54,10 +65,17 @@ export const SOUNDSCAPES: SoundscapeInfo[] = [
   },
   {
     id: "binaural",
-    name: "40Hz Alpha Waves",
-    description: "Binaural frequency targeting peak cognitive focus",
+    name: "40Hz Gamma Waves",
+    description: "Binaural frequency targeting high-level cognitive binding",
     category: "ambient",
     icon: "Brain",
+  },
+  {
+    id: "theta",
+    name: "6Hz Theta Waves",
+    description: "Subtle binaural tone for meditative intuition and memory encoding",
+    category: "ambient",
+    icon: "Sparkles",
   },
   {
     id: "library",
@@ -81,6 +99,20 @@ export const SOUNDSCAPES: SoundscapeInfo[] = [
     icon: "Trees",
   },
   {
+    id: "ocean",
+    name: "Ocean Surf Waves",
+    category: "nature",
+    description: "Periodic rolling ocean waves and soothing shoreline tide",
+    icon: "Waves",
+  },
+  {
+    id: "crickets",
+    name: "Summer Night Crickets",
+    category: "nature",
+    description: "Peaceful twilight field crickets under starry skies",
+    icon: "Moon",
+  },
+  {
     id: "keyboard",
     name: "Mechanical ASMR",
     category: "asmr",
@@ -92,7 +124,7 @@ export const SOUNDSCAPES: SoundscapeInfo[] = [
     name: "Deep Pink Noise",
     category: "ambient",
     description: "Balanced 1/f frequency spectrum for deep memory consolidation",
-    icon: "Waves",
+    icon: "Sliders",
   },
 ];
 
@@ -150,7 +182,7 @@ class SoundscapeEngine {
           node.disconnect();
         }
       } catch {
-        // Safe tear down
+        // Safe teardown
       }
     });
     this.activeNodes = [];
@@ -170,6 +202,9 @@ class SoundscapeEngine {
       case "lofi":
         this.startLoFi(ctx);
         break;
+      case "piano":
+        this.startPiano(ctx);
+        break;
       case "rain":
         this.startRain(ctx);
         break;
@@ -179,6 +214,9 @@ class SoundscapeEngine {
       case "binaural":
         this.startBinaural(ctx);
         break;
+      case "theta":
+        this.startTheta(ctx);
+        break;
       case "library":
         this.startLibrary(ctx);
         break;
@@ -187,6 +225,12 @@ class SoundscapeEngine {
         break;
       case "forest":
         this.startForest(ctx);
+        break;
+      case "ocean":
+        this.startOcean(ctx);
+        break;
+      case "crickets":
+        this.startCrickets(ctx);
         break;
       case "keyboard":
         this.startKeyboard(ctx);
@@ -200,7 +244,7 @@ class SoundscapeEngine {
   public playChime() {
     const ctx = this.initContext();
     const now = ctx.currentTime;
-    const freqs = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6 chime
+    const freqs = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
 
     freqs.forEach((freq, idx) => {
       const osc = ctx.createOscillator();
@@ -263,7 +307,7 @@ class SoundscapeEngine {
     const interval = window.setInterval(playChord, 3800);
     this.activeNodes.push(interval);
 
-    // Subtle vinyl crackle
+    // Vinyl crackle
     const bufferSize = ctx.sampleRate * 2;
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
@@ -276,6 +320,41 @@ class SoundscapeEngine {
     crackle.connect(this.masterGain!);
     crackle.start();
     this.activeNodes.push(crackle);
+  }
+
+  private startPiano(ctx: AudioContext) {
+    // Pentatonic scale notes: C4, D4, E4, G4, A4, C5, D5, E5
+    const notes = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25];
+    const playNote = () => {
+      if (this.activeType !== "piano") return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(f, now);
+
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.12, now + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 2.8);
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(1200, now);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain!);
+
+      osc.start(now);
+      osc.stop(now + 3.0);
+      this.activeNodes.push(osc);
+    };
+
+    playNote();
+    const interval = window.setInterval(playNote, 1400);
+    this.activeNodes.push(interval);
   }
 
   private startRain(ctx: AudioContext) {
@@ -347,7 +426,33 @@ class SoundscapeEngine {
 
     const oscRight = ctx.createOscillator();
     oscRight.type = "sine";
-    oscRight.frequency.setValueAtTime(442, ctx.currentTime);
+    oscRight.frequency.setValueAtTime(472, ctx.currentTime); // 40Hz difference
+    const gainRight = ctx.createGain();
+    gainRight.gain.setValueAtTime(0.18, ctx.currentTime);
+    oscRight.connect(gainRight);
+    gainRight.connect(merger, 0, 1);
+
+    merger.connect(this.masterGain!);
+
+    oscLeft.start();
+    oscRight.start();
+    this.activeNodes.push(oscLeft, oscRight);
+  }
+
+  private startTheta(ctx: AudioContext) {
+    const merger = ctx.createChannelMerger(2);
+
+    const oscLeft = ctx.createOscillator();
+    oscLeft.type = "sine";
+    oscLeft.frequency.setValueAtTime(216, ctx.currentTime);
+    const gainLeft = ctx.createGain();
+    gainLeft.gain.setValueAtTime(0.18, ctx.currentTime);
+    oscLeft.connect(gainLeft);
+    gainLeft.connect(merger, 0, 0);
+
+    const oscRight = ctx.createOscillator();
+    oscRight.type = "sine";
+    oscRight.frequency.setValueAtTime(222, ctx.currentTime); // 6Hz difference
     const gainRight = ctx.createGain();
     gainRight.gain.setValueAtTime(0.18, ctx.currentTime);
     oscRight.connect(gainRight);
@@ -387,7 +492,6 @@ class SoundscapeEngine {
   }
 
   private startCampfire(ctx: AudioContext) {
-    // Low flame rumble
     const bufferSize = ctx.sampleRate * 2;
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
@@ -414,7 +518,6 @@ class SoundscapeEngine {
     rumble.start();
     this.activeNodes.push(rumble);
 
-    // Random crackle pulses
     const crackleInterval = window.setInterval(() => {
       if (this.activeType !== "campfire") return;
       if (Math.random() > 0.4) {
@@ -435,7 +538,6 @@ class SoundscapeEngine {
   }
 
   private startForest(ctx: AudioContext) {
-    // Rustling wind through pines
     const bufferSize = ctx.sampleRate * 3;
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
@@ -461,8 +563,72 @@ class SoundscapeEngine {
     this.activeNodes.push(wind);
   }
 
+  private startOcean(ctx: AudioContext) {
+    // Ocean surf: modulated lowpass brown noise
+    const bufferSize = ctx.sampleRate * 4;
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    let lastOut = 0.0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      output[i] = (lastOut + 0.02 * white) / 1.02;
+      lastOut = output[i];
+    }
+    const surf = ctx.createBufferSource();
+    surf.buffer = noiseBuffer;
+    surf.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(400, ctx.currentTime);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+
+    surf.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain!);
+    surf.start();
+    this.activeNodes.push(surf);
+
+    // Sine LFO for swell cycles
+    const lfo = ctx.createOscillator();
+    lfo.type = "sine";
+    lfo.frequency.setValueAtTime(0.12, ctx.currentTime); // 8-second wave period
+
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.setValueAtTime(0.25, ctx.currentTime);
+
+    lfo.connect(lfoGain);
+    lfoGain.connect(gain.gain);
+    lfo.start();
+    this.activeNodes.push(lfo);
+  }
+
+  private startCrickets(ctx: AudioContext) {
+    const cricketInterval = window.setInterval(() => {
+      if (this.activeType !== "crickets") return;
+      const now = ctx.currentTime;
+      for (let j = 0; j < 3; j++) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(4600 + Math.random() * 400, now + j * 0.04);
+
+        gain.gain.setValueAtTime(0, now + j * 0.04);
+        gain.gain.linearRampToValueAtTime(0.04, now + j * 0.04 + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + j * 0.04 + 0.03);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain!);
+        osc.start(now + j * 0.04);
+        osc.stop(now + j * 0.04 + 0.035);
+      }
+    }, 600 + Math.random() * 300);
+    this.activeNodes.push(cricketInterval);
+  }
+
   private startKeyboard(ctx: AudioContext) {
-    // Tactile ASMR mechanical keystroke simulator
     const clickInterval = window.setInterval(() => {
       if (this.activeType !== "keyboard") return;
       const now = ctx.currentTime;
@@ -483,7 +649,6 @@ class SoundscapeEngine {
   }
 
   private startPinkNoise(ctx: AudioContext) {
-    // Deep pink noise (1/f)
     const bufferSize = ctx.sampleRate * 2;
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
