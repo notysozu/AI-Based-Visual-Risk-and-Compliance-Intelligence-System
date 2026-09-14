@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,31 +10,30 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Settings,
   Video,
   Music,
   Clock,
-  Gamepad2,
-  Mic2,
-  Briefcase,
-  GraduationCap,
-  Trees,
   Check,
   Volume2,
+  Plus,
+  Trash2,
+  Upload,
+  FolderOpen,
   Sparkles,
 } from "lucide-react";
 import {
   SOUNDSCAPES,
   type SoundscapeType,
 } from "@/components/pomodoro-soundscapes";
-
-export type WallpaperCategory = "gamers" | "musicians" | "professionals" | "students" | "nature";
+import { toast } from "sonner";
 
 export interface WallpaperItem {
   id: string;
   name: string;
-  category: WallpaperCategory;
+  category: "nature" | "custom";
   type: "video";
   url: string;
   thumb: string;
@@ -42,196 +41,27 @@ export interface WallpaperItem {
   tag: string;
 }
 
-// 100% EXCLUSIVELY ANIMATED / LOOPING VIDEOS (All static images removed)
+// Exactly 1 Nature loop and 1 Earth loop (5-10 second loops)
 export const STUDY_WALLPAPERS: WallpaperItem[] = [
-  // GAMERS
   {
-    id: "gamer-cyberpunk-video",
-    name: "Cyberpunk Rainy Street",
-    category: "gamers",
-    type: "video",
-    url: "/wallpapers/gamer_cyberpunk.webm",
-    thumb: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=300&auto=format&fit=crop",
-    accent: "#a855f7",
-    tag: "Cyber Street 4K",
-  },
-  {
-    id: "gamer-jellyfish-video",
-    name: "Bioluminescent Neon Flow",
-    category: "gamers",
-    type: "video",
-    url: "https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4",
-    thumb: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?q=80&w=300&auto=format&fit=crop",
-    accent: "#06b6d4",
-    tag: "Neon Glow Loop",
-  },
-  {
-    id: "gamer-sintel-video",
-    name: "Cyber Cinematic Flow",
-    category: "gamers",
-    type: "video",
-    url: "https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4",
-    thumb: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300&auto=format&fit=crop",
-    accent: "#38bdf8",
-    tag: "Sci-Fi Ambience",
-  },
-  {
-    id: "gamer-stars-warp-video",
-    name: "Hyperspace Deep Cosmos",
-    category: "gamers",
-    type: "video",
-    url: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4",
-    thumb: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?q=80&w=300&auto=format&fit=crop",
-    accent: "#ec4899",
-    tag: "Cosmic Warp",
-  },
-
-  // SINGERS & MUSICIANS
-  {
-    id: "music-ocean-video",
-    name: "Pacific Shoreline Surf",
-    category: "musicians",
-    type: "video",
-    url: "/wallpapers/nature_ocean.mp4",
-    thumb: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=300&auto=format&fit=crop",
-    accent: "#38bdf8",
-    tag: "Harmonic Waves",
-  },
-  {
-    id: "music-flower-video",
-    name: "Acoustic Blossom Bloom",
-    category: "musicians",
-    type: "video",
-    url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-    thumb: "https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=300&auto=format&fit=crop",
-    accent: "#f59e0b",
-    tag: "Organic Growth",
-  },
-  {
-    id: "music-fireplace-video",
-    name: "Acoustic Fireplace Lounge",
-    category: "musicians",
-    type: "video",
-    url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-    thumb: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=300&auto=format&fit=crop",
-    accent: "#ef4444",
-    tag: "Warm Fire Glow",
-  },
-  {
-    id: "music-stars-video",
-    name: "Starlight Nocturne",
-    category: "musicians",
-    type: "video",
-    url: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4",
-    thumb: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=300&auto=format&fit=crop",
-    accent: "#8b5cf6",
-    tag: "Nocturne Melody",
-  },
-
-  // PROFESSIONALS
-  {
-    id: "pro-ocean-video",
-    name: "Executive Ocean Horizon",
-    category: "professionals",
-    type: "video",
-    url: "/wallpapers/nature_ocean.mp4",
-    thumb: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=300&auto=format&fit=crop",
-    accent: "#f59e0b",
-    tag: "Horizon Focus",
-  },
-  {
-    id: "pro-cyberpunk-video",
-    name: "Downtown Grid Stream",
-    category: "professionals",
-    type: "video",
-    url: "/wallpapers/gamer_cyberpunk.webm",
-    thumb: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?q=80&w=300&auto=format&fit=crop",
-    accent: "#38bdf8",
-    tag: "Metropolis Glow",
-  },
-  {
-    id: "pro-stars-video",
-    name: "Global Strategy Starfield",
-    category: "professionals",
-    type: "video",
-    url: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4",
-    thumb: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=300&auto=format&fit=crop",
-    accent: "#10b981",
-    tag: "Executive Vision",
-  },
-
-  // STUDENTS & LO-FI
-  {
-    id: "student-rain-video",
-    name: "Raindrops on Study Window",
-    category: "students",
-    type: "video",
-    url: "/wallpapers/gamer_cyberpunk.webm",
-    thumb: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=300&auto=format&fit=crop",
-    accent: "#06b6d4",
-    tag: "Cozy Rain Glass",
-  },
-  {
-    id: "student-fireplace-video",
-    name: "Warm Fireplace Reading",
-    category: "students",
-    type: "video",
-    url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-    thumb: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=300&auto=format&fit=crop",
-    accent: "#f59e0b",
-    tag: "Cozy Flame",
-  },
-  {
-    id: "student-ocean-video",
-    name: "Ocean Coast Study Retreat",
-    category: "students",
-    type: "video",
-    url: "/wallpapers/nature_ocean.mp4",
-    thumb: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=300&auto=format&fit=crop",
-    accent: "#8b5cf6",
-    tag: "Coastal Library",
-  },
-
-  // NATURE & COSMOS
-  {
-    id: "nature-ocean-video",
-    name: "Pacific Ocean Surf",
+    id: "nature-ocean-loop",
+    name: "Pacific Shoreline Nature",
     category: "nature",
     type: "video",
     url: "/wallpapers/nature_ocean.mp4",
     thumb: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=300&auto=format&fit=crop",
     accent: "#38bdf8",
-    tag: "Ocean Waves",
+    tag: "Nature Ocean",
   },
   {
-    id: "nature-stars-video",
-    name: "Deep Cosmic Night Stars",
+    id: "earth-orbit-loop",
+    name: "Planet Earth & Space",
     category: "nature",
     type: "video",
-    url: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4",
-    thumb: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?q=80&w=300&auto=format&fit=crop",
-    accent: "#a855f7",
-    tag: "Deep Cosmos",
-  },
-  {
-    id: "nature-flower-video",
-    name: "Alpine Flower Blooming",
-    category: "nature",
-    type: "video",
-    url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-    thumb: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=300&auto=format&fit=crop",
-    accent: "#10b981",
-    tag: "Mountain Flora",
-  },
-  {
-    id: "nature-rain-video",
-    name: "Forest Rain Droplets",
-    category: "nature",
-    type: "video",
-    url: "/wallpapers/gamer_cyberpunk.webm",
-    thumb: "https://images.unsplash.com/photo-1441974231531-c627a92ad1ab?q=80&w=300&auto=format&fit=crop",
-    accent: "#06b6d4",
-    tag: "Forest Rain",
+    url: "/wallpapers/earth_orbit.webm",
+    thumb: "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?q=80&w=300&auto=format&fit=crop",
+    accent: "#3b82f6",
+    tag: "Earth Orbit",
   },
 ];
 
@@ -269,38 +99,156 @@ export function StudySettingsDialog({
   onVolumeChange,
 }: StudySettingsDialogProps) {
   const [activeTab, setActiveTab] = useState<"wallpapers" | "timer" | "audio">("wallpapers");
-  const [categoryFilter, setCategoryFilter] = useState<"all" | WallpaperCategory>("all");
 
-  const filteredWallpapers = STUDY_WALLPAPERS.filter((wp) => {
-    if (categoryFilter !== "all" && wp.category !== categoryFilter) return false;
-    return true;
+  // Custom wallpapers list stored in localStorage (no database needed)
+  const [customWallpapers, setCustomWallpapers] = useState<WallpaperItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("study_custom_wallpapers");
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
   });
+
+  // Custom video adder state
+  const [customPath, setCustomPath] = useState("");
+  const [customTag, setCustomTag] = useState("");
+  const [customName, setCustomName] = useState("");
+  const [customThumb, setCustomThumb] = useState("");
+  const [isCapturingThumb, setIsCapturingThumb] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Generate thumbnail from video URL / blob
+  const extractThumbnail = (videoUrl: string) => {
+    setIsCapturingThumb(true);
+    const video = document.createElement("video");
+    video.crossOrigin = "anonymous";
+    video.src = videoUrl;
+    video.muted = true;
+    video.playsInline = true;
+    video.currentTime = 0.5;
+
+    video.onloadeddata = () => {
+      video.currentTime = Math.min(1, (video.duration || 2) / 2);
+    };
+
+    video.onseeked = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 320;
+        canvas.height = 180;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, 320, 180);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+          setCustomThumb(dataUrl);
+        }
+      } catch (e) {
+        // Fallback default thumb if canvas is restricted
+        setCustomThumb("https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=300&auto=format&fit=crop");
+      } finally {
+        setIsCapturingThumb(false);
+      }
+    };
+
+    video.onerror = () => {
+      setCustomThumb("https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=300&auto=format&fit=crop");
+      setIsCapturingThumb(false);
+    };
+  };
+
+  // Handle local file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const objectUrl = URL.createObjectURL(file);
+    setCustomPath(objectUrl);
+    const baseName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+    setCustomName(baseName.charAt(0).toUpperCase() + baseName.slice(1));
+    if (!customTag) setCustomTag("Custom Video");
+    extractThumbnail(objectUrl);
+    toast.success(`Selected local video: ${file.name}`);
+  };
+
+  // Handle manual path/URL input
+  const handleManualPathBlur = () => {
+    if (customPath.trim() && !customThumb) {
+      extractThumbnail(customPath.trim());
+    }
+  };
+
+  // Save custom video wallpaper
+  const handleAddCustomWallpaper = () => {
+    if (!customPath.trim()) {
+      toast.error("Please provide a video file or file path");
+      return;
+    }
+
+    const newItem: WallpaperItem = {
+      id: "custom-" + Date.now(),
+      name: customName.trim() || "Custom Video",
+      category: "custom",
+      type: "video",
+      url: customPath.trim(),
+      thumb:
+        customThumb ||
+        "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=300&auto=format&fit=crop",
+      accent: "#a855f7",
+      tag: customTag.trim() || "Custom Video",
+    };
+
+    const updated = [newItem, ...customWallpapers];
+    setCustomWallpapers(updated);
+    try {
+      localStorage.setItem("study_custom_wallpapers", JSON.stringify(updated));
+    } catch {}
+
+    onSelectWallpaper(newItem);
+    setCustomPath("");
+    setCustomTag("");
+    setCustomName("");
+    setCustomThumb("");
+    toast.success(`Custom wallpaper "${newItem.name}" added & applied!`);
+  };
+
+  // Delete custom video wallpaper
+  const handleDeleteCustomWallpaper = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const updated = customWallpapers.filter((w) => w.id !== id);
+    setCustomWallpapers(updated);
+    try {
+      localStorage.setItem("study_custom_wallpapers", JSON.stringify(updated));
+    } catch {}
+    if (activeWallpaper.id === id) {
+      onSelectWallpaper(STUDY_WALLPAPERS[0]);
+    }
+    toast.info("Custom video wallpaper removed");
+  };
+
+  const allDisplayWallpapers = [...STUDY_WALLPAPERS, ...customWallpapers];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl bg-zinc-950/85 border border-white/15 text-white backdrop-blur-2xl shadow-2xl p-0 gap-0 overflow-hidden max-h-[88vh] flex flex-col rounded-3xl">
-        {/* Apple macOS Window Titlebar with Traffic Light Dots */}
+        {/* Header: Titlebar with "Preferences" title (macOS Studio Theme removed) */}
         <div className="h-11 px-4 border-b border-white/10 bg-black/40 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 pr-3 border-r border-white/10">
-              <button
-                type="button"
-                onClick={() => onOpenChange(false)}
-                className="h-3 w-3 rounded-full bg-[#ff5f56] border border-[#e0443e] hover:opacity-80 transition-opacity"
-                title="Close"
-              />
-              <span className="h-3 w-3 rounded-full bg-[#ffbd2e] border border-[#dea123]" />
-              <span className="h-3 w-3 rounded-full bg-[#27c93f] border border-[#1aab29]" />
-            </div>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="h-3 w-3 rounded-full bg-emerald-500 hover:bg-emerald-400 transition-colors shadow-sm"
+              title="Close Preferences"
+            />
             <div className="flex items-center gap-1.5 text-xs font-semibold text-white/90">
               <Settings className="h-3.5 w-3.5 text-purple-400" />
-              <span>Study Cockpit Preferences</span>
+              <span>Preferences</span>
             </div>
           </div>
-          <span className="text-[11px] text-white/40 font-mono">macOS Studio Theme</span>
         </div>
 
-        {/* Apple Segmented Tab Selector */}
+        {/* Tab Selector */}
         <div className="p-3 border-b border-white/10 bg-black/30 flex justify-center">
           <div className="p-1 rounded-xl bg-white/10 border border-white/10 inline-flex gap-1 text-xs">
             <button
@@ -313,7 +261,7 @@ export function StudySettingsDialog({
               }`}
             >
               <Video className="h-3.5 w-3.5 text-purple-400" />
-              <span>Animated Video Loops</span>
+              <span>Video Wallpapers</span>
             </button>
             <button
               type="button"
@@ -343,126 +291,173 @@ export function StudySettingsDialog({
         </div>
 
         {/* Content area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* TAB 1: ANIMATED VIDEOS ONLY */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* TAB 1: WALLPAPERS (1 NATURE, 1 EARTH + CUSTOM VIDEO UPLOADER) */}
           {activeTab === "wallpapers" && (
-            <div className="space-y-4">
-              {/* Category buttons */}
-              <div className="flex flex-wrap items-center gap-1.5 pb-1">
-                <button
-                  type="button"
-                  onClick={() => setCategoryFilter("all")}
-                  className={`text-xs px-3 py-1 rounded-full border transition-all ${
-                    categoryFilter === "all"
-                      ? "bg-purple-600 text-white border-purple-500 font-bold"
-                      : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
-                  }`}
-                >
-                  All Videos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCategoryFilter("gamers")}
-                  className={`text-xs px-3 py-1 rounded-full border transition-all flex items-center gap-1.5 ${
-                    categoryFilter === "gamers"
-                      ? "bg-purple-600 text-white border-purple-500 font-bold"
-                      : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
-                  }`}
-                >
-                  <Gamepad2 className="h-3 w-3 text-pink-400" />
-                  <span>Gamers</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCategoryFilter("musicians")}
-                  className={`text-xs px-3 py-1 rounded-full border transition-all flex items-center gap-1.5 ${
-                    categoryFilter === "musicians"
-                      ? "bg-purple-600 text-white border-purple-500 font-bold"
-                      : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
-                  }`}
-                >
-                  <Mic2 className="h-3 w-3 text-amber-400" />
-                  <span>Singers & Musicians</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCategoryFilter("professionals")}
-                  className={`text-xs px-3 py-1 rounded-full border transition-all flex items-center gap-1.5 ${
-                    categoryFilter === "professionals"
-                      ? "bg-purple-600 text-white border-purple-500 font-bold"
-                      : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
-                  }`}
-                >
-                  <Briefcase className="h-3 w-3 text-cyan-400" />
-                  <span>Professionals</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCategoryFilter("students")}
-                  className={`text-xs px-3 py-1 rounded-full border transition-all flex items-center gap-1.5 ${
-                    categoryFilter === "students"
-                      ? "bg-purple-600 text-white border-purple-500 font-bold"
-                      : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
-                  }`}
-                >
-                  <GraduationCap className="h-3 w-3 text-emerald-400" />
-                  <span>Students & Lo-Fi</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCategoryFilter("nature")}
-                  className={`text-xs px-3 py-1 rounded-full border transition-all flex items-center gap-1.5 ${
-                    categoryFilter === "nature"
-                      ? "bg-purple-600 text-white border-purple-500 font-bold"
-                      : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
-                  }`}
-                >
-                  <Trees className="h-3 w-3 text-teal-400" />
-                  <span>Nature & Cosmos</span>
-                </button>
+            <div className="space-y-6">
+              {/* Wallpaper Grid */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-white/80">Available Video Loops</Label>
+                  <span className="text-[11px] text-white/50">{allDisplayWallpapers.length} Wallpapers</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  {allDisplayWallpapers.map((wp) => {
+                    const isActive = activeWallpaper.id === wp.id;
+                    const isCustom = wp.category === "custom";
+                    return (
+                      <button
+                        key={wp.id}
+                        type="button"
+                        onClick={() => onSelectWallpaper(wp)}
+                        className={`group relative rounded-2xl overflow-hidden border text-left transition-all h-36 flex flex-col justify-end p-3 ${
+                          isActive
+                            ? "ring-2 ring-purple-400 border-purple-400 shadow-xl scale-[1.02]"
+                            : "border-white/15 opacity-80 hover:opacity-100 hover:border-white/40"
+                        }`}
+                      >
+                        <img
+                          src={wp.thumb}
+                          alt={wp.name}
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+
+                        {/* Top badge with tag */}
+                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                          <span className="bg-purple-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md">
+                            <Video className="h-2.5 w-2.5" />
+                            <span>{wp.tag}</span>
+                          </span>
+                        </div>
+
+                        {/* Active check or Delete custom button */}
+                        <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
+                          {isCustom && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteCustomWallpaper(e, wp.id)}
+                              className="h-6 w-6 rounded-full bg-black/60 hover:bg-red-600/80 text-white/70 hover:text-white flex items-center justify-center transition-colors shadow"
+                              title="Delete Custom Video"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          )}
+                          {isActive && (
+                            <div className="h-6 w-6 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg">
+                              <Check className="h-3.5 w-3.5 stroke-[3]" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="relative z-10 space-y-0.5">
+                          <p className="text-xs font-bold text-white drop-shadow truncate">{wp.name}</p>
+                          <p className="text-[10px] text-white/70 truncate font-mono">
+                            {isCustom ? "Custom Video Loop" : "5–10s Loop"}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Looping Videos Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
-                {filteredWallpapers.map((wp) => {
-                  const isActive = activeWallpaper.id === wp.id;
-                  return (
-                    <button
-                      key={wp.id}
-                      type="button"
-                      onClick={() => onSelectWallpaper(wp)}
-                      className={`group relative rounded-2xl overflow-hidden border text-left transition-all h-36 flex flex-col justify-end p-3 ${
-                        isActive
-                          ? "ring-2 ring-purple-400 border-purple-400 shadow-xl scale-[1.02]"
-                          : "border-white/15 opacity-80 hover:opacity-100 hover:border-white/40"
-                      }`}
-                    >
-                      <img
-                        src={wp.thumb}
-                        alt={wp.name}
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+              {/* ADD CUSTOM VIDEO SECTION */}
+              <div className="p-4 rounded-2xl bg-black/40 border border-white/15 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-purple-400" />
+                  <h4 className="text-xs font-bold text-white">Add Custom Video Wallpaper</h4>
+                </div>
+                <p className="text-[11px] text-white/60">
+                  Select a local video file from your computer or enter a file path / URL. No database storage needed;
+                  we remember the path locally and capture a cover thumbnail.
+                </p>
 
-                      <div className="absolute top-2.5 left-2.5 flex items-center gap-1">
-                        <span className="bg-purple-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md">
-                          <Video className="h-2.5 w-2.5" /> Ambient Loop
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  accept="video/*"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* File / URL Input */}
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] text-white/80">Video File or Path / URL</Label>
+                    <div className="flex gap-1.5">
+                      <Input
+                        placeholder="e.g. C:\Videos\loop.mp4 or URL..."
+                        value={customPath}
+                        onChange={(e) => setCustomPath(e.target.value)}
+                        onBlur={handleManualPathBlur}
+                        className="h-8 bg-zinc-900 border-white/20 text-xs text-white"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="h-8 px-2.5 border-white/20 bg-white/10 hover:bg-white/20 text-white shrink-0 text-xs gap-1"
+                        title="Browse local video file"
+                      >
+                        <FolderOpen className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Browse</span>
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Desired Tag Input */}
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] text-white/80">Desired Tag / Category</Label>
+                    <Input
+                      placeholder="e.g. Synthwave, Gaming, Lo-Fi, Anime..."
+                      value={customTag}
+                      onChange={(e) => setCustomTag(e.target.value)}
+                      className="h-8 bg-zinc-900 border-white/20 text-xs text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Video Name & Thumbnail Preview */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                  <div className="flex items-center gap-3">
+                    {customThumb ? (
+                      <div className="relative w-20 h-12 rounded-lg overflow-hidden border border-purple-400 shadow-md shrink-0">
+                        <img src={customThumb} alt="Preview" className="w-full h-full object-cover" />
+                        <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-[8px] text-white px-1 rounded">
+                          Cover
                         </span>
                       </div>
-
-                      {isActive && (
-                        <div className="absolute top-2.5 right-2.5 h-6 w-6 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg">
-                          <Check className="h-3.5 w-3.5 stroke-[3]" />
-                        </div>
-                      )}
-
-                      <div className="relative z-10 space-y-0.5">
-                        <p className="text-xs font-bold text-white drop-shadow truncate">{wp.name}</p>
-                        <p className="text-[10px] text-white/70 truncate font-mono">{wp.tag}</p>
+                    ) : isCapturingThumb ? (
+                      <div className="w-20 h-12 rounded-lg border border-dashed border-white/20 flex items-center justify-center text-[9px] text-white/40 shrink-0">
+                        Generating...
                       </div>
-                    </button>
-                  );
-                })}
+                    ) : null}
+
+                    <div className="space-y-1">
+                      <Input
+                        placeholder="Wallpaper Title (optional)..."
+                        value={customName}
+                        onChange={(e) => setCustomName(e.target.value)}
+                        className="h-7 w-56 bg-zinc-900 border-white/20 text-[11px] text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    type="button"
+                    onClick={handleAddCustomWallpaper}
+                    disabled={!customPath.trim()}
+                    className="h-8 px-4 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold gap-1.5 shadow-md"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Apply Custom Video</span>
+                  </Button>
+                </div>
               </div>
             </div>
           )}

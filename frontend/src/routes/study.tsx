@@ -165,13 +165,21 @@ function StudyCockpitPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
 
-  // Restore wallpaper choice from localStorage
+  // Restore wallpaper choice from localStorage (including custom wallpapers)
   const [activeWallpaper, setActiveWallpaper] = useState<WallpaperItem>(() => {
     if (typeof window !== "undefined") {
       const savedId = localStorage.getItem("study_active_wallpaper_id");
       if (savedId) {
         const found = STUDY_WALLPAPERS.find((w) => w.id === savedId);
         if (found) return found;
+        try {
+          const custom = localStorage.getItem("study_custom_wallpapers");
+          if (custom) {
+            const list = JSON.parse(custom);
+            const foundCustom = list.find((w: any) => w.id === savedId);
+            if (foundCustom) return foundCustom;
+          }
+        } catch {}
       }
     }
     return STUDY_WALLPAPERS[0];
@@ -794,7 +802,7 @@ function StudyCockpitPage() {
           muted
           playsInline
           preload="auto"
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+          className="absolute inset-0 w-full h-full object-cover transform scale-110 transition-transform duration-700 pointer-events-none"
         >
           <source
             src={activeWallpaper.url}
@@ -821,14 +829,8 @@ function StudyCockpitPage() {
           isFullScreen && !menuHovered ? "-translate-y-full" : "translate-y-0"
         }`}
       >
-        {/* Left: macOS Apple Icon + Actions */}
+        {/* Left: macOS Actions */}
         <div className="flex items-center gap-2 text-xs">
-          {/* Apple Logo / Cockpit Badge */}
-          <span className="text-white/90 text-sm font-semibold pr-1.5 select-none tracking-tight flex items-center gap-1.5">
-            <span className="text-base leading-none"></span>
-            <span className="font-semibold text-[13px] hidden sm:inline text-white/95">Study Cockpit</span>
-          </span>
-
           <Button
             size="sm"
             variant="ghost"
@@ -846,18 +848,20 @@ function StudyCockpitPage() {
             className="h-6 px-2 text-[11px] text-white/80 hover:text-white hover:bg-white/10 rounded-md font-medium gap-1"
           >
             <Settings className="h-3 w-3 text-purple-300" />
-            <span>Settings</span>
+            <span>Preferences</span>
           </Button>
 
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setOnboardingOpen(true)}
-            className="h-6 px-2 text-[11px] text-white/80 hover:text-white hover:bg-white/10 rounded-md font-medium hidden md:flex items-center gap-1"
-          >
-            <HelpCircle className="h-3 w-3 text-cyan-300" />
-            <span>Curriculum</span>
-          </Button>
+          {(!userCurriculum || !userCurriculum.onboarded) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setOnboardingOpen(true)}
+              className="h-6 px-2 text-[11px] text-white/80 hover:text-white hover:bg-white/10 rounded-md font-medium hidden md:flex items-center gap-1"
+            >
+              <HelpCircle className="h-3 w-3 text-cyan-300" />
+              <span>Curriculum</span>
+            </Button>
+          )}
         </div>
 
         {/* Center: Apple Mac Style Live Time & Date */}
