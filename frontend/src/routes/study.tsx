@@ -224,7 +224,7 @@ function StudyCockpitPage() {
       const saved = localStorage.getItem("study_video_speed");
       if (saved !== null) {
         const parsed = parseFloat(saved);
-        if (!isNaN(parsed) && parsed >= 0.25 && parsed <= 3) return parsed;
+        if (!isNaN(parsed) && parsed >= 0.05 && parsed <= 3) return parsed;
       }
     }
     return 1.0;
@@ -308,24 +308,33 @@ function StudyCockpitPage() {
   }, []);
 
   // 2. Video Playback & Autoplay handling
+  const applyVideoSpeed = useCallback((speed: number) => {
+    if (videoRef.current) {
+      try {
+        videoRef.current.defaultPlaybackRate = speed;
+        videoRef.current.playbackRate = speed;
+      } catch {}
+    }
+  }, []);
+
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.defaultMuted = true;
       videoRef.current.muted = true;
+      videoRef.current.defaultPlaybackRate = videoSpeed;
       videoRef.current.playbackRate = videoSpeed;
       videoRef.current.load();
       const p = videoRef.current.play();
       if (p !== undefined) {
         p.catch(() => {});
       }
+      applyVideoSpeed(videoSpeed);
     }
-  }, [activeWallpaper.url]);
+  }, [activeWallpaper.url, videoSpeed, applyVideoSpeed]);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = videoSpeed;
-    }
-  }, [videoSpeed]);
+    applyVideoSpeed(videoSpeed);
+  }, [videoSpeed, applyVideoSpeed]);
 
   // Cleanup on unmount (sound stops, wallpaper stops)
   useEffect(() => {
@@ -630,12 +639,11 @@ function StudyCockpitPage() {
   // Video playback speed change
   const handleVideoSpeedChange = (speed: number) => {
     setVideoSpeed(speed);
-    if (videoRef.current) {
-      videoRef.current.playbackRate = speed;
-    }
+    applyVideoSpeed(speed);
     try {
       localStorage.setItem("study_video_speed", String(speed));
     } catch {}
+    toast.success(`Video speed set to ${speed.toFixed(2)}x`);
   };
 
   // Save study session to backend
@@ -846,14 +854,42 @@ function StudyCockpitPage() {
         <video
           ref={videoRef}
           key={activeWallpaper.url}
+          src={activeWallpaper.url}
           autoPlay
           loop
           muted
           playsInline
           preload="auto"
-          onLoadedMetadata={() => {
-            if (videoRef.current) {
-              videoRef.current.playbackRate = videoSpeed;
+          onPlay={(e) => {
+            const v = e.currentTarget;
+            v.defaultPlaybackRate = videoSpeed;
+            v.playbackRate = videoSpeed;
+          }}
+          onPlaying={(e) => {
+            const v = e.currentTarget;
+            v.defaultPlaybackRate = videoSpeed;
+            v.playbackRate = videoSpeed;
+          }}
+          onLoadedMetadata={(e) => {
+            const v = e.currentTarget;
+            v.defaultPlaybackRate = videoSpeed;
+            v.playbackRate = videoSpeed;
+          }}
+          onCanPlay={(e) => {
+            const v = e.currentTarget;
+            v.defaultPlaybackRate = videoSpeed;
+            v.playbackRate = videoSpeed;
+          }}
+          onSeeked={(e) => {
+            const v = e.currentTarget;
+            v.defaultPlaybackRate = videoSpeed;
+            v.playbackRate = videoSpeed;
+          }}
+          onTimeUpdate={(e) => {
+            const v = e.currentTarget;
+            if (Math.abs(v.playbackRate - videoSpeed) > 0.01) {
+              v.defaultPlaybackRate = videoSpeed;
+              v.playbackRate = videoSpeed;
             }
           }}
           style={{
