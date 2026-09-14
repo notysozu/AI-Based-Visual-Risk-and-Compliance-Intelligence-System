@@ -728,8 +728,6 @@ function StudyCockpitPage() {
     toast.success("Task added to Today's Planner!");
   };
 
-  if (!ok) return null;
-
   // Available subjects
   const availableSubjects = useMemo(() => {
     const list: string[] = [];
@@ -781,6 +779,8 @@ function StudyCockpitPage() {
     { day: "Sat", hours: 0.0, focus: 0.0 },
     { day: "Sun", hours: 0.0, focus: 0.0 },
   ];
+
+  if (!ok) return null;
 
   return (
     <div className="h-screen w-screen overflow-hidden relative select-none bg-black text-white flex flex-col font-sans">
