@@ -1,13 +1,22 @@
-"""
-test_live_mongodb_e2e.py — Comprehensive End-to-End Test Suite for Visual Risk AI
-Tests all features from Conversational AI to Settings Data against the live MongoDB Atlas cluster and FastAPI backend.
-"""
+import os
 import sys
 import time
 import json
 import requests
 
-BASE_URL = "http://127.0.0.1:8000"
+def discover_base_url():
+    if "BASE_URL" in os.environ:
+        return os.environ["BASE_URL"]
+    for port in [8001, 8000]:
+        try:
+            r = requests.get(f"http://127.0.0.1:{port}/health", timeout=0.8)
+            if r.status_code == 200:
+                return f"http://127.0.0.1:{port}"
+        except Exception:
+            pass
+    return "http://127.0.0.1:8001"
+
+BASE_URL = discover_base_url()
 TS = int(time.time())
 TEST_USERNAME = f"live_user_{TS}"
 TEST_EMAIL = f"live_user_{TS}@testvrci.com"
