@@ -42,7 +42,12 @@ flowchart TB
             PlanAgent["PlannerAgent (add_task)<br/>• Single Task Time Parser"]:::aiStyle
             StudyAgent["StudyAgent (log_study)<br/>• Coursework Deep Work Log"]:::aiStyle
             HabitAgent["HabitAgent (log_habits_batch)<br/>• Sleep, Exercise, Screen, Mood"]:::aiStyle
-            AgentRouter --> GoalAgent & FinAgent & SetAgent & PlanAgent & StudyAgent & HabitAgent
+            AgentRouter --> GoalAgent
+            AgentRouter --> FinAgent
+            AgentRouter --> SetAgent
+            AgentRouter --> PlanAgent
+            AgentRouter --> StudyAgent
+            AgentRouter --> HabitAgent
         end
 
         subgraph Pipeline["4-Stage Agentic Reasoning Pipeline"]
@@ -71,8 +76,8 @@ flowchart TB
     end
 
     subgraph Persistence["4. MongoDB Persistence Layer"]
-        DB[(MongoDB Document Database: Local / Atlas<br/>• UserDoc Collection (telemetry, tasks_json, autonomy_mode)<br/>• HabitRecordDoc Collection<br/>• StudyRecordDoc Collection<br/>• FinancialRecordDoc Collection<br/>• ChatSessionDoc with Embedded Messages<br/>• UserSuggestionDoc Collection)]:::dbStyle
-        Cache[(Intelligence Cache<br/>• 12:00 PM Noon AI Reflection<br/>• Monte Carlo Wealth Projections)]:::dbStyle
+        DB[("MongoDB Document Database: Local / Atlas<br/>• UserDoc Collection (telemetry, tasks_json, autonomy_mode)<br/>• HabitRecordDoc Collection<br/>• StudyRecordDoc Collection<br/>• FinancialRecordDoc Collection<br/>• ChatSessionDoc with Embedded Messages<br/>• UserSuggestionDoc Collection")]:::dbStyle
+        Cache[("Intelligence Cache<br/>• 12:00 PM Noon AI Reflection<br/>• Monte Carlo Wealth Projections")]:::dbStyle
     end
 
     %% Connections
@@ -91,14 +96,14 @@ flowchart TB
     AutoPlanEngine --> LLMProviders
     SimRouter --> MathModels
 
-    AuthRouter <--> DB
-    UserRouter <--> DB
-    ChatRouter <--> DB
-    PlanRouter <--> DB
-    SimRouter <--> DB
-    RecRouter <--> DB
-    SimRouter <--> Cache
-    Analytics <--> Cache
+    AuthRouter --- DB
+    UserRouter --- DB
+    ChatRouter --- DB
+    PlanRouter --- DB
+    SimRouter --- DB
+    RecRouter --- DB
+    SimRouter --- Cache
+    Analytics --- Cache
 ```
 
 ---
@@ -346,8 +351,13 @@ flowchart LR
     S3["data/mongodb_persistence.json (Atomic Replace)"]
   end
 
-  O1 & O2 & O3 & O4 --> B1
-  B1 --> S1 --> S2 --> S3
+  O1 --> B1
+  O2 --> B1
+  O3 --> B1
+  O4 --> B1
+  B1 --> S1
+  S1 --> S2
+  S2 --> S3
 ```
 
 ### Key Architectural Capabilities:
