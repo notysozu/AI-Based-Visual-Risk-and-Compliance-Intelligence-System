@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   User,
@@ -120,14 +120,18 @@ function SettingsPage() {
   const [simulationTrials, setSimulationTrials] = useState(500);
   const [suggestionIntensity, setSuggestionIntensity] = useState<"conservative" | "balanced" | "proactive">("proactive");
 
-  if (!ok) return null;
-
-  const cfg = getRoleConfig(draft.role);
+  useEffect(() => {
+    setDraft(state.profile);
+  }, [state.profile]);
 
   // Calculate live changes and financial metrics
   const hasChanges = useMemo(() => {
     return JSON.stringify(draft) !== JSON.stringify(state.profile);
   }, [draft, state.profile]);
+
+  if (!ok) return null;
+
+  const cfg = getRoleConfig(draft.role);
 
   const monthlySavings = Math.max(0, draft.monthlyIncome - draft.monthlyExpenses);
   const calculatedSavingsRate = draft.monthlyIncome > 0 ? Math.round((monthlySavings / draft.monthlyIncome) * 100) : 0;
