@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
-from fastapi import APIRouter, HTTPException
-from typing import Dict, Any, List
+from fastapi import APIRouter, HTTPException, Body
+from typing import Dict, Any, List, Optional
 from database import crud, schemas
 from ai_engine.forecasting import study
 from ai_engine.llm_integration.advisor import generate_optimized_study_plan
@@ -175,12 +175,15 @@ async def get_study_plan_endpoint(user_id: str):
 @router.post("/generate-plan/{user_id}", response_model=schemas.StudyPlanResponse)
 async def generate_study_plan_endpoint(
     user_id: str,
-    payload: schemas.StudyPlanRequest
+    payload: Optional[schemas.StudyPlanRequest] = Body(default=None)
 ):
     """
     Generate an AI-optimized 7-day study plan with Pomodoro sprint blocks,
     prioritized subject allocations, and spaced repetition intervals.
     """
+    if payload is None:
+        payload = schemas.StudyPlanRequest()
+
     user = await crud.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

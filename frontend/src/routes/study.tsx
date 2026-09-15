@@ -529,7 +529,7 @@ function StudyCockpitPage() {
 
     getSavedStudyPlan(p.id)
       .then((data) => {
-        if (data && data.plan) setStudyPlan(data.plan);
+        if (data) setStudyPlan(data.plan || data);
       })
       .catch(() => {});
 
@@ -803,13 +803,14 @@ function StudyCockpitPage() {
     if (!p.id) return;
     setIsGeneratingPlan(true);
     try {
-      const plan = await generateStudyPlan(p.id);
+      const plan = await generateStudyPlan(p.id, { force_refresh: true });
       if (plan) {
-        setStudyPlan(plan);
+        setStudyPlan(plan.plan || plan);
         toast.success("AI synthesized personalized study schedule!");
       }
-    } catch {
-      toast.error("Failed to generate AI study plan");
+    } catch (err: any) {
+      console.error("Failed to generate AI study plan:", err);
+      toast.error(err?.message || "Failed to generate AI study plan");
     } finally {
       setIsGeneratingPlan(false);
     }
@@ -818,7 +819,7 @@ function StudyCockpitPage() {
   // Adopt AI sprint into planner
   const handleAdoptSprint = (sprintKey: string, block: any) => {
     addTask({
-      title: `${block.subject || "Study"}: ${block.activity || "Focus Session"}`,
+      title: `${block.subject || "Study"}: ${block.task_title || block.activity || block.focus_type || "Focus Session"}`,
       start: block.start_time || "10:00",
       minutes: block.duration_minutes || 45,
       category: "study",
@@ -826,7 +827,7 @@ function StudyCockpitPage() {
       date: today(),
     });
     setAdoptedSprints((prev) => new Set(prev).add(sprintKey));
-    toast.success(`Adopted "${block.subject}" into Today's Planner!`);
+    toast.success(`Adopted "${block.subject || "Study"}" into Today's Planner!`);
   };
 
   // Adopt entire day into planner
@@ -834,7 +835,7 @@ function StudyCockpitPage() {
     if (!dayPlan.blocks) return;
     dayPlan.blocks.forEach((b: any) => {
       addTask({
-        title: `${b.subject || "Study"}: ${b.activity || "Focus Session"}`,
+        title: `${b.subject || "Study"}: ${b.task_title || b.activity || b.focus_type || "Focus Session"}`,
         start: b.start_time || "10:00",
         minutes: b.duration_minutes || 45,
         category: "study",
@@ -849,7 +850,7 @@ function StudyCockpitPage() {
       });
       return next;
     });
-    toast.success(`All sprints for ${dayPlan.day_name || `Day ${dayIndex + 1}`} adopted into Planner!`);
+    toast.success(`All sprints for ${dayPlan.day_name || dayPlan.day || `Day ${dayIndex + 1}`} adopted into Planner!`);
   };
 
   // Quick Task form submit
@@ -1495,73 +1496,86 @@ function StudyCockpitPage() {
                   </Button>
                 </div>
 
-                {studyPlan && studyPlan.schedule ? (
-                  <div className="space-y-3">
-                    {studyPlan.schedule.map((day: any, dIdx: number) => {
-                      return (
-                        <div key={dIdx} className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-2">
-                          <div className="flex items-center justify-between pb-1 border-b border-white/5">
-                            <span className="text-xs font-bold text-purple-300">
-                              {day.day_name || `Day ${dIdx + 1}`}
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleAdoptDay(dIdx, day)}
-                              className="h-5 px-1.5 text-[10px] text-purple-300 hover:text-white"
-                            >
-                              + Adopt All
-                            </Button>
+                {(() => {
+                  const schedule = studyPlan?.daily_plans || studyPlan?.schedule;
+                  if (schedule && Array.isArray(schedule) && schedule.length > 0) {
+                    return (
+                      <div className="space-y-3">
+                        {studyPlan.weekly_goal && (
+                          <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/20 text-[11px] text-purple-200">
+                            <span className="font-bold text-purple-300">Weekly Goal: </span>
+                            {studyPlan.weekly_goal}
                           </div>
-
-                          <div className="space-y-1.5">
-                            {(day.blocks || []).map((b: any, bIdx: number) => {
-                              const sprintKey = `${dIdx}-${bIdx}`;
-                              const isAdopted = adoptedSprints.has(sprintKey);
-                              return (
-                                <div
-                                  key={bIdx}
-                                  className="p-2 rounded-lg bg-black/50 border border-white/5 flex items-center justify-between text-xs"
+                        )}
+                        {schedule.map((day: any, dIdx: number) => {
+                          const blocks = day.blocks || [];
+                          return (
+                            <div key={dIdx} className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                              <div className="flex items-center justify-between pb-1 border-b border-white/5">
+                                <span className="text-xs font-bold text-purple-300">
+                                  {day.day_name || day.day || `Day ${dIdx + 1}`}
+                                </span>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleAdoptDay(dIdx, day)}
+                                  className="h-5 px-1.5 text-[10px] text-purple-300 hover:text-white"
                                 >
-                                  <div>
-                                    <p className="font-semibold text-white/90 truncate">{b.subject || "Study"}</p>
-                                    <p className="text-[10px] text-white/50">
-                                      {b.start_time || "14:00"} · {b.duration_minutes || 45}m
-                                    </p>
-                                  </div>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleAdoptSprint(sprintKey, b)}
-                                    disabled={isAdopted}
-                                    className={`h-6 px-2 text-[10px] ${
-                                      isAdopted ? "text-emerald-400 font-bold" : "text-purple-300 hover:text-white"
-                                    }`}
-                                  >
-                                    {isAdopted ? "Added" : "+ Add"}
-                                  </Button>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="p-6 text-center text-xs text-white/50 border border-dashed border-white/10 rounded-xl space-y-2">
-                    <Sparkles className="h-6 w-6 mx-auto opacity-40 text-purple-400" />
-                    <p>No active AI study schedule.</p>
-                    <Button
-                      size="sm"
-                      onClick={handleGeneratePlan}
-                      disabled={isGeneratingPlan}
-                      className="bg-purple-600 text-white text-xs h-8 px-4"
-                    >
-                      Synthesize Schedule
-                    </Button>
-                  </div>
-                )}
+                                  + Adopt All
+                                </Button>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                {blocks.map((b: any, bIdx: number) => {
+                                  const sprintKey = `${dIdx}-${bIdx}`;
+                                  const isAdopted = adoptedSprints.has(sprintKey);
+                                  return (
+                                    <div
+                                      key={bIdx}
+                                      className="p-2 rounded-lg bg-black/50 border border-white/5 flex items-center justify-between text-xs"
+                                    >
+                                      <div className="min-w-0 pr-2">
+                                        <p className="font-semibold text-white/90 truncate">{b.subject || "Study"}</p>
+                                        <p className="text-[10px] text-white/50 truncate">
+                                          {b.task_title || b.activity || b.focus_type || "Focus Session"} · {b.start_time || "14:00"} · {b.duration_minutes || 45}m
+                                        </p>
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleAdoptSprint(sprintKey, b)}
+                                        disabled={isAdopted}
+                                        className={`h-6 px-2 text-[10px] shrink-0 ${
+                                          isAdopted ? "text-emerald-400 font-bold" : "text-purple-300 hover:text-white"
+                                        }`}
+                                      >
+                                        {isAdopted ? "Added" : "+ Add"}
+                                      </Button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="p-6 text-center text-xs text-white/50 border border-dashed border-white/10 rounded-xl space-y-2">
+                      <Sparkles className="h-6 w-6 mx-auto opacity-40 text-purple-400" />
+                      <p>No active AI study schedule.</p>
+                      <Button
+                        size="sm"
+                        onClick={handleGeneratePlan}
+                        disabled={isGeneratingPlan}
+                        className="bg-purple-600 text-white text-xs h-8 px-4"
+                      >
+                        {isGeneratingPlan ? "Synthesizing..." : "Synthesize Schedule"}
+                      </Button>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
