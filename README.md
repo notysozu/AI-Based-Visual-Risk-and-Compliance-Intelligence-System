@@ -115,8 +115,8 @@ Academic productivity cockpit featuring AI-synthesized 7-day Pomodoro sprint sch
 Governance center providing 3-tier autonomy controls (Manual Review, Semi-Autonomous with Undo Window, Fully Autonomous), Think Mode telemetry toggles, and instant persona switching.
 
 <p align="center">
-  <a href="docs/images/08_settings.png" target="_blank">
-    <img src="docs/images/08_settings.png" alt="Visual Risk AI - Settings & Autonomy Center" width="100%" />
+  <a href="docs/images/08_settings_governance.png" target="_blank">
+    <img src="docs/images/08_settings_governance.png" alt="Visual Risk AI - Settings & Autonomy Center" width="100%" />
   </a>
 </p>
 
