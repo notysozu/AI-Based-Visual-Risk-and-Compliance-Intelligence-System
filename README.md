@@ -19,37 +19,117 @@
 
 ---
 
-## Interactive Visual Interface Tour
+## Visual Interface & Dashboard Showcase
 
-```mermaid
-flowchart TD
-  subgraph PublicAndAuth["Onboarding & Security Interface"]
-    P1["1. Landing Page<br/>• Value Proposition & 5 Life-Stage Personas"]
-    P2["2. Sign Up Page<br/>• Argon2id/Bcrypt & Unique Token Dispatch"]
-    P3["3. Login Page<br/>• Dual Identifier (Username/Email) & Refresh Token Cookie"]
-  end
+Explore the core modules of Visual Risk AI. Click on any screenshot to inspect the full-resolution image in a new tab:
 
-  subgraph CoreTwinIntelligence["Core Twin Intelligence Modules"]
-    P4["4. Telemetry Dashboard (/dashboard)<br/>• Real-Time Health Index, Financial Surplus & Milestones"]
-    P5["5. Visual Risk Copilot (/chat)<br/>• 4-Stage Reasoning Chain, Voice STT & 1-Click Action Proposals"]
-    P6["6. Decision Sandbox (/simulator)<br/>• Dual Scenario A vs B Modeling & Biological Elasticity"]
-  end
+### 01. Landing & Persona Portal
+The primary onboarding gateway introducing the 5 life-stage demographic personas (Student, Professional, Freelancer, Tech Lead, Custom) with immediate baseline telemetry configuration.
 
-  subgraph PlanningAndAnalytics["Autonomous Planning & Predictive Analytics"]
-    P7["7. Wealth Planner (/wealth)<br/>• 500-Run Stochastic Monte Carlo & Confidence Bands"]
-    P8["8. Habit Analytics (/analytics)<br/>• Biometric Correlations & Automated 12:00 PM AI Reflections"]
-    P9["9. Autonomous Daily Planner (/planner)<br/>• Circadian Schedule Optimization & Morning Briefings"]
-    P10["10. Settings & Autonomy Center (/settings)<br/>• 3-Tier Governance, Think Mode & Persona Switcher"]
-  end
+<p align="center">
+  <a href="docs/images/01_landing.png" target="_blank">
+    <img src="docs/images/01_landing.png" alt="Visual Risk AI - Landing Page" width="100%" />
+  </a>
+</p>
 
-  P1 --> P2 --> P3 --> P4
-  P4 --> P5
-  P4 --> P6
-  P4 --> P7
-  P4 --> P8
-  P4 --> P9
-  P4 --> P10
-```
+---
+
+### 02. Living Digital Twin Dashboard (`/dashboard`)
+The central telemetry command center displaying real-time cognitive Vitality & Health Index gauges, financial cashflow surplus, today's circadian schedule, and long-term milestone progress.
+
+<p align="center">
+  <a href="docs/images/02_dashboard.png" target="_blank">
+    <img src="docs/images/02_dashboard.png" alt="Visual Risk AI - Living Digital Twin Dashboard" width="100%" />
+  </a>
+</p>
+
+---
+
+### 03. Visual Risk Copilot & Multi-Agent Chat (`/chat`)
+Conversational agentic intelligence powered by a specialized Multi-Agent Router and 6 Domain Sub-Agents. Includes 4-stage transparent reasoning disclosure, speech-to-text voice input, and 1-click database mutation execution.
+
+<p align="center">
+  <a href="docs/images/03_copilot_chat.png" target="_blank">
+    <img src="docs/images/03_copilot_chat.png" alt="Visual Risk AI - Visual Risk Copilot" width="100%" />
+  </a>
+</p>
+
+---
+
+### 04. Decision Sandbox & What-If Tradeoff Simulator (`/simulator`)
+Side-by-side comparative simulation comparing Scenario A vs Scenario B over 5 to 40-year horizons. Models biological feedback loops, sleep deficit penalties, and net worth opportunity costs in real time.
+
+<p align="center">
+  <a href="docs/images/04_simulator.png" target="_blank">
+    <img src="docs/images/04_simulator.png" alt="Visual Risk AI - Decision Sandbox Simulator" width="100%" />
+  </a>
+</p>
+
+---
+
+### 05. Wealth Engine & Stochastic Monte Carlo Simulation (`/wealth`)
+500-run Geometric Brownian Motion simulations generating p10, p50 (median), and p90 confidence bands with real-time CAGR loss calculations and inflation-adjusted milestone probabilities.
+
+<p align="center">
+  <a href="docs/images/05_wealth_planner.png" target="_blank">
+    <img src="docs/images/05_wealth_planner.png" alt="Visual Risk AI - Wealth Planner Monte Carlo" width="100%" />
+  </a>
+</p>
+
+---
+
+### 06. Habit Analytics & Circadian Health Index (`/analytics`)
+Biometric and habit correlation telemetry mapping sleep duration, exercise, and study volume against cognitive focus scores. Automatically caches daily reflections and health recommendations at 12:00 PM.
+
+<p align="center">
+  <a href="docs/images/06_habit_analytics.png" target="_blank">
+    <img src="docs/images/06_habit_analytics.png" alt="Visual Risk AI - Habit Analytics" width="100%" />
+  </a>
+</p>
+
+---
+
+### 07. Autonomous Daily Planner (`/planner`)
+Circadian schedule synthesis aligning deep work focus sprints with peak cognitive cortisol windows. Supports Morning Intelligence briefings and 1-click AI suggestion adoption.
+
+<p align="center">
+  <a href="docs/images/07_task_planner.png" target="_blank">
+    <img src="docs/images/07_task_planner.png" alt="Visual Risk AI - Autonomous Daily Planner" width="100%" />
+  </a>
+</p>
+
+---
+
+### 08. Study Cockpit & Academic Intelligence (`/study`)
+Academic productivity cockpit featuring AI-synthesized 7-day Pomodoro sprint schedules, spaced repetition algorithms, exam target readiness curves, and loop-locked ambient video soundscapes.
+
+<p align="center">
+  <a href="docs/images/11_study_cockpit.png" target="_blank">
+    <img src="docs/images/11_study_cockpit.png" alt="Visual Risk AI - Study Cockpit" width="100%" />
+  </a>
+</p>
+
+---
+
+### 09. Settings & 3-Tier Autonomy Governance (`/settings`)
+Governance center providing 3-tier autonomy controls (Manual Review, Semi-Autonomous with Undo Window, Fully Autonomous), Think Mode telemetry toggles, and instant persona switching.
+
+<p align="center">
+  <a href="docs/images/08_settings.png" target="_blank">
+    <img src="docs/images/08_settings.png" alt="Visual Risk AI - Settings & Autonomy Center" width="100%" />
+  </a>
+</p>
+
+---
+
+### 10. Secure Authentication & Onboarding (`/login` & `/signup`)
+Cryptographically secure authentication with Argon2id and Bcrypt password hashing, short-lived 15-minute access tokens, rotating 7-day refresh token cookies, and 1-click demo persona access.
+
+<p align="center">
+  <a href="docs/images/10_login.png" target="_blank">
+    <img src="docs/images/10_login.png" alt="Visual Risk AI - Login & Authentication" width="100%" />
+  </a>
+</p>
 
 ---
 
@@ -201,14 +281,14 @@ flowchart LR
 
 To execute the test suite:
 ```bash
-# Run pytest unit tests (19/19 passing)
-PYTHONPATH=. .venv/bin/pytest tests/
+# Run automated pytest unit & integration tests (21/21 passing)
+PYTHONPATH=. .venv/bin/pytest tests/ -v
 
-# Run complete 100 E2E tests (100/100 passing)
+# Run comprehensive live MongoDB end-to-end suite (76/76 passing)
+PYTHONPATH=. .venv/bin/python test_live_mongodb_e2e.py
+
+# Run complete 100 E2E benchmark tests (100/100 passing)
 PYTHONPATH=. .venv/bin/python run_exact_100_e2e_tests.py
-
-# Run live autonomous planner tests (8/8 passing)
-PYTHONPATH=. .venv/bin/python test_live_autonomous_planner_e2e.py
 ```
 
 ---
