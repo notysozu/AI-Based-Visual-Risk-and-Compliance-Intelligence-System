@@ -72,14 +72,35 @@ import {
   buildDemoProfile
 } from "./persona-defaults";
 
+export const THEME_STORAGE_KEY = "visual-risk-ai-theme";
+
+export function getSavedTheme(): "light" | "dark" {
+  try {
+    if (typeof window !== "undefined") {
+      const explicit = localStorage.getItem(THEME_STORAGE_KEY);
+      if (explicit === "light" || explicit === "dark") return explicit;
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.theme === "light" || parsed?.theme === "dark") return parsed.theme;
+      }
+    }
+  } catch {}
+  return "dark";
+}
+
 function loadState(): TwinState {
+  const currentTheme = getSavedTheme();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
+      const chosenTheme =
+        parsed?.theme === "light" || parsed?.theme === "dark" ? parsed.theme : currentTheme;
       return {
         ...DEFAULT_STATE,
         ...parsed,
+        theme: chosenTheme,
         profile: { ...DEFAULT_PROFILE, ...parsed.profile },
         forecast: null,
         forecastLoading: false,
@@ -91,7 +112,10 @@ function loadState(): TwinState {
   } catch {
     // ignore corrupt storage
   }
-  return DEFAULT_STATE;
+  return {
+    ...DEFAULT_STATE,
+    theme: currentTheme,
+  };
 }
 
 export function getRoleConfig(role?: string | null): RoleConfig {
@@ -442,21 +466,36 @@ type TwinContextValue = {
 const TwinContext = createContext<TwinContextValue | null>(null);
 
 export function TwinProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<TwinState>(DEFAULT_STATE);
+  const [state, setState] = useState<TwinState>(() => {
+    const initialTheme = getSavedTheme();
+    return {
+      ...DEFAULT_STATE,
+      theme: initialTheme,
+    };
+  });
   const [ready, setReady] = useState(false);
   const hasAutoSynced = useRef(false);
 
   useEffect(() => {
-    setState(loadState());
+    const loaded = loadState();
+    setState(loaded);
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", loaded.theme === "dark");
+    }
     setReady(true);
   }, []);
 
   useEffect(() => {
-    if (ready) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (ready) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(THEME_STORAGE_KEY, state.theme);
+    }
   }, [state, ready]);
 
   useEffect(() => {
-    if (ready) document.documentElement.classList.toggle("dark", state.theme === "dark");
+    if (ready && typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", state.theme === "dark");
+    }
   }, [state.theme, ready]);
 
   const addLog = (log: Omit<Log, "id">) => {
@@ -608,15 +647,39 @@ export function TwinProvider({ children }: { children: ReactNode }) {
 
   const reset = () => {
     hasAutoSynced.current = false;
-    setState(DEFAULT_STATE);
+    setState((s) => {
+      const preservedTheme = s.theme || getSavedTheme();
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, preservedTheme);
+      } catch {}
+      return {
+        ...DEFAULT_STATE,
+        theme: preservedTheme,
+      };
+    });
   };
 
   const signOut = () => {
     hasAutoSynced.current = false;
-    setState(DEFAULT_STATE);
+    setState((s) => {
+      const preservedTheme = s.theme || getSavedTheme();
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, preservedTheme);
+      } catch {}
+      return {
+        ...DEFAULT_STATE,
+        theme: preservedTheme,
+      };
+    });
   };
 
   const setTheme = (theme: "light" | "dark") => {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {}
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", theme === "dark");
+    }
     setState((s) => {
       if (s.profile.id) {
         updateUser(s.profile.id, { theme_preference: theme }).catch((e) =>
@@ -896,7 +959,18 @@ export function TwinProvider({ children }: { children: ReactNode }) {
 
       setState((s) => {
         const nextProfile = { ...s.profile, ...mapBackendToProfile(user) };
-        const nextTheme = user.theme_preference === "light" || user.theme_preference === "dark" ? user.theme_preference : s.theme;
+        const savedTheme = s.theme || getSavedTheme();
+        const nextTheme =
+          user.theme_preference === "light" || user.theme_preference === "dark"
+            ? user.theme_preference
+            : savedTheme;
+
+        try {
+          localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+        } catch {}
+        if (typeof document !== "undefined") {
+          document.documentElement.classList.toggle("dark", nextTheme === "dark");
+        }
 
         const dateMap: Record<string, Log> = {};
         if (Array.isArray(habitsData) && habitsData.length > 0) {

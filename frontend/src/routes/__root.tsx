@@ -117,6 +117,24 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){
+              try {
+                var t = localStorage.getItem("visual-risk-ai-theme");
+                if (!t) {
+                  var s = localStorage.getItem("digital-twin-state");
+                  if (s) { t = JSON.parse(s).theme; }
+                }
+                if (t === "light") {
+                  document.documentElement.classList.remove("dark");
+                } else {
+                  document.documentElement.classList.add("dark");
+                }
+              } catch(e) {}
+            })()`,
+          }}
+        />
         <HeadContent />
       </head>
       <body suppressHydrationWarning>
