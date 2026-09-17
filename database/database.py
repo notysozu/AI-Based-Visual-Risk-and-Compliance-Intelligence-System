@@ -3,6 +3,9 @@ import json
 import asyncio
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
+
+# Compatibility patch for Beanie driver metadata on AsyncIOMotorClient
+AsyncIOMotorClient.append_metadata = lambda self, *args, **kwargs: None
 from beanie import init_beanie
 from dotenv import load_dotenv
 
@@ -265,6 +268,7 @@ async def init_mongodb():
             return _orig_list_colls(self, *args, **clean_kwargs)
         mongomock.database.Database.list_collection_names = _safe_list_colls
 
+        mongomock_motor.AsyncMongoMockClient.append_metadata = lambda self, *args, **kwargs: None
         motor_client = mongomock_motor.AsyncMongoMockClient()
         db_instance = motor_client[DATABASE_NAME]
         is_mock_fallback = True
