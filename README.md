@@ -143,6 +143,7 @@ Cryptographically secure authentication with Argon2id and Bcrypt password hashin
 - [**06. Running the Application & Deployment**](docs/running_the_application.md) — Production build, docker deployment, and daemon process management.
 - [**07. Complete API Reference & Example Payloads**](docs/api_reference.md) — Complete REST endpoint specifications, request schemas, and curl examples.
 - [**08. Authentication & Security Architecture (15 Principles)**](docs/authentication_architecture.md) — Threat models, token lifecycles, and cryptographic standards.
+- [**09. Milestone Feature Document (Team 05)**](docs/milestone_feature_document.md) — 5-milestone engineering breakdown, goals, features, and core technologies.
 
 ---
 
