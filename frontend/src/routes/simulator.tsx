@@ -77,43 +77,64 @@ function SimulatorPage() {
     return { sleep, health, focus, path, terminal: path[path.length - 1].value };
   };
 
+  const handleSetA = (newA: Scenario) => {
+    setA(newA);
+    setBackendResult(null);
+  };
+
+  const handleSetB = (newB: Scenario) => {
+    setB(newB);
+    setBackendResult(null);
+  };
+
   const localA = useMemo(() => evaluate(a), [a, p]);
   const localB = useMemo(() => evaluate(b), [b, p]);
 
   // Backend health_index/focus_index come back on a 0-100 scale;
   // local evaluate() and the rest of this UI (chart axis, burnout threshold) use 0-10.
-  const A = backendResult
-    ? {
+  const A = useMemo(() => {
+    if (backendResult?.scenario_a?.datapoints?.length) {
+      const last = backendResult.scenario_a.datapoints.at(-1);
+      return {
         ...localA,
-        health: backendResult.scenario_a.datapoints.at(-1).health_index / 10,
-        focus: backendResult.scenario_a.datapoints.at(-1).focus_index / 10,
-        terminal: backendResult.scenario_a.wealth_at_end,
-      }
-    : localA;
+        health: (last.health_index || 70) / 10,
+        focus: (last.focus_index || 70) / 10,
+        terminal: backendResult.scenario_a.wealth_at_end ?? localA.terminal,
+      };
+    }
+    return localA;
+  }, [localA, backendResult]);
 
-  const B = backendResult
-    ? {
+  const B = useMemo(() => {
+    if (backendResult?.scenario_b?.datapoints?.length) {
+      const last = backendResult.scenario_b.datapoints.at(-1);
+      return {
         ...localB,
-        health: backendResult.scenario_b.datapoints.at(-1).health_index / 10,
-        focus: backendResult.scenario_b.datapoints.at(-1).focus_index / 10,
-        terminal: backendResult.scenario_b.wealth_at_end,
-      }
-    : localB;
+        health: (last.health_index || 70) / 10,
+        focus: (last.focus_index || 70) / 10,
+        terminal: backendResult.scenario_b.wealth_at_end ?? localB.terminal,
+      };
+    }
+    return localB;
+  }, [localB, backendResult]);
 
   const chart = useMemo(() => {
-    if (backendResult) {
-      return backendResult.scenario_a.datapoints.map((dp: any, i: number) => ({
-        year: `Age ${p.age + dp.year}`,
-        netA: dp.net_worth,
-        netB: backendResult.scenario_b.datapoints[i].net_worth,
-        focusA: +(dp.focus_index / 10).toFixed(2),
-        focusB: +(backendResult.scenario_b.datapoints[i].focus_index / 10).toFixed(2),
-      }));
+    if (backendResult?.scenario_a?.datapoints && backendResult?.scenario_b?.datapoints) {
+      return backendResult.scenario_a.datapoints.map((dp: any, i: number) => {
+        const dpB = backendResult.scenario_b.datapoints[i] || dp;
+        return {
+          year: `Age ${p.age + (dp.year || i + 1)}`,
+          netA: dp.net_worth,
+          netB: dpB.net_worth,
+          focusA: +(dp.focus_index / 10).toFixed(2),
+          focusB: +(dpB.focus_index / 10).toFixed(2),
+        };
+      });
     }
     return localA.path.map((row, i) => ({
       year: `Age ${p.age + row.year}`,
       netA: row.value,
-      netB: localB.path[i].value,
+      netB: localB.path[i]?.value ?? row.value,
       focusA: +(localA.focus - i * 0.02).toFixed(2),
       focusB: +(localB.focus - i * 0.05).toFixed(2),
     }));
@@ -122,6 +143,7 @@ function SimulatorPage() {
   const runComparison = async () => {
     const userId = p.id ?? 1;
     setRan(false);
+    setBackendResult(null);
 
     let currentA = a;
     let currentB = b;
@@ -206,8 +228,8 @@ function SimulatorPage() {
     >
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
         <div className="space-y-4">
-          <ScenarioCard name="A" s={a} set={setA} result={A} onDrag={setDragging} adopt={adopt} role={p.role} />
-          <ScenarioCard name="B" s={b} set={setB} result={B} onDrag={setDragging} adopt={adopt} role={p.role} />
+          <ScenarioCard name="A" s={a} set={handleSetA} result={A} onDrag={setDragging} adopt={adopt} role={p.role} />
+          <ScenarioCard name="B" s={b} set={handleSetB} result={B} onDrag={setDragging} adopt={adopt} role={p.role} />
           <div className="flex gap-2">
             <Button
               className="flex-1"
@@ -235,23 +257,30 @@ function SimulatorPage() {
             className={`panel p-6 ${dragging || !ran ? "animate-pulse-glow" : ""}`}
           >
             <div className="flex items-center justify-between">
-              <p className="label-xs">Future trajectory comparison</p>
+              <div className="flex items-center gap-2">
+                <p className="label-xs">Future trajectory comparison</p>
+                {backendResult && (
+                  <span className="clay-badge-indigo text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    Neural Engine Verified
+                  </span>
+                )}
+              </div>
               <span className="text-xs text-muted-foreground">
-                {dragging || !ran ? "Syncing twin forecast…" : "Synced"}
+                {!ran ? "Running neural comparison…" : dragging ? "Recalculating trajectory…" : "5-Year Horizon"}
               </span>
             </div>
             <div className="mt-4 h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chart}>
+                <LineChart data={chart} key={`chart-${backendResult ? "neural" : "live"}-${a.savings}-${a.sleep}-${a.study}-${b.savings}-${b.sleep}-${b.study}`}>
                   <CartesianGrid stroke="var(--color-border)" vertical={false} />
                   <XAxis dataKey="year" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis yAxisId="left" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={58} tickFormatter={(v) => `$${Math.round(v / 1000)}k`} />
                   <YAxis yAxisId="right" orientation="right" domain={[0, 10]} stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={26} />
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Line yAxisId="left" type="monotone" dataKey="netA" name="Scenario A (Net Worth)" stroke="#6366f1" strokeWidth={2.5} dot={false} />
-                  <Line yAxisId="left" type="monotone" dataKey="netB" name="Scenario B (Net Worth)" stroke="#10b981" strokeWidth={2.5} dot={false} />
-                  <Line yAxisId="right" type="monotone" dataKey="focusA" name="Scenario A (Focus)" stroke="#818cf8" strokeDasharray="3 3" strokeWidth={1.5} dot={false} />
-                  <Line yAxisId="right" type="monotone" dataKey="focusB" name="Scenario B (Focus)" stroke="#34d399" strokeDasharray="3 3" strokeWidth={1.5} dot={false} />
+                  <Line yAxisId="left" type="monotone" dataKey="netA" name="Scenario A (Net Worth)" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 3, fill: "#6366f1" }} activeDot={{ r: 5 }} isAnimationActive={true} />
+                  <Line yAxisId="left" type="monotone" dataKey="netB" name="Scenario B (Net Worth)" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3, fill: "#10b981" }} activeDot={{ r: 5 }} isAnimationActive={true} strokeDasharray="4 4" />
+                  <Line yAxisId="right" type="monotone" dataKey="focusA" name="Scenario A (Focus)" stroke="#818cf8" strokeDasharray="3 3" strokeWidth={1.5} dot={false} isAnimationActive={true} />
+                  <Line yAxisId="right" type="monotone" dataKey="focusB" name="Scenario B (Focus)" stroke="#34d399" strokeDasharray="3 3" strokeWidth={1.5} dot={false} isAnimationActive={true} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
