@@ -56,3 +56,4 @@ frontend/.wrangler/
 
 # OS
 .DS_Store
+.vercel

@@ -178,4 +178,10 @@ PYTHONPATH=. .venv/bin/python run_exact_100_e2e_tests.py
 
 ---
 
+## License
+
+This project is licensed under the terms of the [MIT License](LICENSE).
+
+---
+
 *Visual Risk AI — Intelligent Multi-Persona Trajectory Engine.*
