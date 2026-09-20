@@ -74,6 +74,7 @@ async def auto_plan_today(
         "goal_name": user.goal_name or "Emergency Fund",
         "goal_target": user.goal_target or 50000.0,
         "goal_current": user.goal_current or 15000.0,
+        "routine_config": getattr(user, "routine_config", None),
     }
 
     baseline = await get_user_baseline_metrics(user)

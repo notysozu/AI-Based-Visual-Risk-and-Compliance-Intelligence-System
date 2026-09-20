@@ -87,4 +87,78 @@ def test_generate_autonomous_daily_schedule_all_roles():
             assert "category" in task
             assert "start" in task
             assert "minutes" in task
-            assert task["is_auto_planned"] is True
+            assert "is_auto_planned" in task
+
+
+def test_routine_config_fixed_anchors_and_hobbies():
+    user_info = {
+        "role": "student",
+        "username": "Alex Student",
+        "sleep_target_hours": 8.0,
+        "study_target_hours_week": 20.0,
+        "monthly_income": 800.0,
+        "monthly_expenses": 500.0,
+        "net_worth": 1500.0,
+        "routine_config": {
+            "fixed_commitments": [
+                {
+                    "id": "college-block",
+                    "name": "College Lectures & Labs",
+                    "category": "College",
+                    "start": "09:00",
+                    "end": "15:30",
+                    "minutes": 390,
+                    "days": ["Mon", "Tue", "Wed", "Thu", "Fri"]
+                }
+            ],
+            "hobbies": [
+                {
+                    "id": "guitar-goal",
+                    "name": "Guitar Practice",
+                    "category": "Hobby",
+                    "minutes": 30,
+                    "preferred_time": "evening"
+                }
+            ],
+            "custom_context": "Classes 9am-3:30pm. Prefer studying after 5pm."
+        }
+    }
+    baseline = {
+        "sleep": 7.0,
+        "screen": 4.5,
+        "study_hours_week": 14.0,
+        "monthly_savings": 300.0,
+        "current_net_worth": 1500.0
+    }
+    # 2026-09-07 is Monday
+    res = synthesize_fallback_schedule(user_info, baseline, plan_date="2026-09-07")
+
+    assert res["auto_committed"] is True
+
+    # Verify fixed anchor task exists
+    fixed_tasks = [t for t in res["tasks"] if t.get("is_fixed")]
+    assert len(fixed_tasks) == 1
+    fc = fixed_tasks[0]
+    assert fc["title"] == "College Lectures & Labs"
+    assert fc["start"] == "09:00"
+    assert fc["minutes"] == 390
+    assert fc["is_fixed"] is True
+    assert fc["impact"] == "Locked Anchor"
+
+    # Verify hobby task exists
+    hobby_tasks = [t for t in res["tasks"] if t["title"] == "Guitar Practice"]
+    assert len(hobby_tasks) == 1
+    assert hobby_tasks[0]["minutes"] == 30
+
+    # Verify ZERO tasks overlap with 09:00 - 15:30 (540 to 930 mins)
+    fc_start_min = 9 * 60
+    fc_end_min = 9 * 60 + 390
+    for t in res["tasks"]:
+        if t.get("is_fixed"):
+            continue
+        t_start = int(t["start"].split(":")[0]) * 60 + int(t["start"].split(":")[1])
+        t_end = t_start + t["minutes"]
+        assert not (max(t_start, fc_start_min) < min(t_end, fc_end_min)), (
+            f"Task {t['title']} at {t['start']} ({t['minutes']}m) overlaps with locked commitment!"
+        )
+

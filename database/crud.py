@@ -725,10 +725,10 @@ async def save_auto_planned_tasks(
         except Exception:
             current_tasks = []
 
-    # Filter out any older auto-planned tasks for this specific date to avoid duplicates
+    # Filter out any older auto-planned tasks and fixed anchors for this specific date to avoid duplicates
     preserved_tasks = [
         item for item in current_tasks
-        if not (item.get("date") == plan_date and (item.get("is_auto_planned") or str(item.get("id", "")).startswith("autoplan-")))
+        if not (item.get("date") == plan_date and (item.get("is_auto_planned") or str(item.get("id", "")).startswith("autoplan-") or str(item.get("id", "")).startswith("fixed-")))
     ]
     merged_tasks = preserved_tasks + tasks
 

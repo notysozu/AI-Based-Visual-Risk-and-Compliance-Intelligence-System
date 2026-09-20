@@ -177,6 +177,7 @@ export const DEFAULT_PROFILE: Profile = {
   autoPlannerEnabled: true,
   lastAutoPlanBriefing: null,
   lastAutoPlannedDate: null,
+  routineConfig: null,
 };
 
 export const DEFAULT_STATE: TwinState = {

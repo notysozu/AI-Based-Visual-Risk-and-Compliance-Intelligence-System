@@ -51,6 +51,7 @@ class UserBase(BaseModel):
     auto_planner_enabled: Optional[bool] = True
     last_auto_planned_date: Optional[str] = None
     last_auto_plan_briefing: Optional[str] = None
+    routine_config: Optional[str] = None
     scenario_a_preset: Optional[str] = None
     scenario_b_preset: Optional[str] = None
     last_success_odds: Optional[float] = None
@@ -111,6 +112,7 @@ class UserUpdate(BaseModel):
     auto_planner_enabled: Optional[bool] = None
     last_auto_planned_date: Optional[str] = None
     last_auto_plan_briefing: Optional[str] = None
+    routine_config: Optional[str] = None
     scenario_a_preset: Optional[str] = None
     scenario_b_preset: Optional[str] = None
     last_success_odds: Optional[float] = None
@@ -406,7 +408,31 @@ class ChatActionRejectRequest(BaseModel):
     user_id: Any
 
 
-# Autonomous Planner Schemas
+# Autonomous Planner & Routine Schemas
+class FixedCommitment(BaseModel):
+    id: str
+    name: str
+    category: str = "Fixed"
+    start: str
+    end: Optional[str] = None
+    minutes: int
+    days: List[str] = ["Mon", "Tue", "Wed", "Thu", "Fri"]
+
+
+class HabitGoal(BaseModel):
+    id: str
+    name: str
+    category: str = "Hobby"
+    minutes: int = 30
+    preferred_time: str = "evening"  # morning, afternoon, evening, any
+
+
+class RoutineConfig(BaseModel):
+    fixed_commitments: List[FixedCommitment] = []
+    hobbies: List[HabitGoal] = []
+    custom_context: Optional[str] = ""
+
+
 class AutoPlanTaskItem(BaseModel):
     id: str
     title: str
@@ -419,6 +445,7 @@ class AutoPlanTaskItem(BaseModel):
     date: str
     fromSuggestion: bool = True
     is_auto_planned: bool = True
+    is_fixed: Optional[bool] = False
 
 
 class AutoPlanRequest(BaseModel):

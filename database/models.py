@@ -49,6 +49,7 @@ class UserDoc(Document):
     auto_planner_enabled: bool = True
     last_auto_planned_date: Optional[str] = None
     last_auto_plan_briefing: Optional[str] = None
+    routine_config: Optional[str] = None  # JSON string containing fixed commitments, habits, and routine context
 
     # Decision Sandbox scenario slider presets (JSON: {"savings": 0, "sleep": 0, "study": 0})
     scenario_a_preset: Optional[str] = None

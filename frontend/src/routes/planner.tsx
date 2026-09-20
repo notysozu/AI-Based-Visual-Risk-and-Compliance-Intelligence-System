@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, Clock, Plus, Trash2, Sparkles, RefreshCw, Zap, Brain, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, Clock, Plus, Trash2, Sparkles, RefreshCw, Zap, Brain, ChevronDown, ChevronUp, Lock, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { useGuard } from "@/lib/use-guard";
 import { today, useTwin, type Task, getRoleConfig } from "@/lib/twin-store";
+import { RoutineSettingsDialog } from "@/components/routine-settings-dialog";
 
 /** Daily task planning board route */
 export const Route = createFileRoute("/planner")({
@@ -39,6 +40,7 @@ function PlannerPage() {
   const [category, setCategory] = useState<string>(categories[0]);
   const [isAutoPlanning, setIsAutoPlanning] = useState(false);
   const [showBriefing, setShowBriefing] = useState(true);
+  const [showRoutineModal, setShowRoutineModal] = useState(false);
 
   const todays = useMemo(
     () =>
@@ -144,20 +146,32 @@ function PlannerPage() {
           )}
 
           {/* Quick Auto-Plan CTA Toolbar */}
-          <div className="flex items-center justify-between gap-3 px-1">
+          <div className="flex items-center justify-between gap-3 px-1 flex-wrap">
             <span className="text-xs font-semibold text-muted-foreground">
-              {todays.length} Planned Tasks ({todays.filter(t => t.isAutoPlanned || t.id.startsWith("autoplan-")).length} AI Auto-Scheduled)
+              {todays.length} Planned Tasks ({todays.filter(t => t.isAutoPlanned || t.id.startsWith("autoplan-")).length} AI Auto-Scheduled
+              {todays.filter(t => t.isFixed || t.id.startsWith("fixed-")).length > 0 ? `, ${todays.filter(t => t.isFixed || t.id.startsWith("fixed-")).length} Fixed Anchors` : ""})
             </span>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs font-semibold border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10"
-              onClick={() => handleAutoPlan(true)}
-              disabled={isAutoPlanning}
-            >
-              <Sparkles className={`h-3.5 w-3.5 mr-1.5 ${isAutoPlanning ? "animate-spin text-purple-500" : ""}`} />
-              {isAutoPlanning ? "AI Planning Day..." : "Auto-Plan Day with AI"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs font-semibold border-border hover:bg-accent"
+                onClick={() => setShowRoutineModal(true)}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                Routine & Habit Settings
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs font-semibold border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10"
+                onClick={() => handleAutoPlan(true)}
+                disabled={isAutoPlanning}
+              >
+                <Sparkles className={`h-3.5 w-3.5 mr-1.5 ${isAutoPlanning ? "animate-spin text-purple-500" : ""}`} />
+                {isAutoPlanning ? "AI Planning Day..." : "Auto-Plan Day with AI"}
+              </Button>
+            </div>
           </div>
 
           <div className="panel p-3 space-y-2 min-w-0 overflow-hidden">
@@ -166,19 +180,30 @@ function PlannerPage() {
                 <p className="text-sm text-muted-foreground">
                   Nothing planned for today yet. Let your AI Twin synthesize your schedule or add tasks manually.
                 </p>
-                <Button
-                  onClick={() => handleAutoPlan(true)}
-                  disabled={isAutoPlanning}
-                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-md text-xs font-semibold"
-                >
-                  <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                  Auto-Plan Today with AI Twin
-                </Button>
+                <div className="flex items-center justify-center gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowRoutineModal(true)}
+                    className="h-8 text-xs font-semibold border-border hover:bg-accent"
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                    Configure Routine & Anchors
+                  </Button>
+                  <Button
+                    onClick={() => handleAutoPlan(true)}
+                    disabled={isAutoPlanning}
+                    className="h-8 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-md text-xs font-semibold"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                    Auto-Plan Today with AI Twin
+                  </Button>
+                </div>
               </div>
             )}
             {todays.map((t) => {
               const badgeClass = getCategoryBadgeClass(t.category);
               const isAi = t.isAutoPlanned || t.id.startsWith("autoplan-") || t.fromSuggestion;
+              const isFixed = t.isFixed || t.id.startsWith("fixed-");
               return (
                 <div
                   key={t.id}
@@ -203,11 +228,16 @@ function PlannerPage() {
                         <Clock className="h-3 w-3" />
                         {t.minutes}m
                       </span>
-                      {isAi && (
+                      {isFixed ? (
+                        <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0 flex items-center gap-1">
+                          <Lock className="h-2.5 w-2.5" />
+                          Fixed Anchor
+                        </span>
+                      ) : isAi ? (
                         <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shrink-0">
                           AI Scheduled
                         </span>
-                      )}
+                      ) : null}
                     </p>
                   </div>
                   <Button
@@ -301,6 +331,7 @@ function PlannerPage() {
           </div>
         </div>
       </div>
+      <RoutineSettingsDialog open={showRoutineModal} onOpenChange={setShowRoutineModal} />
     </AppShell>
   );
 }

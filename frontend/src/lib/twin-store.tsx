@@ -377,6 +377,7 @@ function mapProfileToBackend(profile: Profile, tasks?: Task[], theme?: "light" |
     auto_planner_enabled: profile.autoPlannerEnabled,
     last_auto_plan_briefing: profile.lastAutoPlanBriefing,
     last_auto_planned_date: profile.lastAutoPlannedDate,
+    routine_config: profile.routineConfig ? JSON.stringify(profile.routineConfig) : undefined,
   };
 }
 
@@ -412,6 +413,19 @@ function mapBackendToProfile(user: any): Partial<Profile> {
     autoPlannerEnabled: user.auto_planner_enabled ?? true,
     lastAutoPlanBriefing: user.last_auto_plan_briefing ?? null,
     lastAutoPlannedDate: user.last_auto_planned_date ?? null,
+    routineConfig: (() => {
+      if (!user.routine_config) return null;
+      try {
+        const rc = typeof user.routine_config === "string" ? JSON.parse(user.routine_config) : user.routine_config;
+        return {
+          fixed_commitments: Array.isArray(rc.fixed_commitments) ? rc.fixed_commitments : [],
+          hobbies: Array.isArray(rc.hobbies) ? rc.hobbies : [],
+          custom_context: rc.custom_context || "",
+        };
+      } catch {
+        return null;
+      }
+    })(),
   };
 }
 

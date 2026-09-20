@@ -31,6 +31,31 @@ export type Profile = {
   autoPlannerEnabled?: boolean;
   lastAutoPlanBriefing?: string | null;
   lastAutoPlannedDate?: string | null;
+  routineConfig?: RoutineConfig | null;
+};
+
+export type FixedCommitment = {
+  id: string;
+  name: string;
+  category: string;
+  start: string;
+  end?: string;
+  minutes: number;
+  days: string[];
+};
+
+export type HabitGoal = {
+  id: string;
+  name: string;
+  category: string;
+  minutes: number;
+  preferred_time: "morning" | "afternoon" | "evening" | "any";
+};
+
+export type RoutineConfig = {
+  fixed_commitments: FixedCommitment[];
+  hobbies: HabitGoal[];
+  custom_context?: string;
 };
 
 export type Log = {
@@ -62,6 +87,7 @@ export type Task = {
   impact?: string;
   detail?: string;
   isAutoPlanned?: boolean;
+  isFixed?: boolean;
 };
 
 export type Suggestion = {
