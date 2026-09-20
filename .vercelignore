@@ -1,0 +1,9 @@
+frontend/
+docs/
+*.pptx
+*.docx
+.pytest_cache/
+.venv/
+tests/
+scratch/
+*.db
