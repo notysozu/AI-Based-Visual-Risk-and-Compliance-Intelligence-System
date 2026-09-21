@@ -31,6 +31,7 @@ import { HabitDrawer, tooltipStyle } from "@/routes/dashboard";
 import { useGuard } from "@/lib/use-guard";
 import { baseline, focusIndex, useTwin, getRoleConfig } from "@/lib/twin-store";
 import { getAnalyticsSummary, getStudyAnalytics, getStudyRecords } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({
@@ -195,7 +196,43 @@ function AnalyticsPage() {
 
   const week = state.logs.slice(-7);
 
-  if (!ok) return null;
+  if (!ok) return (
+    <AppShell title="Analytics" subtitle="Loading...">
+      {/* AI Overview panel skeleton */}
+      <div className="panel p-6 mb-5 space-y-4">
+        <div className="flex items-center justify-between pb-4 border-b border-border">
+          <div className="space-y-2"><Skeleton className="h-3 w-32" /><Skeleton className="h-6 w-48" /></div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-5 mt-5">
+          {[0,1,2,3,4].map(i => <Skeleton key={i} className="h-20 w-full rounded-2xl" />)}
+        </div>
+        <Skeleton className="h-20 w-full rounded-2xl mt-5" />
+      </div>
+      {/* Charts skeleton */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="panel p-6 space-y-3"><Skeleton className="h-3 w-40" /><Skeleton className="h-64 w-full rounded-xl" /></div>
+        <div className="panel p-6 space-y-3"><Skeleton className="h-3 w-40" /><Skeleton className="h-64 w-full rounded-xl" /></div>
+      </div>
+      {/* Streak skeleton */}
+      <div className="panel mt-5 p-6">
+        <Skeleton className="h-3 w-24 mb-4" />
+        <div className="grid grid-cols-7 gap-2.5">
+          {[0,1,2,3,4,5,6].map(i => <Skeleton key={i} className="aspect-square rounded-2xl" />)}
+        </div>
+      </div>
+      {/* Table skeleton */}
+      <div className="panel mt-5 p-4 space-y-2">
+        <div className="grid grid-cols-6 gap-4 px-2 py-2">
+          {[0,1,2,3,4,5].map(i => <Skeleton key={i} className="h-3 w-full" />)}
+        </div>
+        {[0,1,2,3,4].map(i => (
+          <div key={i} className="grid grid-cols-6 gap-4 px-2 py-2.5 border-t border-border/30">
+            {[0,1,2,3,4,5].map(j => <Skeleton key={j} className="h-3 w-full" />)}
+          </div>
+        ))}
+      </div>
+    </AppShell>
+  );
 
   const exportCsv = () => {
     const rows = [
@@ -303,8 +340,16 @@ function AnalyticsPage() {
 
         {/* AI Explanatory Narrative */}
         {summaryLoading ? (
-          <div className="mt-5 rounded-2xl bg-input p-5 border border-border/30 shadow-[var(--clay-inset)] text-sm text-muted-foreground animate-pulse">
-            Twin is synthesizing habit logs and computing focus-vitality correlations...
+          <div className="mt-5 rounded-2xl bg-input p-5 border border-border/30 shadow-[var(--clay-inset)] space-y-3">
+            <div className="flex items-center gap-2 mb-4">
+              <Skeleton className="h-5 w-5 rounded" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-11/12" />
+            <Skeleton className="h-3 w-4/5" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-3/4" />
           </div>
         ) : summary ? (
           <div className="mt-5">
@@ -316,6 +361,7 @@ function AnalyticsPage() {
           </div>
         ) : null}
       </div>
+
 
       <div className="grid gap-5 lg:grid-cols-2">
         <ChartCard title="How sleep affects your focus">
@@ -413,6 +459,16 @@ function AnalyticsPage() {
         </div>
 
         {/* 4 Study KPI Badges */}
+        {studyAnalytics === null ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[0,1,2,3].map(i => (
+              <div key={i} className="p-4 rounded-xl bg-muted/40 border border-border flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+                <div className="space-y-1.5 flex-1"><Skeleton className="h-3 w-24" /><Skeleton className="h-5 w-16" /></div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="p-4 rounded-xl bg-muted/40 border border-border flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
@@ -460,6 +516,7 @@ function AnalyticsPage() {
             </div>
           </div>
         </div>
+        )} {/* end studyAnalytics conditional */}
 
         {/* Two Visual Panels: Chart + Subject Breakdown */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">

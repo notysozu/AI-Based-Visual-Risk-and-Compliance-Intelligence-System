@@ -28,6 +28,7 @@ import {
   generateSmartSuggestions,
   resetSuggestionsApi,
 } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/suggestions")({
   head: () => ({
@@ -283,7 +284,54 @@ function SuggestionsPage() {
     return filteredSuggestions.slice(start, start + itemsPerPage);
   }, [filteredSuggestions, currentPage, itemsPerPage]);
 
-  if (!ok) return null;
+  if (!ok) return (
+    <AppShell title="Smart Suggestions" subtitle="Loading...">
+      <div className="space-y-5">
+        {/* Diagnostic banner skeleton */}
+        <div className="panel p-5 border border-border/60 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border/40">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-8 w-8 rounded-xl shrink-0" />
+              <div className="space-y-1.5"><Skeleton className="h-4 w-48" /><Skeleton className="h-3 w-64" /></div>
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-8 w-32 rounded-xl" />
+              <Skeleton className="h-8 w-40 rounded-xl" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3.5">
+            {[0,1,2,3].map(i => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
+          </div>
+        </div>
+        {/* Filter bar skeleton */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex gap-1.5 rounded-2xl bg-input/50 p-1 border border-border/40">
+            {[0,1,2,3,4,5].map(i => <Skeleton key={i} className="h-7 w-20 rounded-xl" />)}
+          </div>
+          <div className="flex gap-2"><Skeleton className="h-9 w-60 rounded-xl" /><Skeleton className="h-9 w-28 rounded-xl" /></div>
+        </div>
+        {/* Card grid skeleton */}
+        <div className="grid gap-5 md:grid-cols-2">
+          {[0,1,2,3].map(i => (
+            <div key={i} className="panel p-6 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex gap-1.5"><Skeleton className="h-5 w-20 rounded-full" /><Skeleton className="h-5 w-8 rounded-full" /></div>
+                <Skeleton className="h-5 w-20 rounded-full" />
+              </div>
+              <Skeleton className="h-6 w-3/4 mt-3" />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-5/6" />
+              <Skeleton className="h-3 w-4/5" />
+              <div className="flex items-center justify-between pt-4 border-t border-border/50 mt-5">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-8 w-28 rounded-xl" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </AppShell>
+  );
 
   return (
     <AppShell
@@ -472,9 +520,23 @@ function SuggestionsPage() {
 
         {/* Suggestions Grid */}
         {loading ? (
-          <div className="panel p-10 text-center text-sm text-muted-foreground animate-pulse">
-            <Sparkles className="h-6 w-6 text-indigo-500 animate-spin mx-auto mb-2" />
-            Loading calibrated recommendations...
+          <div className="grid gap-5 md:grid-cols-2">
+            {[0,1,2,3].map(i => (
+              <div key={i} className="panel p-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-1.5"><Skeleton className="h-5 w-20 rounded-full" /><Skeleton className="h-5 w-8 rounded-full" /></div>
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </div>
+                <Skeleton className="h-6 w-3/4 mt-3" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-5/6" />
+                <Skeleton className="h-3 w-4/5" />
+                <div className="flex items-center justify-between pt-4 border-t border-border/50 mt-5">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-8 w-28 rounded-xl" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredSuggestions.length === 0 ? (
           <div className="panel p-10 text-center text-sm text-muted-foreground space-y-3">

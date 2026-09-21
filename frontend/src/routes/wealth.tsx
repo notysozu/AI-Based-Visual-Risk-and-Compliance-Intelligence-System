@@ -24,6 +24,7 @@ import { useGuard } from "@/lib/use-guard";
 import { money, useTwin, getRoleConfig } from "@/lib/twin-store";
 import { tooltipStyle } from "@/routes/dashboard";
 import { getWealthAdvice, updateUser } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/wealth")({
   head: () => ({
@@ -139,7 +140,48 @@ function WealthPage() {
     }
   };
 
-  if (!ok) return null;
+
+  if (!ok) return (
+    <AppShell title="Wealth Planner" subtitle="Loading...">
+      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+        {/* Left col: gauge + goal form skeleton */}
+        <div className="space-y-5">
+          <div className="panel p-6 flex flex-col items-center gap-4">
+            <Skeleton className="h-[190px] w-[190px] rounded-full" />
+            <div className="w-full space-y-2"><Skeleton className="h-3 w-32 mx-auto" /><Skeleton className="h-4 w-24 mx-auto" /></div>
+          </div>
+          <div className="panel p-5 space-y-4">
+            <Skeleton className="h-3 w-28" />
+            {[0,1,2].map(i => (
+              <div key={i} className="space-y-1.5">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-9 w-full rounded-xl" />
+              </div>
+            ))}
+            <Skeleton className="h-10 w-full rounded-xl mt-2" />
+          </div>
+        </div>
+        {/* Right col: charts + advice */}
+        <div className="space-y-5">
+          <div className="panel p-6 space-y-3">
+            <Skeleton className="h-3 w-48" />
+            <Skeleton className="h-64 w-full rounded-xl" />
+          </div>
+          <div className="panel p-6 space-y-3">
+            <Skeleton className="h-3 w-40" />
+            <Skeleton className="h-64 w-full rounded-xl" />
+          </div>
+          {/* Advice card skeleton */}
+          <div className="panel p-5 space-y-3">
+            <div className="flex items-center gap-2"><Skeleton className="h-5 w-5 rounded" /><Skeleton className="h-4 w-48" /></div>
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-11/12" />
+            <Skeleton className="h-3 w-4/5" />
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
 
   const monthly = Math.max(0, p.monthlyIncome - p.monthlyExpenses);
   const discretionary = Math.round(p.monthlyExpenses * 0.35);
@@ -163,6 +205,10 @@ function WealthPage() {
               <p className="mt-4 text-sm text-destructive">
                 Couldn't load forecast: {state.forecastError}
               </p>
+            )}
+
+            {running && !forecast && (
+              <Skeleton className="mt-4 h-80 w-full rounded-xl" />
             )}
 
             {!forecast && !running && !state.forecastError && (
@@ -205,9 +251,16 @@ function WealthPage() {
             )}
 
             {adviceLoading && (
-              <div className="mt-4 rounded-2xl bg-input p-5 shadow-[var(--clay-inset)] border border-border/30 text-sm text-muted-foreground flex items-center gap-2.5 text-foreground animate-pulse">
-                <Sparkles className="h-4 w-4 text-indigo-500 animate-spin" />
-                <span>Twin AI is calculating your trajectory and success probability...</span>
+              <div className="mt-4 rounded-2xl bg-input p-5 shadow-[var(--clay-inset)] border border-border/30 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-4 w-56" />
+                </div>
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-11/12" />
+                <Skeleton className="h-3 w-4/5" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-3/4" />
               </div>
             )}
 

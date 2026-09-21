@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Area,
   AreaChart,
@@ -76,7 +77,49 @@ function DashboardPage() {
     [state.logs],
   );
 
-  if (!ok) return null;
+  if (!ok) return (
+    <AppShell title="Twin Core" subtitle="Loading...">
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="panel p-6 lg:col-span-2">
+          <div className="flex items-center justify-between pb-3 border-b border-border/50">
+            <div className="space-y-2"><Skeleton className="h-3 w-24" /><Skeleton className="h-5 w-48" /></div>
+            <Skeleton className="h-5 w-28 rounded-full" />
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-around gap-6 py-2">
+            <Skeleton className="h-[190px] w-[190px] rounded-full" />
+            <Skeleton className="h-[190px] w-[190px] rounded-full" />
+          </div>
+        </div>
+        <div className="panel p-6 space-y-3">
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-14 w-full rounded-2xl" />
+          <Skeleton className="h-14 w-full rounded-2xl" />
+          <Skeleton className="h-14 w-full rounded-2xl" />
+        </div>
+      </div>
+      <div className="mt-5 grid gap-5 sm:grid-cols-3">
+        {[0,1,2].map(i => (
+          <div key={i} className="panel flex items-center gap-4 p-5">
+            <Skeleton className="h-11 w-11 rounded-2xl shrink-0" />
+            <div className="space-y-2 flex-1"><Skeleton className="h-3 w-24" /><Skeleton className="h-6 w-20" /></div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-5 grid gap-5 lg:grid-cols-3">
+        <div className="panel p-6 lg:col-span-2 space-y-3">
+          <Skeleton className="h-3 w-40" />
+          <Skeleton className="h-56 w-full rounded-xl" />
+        </div>
+        <div className="panel p-6 space-y-4">
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-2.5 w-full rounded-full mt-6" />
+          <div className="flex justify-between"><Skeleton className="h-3 w-20" /><Skeleton className="h-3 w-16" /></div>
+        </div>
+      </div>
+    </AppShell>
+  );
 
   const goalPct = Math.min(100, Math.round((p.goalCurrent / Math.max(1, p.goalTarget)) * 100));
 

@@ -923,7 +923,32 @@ function StudyCockpitPage() {
     { day: "Sun", hours: 0.0, focus: 0.0 },
   ];
 
-  if (!ok) return null;
+
+  if (!ok) return (
+    <div className="h-screen w-screen overflow-hidden relative select-none bg-black text-white flex flex-col items-center justify-center gap-6">
+      {/* Ambient shimmer backdrop */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/60 via-black to-purple-950/40" />
+      {/* Cockpit window placeholder */}
+      <div className="relative z-10 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-6 w-96 space-y-4 shadow-[0_8px_40px_rgba(99,102,241,0.2)]">
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-3 rounded-full bg-red-500/80" />
+          <div className="h-3 w-3 rounded-full bg-yellow-500/80" />
+          <div className="h-3 w-3 rounded-full bg-green-500/80" />
+          <div className="h-3 w-24 rounded bg-white/10 animate-pulse ml-2" />
+        </div>
+        <div className="h-48 rounded-xl bg-white/5 animate-pulse border border-white/10" />
+        <div className="space-y-2">
+          <div className="h-3 rounded bg-white/10 animate-pulse w-3/4" />
+          <div className="h-3 rounded bg-white/10 animate-pulse w-1/2" />
+        </div>
+        <div className="h-9 rounded-xl bg-white/10 animate-pulse" />
+      </div>
+      {/* Floating timer pill */}
+      <div className="relative z-10 rounded-full border border-white/15 bg-white/5 backdrop-blur px-8 py-3 animate-pulse">
+        <div className="h-6 w-28 rounded bg-white/10" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="h-screen w-screen overflow-hidden relative select-none bg-black text-white flex flex-col font-sans">

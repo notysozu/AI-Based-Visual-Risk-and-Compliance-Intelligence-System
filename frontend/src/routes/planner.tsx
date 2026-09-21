@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { useGuard } from "@/lib/use-guard";
@@ -51,7 +52,59 @@ function PlannerPage() {
     [state.tasks],
   );
 
-  if (!ok) return null;
+  if (!ok) return (
+    <AppShell title="Today's Plan" subtitle="Loading...">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px] w-full min-w-0">
+        <div className="space-y-4 min-w-0 overflow-hidden">
+          {/* Toolbar skeleton */}
+          <div className="flex items-center justify-between gap-3 px-1">
+            <Skeleton className="h-4 w-48" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-44 rounded-xl" />
+              <Skeleton className="h-8 w-40 rounded-xl" />
+            </div>
+          </div>
+          {/* Task list skeleton */}
+          <div className="panel p-3 space-y-2">
+            {[0,1,2,3].map(i => (
+              <div key={i} className="flex items-center gap-3 p-3.5 rounded-2xl border border-border/40 bg-card">
+                <Skeleton className="h-4 w-4 rounded shrink-0" />
+                <Skeleton className="h-4 w-14 shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-3/4" />
+                  <div className="flex gap-2"><Skeleton className="h-3 w-20 rounded-full" /><Skeleton className="h-3 w-12" /></div>
+                </div>
+                <Skeleton className="h-8 w-8 rounded-xl shrink-0" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-5 min-w-0 w-full">
+          {/* Add task form skeleton */}
+          <div className="panel p-5 space-y-4">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-9 w-full rounded-xl" />
+            <div className="grid grid-cols-2 gap-3">
+              <Skeleton className="h-9 w-full rounded-xl" />
+              <Skeleton className="h-9 w-full rounded-xl" />
+            </div>
+            <Skeleton className="h-9 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-xl" />
+          </div>
+          {/* Timetable skeleton */}
+          <div className="panel p-5 space-y-2">
+            <Skeleton className="h-3 w-20" />
+            {[0,1,2,3,4,5,6].map(i => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="h-3 w-6 shrink-0" />
+                <Skeleton className="h-7 flex-1 rounded-xl" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
 
   const done = todays.filter((t) => t.done).length;
   const planned = todays.reduce((s, t) => s + t.minutes, 0);

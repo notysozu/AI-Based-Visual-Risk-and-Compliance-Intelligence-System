@@ -20,6 +20,7 @@ import { useGuard } from "@/lib/use-guard";
 import { focusIndex, healthIndex, money, projectNetWorth, useTwin } from "@/lib/twin-store";
 import { tooltipStyle } from "@/routes/dashboard";
 import { compareScenarios, getScenarioSuggestions } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 export const Route = createFileRoute("/simulator")({
@@ -214,7 +215,59 @@ function SimulatorPage() {
     toast.success(`Scenario ${name} adopted as your active metrics`);
   };
 
-  if (!ok) return null;
+  if (!ok) return (
+    <AppShell title="Decision Sandbox" subtitle="Loading...">
+      <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
+        <div className="space-y-4">
+          {/* Scenario A/B card skeletons */}
+          {[0,1].map(i => (
+            <div key={i} className="panel p-6 space-y-5">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-5 w-24 rounded-full" />
+              </div>
+              {[0,1,2].map(j => (
+                <div key={j} className="space-y-2">
+                  <div className="flex justify-between"><Skeleton className="h-3 w-32" /><Skeleton className="h-3 w-12" /></div>
+                  <Skeleton className="h-4 w-full rounded-full" />
+                </div>
+              ))}
+              <div className="grid grid-cols-3 gap-2.5 rounded-2xl bg-input p-3">
+                {[0,1,2].map(k => (
+                  <div key={k} className="space-y-1 text-center"><Skeleton className="h-3 w-10 mx-auto" /><Skeleton className="h-4 w-14 mx-auto" /></div>
+                ))}
+              </div>
+              <Skeleton className="h-9 w-full rounded-xl" />
+            </div>
+          ))}
+          <div className="flex gap-2">
+            <Skeleton className="h-10 flex-1 rounded-xl" />
+            <Skeleton className="h-10 w-20 rounded-xl" />
+          </div>
+        </div>
+        <div className="space-y-5">
+          {/* Chart panel skeleton */}
+          <div className="panel p-6 space-y-3">
+            <Skeleton className="h-3 w-48" />
+            <Skeleton className="h-72 w-full rounded-xl" />
+          </div>
+          {/* Verdict cards skeleton */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[0,1,2].map(i => (
+              <div key={i} className="rounded-2xl bg-card p-4 border border-border/50 space-y-3">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+                <div className="pt-2 border-t border-border/40 flex justify-between">
+                  <Skeleton className="h-3 w-16" /><Skeleton className="h-5 w-24 rounded-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
 
   const better = B.terminal > A.terminal ? "B" : "A";
   const worse = better === "A" ? B : A;
@@ -254,7 +307,7 @@ function SimulatorPage() {
 
         <div className="space-y-5">
           <div
-            className={`panel p-6 ${dragging || !ran ? "animate-pulse-glow" : ""}`}
+            className={`panel p-6 ${dragging ? "animate-pulse-glow" : ""}`}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -270,6 +323,9 @@ function SimulatorPage() {
               </span>
             </div>
             <div className="mt-4 h-72">
+              {!ran ? (
+                <Skeleton className="h-full w-full rounded-xl" />
+              ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chart} key={`chart-${backendResult ? "neural" : "live"}-${a.savings}-${a.sleep}-${a.study}-${b.savings}-${b.sleep}-${b.study}`}>
                   <CartesianGrid stroke="var(--color-border)" vertical={false} />
@@ -283,10 +339,26 @@ function SimulatorPage() {
                   <Line yAxisId="right" type="monotone" dataKey="focusB" name="Scenario B (Focus)" stroke="#34d399" strokeDasharray="3 3" strokeWidth={1.5} dot={false} isAnimationActive={true} />
                 </LineChart>
               </ResponsiveContainer>
+              )}
             </div>
           </div>
 
           {/* Structured Verdict Summary Cards Grid */}
+          {!ran ? (
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[0,1,2].map(i => (
+                <div key={i} className="rounded-2xl bg-card p-4 border border-border/50 space-y-3">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-3/4" />
+                  <div className="pt-2 border-t border-border/40 flex justify-between">
+                    <Skeleton className="h-3 w-16" /><Skeleton className="h-5 w-24 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
           <div className="grid gap-4 sm:grid-cols-3">
             {/* Financial Impact Card */}
             <div className="rounded-2xl bg-card p-4 border border-border/50 shadow-[var(--clay-shadow-sm)] flex flex-col justify-between hover:shadow-[var(--clay-shadow)] transition-all">
@@ -358,6 +430,7 @@ function SimulatorPage() {
               </div>
             </div>
           </div>
+          )} {/* end !ran verdict skeleton */}
 
           {/* Interactive AI Advice Narrative Card */}
           {backendResult && (
