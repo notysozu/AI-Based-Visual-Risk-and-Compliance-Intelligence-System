@@ -33,6 +33,7 @@ import { baseline, focusIndex, useTwin, getRoleConfig } from "@/lib/twin-store";
 import { getAnalyticsSummary } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStudyAnalytics, useStudyRecords } from "@/lib/queries";
+import { AnalyticsPeriodSummaries } from "@/components/analytics-period-summaries";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({
@@ -354,6 +355,8 @@ function AnalyticsPage() {
         ) : null}
       </div>
 
+      {/* Multi-Tier Telemetry Intelligence (Daily Mon-Sun, 7-Day Weekly Digest, Monthly Retrospective) */}
+      <AnalyticsPeriodSummaries logs={state.logs} profile={p} />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <ChartCard title="How sleep affects your focus">

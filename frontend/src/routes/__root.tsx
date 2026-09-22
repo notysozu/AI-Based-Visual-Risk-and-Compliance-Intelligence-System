@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import { TwinProvider } from "@/lib/twin-store";
 import { Toaster } from "@/components/ui/sonner";
 import { queryClient } from "@/lib/query-client";
+import { DailyCheckinModal } from "@/components/daily-checkin-modal";
 
 // Persist the TanStack Query cache to localStorage.
 // Max age: 24 hours — stale data from yesterday is always re-fetched on mount.
@@ -161,13 +162,13 @@ function RootShell({ children }: { children: ReactNode }) {
     </html>
   );
 }
-
 function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <TwinProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
+        <DailyCheckinModal />
         <Toaster position="top-center" />
       </TwinProvider>
     </QueryClientProvider>

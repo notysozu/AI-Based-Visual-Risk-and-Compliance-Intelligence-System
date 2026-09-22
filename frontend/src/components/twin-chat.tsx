@@ -53,6 +53,7 @@ import {
   type ChatMessageData
 } from "@/lib/api";
 import { useTwin, today } from "@/lib/twin-store";
+import { queryClient, queryKeys } from "@/lib/query-client";
 
 // Clean, high-impact demonstration cards
 const DEMO_CARDS = [
@@ -103,12 +104,23 @@ export function TwinChat({
   const { state, addTask, addTxn, logHabitActivity, logStudyActivity, updateProfile, saveScenarioPresets } = useTwin();
   const userId = state.profile.id ?? "default";
 
-  const [sessions, setSessions] = useState<ChatSessionData[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | number | null>(selectedSessionId ?? null);
-  const [messages, setMessages] = useState<ChatMessageData[]>([]);
+  // Check cached sessions on initial render for instant 0ms restoration
+  const cachedSessions = queryClient.getQueryData<ChatSessionData[]>(queryKeys.chatSessions(userId)) || [];
+  const savedActiveSessionId = typeof window !== "undefined"
+    ? localStorage.getItem(`twin_last_active_chat_session_${userId}`)
+    : null;
+
+  const initialTargetId = selectedSessionId ?? (savedActiveSessionId || (cachedSessions[0]?.id ?? null));
+  const cachedMessages = initialTargetId
+    ? queryClient.getQueryData<ChatMessageData[]>(queryKeys.chatMessages(initialTargetId)) || []
+    : [];
+
+  const [sessions, setSessions] = useState<ChatSessionData[]>(cachedSessions);
+  const [activeSessionId, setActiveSessionId] = useState<string | number | null>(initialTargetId);
+  const [messages, setMessages] = useState<ChatMessageData[]>(cachedMessages);
   const [inputPrompt, setInputPrompt] = useState("");
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(cachedSessions.length === 0 && !selectedSessionId);
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
   const [isThinkMode, setIsThinkMode] = useState(true);
   const [isListening, setIsListening] = useState(false);
@@ -116,16 +128,23 @@ export function TwinChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const prevMsgCountRef = useRef<number>(0);
+  const prevMsgCountRef = useRef<number>(cachedMessages.length);
   const isActionUpdatingRef = useRef<boolean>(false);
   const recognitionRef = useRef<any>(null);
 
-  // Load sessions on mount or user change
+  // Load sessions on mount or user change without clearing already visible state
   useEffect(() => {
-    setActiveSessionId(selectedSessionId ?? null);
-    setMessages([]);
-    loadSessions(true);
+    loadSessions(cachedSessions.length === 0);
   }, [userId]);
+
+  // Persist active session ID to localStorage
+  useEffect(() => {
+    if (activeSessionId) {
+      try {
+        localStorage.setItem(`twin_last_active_chat_session_${userId}`, String(activeSessionId));
+      } catch {}
+    }
+  }, [activeSessionId, userId]);
 
   // Listen to global events for New Chat Draft and Thread Switching without URL params
   useEffect(() => {
@@ -168,6 +187,10 @@ export function TwinChat({
   // Load messages when active session changes
   useEffect(() => {
     if (activeSessionId) {
+      const cached = queryClient.getQueryData<ChatMessageData[]>(queryKeys.chatMessages(activeSessionId));
+      if (cached && cached.length > 0) {
+        setMessages(cached);
+      }
       loadMessages(activeSessionId);
     } else {
       setMessages([]);
@@ -187,39 +210,46 @@ export function TwinChat({
     prevMsgCountRef.current = messages.length;
   }, [messages, loading]);
 
-  const loadSessions = async (setDefault = true) => {
+  const loadSessions = async (showSpinner = false) => {
     try {
-      if (setDefault) setInitialLoading(true);
+      if (showSpinner) setInitialLoading(true);
       const data = await getChatSessions(userId);
       if (data && data.length > 0) {
         setSessions(data);
-        if (setDefault) {
-          let targetSessionId = data[0].id;
+        queryClient.setQueryData(queryKeys.chatSessions(userId), data);
+
+        let targetSessionId = activeSessionId;
+        if (!targetSessionId || !data.some((s) => s.id === targetSessionId)) {
           if (selectedSessionId && data.some((s) => s.id === selectedSessionId)) {
             targetSessionId = selectedSessionId;
-          } else if (activeSessionId && data.some((s) => s.id === activeSessionId)) {
-            targetSessionId = activeSessionId;
+          } else if (savedActiveSessionId && data.some((s) => String(s.id) === String(savedActiveSessionId))) {
+            targetSessionId = savedActiveSessionId;
+          } else {
+            targetSessionId = data[0].id;
           }
-          setActiveSessionId(targetSessionId);
-          await loadMessages(targetSessionId);
         }
+        setActiveSessionId(targetSessionId);
+        await loadMessages(targetSessionId);
       } else {
         setSessions([]);
+        queryClient.setQueryData(queryKeys.chatSessions(userId), []);
         setActiveSessionId(null);
         setMessages([]);
       }
     } catch (err) {
       console.error("Failed to load chat sessions:", err);
     } finally {
-      if (setDefault) setInitialLoading(false);
+      if (showSpinner) setInitialLoading(false);
     }
   };
 
   const loadMessages = async (sessionId: string | number) => {
     try {
       const data = await getChatMessages(sessionId, userId);
-      setMessages(data || []);
-      prevMsgCountRef.current = (data || []).length;
+      const msgs = data || [];
+      setMessages(msgs);
+      queryClient.setQueryData(queryKeys.chatMessages(sessionId), msgs);
+      prevMsgCountRef.current = msgs.length;
     } catch (err) {
       console.error("Failed to load messages:", err);
     }
@@ -461,9 +491,13 @@ export function TwinChat({
           client_context: clientContext
         });
 
+        const newMsgs = [res.user_message, res.assistant_message];
         setActiveSessionId(res.session.id);
-        setMessages([res.user_message, res.assistant_message]);
-        setSessions((prev) => [res.session, ...prev.filter((s) => s.id !== res.session.id)]);
+        setMessages(newMsgs);
+        const nextSessions = [res.session, ...sessions.filter((s) => s.id !== res.session.id)];
+        setSessions(nextSessions);
+        queryClient.setQueryData(queryKeys.chatSessions(userId), nextSessions);
+        queryClient.setQueryData(queryKeys.chatMessages(res.session.id), newMsgs);
         syncExecutedActionToLocalStore(res.assistant_message);
         window.dispatchEvent(new Event("chat-sessions-updated"));
       } else {
@@ -475,15 +509,18 @@ export function TwinChat({
           client_context: clientContext
         });
 
-        setMessages((prev) => [
-          ...prev.filter((m) => m.id !== optimisticUserMsg.id),
+        const nextMsgs = [
+          ...messages.filter((m) => m.id !== optimisticUserMsg.id),
           res.user_message,
           res.assistant_message
-        ]);
+        ];
+        setMessages(nextMsgs);
+        queryClient.setQueryData(queryKeys.chatMessages(activeSessionId), nextMsgs);
         syncExecutedActionToLocalStore(res.assistant_message);
 
         const updatedSessions = await getChatSessions(userId);
         setSessions(updatedSessions);
+        queryClient.setQueryData(queryKeys.chatSessions(userId), updatedSessions);
         window.dispatchEvent(new Event("chat-sessions-updated"));
       }
     } catch (err: any) {
@@ -594,7 +631,10 @@ export function TwinChat({
     e.preventDefault();
     try {
       await deleteChatSession(sessionId, userId);
-      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      const nextSessions = sessions.filter((s) => s.id !== sessionId);
+      setSessions(nextSessions);
+      queryClient.setQueryData(queryKeys.chatSessions(userId), nextSessions);
+      queryClient.removeQueries({ queryKey: queryKeys.chatMessages(sessionId) });
       if (activeSessionId === sessionId) {
         setActiveSessionId(null);
         setMessages([]);
