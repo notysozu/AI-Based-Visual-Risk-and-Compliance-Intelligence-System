@@ -1,5 +1,6 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { queryClient, queryKeys } from "./query-client";
 import {
   createUser,
   loginUser,
@@ -522,6 +523,9 @@ export function TwinProvider({ children }: { children: ReactNode }) {
           habit_name: "Sleep",
           duration_minutes: Math.round(log.sleep * 60),
           impact_score: 8
+        }).then(() => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.habitRecords(state.profile.id!) });
+          queryClient.invalidateQueries({ queryKey: queryKeys.studyAnalytics(state.profile.id!) });
         }).catch((e) => console.warn("Failed to persist sleep record to MongoDB:", e));
       }
       if (log.study > 0) {
@@ -530,6 +534,9 @@ export function TwinProvider({ children }: { children: ReactNode }) {
           duration_minutes: Math.round(log.study * 60),
           focus_score: 8,
           session_type: "study"
+        }).then(() => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.studyRecords(state.profile.id!) });
+          queryClient.invalidateQueries({ queryKey: queryKeys.studyAnalytics(state.profile.id!) });
         }).catch((e) => console.warn("Failed to persist study record to MongoDB:", e));
       }
     }
@@ -574,6 +581,9 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         habit_name: habitName,
         duration_minutes: Math.round(hours * 60),
         impact_score: 8
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.habitRecords(state.profile.id!) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.studyAnalytics(state.profile.id!) });
       }).catch((e) => console.warn("Failed to persist habit record to MongoDB:", e));
     }
   };
@@ -611,6 +621,9 @@ export function TwinProvider({ children }: { children: ReactNode }) {
         duration_minutes: Math.round(hours * 60),
         focus_score: 8,
         session_type: "study"
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.studyRecords(state.profile.id!) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.studyAnalytics(state.profile.id!) });
       }).catch((e) => console.warn("Failed to persist study record to MongoDB:", e));
     }
   };
@@ -675,6 +688,8 @@ export function TwinProvider({ children }: { children: ReactNode }) {
 
   const signOut = () => {
     hasAutoSynced.current = false;
+    // Clear cached query data so next user doesn't see previous user's data
+    queryClient.clear();
     setState((s) => {
       const preservedTheme = s.theme || getSavedTheme();
       try {
@@ -1072,6 +1087,16 @@ export function TwinProvider({ children }: { children: ReactNode }) {
           profileSyncing: false,
         };
       });
+
+      // Invalidate all user-scoped query cache so pages fetch fresh data for the new user
+      const userId = targetUserId ?? state.profile.id;
+      if (userId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(userId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.studyAnalytics(userId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.studyRecords(userId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.habitRecords(userId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.forecast(userId) });
+      }
     } catch (err) {
       setState((s) => ({
         ...s,

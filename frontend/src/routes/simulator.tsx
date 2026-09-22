@@ -21,6 +21,7 @@ import { focusIndex, healthIndex, money, projectNetWorth, useTwin } from "@/lib/
 import { tooltipStyle } from "@/routes/dashboard";
 import { compareScenarios, getScenarioSuggestions } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useScenarioPresets } from "@/lib/queries";
 
 
 export const Route = createFileRoute("/simulator")({
@@ -43,7 +44,7 @@ const ZERO: Scenario = { savings: 0, sleep: 0, study: 0 };
 
 function SimulatorPage() {
   const ok = useGuard();
-  const { state, updateProfile, saveScenarioPresets, loadScenarioPresets } = useTwin();
+  const { state, updateProfile, saveScenarioPresets } = useTwin();
   const p = state.profile;
   const [a, setA] = useState<Scenario>({ savings: 400, sleep: 0.5, study: 4 });
   const [b, setB] = useState<Scenario>({ savings: 1200, sleep: -1, study: 12 });
@@ -52,19 +53,15 @@ function SimulatorPage() {
   const [burst, setBurst] = useState(false);
   const [backendResult, setBackendResult] = useState<any>(null);
 
-  // On mount, pull any previously-saved Scenario A/B slider positions
-  // from the backend so the sandbox opens where the user left it.
+  // — Cached scenario presets (10 min stale — no DB hit on revisit) —
+  const { data: presetsData } = useScenarioPresets(p.id);
   useEffect(() => {
-    loadScenarioPresets()
-      .then(({ a: savedA, b: savedB }) => {
-        if (savedA) setA(savedA);
-        if (savedB) setB(savedB);
-      })
-      .catch(() => {
-        // no saved presets yet, or not signed in — keep current defaults
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!presetsData) return;
+    const savedA = presetsData?.a ?? presetsData?.scenario_a ?? null;
+    const savedB = presetsData?.b ?? presetsData?.scenario_b ?? null;
+    if (savedA) setA(savedA);
+    if (savedB) setB(savedB);
+  }, [presetsData]);
 
 
   const monthlyBase = Math.max(0, p.monthlyIncome - p.monthlyExpenses);

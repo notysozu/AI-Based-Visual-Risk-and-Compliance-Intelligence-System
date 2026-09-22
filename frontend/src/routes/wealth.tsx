@@ -25,6 +25,8 @@ import { money, useTwin, getRoleConfig } from "@/lib/twin-store";
 import { tooltipStyle } from "@/routes/dashboard";
 import { getWealthAdvice, updateUser } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useForecast } from "@/lib/queries";
+import { queryClient, queryKeys } from "@/lib/query-client";
 
 export const Route = createFileRoute("/wealth")({
   head: () => ({
@@ -43,7 +45,7 @@ export const Route = createFileRoute("/wealth")({
 
 function WealthPage() {
   const ok = useGuard();
-  const { state, updateProfile, loadForecast } = useTwin();
+  const { state, updateProfile } = useTwin();
   const p = state.profile;
   const cfg = getRoleConfig(p.role);
 
@@ -69,17 +71,10 @@ function WealthPage() {
     }
   }, [p.lastWealthPrediction, p.lastSuccessOdds]);
 
-  // Fetch the real forecast from the backend when the page loads
-  // or when the profile id/targets change.
-  useEffect(() => {
-    if (p.id !== null && p.id !== undefined) {
-      loadForecast();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [p.id, p.age, p.targetAge, p.targetNetWorth, p.monthlyIncome, p.monthlyExpenses, p.netWorth]);
+  // — Cached forecast query (30 min stale — avoids re-running Monte Carlo on every visit) —
+  const { data: forecastData, isFetching: running } = useForecast(p.id);
+  const forecast = forecastData ?? state.forecast;
 
-  const forecast = state.forecast;
-  const running = state.forecastLoading;
 
   // Map backend monte_carlo shape into the {year, p10, p50, p90} shape the chart expects
   const mcData = useMemo(() => {
@@ -116,8 +111,8 @@ function WealthPage() {
         targetNetWorth: targets.targetNetWorth,
       });
 
-      // 3. Re-run forecast Monte Carlo projection
-      await loadForecast();
+      // 3. Re-run forecast Monte Carlo projection (invalidate cache → useForecast refetches)
+      await queryClient.invalidateQueries({ queryKey: queryKeys.forecast(userId) });
 
       // 4. Get fresh AI prediction (with force=true)
       const result = await getWealthAdvice(userId, true);

@@ -29,6 +29,8 @@ import {
   resetSuggestionsApi,
 } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSuggestions } from "@/lib/queries";
+import { queryClient, queryKeys } from "@/lib/query-client";
 
 export const Route = createFileRoute("/suggestions")({
   head: () => ({
@@ -66,7 +68,6 @@ function SuggestionsPage() {
 
   const [items, setItems] = useState<SuggestionItemData[]>([]);
   const [diagnostic, setDiagnostic] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(true);
   const [generating, setGenerating] = useState<boolean>(false);
   const [addingMore, setAddingMore] = useState<boolean>(false);
   const [resetting, setResetting] = useState<boolean>(false);
@@ -83,55 +84,31 @@ function SuggestionsPage() {
   const cfg = getRoleConfig(state.profile.role);
   const userId = state.profile.id ?? "default";
 
-  // Load initial suggestions from database or fallback to local role templates
-  useEffect(() => {
-    let isMounted = true;
-    async function loadData() {
-      setLoading(true);
-      try {
-        const res = await getUserSuggestions(userId);
-        if (isMounted && res?.suggestions?.length > 0) {
-          setItems(res.suggestions);
-          setDiagnostic(res.lifestyle_diagnostic || "");
-        } else if (isMounted) {
-          // Fallback to local role suggestions
-          const roleDefaults = getRoleSuggestions(state.profile.role).map((s) => ({
-            suggestion_id: s.id,
-            title: s.title,
-            category: s.category,
-            detail: s.detail,
-            impact: s.impact,
-            start_time: s.start,
-            duration_minutes: s.minutes,
-            is_adopted: state.adopted.includes(s.id),
-            is_ai_generated: false,
-          }));
-          setItems(roleDefaults);
-        }
-      } catch (err) {
-        console.warn("Failed to load suggestions from backend, using local store:", err);
-        const roleDefaults = getRoleSuggestions(state.profile.role).map((s) => ({
-          suggestion_id: s.id,
-          title: s.title,
-          category: s.category,
-          detail: s.detail,
-          impact: s.impact,
-          start_time: s.start,
-          duration_minutes: s.minutes,
-          is_adopted: state.adopted.includes(s.id),
-          is_ai_generated: false,
-        }));
-        if (isMounted) setItems(roleDefaults);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    }
+  // — Cached suggestions query —
+  const { data: suggestionsData, isLoading: loading } = useSuggestions(state.profile.id);
 
-    loadData();
-    return () => {
-      isMounted = false;
-    };
-  }, [userId, state.profile.role]);
+  // Sync query data into local items state (once loaded or refreshed)
+  useEffect(() => {
+    if (!suggestionsData) return;
+    if (suggestionsData?.suggestions?.length > 0) {
+      setItems(suggestionsData.suggestions);
+      setDiagnostic(suggestionsData.lifestyle_diagnostic || "");
+    } else {
+      // Fallback to local role suggestions when no backend suggestions exist
+      const roleDefaults = getRoleSuggestions(state.profile.role).map((s) => ({
+        suggestion_id: s.id,
+        title: s.title,
+        category: s.category,
+        detail: s.detail,
+        impact: s.impact,
+        start_time: s.start,
+        duration_minutes: s.minutes,
+        is_adopted: state.adopted.includes(s.id),
+        is_ai_generated: false,
+      }));
+      setItems(roleDefaults);
+    }
+  }, [suggestionsData, state.profile.role, state.adopted]);
 
   // Handle AI Regeneration (Data Analysis & Refresh)
   const handleRegenerate = async () => {
@@ -143,6 +120,8 @@ function SuggestionsPage() {
         setItems(res.suggestions);
         setDiagnostic(res.lifestyle_diagnostic || "");
         setCurrentPage(1);
+        // Invalidate so next visit gets fresh data
+        queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(state.profile.id ?? userId) });
         toast.success("Fresh AI suggestions generated from your data");
       }
     } catch (err: any) {

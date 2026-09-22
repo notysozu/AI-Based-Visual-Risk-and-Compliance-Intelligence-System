@@ -67,6 +67,14 @@ import {
   addStudyExam,
   deleteStudyExam,
 } from "@/lib/api";
+import {
+  useStudyOnboardingStatus,
+  useStudyAnalytics,
+  useStudyForecast,
+  useSavedStudyPlan,
+  useStudyExams,
+} from "@/lib/queries";
+import { queryClient, queryKeys } from "@/lib/query-client";
 import { StudyOnboardingModal } from "@/components/study-onboarding-modal";
 import {
   SOUNDSCAPES,
@@ -516,47 +524,50 @@ function StudyCockpitPage() {
     };
   }, [isCornerResizing, windowPos.x, windowPos.y]);
 
-  // Refresh study records, analytics, and exams
+  // — Cached study data queries (served from cache on revisit) —
+  const { data: onboardingData } = useStudyOnboardingStatus(p.id);
+  const { data: analyticsData } = useStudyAnalytics(p.id);
+  const { data: forecastData } = useStudyForecast(p.id);
+  const { data: studyPlanData } = useSavedStudyPlan(p.id);
+  const { data: examsData } = useStudyExams(p.id);
+
+  // Sync query results into local state mirrors (needed for mutation/edit flows)
+  useEffect(() => {
+    if (!onboardingData) return;
+    if (!onboardingData.onboarded) {
+      setOnboardingOpen(true);
+    } else if (onboardingData.subjects?.length > 0) {
+      setUserCurriculum(onboardingData);
+      setSelectedSubject(onboardingData.subjects[0]);
+      setLogSubject(onboardingData.subjects[0]);
+      setExamSubject(onboardingData.subjects[0]);
+    }
+  }, [onboardingData]);
+
+  useEffect(() => {
+    if (analyticsData) setAnalytics(analyticsData);
+  }, [analyticsData]);
+
+  useEffect(() => {
+    if (forecastData) setForecast(forecastData);
+  }, [forecastData]);
+
+  useEffect(() => {
+    if (studyPlanData) setStudyPlan(studyPlanData.plan || studyPlanData);
+  }, [studyPlanData]);
+
+  useEffect(() => {
+    if (Array.isArray(examsData)) setExams(examsData);
+  }, [examsData]);
+
+  // Invalidate study queries after any mutation to refresh analytics
   const refreshAllData = useCallback(() => {
     if (!p.id) return;
-    getStudyAnalytics(p.id)
-      .then((data) => setAnalytics(data))
-      .catch(() => {});
-
-    getStudyForecast(p.id)
-      .then((data) => setForecast(data))
-      .catch(() => {});
-
-    getSavedStudyPlan(p.id)
-      .then((data) => {
-        if (data) setStudyPlan(data.plan || data);
-      })
-      .catch(() => {});
-
-    getStudyExams(p.id)
-      .then((data) => {
-        if (Array.isArray(data)) setExams(data);
-      })
-      .catch(() => {});
+    queryClient.invalidateQueries({ queryKey: queryKeys.studyAnalytics(p.id) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.studyForecast(p.id) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.studyPlan(p.id) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.studyExams(p.id) });
   }, [p.id]);
-
-  // Check onboarding on mount
-  useEffect(() => {
-    if (!p.id) return;
-    getStudyOnboardingStatus(p.id)
-      .then((res: any) => {
-        if (res && !res.onboarded) {
-          setOnboardingOpen(true);
-        } else if (res && res.subjects && res.subjects.length > 0) {
-          setUserCurriculum(res);
-          setSelectedSubject(res.subjects[0]);
-          setLogSubject(res.subjects[0]);
-          setExamSubject(res.subjects[0]);
-        }
-      })
-      .catch(() => {});
-    refreshAllData();
-  }, [p.id, refreshAllData]);
 
   // Handle timer completion (Direct MongoDB Save)
   const handleTimerCompleted = useCallback(() => {

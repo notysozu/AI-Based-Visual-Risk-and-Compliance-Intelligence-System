@@ -30,8 +30,9 @@ import { AIIntelligenceCard } from "@/components/ai-intelligence-card";
 import { HabitDrawer, tooltipStyle } from "@/routes/dashboard";
 import { useGuard } from "@/lib/use-guard";
 import { baseline, focusIndex, useTwin, getRoleConfig } from "@/lib/twin-store";
-import { getAnalyticsSummary, getStudyAnalytics, getStudyRecords } from "@/lib/api";
+import { getAnalyticsSummary } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useStudyAnalytics, useStudyRecords } from "@/lib/queries";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({
@@ -55,20 +56,11 @@ function AnalyticsPage() {
   const [drawer, setDrawer] = useState(false);
   const [summary, setSummary] = useState<string>(p.lastAnalyticsSummary ?? "");
   const [summaryLoading, setSummaryLoading] = useState(false);
-  const [studyAnalytics, setStudyAnalytics] = useState<any>(null);
-  const [studyRecords, setStudyRecords] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (!p.id) return;
-    getStudyAnalytics(p.id)
-      .then((data) => setStudyAnalytics(data))
-      .catch(() => {});
-    getStudyRecords(p.id)
-      .then((records) => {
-        if (Array.isArray(records)) setStudyRecords(records);
-      })
-      .catch(() => {});
-  }, [p.id]);
+  // — Cached queries (no repeated DB hits on re-visit) —
+  const { data: studyAnalytics = null } = useStudyAnalytics(p.id);
+  const { data: studyRecordsData = [] } = useStudyRecords(p.id);
+  const studyRecords: any[] = Array.isArray(studyRecordsData) ? studyRecordsData : [];
 
   // Request/Update the AI Analytics narrative based on the 12:00 PM internal time rule
   useEffect(() => {

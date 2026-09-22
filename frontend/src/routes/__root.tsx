@@ -1,4 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { persistQueryClient } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import {
   Outlet,
   Link,
@@ -12,6 +14,21 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { TwinProvider } from "@/lib/twin-store";
 import { Toaster } from "@/components/ui/sonner";
+import { queryClient } from "@/lib/query-client";
+
+// Persist the TanStack Query cache to localStorage.
+// Max age: 24 hours — stale data from yesterday is always re-fetched on mount.
+if (typeof window !== "undefined") {
+  const persister = createSyncStoragePersister({
+    storage: window.localStorage,
+    key: "vrci-query-cache",
+  });
+  persistQueryClient({
+    queryClient,
+    persister,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  });
+}
 
 
 function NotFoundComponent() {
@@ -146,8 +163,6 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
-
   return (
     <QueryClientProvider client={queryClient}>
       <TwinProvider>
