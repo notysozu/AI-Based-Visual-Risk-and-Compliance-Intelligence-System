@@ -115,7 +115,7 @@ export function StudyJarvisLive({
     setLiveTranscript("");
   }, []);
 
-  // Natural TTS Voice with Acoustic Shield & Speaker Echo Cancellation
+  // Natural TTS Voice with Hardware Mic Lock & Acoustic Shield Isolation
   const speakJarvis = useCallback((textToSpeak: string) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
@@ -124,20 +124,29 @@ export function StudyJarvisLive({
       if (echoCooldownTimerRef.current) {
         clearTimeout(echoCooldownTimerRef.current);
       }
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+      }
 
       const clean = textToSpeak.replace(/<[^>]*>?/gm, "").replace(/[`*#_]/g, "").trim();
       if (!clean) return;
 
-      // 1. Record spoken text to cancel any acoustic echoes
+      // 1. Record spoken text to cancel any acoustic echoes for 30 seconds
       recentSpokenTextsRef.current.push({ text: clean, timestamp: Date.now() });
-      if (recentSpokenTextsRef.current.length > 15) {
+      if (recentSpokenTextsRef.current.length > 20) {
         recentSpokenTextsRef.current.shift();
       }
 
-      // 2. Lock microphone recognition immediately
+      // 2. Hardware Mic Lock: Immediately flag speaking and abort recognition hardware stream
       isSpeakingRef.current = true;
       setIsSpeaking(true);
       setLiveTranscript("");
+
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {}
+      }
 
       const utterance = new SpeechSynthesisUtterance(clean);
       utterance.rate = 1.08;
@@ -154,21 +163,40 @@ export function StudyJarvisLive({
       utterance.onstart = () => {
         isSpeakingRef.current = true;
         setIsSpeaking(true);
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.abort();
+          } catch {}
+        }
       };
 
       utterance.onend = () => {
         setIsSpeaking(false);
-        // Keep acoustic echo suppression active for 850ms to let room reverb and mic buffer clear
+        // Keep acoustic echo suppression active for 1100ms to let room reverb and mic buffer clear completely
         if (echoCooldownTimerRef.current) clearTimeout(echoCooldownTimerRef.current);
         echoCooldownTimerRef.current = setTimeout(() => {
           isSpeakingRef.current = false;
           setLiveTranscript("");
-        }, 850);
+          // Safely resume microphone listening
+          if (!isMuted && recognitionRef.current) {
+            try {
+              recognitionRef.current.start();
+            } catch {}
+          }
+        }, 1100);
       };
 
       utterance.onerror = () => {
         setIsSpeaking(false);
-        isSpeakingRef.current = false;
+        if (echoCooldownTimerRef.current) clearTimeout(echoCooldownTimerRef.current);
+        echoCooldownTimerRef.current = setTimeout(() => {
+          isSpeakingRef.current = false;
+          if (!isMuted && recognitionRef.current) {
+            try {
+              recognitionRef.current.start();
+            } catch {}
+          }
+        }, 800);
       };
 
       window.speechSynthesis.speak(utterance);
@@ -177,7 +205,7 @@ export function StudyJarvisLive({
       setIsSpeaking(false);
       isSpeakingRef.current = false;
     }
-  }, []);
+  }, [isMuted]);
 
   // Process Voice Query / Command
   const processVoiceInput = useCallback(
@@ -191,7 +219,7 @@ export function StudyJarvisLive({
 
       const now = Date.now();
       const isEcho = recentSpokenTextsRef.current.some((item) => {
-        if (now - item.timestamp > 15000) return false;
+        if (now - item.timestamp > 30000) return false;
         const cleanSpoken = item.text.toLowerCase().replace(/[^a-z0-9]/g, " ").trim();
 
         // Exact substring match
@@ -199,15 +227,15 @@ export function StudyJarvisLive({
           return true;
         }
 
-        // Token overlap similarity (e.g. if mic misrecognized 1-2 words of JARVIS's sentence)
-        const qTokens = cleanQ.split(/\s+/).filter((w) => w.length >= 3);
-        const spokenTokens = new Set(cleanSpoken.split(/\s+/).filter((w) => w.length >= 3));
+        // Token overlap similarity
+        const qTokens = cleanQ.split(/\s+/).filter((w) => w.length >= 2);
+        const spokenTokens = new Set(cleanSpoken.split(/\s+/).filter((w) => w.length >= 2));
         if (qTokens.length > 0 && spokenTokens.size > 0) {
           let matched = 0;
           for (const tok of qTokens) {
             if (spokenTokens.has(tok)) matched++;
           }
-          if (matched / Math.min(qTokens.length, spokenTokens.size) >= 0.55) {
+          if (matched / Math.min(qTokens.length, spokenTokens.size) >= 0.35) {
             return true;
           }
         }
@@ -344,8 +372,10 @@ export function StudyJarvisLive({
         };
 
         recognition.onresult = (event: any) => {
-          // Acoustic Shield: Drop all audio frames picked up while JARVIS is speaking
+          // Acoustic Shield: Drop all audio frames picked up while JARVIS is speaking or cooling down
           if (isSpeakingRef.current) {
+            setLiveTranscript("");
+            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
             return;
           }
 
@@ -363,6 +393,31 @@ export function StudyJarvisLive({
 
           const current = (finalTranscript + interim).trim();
           if (current) {
+            // Early echo filter on incoming stream
+            const cleanQ = current.toLowerCase().replace(/[^a-z0-9]/g, " ").trim();
+            const now = Date.now();
+            const isEcho = recentSpokenTextsRef.current.some((item) => {
+              if (now - item.timestamp > 30000) return false;
+              const cleanSpoken = item.text.toLowerCase().replace(/[^a-z0-9]/g, " ").trim();
+              if (cleanSpoken.includes(cleanQ) || cleanQ.includes(cleanSpoken)) return true;
+              const qTokens = cleanQ.split(/\s+/).filter((w) => w.length >= 2);
+              const spokenTokens = new Set(cleanSpoken.split(/\s+/).filter((w) => w.length >= 2));
+              if (qTokens.length > 0 && spokenTokens.size > 0) {
+                let matched = 0;
+                for (const tok of qTokens) {
+                  if (spokenTokens.has(tok)) matched++;
+                }
+                if (matched / Math.min(qTokens.length, spokenTokens.size) >= 0.35) return true;
+              }
+              return false;
+            });
+
+            if (isEcho) {
+              setLiveTranscript("");
+              if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+              return;
+            }
+
             setLiveTranscript(current);
 
             if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
@@ -381,6 +436,10 @@ export function StudyJarvisLive({
         };
 
         recognition.onend = () => {
+          // If JARVIS is speaking or cooling down, do NOT auto-restart yet
+          if (isSpeakingRef.current) {
+            return;
+          }
           if (!isMuted) {
             try {
               recognition.start();
