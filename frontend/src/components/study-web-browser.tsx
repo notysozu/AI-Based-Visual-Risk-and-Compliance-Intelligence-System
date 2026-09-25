@@ -108,6 +108,8 @@ interface StudyWebBrowserProps {
   onClose: () => void;
   pos?: { x: number; y: number };
   onPosChange?: (pos: { x: number; y: number }) => void;
+  zIndex?: number;
+  onFocus?: () => void;
 }
 
 export function StudyWebBrowser({
@@ -115,6 +117,8 @@ export function StudyWebBrowser({
   onClose,
   pos = { x: 80, y: 70 },
   onPosChange,
+  zIndex = 40,
+  onFocus,
 }: StudyWebBrowserProps) {
   // Multi-tab state
   const [tabs, setTabs] = useState<BrowserTab[]>([
@@ -278,6 +282,7 @@ export function StudyWebBrowser({
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button, input, select, iframe, a")) return;
     e.preventDefault();
+    onFocus?.();
     dragStartRef.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
@@ -319,6 +324,7 @@ export function StudyWebBrowser({
   const handleCornerResizeMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    onFocus?.();
     cornerResizeStartRef.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
@@ -362,13 +368,15 @@ export function StudyWebBrowser({
 
   return (
     <div
+      onMouseDownCapture={onFocus}
       style={{
         left: isMaximized ? "12px" : `${windowPos.x}px`,
         top: isMaximized ? "52px" : `${windowPos.y}px`,
         width: isMaximized ? "calc(100vw - 24px)" : `${windowSize.width}px`,
         height: isMaximized ? "calc(100vh - 64px)" : `${windowSize.height}px`,
+        zIndex,
       }}
-      className="fixed z-30 rounded-2xl border border-cyan-500/25 bg-black/40 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden select-none"
+      className="fixed rounded-2xl border border-cyan-500/25 bg-black/40 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden select-none transition-shadow"
     >
       {/* 1. macOS Window Header & Tab Bar */}
       <div

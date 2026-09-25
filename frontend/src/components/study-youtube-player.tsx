@@ -133,6 +133,8 @@ interface StudyYouTubePlayerProps {
   onClose: () => void;
   pos?: { x: number; y: number };
   onPosChange?: (pos: { x: number; y: number }) => void;
+  zIndex?: number;
+  onFocus?: () => void;
 }
 
 export function StudyYouTubePlayer({
@@ -140,6 +142,8 @@ export function StudyYouTubePlayer({
   onClose,
   pos = { x: 30, y: 70 },
   onPosChange,
+  zIndex = 40,
+  onFocus,
 }: StudyYouTubePlayerProps) {
   const [activePreset, setActivePreset] = useState<YouTubePreset>(CURATED_YOUTUBE_PRESETS[0]);
   const [customInput, setCustomInput] = useState("");
@@ -153,10 +157,31 @@ export function StudyYouTubePlayer({
   const [activeTab, setActiveTab] = useState<"curated" | "favorites" | "custom">("curated");
   const [isCompact, setIsCompact] = useState(false);
 
-  // Movable Window State
+  // Movable & Resizable Window State
   const [windowPos, setWindowPos] = useState(pos);
+  const [windowSize, setWindowSize] = useState<{ width: number; height: number }>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("study_youtube_window_size");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.width === "number" && typeof parsed.height === "number") {
+            return {
+              width: Math.max(340, Math.min(window.innerWidth - 30, parsed.width)),
+              height: Math.max(260, Math.min(window.innerHeight - 60, parsed.height)),
+            };
+          }
+        } catch {}
+      }
+    }
+    return { width: 480, height: 540 };
+  });
+
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, posX: 0, posY: 0 });
+
+  const [isCornerResizing, setIsCornerResizing] = useState(false);
+  const cornerResizeStartRef = useRef({ mouseX: 0, mouseY: 0, startW: 0, startH: 0 });
 
   useEffect(() => {
     setWindowPos(pos);
@@ -212,6 +237,7 @@ export function StudyYouTubePlayer({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button, input, iframe, a")) return;
+    onFocus?.();
     setIsDragging(true);
     dragStartRef.current = {
       mouseX: e.clientX,
@@ -226,8 +252,10 @@ export function StudyYouTubePlayer({
       if (!isDragging) return;
       const dx = e.clientX - dragStartRef.current.mouseX;
       const dy = e.clientY - dragStartRef.current.mouseY;
-      const newX = Math.max(10, Math.min(window.innerWidth - 420, dragStartRef.current.posX + dx));
-      const newY = Math.max(40, Math.min(window.innerHeight - 200, dragStartRef.current.posY + dy));
+      const maxX = Math.max(10, window.innerWidth - (isCompact ? 320 : windowSize.width) - 10);
+      const maxY = Math.max(40, window.innerHeight - 100);
+      const newX = Math.max(10, Math.min(maxX, dragStartRef.current.posX + dx));
+      const newY = Math.max(40, Math.min(maxY, dragStartRef.current.posY + dy));
       const nextPos = { x: newX, y: newY };
       currentPosRef.current = nextPos;
       setWindowPos(nextPos);
@@ -249,14 +277,65 @@ export function StudyYouTubePlayer({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, onPosChange]);
+  }, [isDragging, onPosChange, isCompact, windowSize.width]);
+
+  // Corner Resize Handlers
+  const handleCornerResizeMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onFocus?.();
+    cornerResizeStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      startW: windowSize.width,
+      startH: windowSize.height,
+    };
+    setIsCornerResizing(true);
+  };
+
+  useEffect(() => {
+    if (!isCornerResizing) return;
+    let finalSize = windowSize;
+
+    const onMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - cornerResizeStartRef.current.mouseX;
+      const deltaY = e.clientY - cornerResizeStartRef.current.mouseY;
+      const maxW = Math.min(window.innerWidth - windowPos.x - 16, window.innerWidth - 32);
+      const maxH = Math.min(window.innerHeight - windowPos.y - 16, window.innerHeight - 60);
+      const nextW = Math.max(340, Math.min(maxW, cornerResizeStartRef.current.startW + deltaX));
+      const nextH = Math.max(260, Math.min(maxH, cornerResizeStartRef.current.startH + deltaY));
+      finalSize = { width: nextW, height: nextH };
+      setWindowSize(finalSize);
+    };
+
+    const onMouseUp = () => {
+      setIsCornerResizing(false);
+      try {
+        localStorage.setItem("study_youtube_window_size", JSON.stringify(finalSize));
+      } catch {}
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isCornerResizing, windowPos.x, windowPos.y, windowSize]);
 
   if (!open) return null;
 
   return (
     <div
-      style={{ left: `${windowPos.x}px`, top: `${windowPos.y}px` }}
-      className={`fixed z-40 w-[450px] max-w-[95vw] select-none rounded-2xl border border-white/10 bg-[#0F0F0F]/95 backdrop-blur-2xl shadow-2xl shadow-black/90 text-white overflow-hidden flex flex-col font-sans ${
+      onMouseDownCapture={onFocus}
+      style={{
+        left: `${windowPos.x}px`,
+        top: `${windowPos.y}px`,
+        width: isCompact ? "340px" : `${windowSize.width}px`,
+        height: isCompact ? undefined : `${windowSize.height}px`,
+        zIndex,
+      }}
+      className={`fixed max-w-[98vw] max-h-[92vh] select-none rounded-2xl border border-white/10 bg-[#0F0F0F]/95 backdrop-blur-2xl shadow-2xl shadow-black/90 text-white overflow-hidden flex flex-col font-sans transition-shadow ${
         isCompact ? "h-auto" : ""
       }`}
     >
@@ -338,7 +417,7 @@ export function StudyYouTubePlayer({
       {/* 2. Embedded Video Frame */}
       <div className="p-3 bg-[#0F0F0F]">
         <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-white/10 shadow-lg">
-          {isDragging && <div className="absolute inset-0 z-50 bg-transparent" />}
+          {(isDragging || isCornerResizing) && <div className="absolute inset-0 z-50 bg-transparent" />}
           <iframe
             key={activePreset.videoId}
             src={`https://www.youtube.com/embed/${activePreset.videoId}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0`}
@@ -509,6 +588,27 @@ export function StudyYouTubePlayer({
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Bottom-Right macOS Corner Resize Handle */}
+      {!isCompact && (
+        <div
+          onMouseDown={handleCornerResizeMouseDown}
+          className="absolute bottom-1 right-1 w-4 h-4 cursor-se-resize flex items-center justify-center text-white/30 hover:text-white/80 transition-colors z-50 group"
+          title="Drag to resize YouTube window"
+        >
+          <svg
+            className="w-3 h-3 opacity-60 group-hover:opacity-100 transition-opacity"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          >
+            <line x1="21" y1="9" x2="9" y2="21" />
+            <line x1="21" y1="15" x2="15" y2="21" />
+          </svg>
         </div>
       )}
     </div>

@@ -34,6 +34,8 @@ interface StudyNotesWindowProps {
   subject?: string;
   pos?: { x: number; y: number };
   onPosChange?: (pos: { x: number; y: number }) => void;
+  zIndex?: number;
+  onFocus?: () => void;
 }
 
 const CATEGORIES = [
@@ -51,6 +53,8 @@ export function StudyNotesWindow({
   subject = "General Study",
   pos = { x: 340, y: 80 },
   onPosChange,
+  zIndex = 40,
+  onFocus,
 }: StudyNotesWindowProps) {
   const [notes, setNotes] = useState<StudyNote[]>(() => {
     try {
@@ -79,10 +83,31 @@ export function StudyNotesWindow({
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Movable Window State
+  // Movable & Resizable Window State
   const [windowPos, setWindowPos] = useState(pos);
+  const [windowSize, setWindowSize] = useState<{ width: number; height: number }>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`study_notes_size_${userId}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.width === "number" && typeof parsed.height === "number") {
+            return {
+              width: Math.max(380, Math.min(window.innerWidth - 40, parsed.width)),
+              height: Math.max(300, Math.min(window.innerHeight - 80, parsed.height)),
+            };
+          }
+        } catch {}
+      }
+    }
+    return { width: 780, height: 540 };
+  });
+
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, posX: 0, posY: 0 });
+
+  const [isCornerResizing, setIsCornerResizing] = useState(false);
+  const cornerResizeStartRef = useRef({ mouseX: 0, mouseY: 0, startW: 0, startH: 0 });
 
   useEffect(() => {
     setWindowPos(pos);
@@ -236,6 +261,7 @@ export function StudyNotesWindow({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button, input, textarea, a, select")) return;
+    onFocus?.();
     setIsDragging(true);
     dragStartRef.current = {
       mouseX: e.clientX,
@@ -250,8 +276,10 @@ export function StudyNotesWindow({
       if (!isDragging) return;
       const dx = e.clientX - dragStartRef.current.mouseX;
       const dy = e.clientY - dragStartRef.current.mouseY;
-      const newX = Math.max(10, Math.min(window.innerWidth - 650, dragStartRef.current.posX + dx));
-      const newY = Math.max(40, Math.min(window.innerHeight - 300, dragStartRef.current.posY + dy));
+      const maxX = Math.max(10, window.innerWidth - windowSize.width - 10);
+      const maxY = Math.max(40, window.innerHeight - 100);
+      const newX = Math.max(10, Math.min(maxX, dragStartRef.current.posX + dx));
+      const newY = Math.max(40, Math.min(maxY, dragStartRef.current.posY + dy));
       const nextPos = { x: newX, y: newY };
       currentPosRef.current = nextPos;
       setWindowPos(nextPos);
@@ -273,14 +301,65 @@ export function StudyNotesWindow({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, onPosChange]);
+  }, [isDragging, onPosChange, windowSize.width]);
+
+  // Corner Resize Handlers
+  const handleCornerResizeMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onFocus?.();
+    cornerResizeStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      startW: windowSize.width,
+      startH: windowSize.height,
+    };
+    setIsCornerResizing(true);
+  };
+
+  useEffect(() => {
+    if (!isCornerResizing) return;
+    let finalSize = windowSize;
+
+    const onMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - cornerResizeStartRef.current.mouseX;
+      const deltaY = e.clientY - cornerResizeStartRef.current.mouseY;
+      const maxW = Math.min(window.innerWidth - windowPos.x - 16, window.innerWidth - 32);
+      const maxH = Math.min(window.innerHeight - windowPos.y - 16, window.innerHeight - 60);
+      const nextW = Math.max(380, Math.min(maxW, cornerResizeStartRef.current.startW + deltaX));
+      const nextH = Math.max(300, Math.min(maxH, cornerResizeStartRef.current.startH + deltaY));
+      finalSize = { width: nextW, height: nextH };
+      setWindowSize(finalSize);
+    };
+
+    const onMouseUp = () => {
+      setIsCornerResizing(false);
+      try {
+        localStorage.setItem(`study_notes_size_${userId}`, JSON.stringify(finalSize));
+      } catch {}
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [isCornerResizing, userId, windowPos.x, windowPos.y, windowSize]);
 
   if (!open) return null;
 
   return (
     <div
-      style={{ left: `${windowPos.x}px`, top: `${windowPos.y}px` }}
-      className="fixed z-40 w-[780px] max-w-[95vw] h-[540px] max-h-[85vh] select-none rounded-2xl border border-white/15 bg-zinc-950/95 backdrop-blur-2xl shadow-2xl shadow-black/80 text-white overflow-hidden flex flex-col font-sans"
+      onMouseDownCapture={onFocus}
+      style={{
+        left: `${windowPos.x}px`,
+        top: `${windowPos.y}px`,
+        width: `${windowSize.width}px`,
+        height: `${windowSize.height}px`,
+        zIndex,
+      }}
+      className="fixed max-w-[98vw] max-h-[92vh] select-none rounded-2xl border border-white/15 bg-zinc-950/95 backdrop-blur-2xl shadow-2xl shadow-black/80 text-white overflow-hidden flex flex-col font-sans transition-shadow"
     >
       {/* 1. Header Bar */}
       <div
@@ -561,6 +640,25 @@ export function StudyNotesWindow({
             </Button>
           </div>
         )}
+      </div>
+
+      {/* Bottom-Right macOS Corner Resize Handle */}
+      <div
+        onMouseDown={handleCornerResizeMouseDown}
+        className="absolute bottom-1 right-1 w-4 h-4 cursor-se-resize flex items-center justify-center text-white/30 hover:text-white/80 transition-colors z-50 group"
+        title="Drag to resize Notes window"
+      >
+        <svg
+          className="w-3 h-3 opacity-60 group-hover:opacity-100 transition-opacity"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        >
+          <line x1="21" y1="9" x2="9" y2="21" />
+          <line x1="21" y1="15" x2="15" y2="21" />
+        </svg>
       </div>
     </div>
   );

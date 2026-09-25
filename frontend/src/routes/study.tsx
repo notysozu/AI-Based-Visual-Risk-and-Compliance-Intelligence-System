@@ -248,28 +248,55 @@ function StudyCockpitPage() {
     return { x: 24, y: typeof window !== "undefined" ? window.innerHeight - 150 : 550 };
   });
 
+  // Window Z-Index Focus Stacking Manager (Brings active/clicked window immediately to the top)
+  const [windowZIndices, setWindowZIndices] = useState<Record<string, number>>({
+    workspace: 30,
+    timer: 31,
+    notes: 32,
+    youtube: 33,
+    spotify: 34,
+    browser: 35,
+    gemini: 36,
+    jarvis: 45,
+  });
+  const topZIndexRef = useRef<number>(50);
+
+  const bringToFront = useCallback((windowId: string) => {
+    topZIndexRef.current += 1;
+    const nextZ = topZIndexRef.current;
+    setWindowZIndices((prev) => ({
+      ...prev,
+      [windowId]: nextZ,
+    }));
+  }, []);
+
   const setBrowserState = (open: boolean) => {
     setBrowserOpen(open);
+    if (open) bringToFront("browser");
     try { localStorage.setItem("study_browser_open", String(open)); } catch {}
   };
 
   const setYouTubeState = (open: boolean) => {
     setYoutubeOpen(open);
+    if (open) bringToFront("youtube");
     try { localStorage.setItem("study_youtube_open", String(open)); } catch {}
   };
 
   const setSpotifyState = (open: boolean) => {
     setSpotifyOpen(open);
+    if (open) bringToFront("spotify");
     try { localStorage.setItem("study_spotify_open", String(open)); } catch {}
   };
 
   const setNotesState = (open: boolean) => {
     setNotesOpen(open);
+    if (open) bringToFront("notes");
     try { localStorage.setItem("study_notes_open", String(open)); } catch {}
   };
 
   const setGeminiLiveState = (open: boolean) => {
     setGeminiLiveOpen(open);
+    if (open) bringToFront("gemini");
     try { localStorage.setItem("study_gemini_live_open", String(open)); } catch {}
   };
 
@@ -278,6 +305,51 @@ function StudyCockpitPage() {
   const toggleSpotify = () => setSpotifyState(!spotifyOpen);
   const toggleNotes = () => setNotesState(!notesOpen);
   const toggleGeminiLive = () => setGeminiLiveState(!geminiLiveOpen);
+
+  // Movable & Corner-Resizable "Power Time" Pomodoro Timer Window State
+  const [timerPos, setTimerPos] = useState<{ x: number; y: number }>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("study_timer_pos");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.x === "number" && typeof parsed.y === "number") {
+            return {
+              x: Math.max(8, Math.min(window.innerWidth - 280, parsed.x)),
+              y: Math.max(52, Math.min(window.innerHeight - 120, parsed.y)),
+            };
+          }
+        } catch {}
+      }
+    }
+    const defaultX = typeof window !== "undefined" ? Math.max(20, window.innerWidth - 380) : 800;
+    const defaultY = typeof window !== "undefined" ? Math.max(60, window.innerHeight - 250) : 550;
+    return { x: defaultX, y: defaultY };
+  });
+
+  const [timerSize, setTimerSize] = useState<{ width: number; height: number }>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("study_timer_size");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.width === "number" && typeof parsed.height === "number") {
+            return {
+              width: Math.max(260, Math.min(600, parsed.width)),
+              height: Math.max(160, Math.min(500, parsed.height)),
+            };
+          }
+        } catch {}
+      }
+    }
+    return { width: 340, height: 210 };
+  });
+
+  const [isTimerDragging, setIsTimerDragging] = useState(false);
+  const dragTimerStartRef = useRef({ mouseX: 0, mouseY: 0, posX: 0, posY: 0 });
+
+  const [isTimerCornerResizing, setIsTimerCornerResizing] = useState(false);
+  const cornerResizeTimerStartRef = useRef({ mouseX: 0, mouseY: 0, startW: 0, startH: 0 });
 
   // Window position (movable via top header bar)
   const [windowPos, setWindowPos] = useState<{ x: number; y: number }>(() => {
@@ -768,6 +840,98 @@ function StudyCockpitPage() {
       window.removeEventListener("mouseup", onMouseUp);
     };
   }, [isCornerResizing, windowPos.x, windowPos.y]);
+
+  // 6. "Power Time" Pomodoro Timer Drag-to-Move Logic
+  const handleTimerDragMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button, input, select, textarea, [role='button']")) {
+      return;
+    }
+    e.preventDefault();
+    bringToFront("timer");
+    dragTimerStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      posX: timerPos.x,
+      posY: timerPos.y,
+    };
+    setIsTimerDragging(true);
+  };
+
+  useEffect(() => {
+    if (!isTimerDragging) return;
+
+    const onMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - dragTimerStartRef.current.mouseX;
+      const deltaY = e.clientY - dragTimerStartRef.current.mouseY;
+      const maxX = Math.max(8, window.innerWidth - timerSize.width - 8);
+      const maxY = Math.max(52, window.innerHeight - 80);
+      const nextX = Math.max(8, Math.min(maxX, dragTimerStartRef.current.posX + deltaX));
+      const nextY = Math.max(52, Math.min(maxY, dragTimerStartRef.current.posY + deltaY));
+      setTimerPos({ x: nextX, y: nextY });
+    };
+
+    const onMouseUp = () => {
+      setIsTimerDragging(false);
+      setTimerPos((p) => {
+        try {
+          localStorage.setItem("study_timer_pos", JSON.stringify(p));
+        } catch {}
+        return p;
+      });
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [isTimerDragging, timerSize.width]);
+
+  // 7. "Power Time" Pomodoro Timer Corner-Resize Logic
+  const handleTimerCornerResizeMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    bringToFront("timer");
+    cornerResizeTimerStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      startW: timerSize.width,
+      startH: timerSize.height,
+    };
+    setIsTimerCornerResizing(true);
+  };
+
+  useEffect(() => {
+    if (!isTimerCornerResizing) return;
+
+    const onMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - cornerResizeTimerStartRef.current.mouseX;
+      const deltaY = e.clientY - cornerResizeTimerStartRef.current.mouseY;
+      const maxW = Math.min(640, window.innerWidth - timerPos.x - 16);
+      const maxH = Math.min(520, window.innerHeight - timerPos.y - 16);
+      const nextW = Math.max(260, Math.min(maxW, cornerResizeTimerStartRef.current.startW + deltaX));
+      const nextH = Math.max(160, Math.min(maxH, cornerResizeTimerStartRef.current.startH + deltaY));
+      setTimerSize({ width: nextW, height: nextH });
+    };
+
+    const onMouseUp = () => {
+      setIsTimerCornerResizing(false);
+      setTimerSize((s) => {
+        try {
+          localStorage.setItem("study_timer_size", JSON.stringify(s));
+        } catch {}
+        return s;
+      });
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [isTimerCornerResizing, timerPos.x, timerPos.y]);
 
   // — Cached study data queries (served from cache on revisit) —
   const { data: onboardingData } = useStudyOnboardingStatus(p.id);
@@ -1449,13 +1613,15 @@ function StudyCockpitPage() {
       {/* 4. MOVABLE & CORNER-RESIZABLE TRANSPARENT WORKSPACE WINDOW (macOS Window Style) */}
       {sidebarOpen && (
         <aside
+          onMouseDownCapture={() => bringToFront("workspace")}
           style={{
             left: `${windowPos.x}px`,
             top: `${windowPos.y}px`,
             width: `${windowSize.width}px`,
             height: `${windowSize.height}px`,
+            zIndex: windowZIndices.workspace,
           }}
-          className="fixed z-30 rounded-2xl border border-white/15 bg-black/30 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden select-none transition-shadow"
+          className="fixed rounded-2xl border border-white/15 bg-black/30 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden select-none transition-shadow"
         >
           {/* Top Header Bar / Space to Move Window + Green Dot Only */}
           <div
@@ -1962,16 +2128,45 @@ function StudyCockpitPage() {
         </aside>
       )}
 
-      {/* 5. FLOATING APPLE-STYLED DYNAMIC ISLAND TIMER CAPSULE (Bottom Right Corner with Subject Name) */}
-      <div className="fixed bottom-5 right-5 z-40 w-84 sm:w-92 rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/15 shadow-2xl p-4 space-y-3 text-white transition-all select-none">
-        {/* Top Row: Mode Pills & Subject Selector (Subject prominently in Right Corner with Timer) */}
-        <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
+      {/* 5. MOVABLE & CORNER-RESIZABLE "POWER TIME" POMODORO TIMER WINDOW */}
+      <div
+        onMouseDownCapture={() => bringToFront("timer")}
+        style={{
+          left: `${timerPos.x}px`,
+          top: `${timerPos.y}px`,
+          width: `${timerSize.width}px`,
+          height: `${timerSize.height}px`,
+          zIndex: windowZIndices.timer,
+        }}
+        className="fixed max-w-[98vw] max-h-[92vh] rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/15 shadow-2xl p-3 sm:p-4 text-white transition-shadow select-none flex flex-col justify-between overflow-hidden group"
+      >
+        {/* Top Header Bar (macOS style draggable header) */}
+        <div
+          onMouseDown={handleTimerDragMouseDown}
+          className="cursor-grab active:cursor-grabbing flex items-center justify-between gap-1.5 pb-2 border-b border-white/10"
+        >
+          {/* Traffic Light Dot / Header Title */}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handleResetTimer}
+              className="w-3 h-3 rounded-full bg-amber-500/80 hover:bg-amber-400 transition-colors shadow-sm flex items-center justify-center group"
+              title="Reset Timer"
+            >
+              <RotateCcw className="w-2 h-2 text-black/80 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+            <div className="flex items-center gap-1 text-[11px] font-bold text-white/90">
+              <Move className="h-3 w-3 text-purple-400" />
+              <span className="hidden sm:inline">Power Time</span>
+            </div>
+          </div>
+
           {/* Mode Pills */}
           <div className="flex items-center p-0.5 rounded-xl bg-black/50 border border-white/10 gap-0.5 text-[10px]">
             <button
               type="button"
               onClick={() => handleSwitchMode("focus")}
-              className={`px-2 py-1 rounded-lg font-bold transition-all ${
+              className={`px-1.5 sm:px-2 py-0.5 rounded-lg font-bold transition-all ${
                 timerMode === "focus"
                   ? "bg-purple-600 text-white shadow-sm"
                   : "text-white/60 hover:text-white"
@@ -1982,7 +2177,7 @@ function StudyCockpitPage() {
             <button
               type="button"
               onClick={() => handleSwitchMode("shortBreak")}
-              className={`px-2 py-1 rounded-lg font-bold transition-all ${
+              className={`px-1.5 sm:px-2 py-0.5 rounded-lg font-bold transition-all ${
                 timerMode === "shortBreak"
                   ? "bg-cyan-600 text-white shadow-sm"
                   : "text-white/60 hover:text-white"
@@ -1993,7 +2188,7 @@ function StudyCockpitPage() {
             <button
               type="button"
               onClick={() => handleSwitchMode("longBreak")}
-              className={`px-2 py-1 rounded-lg font-bold transition-all ${
+              className={`px-1.5 sm:px-2 py-0.5 rounded-lg font-bold transition-all ${
                 timerMode === "longBreak"
                   ? "bg-emerald-600 text-white shadow-sm"
                   : "text-white/60 hover:text-white"
@@ -2003,13 +2198,13 @@ function StudyCockpitPage() {
             </button>
           </div>
 
-          {/* Subject Dropdown with Graduation Cap in Timer Widget */}
-          <div className="flex items-center gap-1.5 bg-purple-500/20 border border-purple-400/30 px-2 py-1 rounded-xl text-[11px] text-purple-200">
-            <GraduationCap className="h-3.5 w-3.5 text-purple-300 shrink-0" />
+          {/* Subject Dropdown with Graduation Cap */}
+          <div className="flex items-center gap-1 bg-purple-500/20 border border-purple-400/30 px-1.5 py-0.5 rounded-xl text-[10px] text-purple-200">
+            <GraduationCap className="h-3 w-3 text-purple-300 shrink-0" />
             <select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
-              className="bg-transparent border-0 text-[11px] font-bold text-white focus:outline-none cursor-pointer max-w-[110px] truncate"
+              className="bg-transparent border-0 text-[10px] font-bold text-white focus:outline-none cursor-pointer max-w-[90px] truncate"
             >
               {availableSubjects.map((sub) => (
                 <option key={sub} value={sub} className="bg-zinc-950 text-white">
@@ -2021,9 +2216,9 @@ function StudyCockpitPage() {
         </div>
 
         {/* Middle Row: Digital Countdown Display & Progress Bar */}
-        <div className="space-y-1.5">
+        <div className="space-y-1 py-1">
           <div className="flex items-baseline justify-between">
-            <div className="font-mono text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-md">
+            <div className="font-mono text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white drop-shadow-md">
               {formatTime(secondsLeft)}
             </div>
             <div className="text-right">
@@ -2037,8 +2232,8 @@ function StudyCockpitPage() {
           </div>
 
           {/* Active Subject & Sprint Subtitle */}
-          <div className="flex items-center justify-between text-xs pt-0.5 text-white/70">
-            <span className="font-semibold text-purple-300 flex items-center gap-1 truncate max-w-[180px]">
+          <div className="flex items-center justify-between text-xs text-white/70">
+            <span className="font-semibold text-purple-300 flex items-center gap-1 truncate max-w-[160px]">
               <BookOpen className="h-3 w-3 text-purple-400 shrink-0" />
               <span className="truncate">{selectedSubject}</span>
             </span>
@@ -2062,13 +2257,13 @@ function StudyCockpitPage() {
           </div>
         </div>
 
-        {/* Bottom Row: Play Controls + "Save" Button */}
-        <div className="flex items-center justify-between gap-1.5 pt-1">
+        {/* Bottom Row: Play Controls */}
+        <div className="flex items-center justify-between gap-1.5 pt-0.5">
           {/* Play/Pause */}
           <Button
             size="sm"
             onClick={handleTogglePlay}
-            className={`h-9 px-4 rounded-full font-bold text-xs gap-1.5 transition-all ${
+            className={`h-8 sm:h-9 px-3 sm:px-4 rounded-full font-bold text-xs gap-1.5 transition-all ${
               isTimerRunning
                 ? "bg-amber-600 hover:bg-amber-500 text-white shadow-md"
                 : "bg-purple-600 hover:bg-purple-500 text-white shadow-md"
@@ -2087,38 +2282,59 @@ function StudyCockpitPage() {
             )}
           </Button>
 
-          {/* Reset */}
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={handleResetTimer}
-            className="h-8 w-8 rounded-full border-white/20 bg-black/40 text-white hover:bg-white/20 text-xs"
-            title="Reset Timer"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            {/* Reset */}
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleResetTimer}
+              className="h-7 w-7 sm:h-8 sm:w-8 rounded-full border-white/20 bg-black/40 text-white hover:bg-white/20 text-xs"
+              title="Reset Timer"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </Button>
 
-          {/* +5m */}
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={handleAddFiveMinutes}
-            className="h-8 w-8 rounded-full border-white/20 bg-black/40 text-white hover:bg-white/20 text-[10px] font-bold"
-            title="+5 Minutes"
-          >
-            +5m
-          </Button>
+            {/* +5m */}
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleAddFiveMinutes}
+              className="h-7 w-7 sm:h-8 sm:w-8 rounded-full border-white/20 bg-black/40 text-white hover:bg-white/20 text-[10px] font-bold"
+              title="+5 Minutes"
+            >
+              +5m
+            </Button>
 
-          {/* Skip */}
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={handleTimerCompleted}
-            className="h-8 w-8 rounded-full border-white/20 bg-black/40 text-white hover:bg-white/20 text-xs"
-            title="Skip to next mode"
+            {/* Skip */}
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleTimerCompleted}
+              className="h-7 w-7 sm:h-8 sm:w-8 rounded-full border-white/20 bg-black/40 text-white hover:bg-white/20 text-xs"
+              title="Skip to next mode"
+            >
+              <SkipForward className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Bottom-Right macOS Corner Resize Handle */}
+        <div
+          onMouseDown={handleTimerCornerResizeMouseDown}
+          className="absolute bottom-1 right-1 w-4 h-4 cursor-se-resize flex items-center justify-center text-white/30 hover:text-purple-300 transition-colors z-50 group"
+          title="Drag corner to resize Power Time window"
+        >
+          <svg
+            className="w-3 h-3 opacity-60 group-hover:opacity-100 transition-opacity"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
           >
-            <SkipForward className="h-3.5 w-3.5" />
-          </Button>
+            <line x1="21" y1="9" x2="9" y2="21" />
+            <line x1="21" y1="15" x2="15" y2="21" />
+          </svg>
         </div>
       </div>
 
@@ -2127,7 +2343,10 @@ function StudyCockpitPage() {
         {/* Workspace App */}
         <button
           type="button"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+          onClick={() => {
+            setSidebarOpen(!sidebarOpen);
+            if (!sidebarOpen) bringToFront("workspace");
+          }}
           className={`relative p-2.5 rounded-xl flex flex-col items-center justify-center transition-all group ${
             sidebarOpen ? "bg-purple-600/30 border border-purple-500/40 text-purple-300" : "hover:bg-white/10 text-white/70 hover:text-white"
           }`}
@@ -2231,6 +2450,8 @@ function StudyCockpitPage() {
             localStorage.setItem("study_jarvis_pos", JSON.stringify(p));
           } catch {}
         }}
+        zIndex={windowZIndices.jarvis}
+        onFocus={() => bringToFront("jarvis")}
       />
 
       {/* 7. FLOATING STUDY NOTES & IDEAS WINDOW */}
@@ -2246,6 +2467,8 @@ function StudyCockpitPage() {
             localStorage.setItem("study_notes_pos", JSON.stringify(p));
           } catch {}
         }}
+        zIndex={windowZIndices.notes}
+        onFocus={() => bringToFront("notes")}
       />
 
       {/* 8. FLOATING GEMINI LIVE VOICE AI COPILOT */}
@@ -2264,6 +2487,8 @@ function StudyCockpitPage() {
             localStorage.setItem("study_gemini_live_pos", JSON.stringify(p));
           } catch {}
         }}
+        zIndex={windowZIndices.gemini}
+        onFocus={() => bringToFront("gemini")}
       />
 
       {/* 9. FLOATING YOUTUBE FOCUS PLAYER WINDOW */}
@@ -2275,6 +2500,8 @@ function StudyCockpitPage() {
           setYoutubePos(p);
           try { localStorage.setItem("study_youtube_pos", JSON.stringify(p)); } catch {}
         }}
+        zIndex={windowZIndices.youtube}
+        onFocus={() => bringToFront("youtube")}
       />
 
       {/* 10. FLOATING SPOTIFY FOCUS PLAYER WINDOW */}
@@ -2286,6 +2513,8 @@ function StudyCockpitPage() {
           setSpotifyPos(p);
           try { localStorage.setItem("study_spotify_pos", JSON.stringify(p)); } catch {}
         }}
+        zIndex={windowZIndices.spotify}
+        onFocus={() => bringToFront("spotify")}
       />
 
       {/* 11. FLOATING IN-COCKPIT WEB BROWSER WINDOW */}
@@ -2297,6 +2526,8 @@ function StudyCockpitPage() {
           setBrowserPos(p);
           try { localStorage.setItem("study_browser_pos", JSON.stringify(p)); } catch {}
         }}
+        zIndex={windowZIndices.browser}
+        onFocus={() => bringToFront("browser")}
       />
 
       {/* 9. SETTINGS & VIDEO WALLPAPERS DIALOG */}

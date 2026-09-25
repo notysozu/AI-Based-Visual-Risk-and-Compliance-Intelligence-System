@@ -40,6 +40,8 @@ interface StudyJarvisLiveProps {
   cockpitContext: JarvisCockpitContext;
   pos?: { x: number; y: number };
   onPosChange?: (pos: { x: number; y: number }) => void;
+  zIndex?: number;
+  onFocus?: () => void;
 }
 
 export function StudyJarvisLive({
@@ -48,6 +50,8 @@ export function StudyJarvisLive({
   cockpitContext,
   pos = { x: 40, y: 120 },
   onPosChange,
+  zIndex = 50,
+  onFocus,
 }: StudyJarvisLiveProps) {
   // Voice & Copilot State
   const [isMuted, setIsMuted] = useState(false);
@@ -403,6 +407,7 @@ export function StudyJarvisLive({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button, input, a")) return;
+    onFocus?.();
     setIsDragging(true);
     dragStartRef.current = {
       mouseX: e.clientX,
@@ -444,8 +449,9 @@ export function StudyJarvisLive({
 
   return (
     <div
-      style={{ left: `${windowPos.x}px`, top: `${windowPos.y}px` }}
-      className="fixed z-50 flex items-center gap-2 select-none font-sans"
+      onMouseDownCapture={onFocus}
+      style={{ left: `${windowPos.x}px`, top: `${windowPos.y}px`, zIndex }}
+      className="fixed flex items-center gap-2 select-none font-sans transition-shadow"
     >
       {/* 1. Small Animated Arc Reactor Mic Button */}
       <div className="relative group flex items-center justify-center">
