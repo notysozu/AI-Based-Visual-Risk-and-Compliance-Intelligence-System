@@ -157,11 +157,22 @@ CRITICAL SPOKEN VOICE GUIDELINES:
         subject: str
     ) -> Optional[Dict[str, Any]]:
         """Evaluate fast-path cockpit window, timer, and note-taking actions."""
-        # 1. Take a Note / Idea
-        if any(k in p_low for k in ["take a note", "note down", "write a note", "save an idea", "save idea", "add a note", "remember this", "make a note"]):
+        # 1. Take a Note / Idea / Create Note
+        note_triggers = [
+            "take a note", "take note", "note down", "write a note", "write note", "write down",
+            "save an idea", "save idea", "save note", "save notes", "add a note", "add note",
+            "add notes", "create a note", "create note", "create notes", "new note", "remember this",
+            "remember that", "make a note", "make note", "add to notes", "put in notes", "record note"
+        ]
+        if any(k in p_low for k in note_triggers):
             cleaned = re.sub(r"^(jarvis\s*,?\s*|hey jarvis\s*,?\s*|please\s*)", "", prompt, flags=re.IGNORECASE)
-            cleaned = re.sub(r"^(take a note\s*(that|about|:|to)?|note down\s*(that|about|:|to)?|write a note\s*(that|about|:|to)?|save an idea\s*(that|about|:|to)?|save idea\s*(that|about|:|to)?|add a note\s*(that|about|:|to)?|remember this\s*(that|about|:|to)?|make a note\s*(that|about|:|to)?)\s*", "", cleaned, flags=re.IGNORECASE).strip()
-            note_content = cleaned if cleaned else prompt
+            cleaned = re.sub(
+                r"^(take a note\s*(that|about|:|to)?|take notes?\s*(that|about|:|to)?|note down\s*(that|about|:|to)?|write a note\s*(that|about|:|to)?|write notes?\s*(that|about|:|to)?|write down\s*(that|about|:|to)?|save an idea\s*(that|about|:|to)?|save idea\s*(that|about|:|to)?|save notes?\s*(that|about|:|to)?|save this note\s*(that|about|:|to)?|add a note\s*(that|about|:|to)?|add notes?\s*(that|about|:|to)?|add to notes?\s*(that|about|:|to)?|create a note\s*(that|about|:|to)?|create notes?\s*(that|about|:|to)?|new notes?\s*(that|about|:|to)?|put in notes?\s*(that|about|:|to)?|remember this\s*(that|about|:|to)?|remember that\s*(that|about|:|to)?|make a note\s*(that|about|:|to)?|make notes?\s*(that|about|:|to)?|record note\s*(that|about|:|to)?)\s*",
+                "",
+                cleaned,
+                flags=re.IGNORECASE
+            ).strip()
+            note_content = cleaned if cleaned else f"Voice note recorded on {subject}"
             words = note_content.split()
             note_title = " ".join(words[:4]).capitalize() if len(words) >= 4 else note_content.capitalize()
 
@@ -186,7 +197,7 @@ CRITICAL SPOKEN VOICE GUIDELINES:
                     print(f"[Jarvis] Auto-note save error: {e}")
 
             return {
-                "text": f"Noted, {username}. I have recorded that into your notes and memory.",
+                "text": f"Noted, {username}. I have recorded '{note_title}' into your notes board.",
                 "action": {
                     "type": "create_note",
                     "payload": {

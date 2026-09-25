@@ -134,6 +134,25 @@ export function StudyNotesWindow({
     }
   }, [open, userId]);
 
+  // Real-time synchronization when JARVIS or external events create a note
+  useEffect(() => {
+    const handleNoteCreated = (e: CustomEvent<StudyNote>) => {
+      const newNote = e.detail;
+      if (newNote && newNote.id) {
+        setNotes((prev) => {
+          const filtered = prev.filter((n) => n.id !== newNote.id);
+          return [newNote, ...filtered];
+        });
+        setActiveNoteId(newNote.id);
+      }
+    };
+
+    window.addEventListener("study_note_created", handleNoteCreated as EventListener);
+    return () => {
+      window.removeEventListener("study_note_created", handleNoteCreated as EventListener);
+    };
+  }, []);
+
   // Save notes locally whenever updated
   useEffect(() => {
     try {

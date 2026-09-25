@@ -511,12 +511,24 @@ function StudyCockpitPage() {
   const jarvisCockpitContext: JarvisCockpitContext = useMemo(
     () => ({
       openApp: (app: JarvisAppId) => {
-        if (app === "youtube") setYouTubeState(true);
-        else if (app === "spotify") setSpotifyState(true);
-        else if (app === "browser") setBrowserState(true);
-        else if (app === "notes") setNotesState(true);
-        else if (app === "workspace") setSidebarOpen(true);
-        else if (app === "settings") setSettingsOpen(true);
+        if (app === "youtube") {
+          setYouTubeState(true);
+          bringToFront("youtube");
+        } else if (app === "spotify") {
+          setSpotifyState(true);
+          bringToFront("spotify");
+        } else if (app === "browser") {
+          setBrowserState(true);
+          bringToFront("browser");
+        } else if (app === "notes") {
+          setNotesState(true);
+          bringToFront("notes");
+        } else if (app === "workspace") {
+          setSidebarOpen(true);
+          bringToFront("workspace");
+        } else if (app === "settings") {
+          setSettingsOpen(true);
+        }
       },
       closeApp: (app: JarvisAppId) => {
         if (app === "youtube") setYouTubeState(false);
@@ -527,12 +539,24 @@ function StudyCockpitPage() {
         else if (app === "settings") setSettingsOpen(false);
       },
       toggleApp: (app: JarvisAppId) => {
-        if (app === "youtube") toggleYouTube();
-        else if (app === "spotify") toggleSpotify();
-        else if (app === "browser") toggleBrowser();
-        else if (app === "notes") toggleNotes();
-        else if (app === "workspace") setSidebarOpen((p) => !p);
-        else if (app === "settings") setSettingsOpen((p) => !p);
+        if (app === "youtube") {
+          toggleYouTube();
+          bringToFront("youtube");
+        } else if (app === "spotify") {
+          toggleSpotify();
+          bringToFront("spotify");
+        } else if (app === "browser") {
+          toggleBrowser();
+          bringToFront("browser");
+        } else if (app === "notes") {
+          toggleNotes();
+          bringToFront("notes");
+        } else if (app === "workspace") {
+          setSidebarOpen((prev) => !prev);
+          bringToFront("workspace");
+        } else if (app === "settings") {
+          setSettingsOpen((prev) => !prev);
+        }
       },
       startTimer: () => setIsTimerRunning(true),
       pauseTimer: () => setIsTimerRunning(false),
@@ -553,16 +577,76 @@ function StudyCockpitPage() {
         else setSecondsLeft(longBreakLengthMins * 60);
       },
       createNote: async (note) => {
+        const userIdKey = String(p.id ?? "1");
+        const titleText = note.title || "Voice Note";
+        const contentText = note.content || titleText;
+        const noteCategory = note.category || "ideas";
+
         try {
-          await saveStudyNote(p.id ?? "1", {
-            title: note.title,
-            content: note.content,
-            category: note.category || "ideas",
+          const res = await saveStudyNote(userIdKey, {
+            title: titleText,
+            content: contentText,
+            category: noteCategory,
             tags: ["jarvis", selectedSubject.toLowerCase()],
           });
+
+          const createdNote = res || {
+            id: `note-${Date.now()}`,
+            user_id: userIdKey,
+            title: titleText,
+            content: contentText,
+            category: noteCategory,
+            tags: ["jarvis", selectedSubject.toLowerCase()],
+            is_pinned: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+
+          // Update local cache
+          try {
+            const key = `study_notes_${userIdKey}`;
+            const existing = JSON.parse(localStorage.getItem(key) || "[]");
+            const updated = [createdNote, ...existing.filter((n: any) => n.id !== createdNote.id)];
+            localStorage.setItem(key, JSON.stringify(updated));
+          } catch {}
+
+          // Broadcast to notes window
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("study_note_created", { detail: createdNote }));
+          }
+
           setNotesState(true);
+          bringToFront("notes");
+          toast.success(`Note saved: "${titleText}"`, {
+            description: "Recorded by JARVIS on your Study Notes board.",
+          });
         } catch (err) {
-          console.warn("Jarvis save note failed:", err);
+          console.warn("Jarvis save note failed, storing locally:", err);
+          const fallbackNote = {
+            id: `note-local-${Date.now()}`,
+            user_id: userIdKey,
+            title: titleText,
+            content: contentText,
+            category: noteCategory,
+            tags: ["jarvis", selectedSubject.toLowerCase()],
+            is_pinned: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+
+          try {
+            const key = `study_notes_${userIdKey}`;
+            const existing = JSON.parse(localStorage.getItem(key) || "[]");
+            localStorage.setItem(key, JSON.stringify([fallbackNote, ...existing]));
+          } catch {}
+
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("study_note_created", { detail: fallbackNote }));
+          }
+
+          setNotesState(true);
+          bringToFront("notes");
+          toast.success(`Note saved locally: "${titleText}"`);
         }
       },
       setWallpaperByTheme: (themeKeyword: string) => {

@@ -142,35 +142,57 @@ export function parseLocalJarvisCommand(spokenText: string): JarvisActionPayload
     }
   }
 
-  // 3. Take Note / Save Idea
-  if (
+  // 3. Take Note / Save Idea / Create Note / Write Down
+  const isNoteIntent =
     s.includes("take a note") ||
+    s.includes("take note") ||
+    s.includes("take notes") ||
     s.includes("note down") ||
     s.includes("write a note") ||
+    s.includes("write note") ||
+    s.includes("write notes") ||
+    s.includes("write down") ||
     s.includes("save an idea") ||
     s.includes("save idea") ||
+    s.includes("save note") ||
+    s.includes("save this note") ||
+    s.includes("save notes") ||
     s.includes("add a note") ||
+    s.includes("add note") ||
+    s.includes("add notes") ||
+    s.includes("create a note") ||
+    s.includes("create note") ||
+    s.includes("create notes") ||
+    s.includes("new note") ||
+    s.includes("add to notes") ||
+    s.includes("put in notes") ||
     s.includes("remember this") ||
-    s.includes("make a note")
-  ) {
+    s.includes("remember that") ||
+    s.includes("make a note") ||
+    s.includes("make note") ||
+    s.includes("record note");
+
+  if (isNoteIntent) {
     let clean = s.replace(/^(jarvis\s*,?\s*|hey jarvis\s*,?\s*|please\s*)/i, "");
     clean = clean.replace(
-      /^(take a note\s*(that|about|:|to)?|note down\s*(that|about|:|to)?|write a note\s*(that|about|:|to)?|save an idea\s*(that|about|:|to)?|save idea\s*(that|about|:|to)?|add a note\s*(that|about|:|to)?|remember this\s*(that|about|:|to)?|make a note\s*(that|about|:|to)?)\s*/i,
+      /^(take a note\s*(that|about|:|to)?|take notes?\s*(that|about|:|to)?|note down\s*(that|about|:|to)?|write a note\s*(that|about|:|to)?|write notes?\s*(that|about|:|to)?|write down\s*(that|about|:|to)?|save an idea\s*(that|about|:|to)?|save idea\s*(that|about|:|to)?|save notes?\s*(that|about|:|to)?|save this note\s*(that|about|:|to)?|add a note\s*(that|about|:|to)?|add notes?\s*(that|about|:|to)?|add to notes?\s*(that|about|:|to)?|create a note\s*(that|about|:|to)?|create notes?\s*(that|about|:|to)?|new notes?\s*(that|about|:|to)?|put in notes?\s*(that|about|:|to)?|remember this\s*(that|about|:|to)?|remember that\s*(that|about|:|to)?|make a note\s*(that|about|:|to)?|make notes?\s*(that|about|:|to)?|record note\s*(that|about|:|to)?)\s*/i,
       ""
     ).trim();
 
-    if (clean) {
-      const words = clean.split(" ");
-      const title = words.slice(0, 4).join(" ");
-      return {
-        type: "create_note",
-        note: {
-          title: title.charAt(0).toUpperCase() + title.slice(1),
-          content: clean.charAt(0).toUpperCase() + clean.slice(1),
-          category: "ideas",
-        },
-      };
+    if (!clean) {
+      clean = "Voice note recorded";
     }
+
+    const words = clean.split(/\s+/);
+    const title = words.slice(0, 4).join(" ");
+    return {
+      type: "create_note",
+      note: {
+        title: title.charAt(0).toUpperCase() + title.slice(1),
+        content: clean.charAt(0).toUpperCase() + clean.slice(1),
+        category: "ideas",
+      },
+    };
   }
 
   // 4. Wallpaper Switch
@@ -190,6 +212,8 @@ export async function executeJarvisCockpitAction(
   action: JarvisActionPayload,
   ctx: JarvisCockpitContext
 ): Promise<string> {
+  const pLoad = action.customData || (action as any).payload || {};
+
   switch (action.type) {
     case "open_app":
     case "open_youtube":
@@ -198,7 +222,7 @@ export async function executeJarvisCockpitAction(
     case "open_notes":
     case "open_workspace":
     case "open_settings": {
-      const app = action.app || (action.type.replace("open_", "") as JarvisAppId);
+      const app = action.app || pLoad.app || (action.type.replace("open_", "") as JarvisAppId);
       ctx.openApp(app);
       const names: Record<JarvisAppId, string> = {
         youtube: "YouTube player",
@@ -218,7 +242,7 @@ export async function executeJarvisCockpitAction(
     case "close_notes":
     case "close_workspace":
     case "close_settings": {
-      const app = action.app || (action.type.replace("close_", "") as JarvisAppId);
+      const app = action.app || pLoad.app || (action.type.replace("close_", "") as JarvisAppId);
       ctx.closeApp(app);
       return `Window closed, sir.`;
     }
@@ -239,39 +263,47 @@ export async function executeJarvisCockpitAction(
     }
 
     case "set_timer_mode": {
-      if (action.mode) {
-        ctx.setTimerMode(action.mode);
+      const mode = action.mode || pLoad.mode;
+      if (mode) {
+        ctx.setTimerMode(mode);
         const modeNames = {
           focus: "Focus session",
           shortBreak: "Short break",
           longBreak: "Long break",
         };
-        return `Switched to ${modeNames[action.mode]}, sir.`;
+        return `Switched to ${modeNames[mode as keyof typeof modeNames] || "focus"}, sir.`;
       }
       return "Timer mode updated.";
     }
 
     case "set_timer_duration": {
-      if (action.duration) {
-        ctx.setTimerMinutes(action.duration);
-        return `Timer set to ${action.duration} minutes.`;
+      const duration = action.duration || pLoad.duration;
+      if (duration) {
+        ctx.setTimerMinutes(duration);
+        return `Timer set to ${duration} minutes.`;
       }
       return "Timer duration updated.";
     }
 
     case "create_note": {
-      if (action.note) {
-        await ctx.createNote(action.note);
+      const noteData = action.note || pLoad;
+      if (noteData && (noteData.title || noteData.content)) {
+        await ctx.createNote({
+          title: noteData.title || "Voice Note",
+          content: noteData.content || noteData.title || "",
+          category: noteData.category || "ideas",
+        });
         ctx.openApp("notes");
-        return `I have saved that note to your ideas board, sir.`;
+        return `I have recorded that note to your ideas board, sir.`;
       }
       return "Note recorded.";
     }
 
     case "change_wallpaper": {
-      if (action.wallpaper) {
-        const ok = ctx.setWallpaperByTheme(action.wallpaper);
-        if (ok) return `Switched wallpaper to ${action.wallpaper}.`;
+      const wallpaper = action.wallpaper || pLoad.wallpaper;
+      if (wallpaper) {
+        const ok = ctx.setWallpaperByTheme(wallpaper);
+        if (ok) return `Switched wallpaper to ${wallpaper}.`;
         return `Wallpaper updated, sir.`;
       }
       return "Wallpaper updated.";
