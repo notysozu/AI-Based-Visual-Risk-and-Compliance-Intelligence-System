@@ -425,9 +425,37 @@ export function askJarvis(payload: {
   prompt: string;
   subject?: string;
   history?: Array<{ role: string; content?: string; text?: string }>;
+  cockpit_context?: Record<string, unknown>;
 }) {
   return request("/chat/jarvis", {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export function getJarvisMemories(userId: string | number, category?: string) {
+  const q = category ? `?category=${encodeURIComponent(category)}` : "";
+  return request(`/chat/jarvis/memories/${userId}${q}`);
+}
+
+export function saveJarvisMemory(userId: string | number, payload: {
+  memory_key?: string;
+  content: string;
+  category?: string;
+  importance?: number;
+}) {
+  return request(`/chat/jarvis/memories/${userId}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteJarvisMemory(userId: string | number, memoryId: string) {
+  return request(`/chat/jarvis/memories/${userId}/${encodeURIComponent(memoryId)}`, {
+    method: "DELETE",
+  });
+}
+
+export function getJarvisSwarmAgents() {
+  return request("/chat/jarvis/agents");
 }

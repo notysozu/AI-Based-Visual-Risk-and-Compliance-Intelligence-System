@@ -50,7 +50,8 @@ async def save_persistence_snapshot():
             RefreshTokenDoc,
             PasswordResetTokenDoc,
             EmailVerificationTokenDoc,
-            UserNoteDoc
+            UserNoteDoc,
+            JarvisMemoryDoc
         )
 
         users = await UserDoc.find_all().to_list()
@@ -64,6 +65,7 @@ async def save_persistence_snapshot():
         reset_tokens = await PasswordResetTokenDoc.find_all().to_list()
         verify_tokens = await EmailVerificationTokenDoc.find_all().to_list()
         user_notes = await UserNoteDoc.find_all().to_list()
+        jarvis_memories = await JarvisMemoryDoc.find_all().to_list()
 
         snapshot = {
             "version": 1,
@@ -79,6 +81,7 @@ async def save_persistence_snapshot():
             "password_reset_tokens": [pr.model_dump(mode="json") for pr in reset_tokens],
             "email_verification_tokens": [ev.model_dump(mode="json") for ev in verify_tokens],
             "user_notes": [n.model_dump(mode="json") for n in user_notes],
+            "jarvis_memories": [jm.model_dump(mode="json") for jm in jarvis_memories],
         }
 
         temp_file = f"{PERSISTENCE_FILE}.tmp"
@@ -231,7 +234,31 @@ async def load_persistence_snapshot():
                         note.id = nid
                 await note.insert()
 
-        print(f"[MongoDB Persistence] Rehydrated {len(data.get('users', []))} users and {len(data.get('chat_sessions', []))} chat sessions from persistent store.")
+        # Restore jarvis memories
+        for jm_data in data.get("jarvis_memories", []):
+            jmid = jm_data.get("id") or jm_data.get("_id")
+            existing_mem = None
+            if jmid:
+                try:
+                    from bson import ObjectId
+                    if ObjectId.is_valid(str(jmid)):
+                        existing_mem = await JarvisMemoryDoc.get(ObjectId(str(jmid)))
+                except Exception:
+                    pass
+            if not existing_mem:
+                mem = JarvisMemoryDoc(**jm_data)
+                if jmid:
+                    try:
+                        from bson import ObjectId
+                        if ObjectId.is_valid(str(jmid)):
+                            mem.id = ObjectId(str(jmid))
+                        else:
+                            mem.id = jmid
+                    except Exception:
+                        mem.id = jmid
+                await mem.insert()
+
+        print(f"[MongoDB Persistence] Rehydrated {len(data.get('users', []))} users, {len(data.get('chat_sessions', []))} chats, {len(data.get('jarvis_memories', []))} memories from persistent store.")
     except Exception as e:
         print(f"[MongoDB Persistence] Rehydration notice: {e}")
 
@@ -253,7 +280,8 @@ async def init_mongodb():
         RefreshTokenDoc,
         PasswordResetTokenDoc,
         EmailVerificationTokenDoc,
-        UserNoteDoc
+        UserNoteDoc,
+        JarvisMemoryDoc
     )
 
     document_models = [
@@ -267,7 +295,8 @@ async def init_mongodb():
         RefreshTokenDoc,
         PasswordResetTokenDoc,
         EmailVerificationTokenDoc,
-        UserNoteDoc
+        UserNoteDoc,
+        JarvisMemoryDoc
     ]
 
     try:

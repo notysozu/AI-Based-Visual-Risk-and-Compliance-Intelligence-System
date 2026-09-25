@@ -1352,3 +1352,90 @@ async def delete_user_note(
     return False
 
 
+# --- JARVIS AI Persistent Memory Operations ---
+
+async def get_jarvis_memories(
+    user_id: Union[str, int, ObjectId],
+    category: Optional[str] = None,
+    limit: int = 30
+) -> List[models.JarvisMemoryDoc]:
+    """Retrieve long-term memory facts for JARVIS AI sorted by importance and recency."""
+    user = await get_user(user_id)
+    u_id_str = str(user.id) if user else str(user_id)
+
+    query = models.JarvisMemoryDoc.find(models.JarvisMemoryDoc.user_id == u_id_str)
+    if category and category != "all":
+        query = query.find(models.JarvisMemoryDoc.category == category)
+
+    memories = await query.sort(-models.JarvisMemoryDoc.importance, -models.JarvisMemoryDoc.updated_at).limit(limit).to_list()
+    return memories
+
+
+async def save_jarvis_memory(
+    user_id: Union[str, int, ObjectId],
+    memory_key: str,
+    content: str,
+    category: str = "general",
+    importance: float = 1.0
+) -> models.JarvisMemoryDoc:
+    """Save or update a persistent fact or preference in JARVIS long-term memory."""
+    user = await get_user(user_id)
+    u_id_str = str(user.id) if user else str(user_id)
+    now = datetime.utcnow()
+
+    # Normalize key
+    clean_key = re.sub(r"[^a-zA-Z0-9_-]", "_", memory_key.strip().lower())
+
+    existing = await models.JarvisMemoryDoc.find_one(
+        models.JarvisMemoryDoc.user_id == u_id_str,
+        models.JarvisMemoryDoc.memory_key == clean_key
+    )
+
+    if existing:
+        existing.content = content.strip()
+        existing.category = category
+        existing.importance = max(existing.importance, importance)
+        existing.updated_at = now
+        await existing.save()
+        await _sync_disk()
+        return existing
+
+    new_memory = models.JarvisMemoryDoc(
+        user_id=u_id_str,
+        memory_key=clean_key,
+        content=content.strip(),
+        category=category,
+        importance=importance,
+        created_at=now,
+        updated_at=now
+    )
+    await new_memory.insert()
+    await _sync_disk()
+    return new_memory
+
+
+async def delete_jarvis_memory(
+    user_id: Union[str, int, ObjectId],
+    memory_id_or_key: str
+) -> bool:
+    """Delete a JARVIS memory item by ID or key."""
+    user = await get_user(user_id)
+    u_id_str = str(user.id) if user else str(user_id)
+
+    oid = _to_object_id(memory_id_or_key)
+    mem: Optional[models.JarvisMemoryDoc] = None
+    if oid:
+        mem = await models.JarvisMemoryDoc.get(oid)
+    if not mem:
+        mem = await models.JarvisMemoryDoc.find_one(
+            models.JarvisMemoryDoc.user_id == u_id_str,
+            models.JarvisMemoryDoc.memory_key == memory_id_or_key.strip().lower()
+        )
+
+    if mem and mem.user_id == u_id_str:
+        await mem.delete()
+        await _sync_disk()
+        return True
+    return False
+
+

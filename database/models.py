@@ -238,6 +238,21 @@ class UserNoteDoc(Document):
         indexes = ["user_id", "category", "updated_at"]
 
 
+class JarvisMemoryDoc(Document):
+    """MongoDB Long-term and semantic memory facts for JARVIS AI."""
+    user_id: str
+    memory_key: str  # e.g. 'exam_target', 'study_habit', 'preference', 'project', 'fact'
+    content: str
+    category: str = "general"  # 'academic', 'personal', 'preference', 'goal', 'project'
+    importance: float = 1.0  # 0.0 to 1.0
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "jarvis_memories"
+        indexes = ["user_id", "category", "updated_at"]
+
+
 # Backwards compatibility class aliases
 User = UserDoc
 FinancialRecord = FinancialRecordDoc
@@ -251,4 +266,5 @@ RefreshToken = RefreshTokenDoc
 PasswordResetToken = PasswordResetTokenDoc
 EmailVerificationToken = EmailVerificationTokenDoc
 UserNote = UserNoteDoc
+JarvisMemory = JarvisMemoryDoc
 

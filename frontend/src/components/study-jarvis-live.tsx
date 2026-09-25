@@ -20,7 +20,9 @@ import {
   RotateCcw,
   Minimize2,
   Maximize2,
-  Square
+  Square,
+  BrainCircuit,
+  Cpu
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -55,6 +57,14 @@ export function StudyJarvisLive({
   const [expandedHUD, setExpandedHUD] = useState(true);
   const [speechSupported, setSpeechSupported] = useState(true);
 
+  // Active Multi-Agent & Memory Swarm State
+  const [activeAgent, setActiveAgent] = useState<{ id: string; name: string; category: string }>({
+    id: "chief_jarvis",
+    name: "Chief J.A.R.V.I.S.",
+    category: "Core AI Commander"
+  });
+  const [memoriesCount, setMemoriesCount] = useState<number>(0);
+
   // Transcript & Dialogue State
   const [liveTranscript, setLiveTranscript] = useState("");
   const [lastSpeech, setLastSpeech] = useState<string>("Jarvis online. Standing by for voice commands, sir.");
@@ -65,13 +75,14 @@ export function StudyJarvisLive({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, posX: 0, posY: 0 });
 
-  // References for Acoustic Shield & Echo Cancellation
+  // References for Acoustic Shield & Memory
   const recognitionRef = useRef<any>(null);
   const silenceTimerRef = useRef<any>(null);
   const isProcessingRef = useRef(false);
   const isSpeakingRef = useRef(false);
   const echoCooldownTimerRef = useRef<any>(null);
   const recentSpokenTextsRef = useRef<{ text: string; timestamp: number }[]>([]);
+  const conversationHistoryRef = useRef<Array<{ role: string; content: string }>>([]);
 
   useEffect(() => {
     setWindowPos(pos);
@@ -207,18 +218,29 @@ export function StudyJarvisLive({
           setLastSpeech(confirmationText);
           setLastActionTag(localAction.type.replace("_", " ").toUpperCase());
           speakJarvis(confirmationText);
+          conversationHistoryRef.current.push({ role: "user", content: q });
+          conversationHistoryRef.current.push({ role: "assistant", content: confirmationText });
           return;
         }
 
-        // 2. Call backend JARVIS endpoint for intelligence + complex action parsing
+        // 2. Call backend 100-Agent Swarm Orchestrator with Long-Term Memory
         const res = await askJarvis({
           user_id: userId,
           prompt: q,
           subject,
+          history: conversationHistoryRef.current.slice(-4),
+          cockpit_context: cockpitContext as Record<string, unknown>,
         });
 
         const reply = res.text || "Command executed, sir.";
         setLastSpeech(reply);
+
+        if (res.agent) {
+          setActiveAgent(res.agent);
+        }
+        if (res.memories_count !== undefined) {
+          setMemoriesCount(res.memories_count);
+        }
 
         if (res.action && typeof res.action === "object") {
           const actionPayload = res.action as JarvisActionPayload;
@@ -228,10 +250,16 @@ export function StudyJarvisLive({
           setLastActionTag(null);
         }
 
+        conversationHistoryRef.current.push({ role: "user", content: q });
+        conversationHistoryRef.current.push({ role: "assistant", content: reply });
+        if (conversationHistoryRef.current.length > 10) {
+          conversationHistoryRef.current = conversationHistoryRef.current.slice(-10);
+        }
+
         speakJarvis(reply);
       } catch (err) {
         console.error("Jarvis voice processing error:", err);
-        const fallback = "I'm standing by, sir. Let me know which window or timer you would like me to adjust.";
+        const fallback = "I'm standing by, sir. Let me know which concept, note, or timer you would like to explore.";
         setLastSpeech(fallback);
         speakJarvis(fallback);
       } finally {
@@ -480,7 +508,7 @@ export function StudyJarvisLive({
       {expandedHUD && (
         <div
           onMouseDown={handleMouseDown}
-          className="w-[280px] bg-zinc-950/90 backdrop-blur-xl border border-white/15 rounded-2xl p-2.5 shadow-2xl text-white space-y-1.5 cursor-move"
+          className="w-[290px] bg-zinc-950/90 backdrop-blur-xl border border-white/15 rounded-2xl p-2.5 shadow-2xl text-white space-y-1.5 cursor-move"
         >
           {/* Top Pill Header */}
           <div className="flex items-center justify-between">
@@ -526,6 +554,21 @@ export function StudyJarvisLive({
             </div>
           </div>
 
+          {/* Active 100-Agent Swarm Specialist Badge & Memory Counter */}
+          <div className="flex items-center justify-between text-[9px] px-1 text-cyan-300/90 font-mono border-b border-white/5 pb-1">
+            <span className="flex items-center gap-1 truncate max-w-[170px]" title={activeAgent.name}>
+              <BrainCircuit className="w-2.5 h-2.5 text-cyan-400 shrink-0" />
+              <span className="truncate font-medium">{activeAgent.name}</span>
+            </span>
+            <span
+              className="text-[8px] px-1.5 py-0.2 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30 shrink-0 flex items-center gap-0.5"
+              title="Persistent Long-Term Memory Synced to MongoDB"
+            >
+              <Cpu className="w-2 h-2" />
+              <span>{memoriesCount > 0 ? `${memoriesCount} memory facts` : "Memory synced"}</span>
+            </span>
+          </div>
+
           {/* Live Transcript / Speech Display */}
           <div className="text-[11px] text-white/90 leading-snug bg-zinc-900/60 p-2 rounded-xl border border-white/5 min-h-[38px] flex items-center">
             {liveTranscript ? (
@@ -537,8 +580,8 @@ export function StudyJarvisLive({
 
           {/* Quick Voice Hints */}
           <div className="text-[9px] text-white/40 flex items-center justify-between px-1">
-            <span>Say: "Take a note...", "Open Spotify"</span>
-            <span className="font-mono text-cyan-400/80">Autonomous</span>
+            <span>Say: "Explain calculus...", "Take a note..."</span>
+            <span className="font-mono text-cyan-400/80">100 Agents</span>
           </div>
         </div>
       )}

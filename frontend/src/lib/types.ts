@@ -172,3 +172,22 @@ export type StudyNote = {
   updated_at: string;
 };
 
+export type JarvisMemory = {
+  id: string;
+  user_id: string;
+  memory_key: string;
+  content: string;
+  category: "general" | "academic" | "personal" | "preference" | "goal" | "project";
+  importance: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type JarvisSwarmAgent = {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  triggers: string[];
+};
+
