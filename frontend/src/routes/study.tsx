@@ -86,6 +86,10 @@ import {
   type WallpaperItem,
   StudySettingsDialog,
 } from "@/components/study-settings-dialog";
+import { StudyYouTubePlayer } from "@/components/study-youtube-player";
+import { StudySpotifyPlayer } from "@/components/study-spotify-player";
+import { StudyWebBrowser } from "@/components/study-web-browser";
+import { Youtube, Globe, Music, Radio, Headphones } from "lucide-react";
 import { tooltipStyle } from "@/routes/dashboard";
 
 export const Route = createFileRoute("/study")({
@@ -124,6 +128,91 @@ function StudyCockpitPage() {
   // Movable & Corner-Resizable Workspace Window
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("tasks");
+
+  // Floating Window States: YouTube, Spotify, and In-Cockpit Web Browser
+  const [youtubeOpen, setYoutubeOpen] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("study_youtube_open") === "true";
+    }
+    return false;
+  });
+
+  const [spotifyOpen, setSpotifyOpen] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("study_spotify_open") === "true";
+    }
+    return false;
+  });
+
+  const [browserOpen, setBrowserOpen] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("study_browser_open") === "true";
+    }
+    return false;
+  });
+
+  const [youtubePos, setYoutubePos] = useState<{ x: number; y: number }>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("study_youtube_pos");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.x === "number" && typeof parsed.y === "number") return parsed;
+        } catch {}
+      }
+    }
+    return { x: Math.max(20, (typeof window !== "undefined" ? window.innerWidth - 460 : 480)), y: 68 };
+  });
+
+  const [spotifyPos, setSpotifyPos] = useState<{ x: number; y: number }>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("study_spotify_pos");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.x === "number" && typeof parsed.y === "number") return parsed;
+        } catch {}
+      }
+    }
+    return { x: Math.max(20, (typeof window !== "undefined" ? window.innerWidth - 440 : 500)), y: 110 };
+  });
+
+  const [browserPos, setBrowserPos] = useState<{ x: number; y: number }>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("study_browser_pos");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.x === "number" && typeof parsed.y === "number") return parsed;
+        } catch {}
+      }
+    }
+    return { x: 70, y: 70 };
+  });
+
+  const toggleYouTube = () => {
+    setYoutubeOpen((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("study_youtube_open", String(next)); } catch {}
+      return next;
+    });
+  };
+
+  const toggleSpotify = () => {
+    setSpotifyOpen((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("study_spotify_open", String(next)); } catch {}
+      return next;
+    });
+  };
+
+  const toggleBrowser = () => {
+    setBrowserOpen((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("study_browser_open", String(next)); } catch {}
+      return next;
+    });
+  };
 
   // Window position (movable via top header bar)
   const [windowPos, setWindowPos] = useState<{ x: number; y: number }>(() => {
@@ -1019,8 +1108,8 @@ function StudyCockpitPage() {
           isFullScreen && !menuHovered ? "-translate-y-full" : "translate-y-0"
         }`}
       >
-        {/* Left: macOS Actions */}
-        <div className="flex items-center gap-2 text-xs">
+        {/* Left: macOS Actions & App Launchers */}
+        <div className="flex items-center gap-1.5 text-xs">
           <Button
             size="sm"
             variant="ghost"
@@ -1028,7 +1117,7 @@ function StudyCockpitPage() {
             className="h-6 px-2 text-[11px] text-white/80 hover:text-white hover:bg-white/10 rounded-md font-medium gap-1"
           >
             <ArrowLeft className="h-3 w-3" />
-            <span>Exit Study Mode</span>
+            <span className="hidden sm:inline">Exit</span>
           </Button>
 
           <Button
@@ -1038,7 +1127,57 @@ function StudyCockpitPage() {
             className="h-6 px-2 text-[11px] text-white/80 hover:text-white hover:bg-white/10 rounded-md font-medium gap-1"
           >
             <Settings className="h-3 w-3 text-purple-300" />
-            <span>Preferences</span>
+            <span className="hidden md:inline">Wallpapers</span>
+          </Button>
+
+          <div className="h-3.5 w-px bg-white/15 mx-0.5 hidden sm:block" />
+
+          {/* Quick App Launchers */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={toggleYouTube}
+            className={`h-6 px-2 text-[11px] rounded-md font-medium gap-1 transition-all ${
+              youtubeOpen
+                ? "bg-red-600/80 text-white shadow-sm border border-red-500/40"
+                : "text-white/80 hover:text-white hover:bg-white/10"
+            }`}
+            title="Toggle YouTube Focus Player"
+          >
+            <Youtube className={`h-3 w-3 ${youtubeOpen ? "text-white fill-white" : "text-red-400 fill-red-400"}`} />
+            <span>YouTube</span>
+          </Button>
+
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={toggleSpotify}
+            className={`h-6 px-2 text-[11px] rounded-md font-medium gap-1 transition-all ${
+              spotifyOpen
+                ? "bg-emerald-600/80 text-white shadow-sm border border-emerald-500/40"
+                : "text-white/80 hover:text-white hover:bg-white/10"
+            }`}
+            title="Toggle Spotify Music"
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 text-black flex items-center justify-center text-[7px] font-black">
+              S
+            </span>
+            <span>Spotify</span>
+          </Button>
+
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={toggleBrowser}
+            className={`h-6 px-2 text-[11px] rounded-md font-medium gap-1 transition-all ${
+              browserOpen
+                ? "bg-cyan-600/80 text-white shadow-sm border border-cyan-500/40"
+                : "text-white/80 hover:text-white hover:bg-white/10"
+            }`}
+            title="Toggle Study Web Browser"
+          >
+            <Globe className="h-3 w-3 text-cyan-300" />
+            <span className="hidden md:inline">Browser</span>
           </Button>
 
           {(!userCurriculum || !userCurriculum.onboarded) && (
@@ -1046,7 +1185,7 @@ function StudyCockpitPage() {
               size="sm"
               variant="ghost"
               onClick={() => setOnboardingOpen(true)}
-              className="h-6 px-2 text-[11px] text-white/80 hover:text-white hover:bg-white/10 rounded-md font-medium hidden md:flex items-center gap-1"
+              className="h-6 px-2 text-[11px] text-white/80 hover:text-white hover:bg-white/10 rounded-md font-medium hidden lg:flex items-center gap-1"
             >
               <HelpCircle className="h-3 w-3 text-cyan-300" />
               <span>Curriculum</span>
@@ -1060,7 +1199,7 @@ function StudyCockpitPage() {
           <span className="text-[12px] font-semibold text-white tracking-wider font-mono">
             {macTime || "12:00:00 PM"}
           </span>
-          <span className="text-[10px] text-white/60 bg-white/10 px-1.5 py-0.5 rounded uppercase font-mono tracking-wider">
+          <span className="text-[10px] text-white/60 bg-white/10 px-1.5 py-0.5 rounded uppercase font-mono tracking-wider hidden sm:inline">
             {tzCode}
           </span>
         </div>
@@ -1080,7 +1219,7 @@ function StudyCockpitPage() {
             <select
               value={activeSoundscape}
               onChange={(e) => handleSelectSoundscape(e.target.value as SoundscapeType)}
-              className="bg-transparent border-0 text-[10px] text-white/90 focus:outline-none cursor-pointer pr-1"
+              className="bg-transparent border-0 text-[10px] text-white/90 focus:outline-none cursor-pointer pr-1 max-w-[85px] truncate"
             >
               {SOUNDSCAPES.map((sc) => (
                 <option key={sc.id} value={sc.id} className="bg-zinc-950 text-white">
@@ -1108,12 +1247,12 @@ function StudyCockpitPage() {
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className={`h-6 px-2.5 text-[11px] rounded-md font-semibold gap-1.5 transition-colors ${
               sidebarOpen
-                ? "bg-white/15 text-white"
-                : "bg-emerald-600/80 hover:bg-emerald-500 text-white shadow-sm"
+                ? "bg-purple-600/80 hover:bg-purple-500 text-white shadow-sm border border-purple-500/30"
+                : "bg-white/10 hover:bg-white/20 text-white"
             }`}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span>{sidebarOpen ? "Hide Workspace" : "Show Workspace"}</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+            <span>{sidebarOpen ? "Workspace" : "Workspace"}</span>
           </Button>
         </div>
       </header>
@@ -1797,7 +1936,109 @@ function StudyCockpitPage() {
         </div>
       </div>
 
-      {/* 6. SETTINGS & VIDEO WALLPAPERS DIALOG */}
+      {/* 5. FLOATING APPLE MAC STYLE APP DOCK (Bottom Left Corner) */}
+      <div className="fixed bottom-5 left-5 z-40 flex items-center gap-1.5 p-2 rounded-2xl bg-black/40 backdrop-blur-2xl border border-white/15 shadow-2xl transition-all select-none">
+        {/* Workspace App */}
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className={`relative p-2.5 rounded-xl flex flex-col items-center justify-center transition-all group ${
+            sidebarOpen ? "bg-purple-600/30 border border-purple-500/40 text-purple-300" : "hover:bg-white/10 text-white/70 hover:text-white"
+          }`}
+          title="Workspace (Planner / Habits / Exams / AI Plan)"
+        >
+          <ListChecks className="h-4 w-4" />
+          {sidebarOpen && <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-purple-400" />}
+        </button>
+
+        {/* YouTube App */}
+        <button
+          type="button"
+          onClick={toggleYouTube}
+          className={`relative p-2.5 rounded-xl flex flex-col items-center justify-center transition-all group ${
+            youtubeOpen ? "bg-red-600/30 border border-red-500/40 text-red-400" : "hover:bg-white/10 text-white/70 hover:text-white"
+          }`}
+          title="YouTube Focus Player"
+        >
+          <Youtube className="h-4 w-4 fill-current" />
+          {youtubeOpen && <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-red-500" />}
+        </button>
+
+        {/* Spotify App */}
+        <button
+          type="button"
+          onClick={toggleSpotify}
+          className={`relative p-2.5 rounded-xl flex flex-col items-center justify-center transition-all group ${
+            spotifyOpen ? "bg-emerald-600/30 border border-emerald-500/40 text-emerald-400" : "hover:bg-white/10 text-white/70 hover:text-white"
+          }`}
+          title="Spotify Music & Connect"
+        >
+          <span className="w-4 h-4 rounded-full bg-emerald-500 text-black flex items-center justify-center text-[9px] font-black">
+            S
+          </span>
+          {spotifyOpen && <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-emerald-400" />}
+        </button>
+
+        {/* In-Cockpit Browser */}
+        <button
+          type="button"
+          onClick={toggleBrowser}
+          className={`relative p-2.5 rounded-xl flex flex-col items-center justify-center transition-all group ${
+            browserOpen ? "bg-cyan-600/30 border border-cyan-500/40 text-cyan-300" : "hover:bg-white/10 text-white/70 hover:text-white"
+          }`}
+          title="Study Web Browser (Excalidraw, Wikipedia, Docs, arXiv)"
+        >
+          <Globe className="h-4 w-4" />
+          {browserOpen && <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-cyan-400" />}
+        </button>
+
+        <div className="w-px h-5 bg-white/15 mx-0.5" />
+
+        {/* Preferences / Wallpapers */}
+        <button
+          type="button"
+          onClick={() => setSettingsOpen(true)}
+          className="p-2.5 rounded-xl flex flex-col items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition-all"
+          title="Video Wallpapers & Timer Preferences"
+        >
+          <Settings className="h-4 w-4 text-purple-300" />
+        </button>
+      </div>
+
+      {/* 6. FLOATING YOUTUBE FOCUS PLAYER WINDOW */}
+      <StudyYouTubePlayer
+        open={youtubeOpen}
+        onClose={() => setYoutubeOpen(false)}
+        pos={youtubePos}
+        onPosChange={(p) => {
+          setYoutubePos(p);
+          try { localStorage.setItem("study_youtube_pos", JSON.stringify(p)); } catch {}
+        }}
+      />
+
+      {/* 7. FLOATING SPOTIFY FOCUS PLAYER WINDOW */}
+      <StudySpotifyPlayer
+        open={spotifyOpen}
+        onClose={() => setSpotifyOpen(false)}
+        pos={spotifyPos}
+        onPosChange={(p) => {
+          setSpotifyPos(p);
+          try { localStorage.setItem("study_spotify_pos", JSON.stringify(p)); } catch {}
+        }}
+      />
+
+      {/* 8. FLOATING IN-COCKPIT WEB BROWSER WINDOW */}
+      <StudyWebBrowser
+        open={browserOpen}
+        onClose={() => setBrowserOpen(false)}
+        pos={browserPos}
+        onPosChange={(p) => {
+          setBrowserPos(p);
+          try { localStorage.setItem("study_browser_pos", JSON.stringify(p)); } catch {}
+        }}
+      />
+
+      {/* 9. SETTINGS & VIDEO WALLPAPERS DIALOG */}
       <StudySettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
