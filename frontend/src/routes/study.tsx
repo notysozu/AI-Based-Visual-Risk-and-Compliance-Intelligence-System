@@ -89,7 +89,8 @@ import {
 import { StudyYouTubePlayer } from "@/components/study-youtube-player";
 import { StudySpotifyPlayer } from "@/components/study-spotify-player";
 import { StudyWebBrowser } from "@/components/study-web-browser";
-import { Youtube, Globe, Music, Radio, Headphones } from "lucide-react";
+import { StudyGeminiLive } from "@/components/study-gemini-live";
+import { Youtube, Globe, Music, Radio, Headphones, Bot } from "lucide-react";
 import { tooltipStyle } from "@/routes/dashboard";
 
 export const Route = createFileRoute("/study")({
@@ -129,7 +130,14 @@ function StudyCockpitPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("tasks");
 
-  // Floating Window States: YouTube, Spotify, and In-Cockpit Web Browser
+  // Floating Window States: Gemini Live, YouTube, Spotify, and In-Cockpit Web Browser
+  const [geminiLiveOpen, setGeminiLiveOpen] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("study_gemini_live_open") === "true";
+    }
+    return false;
+  });
+
   const [youtubeOpen, setYoutubeOpen] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("study_youtube_open") === "true";
@@ -149,6 +157,19 @@ function StudyCockpitPage() {
       return localStorage.getItem("study_browser_open") === "true";
     }
     return false;
+  });
+
+  const [geminiLivePos, setGeminiLivePos] = useState<{ x: number; y: number }>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("study_gemini_live_pos");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.x === "number" && typeof parsed.y === "number") return parsed;
+        } catch {}
+      }
+    }
+    return { x: Math.max(20, (typeof window !== "undefined" ? window.innerWidth - 420 : 440)), y: 68 };
   });
 
   const [youtubePos, setYoutubePos] = useState<{ x: number; y: number }>(() => {
@@ -189,6 +210,14 @@ function StudyCockpitPage() {
     }
     return { x: 70, y: 70 };
   });
+
+  const toggleGeminiLive = () => {
+    setGeminiLiveOpen((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("study_gemini_live_open", String(next)); } catch {}
+      return next;
+    });
+  };
 
   const toggleYouTube = () => {
     setYoutubeOpen((prev) => {
@@ -1180,6 +1209,21 @@ function StudyCockpitPage() {
             <span className="hidden md:inline">Browser</span>
           </Button>
 
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={toggleGeminiLive}
+            className={`h-6 px-2 text-[11px] rounded-md font-medium gap-1.5 transition-all ${
+              geminiLiveOpen
+                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm border border-purple-400/40"
+                : "text-purple-300 hover:text-white hover:bg-purple-500/20"
+            }`}
+            title="Toggle Gemini Live Voice AI Copilot (Hands-Free Speech)"
+          >
+            <Sparkles className="h-3 w-3 text-purple-300 animate-pulse" />
+            <span className="font-semibold">Gemini Live</span>
+          </Button>
+
           {(!userCurriculum || !userCurriculum.onboarded) && (
             <Button
               size="sm"
@@ -1992,6 +2036,21 @@ function StudyCockpitPage() {
           {browserOpen && <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-cyan-400" />}
         </button>
 
+        {/* Gemini Live Voice Copilot */}
+        <button
+          type="button"
+          onClick={toggleGeminiLive}
+          className={`relative p-2.5 rounded-xl flex flex-col items-center justify-center transition-all group ${
+            geminiLiveOpen
+              ? "bg-purple-600/40 border border-purple-400/50 text-purple-200 shadow-lg shadow-purple-500/20"
+              : "hover:bg-white/10 text-purple-300 hover:text-white"
+          }`}
+          title="Gemini Live Voice Copilot (Always-Listening Hands-Free)"
+        >
+          <Sparkles className="h-4 w-4 text-purple-300" />
+          {geminiLiveOpen && <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-purple-400" />}
+        </button>
+
         <div className="w-px h-5 bg-white/15 mx-0.5" />
 
         {/* Preferences / Wallpapers */}
@@ -2005,7 +2064,25 @@ function StudyCockpitPage() {
         </button>
       </div>
 
-      {/* 6. FLOATING YOUTUBE FOCUS PLAYER WINDOW */}
+      {/* 6. FLOATING GEMINI LIVE VOICE AI COPILOT */}
+      <StudyGeminiLive
+        open={geminiLiveOpen}
+        onClose={() => setGeminiLiveOpen(false)}
+        userId={p.id ?? "1"}
+        subject={selectedSubject}
+        activeTaskTitle={todaysTasks.find((t) => !t.done)?.title}
+        secondsLeft={secondsLeft}
+        timerMode={timerMode}
+        pos={geminiLivePos}
+        onPosChange={(p) => {
+          setGeminiLivePos(p);
+          try {
+            localStorage.setItem("study_gemini_live_pos", JSON.stringify(p));
+          } catch {}
+        }}
+      />
+
+      {/* 7. FLOATING YOUTUBE FOCUS PLAYER WINDOW */}
       <StudyYouTubePlayer
         open={youtubeOpen}
         onClose={() => setYoutubeOpen(false)}
@@ -2016,7 +2093,7 @@ function StudyCockpitPage() {
         }}
       />
 
-      {/* 7. FLOATING SPOTIFY FOCUS PLAYER WINDOW */}
+      {/* 8. FLOATING SPOTIFY FOCUS PLAYER WINDOW */}
       <StudySpotifyPlayer
         open={spotifyOpen}
         onClose={() => setSpotifyOpen(false)}
@@ -2027,7 +2104,7 @@ function StudyCockpitPage() {
         }}
       />
 
-      {/* 8. FLOATING IN-COCKPIT WEB BROWSER WINDOW */}
+      {/* 9. FLOATING IN-COCKPIT WEB BROWSER WINDOW */}
       <StudyWebBrowser
         open={browserOpen}
         onClose={() => setBrowserOpen(false)}

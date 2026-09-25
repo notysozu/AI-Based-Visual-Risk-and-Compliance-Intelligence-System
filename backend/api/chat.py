@@ -511,3 +511,92 @@ async def reject_chat_action(
         raise HTTPException(status_code=404, detail="Message not found")
 
     return {"status": "rejected", "message_id": message_id}
+
+
+@router.post("/gemini-live")
+async def gemini_live_voice_turn(req: Dict[str, Any]):
+    """
+    Low-latency conversational voice study assistant turn (Gemini Live Mode).
+    Optimized for continuous speech synthesis with short, crisp 1-3 sentence answers.
+    """
+    user_id = str(req.get("user_id") or "1")
+    prompt = (req.get("prompt") or "").strip()
+    subject = (req.get("subject") or "General Study").strip()
+    active_task = req.get("active_task")
+    history = req.get("history") or []
+
+    if not prompt:
+        return {"text": "I'm listening. Ask me any study question, formula, or concept.", "prompt": "", "timestamp": datetime.utcnow().isoformat()}
+
+    user = await crud.get_user(user_id)
+    username = user.username if user and user.username else "Student"
+    role = getattr(user, "role", "student") or "student"
+
+    system_prompt = f"""You are Gemini Live, an instant real-time conversational voice study assistant and personal AI tutor for {username} (Role: {role}).
+Active Subject Context: {subject}
+{f"Active Task: {active_task}" if active_task else ""}
+
+CRITICAL VOICE INSTRUCTIONS:
+1. Provide extremely concise, punchy, high-impact study answers (1 to 3 short sentences maximum).
+2. Answer immediately without conversational filler, preamble, or fluff like 'Sure!', 'Certainly!', or 'Here is your answer:'.
+3. Write for natural speech synthesis audio: use clean, spoken English without markdown tables, asterisks, bullet points, or complex code blocks.
+4. If asked for a formula, definition, or concept, explain it instantly with zero delay.
+5. If asked to quiz the user, state 1 sharp active recall question clearly."""
+
+    messages_payload = [{"role": "system", "content": system_prompt}]
+
+    # Include last 4 turns of history for dialogue continuity
+    for h in history[-4:]:
+        r = h.get("role")
+        c = h.get("content") or h.get("text")
+        if r in ["user", "assistant"] and c:
+            messages_payload.append({"role": r, "content": c})
+
+    messages_payload.append({"role": "user", "content": prompt})
+
+    try:
+        from ai_engine.llm_integration.client import get_groq_client, get_active_groq_models
+        client = get_groq_client()
+        if client:
+            models_to_try = get_active_groq_models(client)
+            for m in models_to_try:
+                try:
+                    resp = client.chat.completions.create(
+                        model=m,
+                        messages=messages_payload,
+                        temperature=0.5,
+                        max_tokens=220,
+                        timeout=8.0
+                    )
+                    content = resp.choices[0].message.content.strip()
+                    # Clean any <think> tags if present
+                    clean_content = re.sub(r"<think>[\s\S]*?</think>", "", content).strip()
+                    # Clean asterisks for smooth TTS
+                    clean_content = clean_content.replace("**", "").replace("*", "").replace("###", "").replace("##", "")
+                    if clean_content:
+                        return {
+                            "text": clean_content,
+                            "prompt": prompt,
+                            "timestamp": datetime.utcnow().isoformat()
+                        }
+                except Exception as inner_err:
+                    continue
+    except Exception as e:
+        print(f"[GeminiLive] LLM error: {e}")
+
+    # Fallback response
+    p_low = prompt.lower()
+    if "quiz" in p_low:
+        fallback = f"Here is your active recall question for {subject}: What is the primary governing principle and core formula behind this concept?"
+    elif "formula" in p_low:
+        fallback = f"For {subject}, focus on foundational relationships: inputs directly scale output velocity under equilibrium constraints."
+    elif "mnemonic" in p_low:
+        fallback = "A great memory anchor is to link the first letters into a vivid visual story in your mind."
+    else:
+        fallback = f"Focus on the core definition in {subject}: break the concept down to first principles, verify the key assumption, and apply it directly to your current problem."
+
+    return {
+        "text": fallback,
+        "prompt": prompt,
+        "timestamp": datetime.utcnow().isoformat()
+    }

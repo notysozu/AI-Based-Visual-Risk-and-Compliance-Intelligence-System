@@ -328,6 +328,19 @@ export function rejectChatAction(
   });
 }
 
+export function askGeminiLive(payload: {
+  user_id: string | number;
+  prompt: string;
+  subject?: string;
+  active_task?: string;
+  history?: Array<{ role: string; content?: string; text?: string }>;
+}): Promise<{ text: string; prompt: string; timestamp: string }> {
+  return request("/chat/gemini-live", {
+    method: "POST",
+    body: JSON.stringify({ ...payload, user_id: String(payload.user_id) }),
+  });
+}
+
 // --- Application Intelligence Cache APIs (MongoDB Persistence) ---
 
 export function getCache(cacheKey: string) {
