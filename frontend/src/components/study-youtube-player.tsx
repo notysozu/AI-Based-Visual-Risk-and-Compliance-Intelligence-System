@@ -319,7 +319,7 @@ export function StudyYouTubePlayer({
     window.addEventListener("mouseup", onMouseUp);
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mouseup", onMouseUp);
     };
   }, [isCornerResizing, windowPos.x, windowPos.y, windowSize]);
 
