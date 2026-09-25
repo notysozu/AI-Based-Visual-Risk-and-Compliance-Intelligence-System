@@ -207,6 +207,9 @@ export function StudyYouTubePlayer({
   };
 
   // Dragging Handlers
+  const currentPosRef = useRef(windowPos);
+  currentPosRef.current = windowPos;
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button, input, iframe, a")) return;
     setIsDragging(true);
@@ -226,12 +229,15 @@ export function StudyYouTubePlayer({
       const newX = Math.max(10, Math.min(window.innerWidth - 420, dragStartRef.current.posX + dx));
       const newY = Math.max(40, Math.min(window.innerHeight - 200, dragStartRef.current.posY + dy));
       const nextPos = { x: newX, y: newY };
+      currentPosRef.current = nextPos;
       setWindowPos(nextPos);
-      onPosChange?.(nextPos);
     };
 
     const handleMouseUp = () => {
-      if (isDragging) setIsDragging(false);
+      if (isDragging) {
+        setIsDragging(false);
+        onPosChange?.(currentPosRef.current);
+      }
     };
 
     if (isDragging) {
@@ -250,7 +256,7 @@ export function StudyYouTubePlayer({
   return (
     <div
       style={{ left: `${windowPos.x}px`, top: `${windowPos.y}px` }}
-      className={`fixed z-40 w-[450px] max-w-[95vw] select-none rounded-2xl border border-white/10 bg-[#0F0F0F]/95 backdrop-blur-2xl shadow-2xl shadow-black/90 text-white overflow-hidden transition-all flex flex-col font-sans ${
+      className={`fixed z-40 w-[450px] max-w-[95vw] select-none rounded-2xl border border-white/10 bg-[#0F0F0F]/95 backdrop-blur-2xl shadow-2xl shadow-black/90 text-white overflow-hidden flex flex-col font-sans ${
         isCompact ? "h-auto" : ""
       }`}
     >
@@ -332,6 +338,7 @@ export function StudyYouTubePlayer({
       {/* 2. Embedded Video Frame */}
       <div className="p-3 bg-[#0F0F0F]">
         <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-white/10 shadow-lg">
+          {isDragging && <div className="absolute inset-0 z-50 bg-transparent" />}
           <iframe
             key={activePreset.videoId}
             src={`https://www.youtube.com/embed/${activePreset.videoId}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0`}

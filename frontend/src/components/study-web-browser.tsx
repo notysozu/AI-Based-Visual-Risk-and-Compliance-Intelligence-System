@@ -289,16 +289,23 @@ export function StudyWebBrowser({
 
   useEffect(() => {
     if (!isDragging) return;
+    let currentX = windowPos.x;
+    let currentY = windowPos.y;
+
     const onMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - dragStartRef.current.mouseX;
       const deltaY = e.clientY - dragStartRef.current.mouseY;
       const nextX = Math.max(8, Math.min(window.innerWidth - 300, dragStartRef.current.posX + deltaX));
       const nextY = Math.max(52, Math.min(window.innerHeight - 150, dragStartRef.current.posY + deltaY));
-      const newPos = { x: nextX, y: nextY };
-      setWindowPos(newPos);
-      if (onPosChange) onPosChange(newPos);
+      currentX = nextX;
+      currentY = nextY;
+      setWindowPos({ x: nextX, y: nextY });
     };
-    const onMouseUp = () => setIsDragging(false);
+
+    const onMouseUp = () => {
+      setIsDragging(false);
+      if (onPosChange) onPosChange({ x: currentX, y: currentY });
+    };
 
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
@@ -306,7 +313,7 @@ export function StudyWebBrowser({
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [isDragging, onPosChange]);
+  }, [isDragging, onPosChange, windowPos.x, windowPos.y]);
 
   // Corner Resize
   const handleCornerResizeMouseDown = (e: React.MouseEvent) => {
@@ -323,6 +330,8 @@ export function StudyWebBrowser({
 
   useEffect(() => {
     if (!isCornerResizing) return;
+    let finalSize = windowSize;
+
     const onMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - cornerResizeStartRef.current.mouseX;
       const deltaY = e.clientY - cornerResizeStartRef.current.mouseY;
@@ -330,13 +339,16 @@ export function StudyWebBrowser({
       const maxH = Math.min(window.innerHeight - windowPos.y - 16, window.innerHeight - 60);
       const nextW = Math.max(380, Math.min(maxW, cornerResizeStartRef.current.startW + deltaX));
       const nextH = Math.max(300, Math.min(maxH, cornerResizeStartRef.current.startH + deltaY));
-      const newSize = { width: nextW, height: nextH };
-      setWindowSize(newSize);
+      finalSize = { width: nextW, height: nextH };
+      setWindowSize(finalSize);
+    };
+
+    const onMouseUp = () => {
+      setIsCornerResizing(false);
       try {
-        localStorage.setItem("study_browser_window_size", JSON.stringify(newSize));
+        localStorage.setItem("study_browser_window_size", JSON.stringify(finalSize));
       } catch {}
     };
-    const onMouseUp = () => setIsCornerResizing(false);
 
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
@@ -344,7 +356,7 @@ export function StudyWebBrowser({
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [isCornerResizing, windowPos.x, windowPos.y]);
+  }, [isCornerResizing, windowPos.x, windowPos.y, windowSize]);
 
   if (!open) return null;
 
@@ -356,7 +368,7 @@ export function StudyWebBrowser({
         width: isMaximized ? "calc(100vw - 24px)" : `${windowSize.width}px`,
         height: isMaximized ? "calc(100vh - 64px)" : `${windowSize.height}px`,
       }}
-      className="fixed z-30 rounded-2xl border border-cyan-500/25 bg-black/40 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden select-none transition-all duration-150"
+      className="fixed z-30 rounded-2xl border border-cyan-500/25 bg-black/40 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden select-none"
     >
       {/* 1. macOS Window Header & Tab Bar */}
       <div
@@ -547,6 +559,9 @@ export function StudyWebBrowser({
 
       {/* 4. Web Browser Viewport (Iframe Sandbox) */}
       <div className="flex-1 relative bg-white/5 overflow-hidden">
+        {(isDragging || isCornerResizing) && (
+          <div className="absolute inset-0 z-50 bg-transparent" />
+        )}
         <iframe
           key={`${activeTab?.url}-${iframeKey}`}
           src={activeTab?.url || "https://excalidraw.com"}

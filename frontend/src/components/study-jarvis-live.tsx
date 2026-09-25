@@ -282,6 +282,9 @@ export function StudyJarvisLive({
   };
 
   // Dragging Handlers
+  const currentPosRef = useRef(windowPos);
+  currentPosRef.current = windowPos;
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button, input, a")) return;
     setIsDragging(true);
@@ -301,12 +304,15 @@ export function StudyJarvisLive({
       const newX = Math.max(10, Math.min(window.innerWidth - 320, dragStartRef.current.posX + dx));
       const newY = Math.max(40, Math.min(window.innerHeight - 150, dragStartRef.current.posY + dy));
       const nextPos = { x: newX, y: newY };
+      currentPosRef.current = nextPos;
       setWindowPos(nextPos);
-      onPosChange?.(nextPos);
     };
 
     const handleMouseUp = () => {
-      if (isDragging) setIsDragging(false);
+      if (isDragging) {
+        setIsDragging(false);
+        onPosChange?.(currentPosRef.current);
+      }
     };
 
     if (isDragging) {

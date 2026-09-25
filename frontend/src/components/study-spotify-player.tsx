@@ -204,6 +204,9 @@ export function StudySpotifyPlayer({
   };
 
   // Dragging Handlers
+  const currentPosRef = useRef(windowPos);
+  currentPosRef.current = windowPos;
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button, input, iframe, a")) return;
     setIsDragging(true);
@@ -223,12 +226,15 @@ export function StudySpotifyPlayer({
       const newX = Math.max(10, Math.min(window.innerWidth - 380, dragStartRef.current.posX + dx));
       const newY = Math.max(40, Math.min(window.innerHeight - 200, dragStartRef.current.posY + dy));
       const nextPos = { x: newX, y: newY };
+      currentPosRef.current = nextPos;
       setWindowPos(nextPos);
-      onPosChange?.(nextPos);
     };
 
     const handleMouseUp = () => {
-      if (isDragging) setIsDragging(false);
+      if (isDragging) {
+        setIsDragging(false);
+        onPosChange?.(currentPosRef.current);
+      }
     };
 
     if (isDragging) {
@@ -247,7 +253,7 @@ export function StudySpotifyPlayer({
   return (
     <div
       style={{ left: `${windowPos.x}px`, top: `${windowPos.y}px` }}
-      className={`fixed z-40 w-[420px] max-w-[95vw] select-none rounded-2xl border border-white/10 bg-[#121212]/95 backdrop-blur-2xl shadow-2xl shadow-black/90 text-white overflow-hidden transition-all flex flex-col font-sans ${
+      className={`fixed z-40 w-[420px] max-w-[95vw] select-none rounded-2xl border border-white/10 bg-[#121212]/95 backdrop-blur-2xl shadow-2xl shadow-black/90 text-white overflow-hidden flex flex-col font-sans ${
         isCompact ? "h-auto" : ""
       }`}
     >
@@ -325,7 +331,8 @@ export function StudySpotifyPlayer({
 
       {/* 2. Embedded Official Spotify Iframe Player */}
       <div className="p-3 bg-[#121212]">
-        <div className="w-full rounded-xl overflow-hidden bg-[#181818] border border-white/5 shadow-inner">
+        <div className="relative w-full rounded-xl overflow-hidden bg-[#181818] border border-white/5 shadow-inner">
+          {isDragging && <div className="absolute inset-0 z-50 bg-transparent" />}
           <iframe
             key={activePreset.embedUrl}
             src={activePreset.embedUrl}
@@ -335,7 +342,7 @@ export function StudySpotifyPlayer({
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
             loading="lazy"
             title="Spotify Focus Player"
-            className="w-full transition-all"
+            className="w-full"
           />
         </div>
       </div>

@@ -231,6 +231,9 @@ export function StudyNotesWindow({
   };
 
   // Dragging Handlers
+  const currentPosRef = useRef(windowPos);
+  currentPosRef.current = windowPos;
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button, input, textarea, a, select")) return;
     setIsDragging(true);
@@ -250,12 +253,15 @@ export function StudyNotesWindow({
       const newX = Math.max(10, Math.min(window.innerWidth - 650, dragStartRef.current.posX + dx));
       const newY = Math.max(40, Math.min(window.innerHeight - 300, dragStartRef.current.posY + dy));
       const nextPos = { x: newX, y: newY };
+      currentPosRef.current = nextPos;
       setWindowPos(nextPos);
-      onPosChange?.(nextPos);
     };
 
     const handleMouseUp = () => {
-      if (isDragging) setIsDragging(false);
+      if (isDragging) {
+        setIsDragging(false);
+        onPosChange?.(currentPosRef.current);
+      }
     };
 
     if (isDragging) {
