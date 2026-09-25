@@ -19,7 +19,8 @@ import {
   Pause,
   RotateCcw,
   Minimize2,
-  Maximize2
+  Maximize2,
+  Square
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -64,26 +65,58 @@ export function StudyJarvisLive({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, posX: 0, posY: 0 });
 
+  // References for Acoustic Shield & Echo Cancellation
   const recognitionRef = useRef<any>(null);
   const silenceTimerRef = useRef<any>(null);
   const isProcessingRef = useRef(false);
+  const isSpeakingRef = useRef(false);
+  const echoCooldownTimerRef = useRef<any>(null);
+  const recentSpokenTextsRef = useRef<{ text: string; timestamp: number }[]>([]);
 
   useEffect(() => {
     setWindowPos(pos);
   }, [pos.x, pos.y]);
 
-  // Natural TTS Voice with Barge-In
+  // Stop Speaking / Interrupt TTS & Clear Acoustic Shield
+  const stopSpeaking = useCallback(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    if (echoCooldownTimerRef.current) {
+      clearTimeout(echoCooldownTimerRef.current);
+    }
+    isSpeakingRef.current = false;
+    setIsSpeaking(false);
+    setLiveTranscript("");
+  }, []);
+
+  // Natural TTS Voice with Acoustic Shield & Speaker Echo Cancellation
   const speakJarvis = useCallback((textToSpeak: string) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
     try {
       window.speechSynthesis.cancel();
+      if (echoCooldownTimerRef.current) {
+        clearTimeout(echoCooldownTimerRef.current);
+      }
+
       const clean = textToSpeak.replace(/<[^>]*>?/gm, "").replace(/[`*#_]/g, "").trim();
       if (!clean) return;
 
+      // 1. Record spoken text to cancel any acoustic echoes
+      recentSpokenTextsRef.current.push({ text: clean, timestamp: Date.now() });
+      if (recentSpokenTextsRef.current.length > 15) {
+        recentSpokenTextsRef.current.shift();
+      }
+
+      // 2. Lock microphone recognition immediately
+      isSpeakingRef.current = true;
+      setIsSpeaking(true);
+      setLiveTranscript("");
+
       const utterance = new SpeechSynthesisUtterance(clean);
       utterance.rate = 1.08;
-      utterance.pitch = 0.98; // Refined, slightly deeper British-style AI tone
+      utterance.pitch = 0.98; // Refined British-style AI tone
 
       const voices = window.speechSynthesis.getVoices();
       const preferredVoice =
@@ -93,21 +126,31 @@ export function StudyJarvisLive({
 
       if (preferredVoice) utterance.voice = preferredVoice;
 
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+      utterance.onstart = () => {
+        isSpeakingRef.current = true;
+        setIsSpeaking(true);
+      };
+
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        // Keep acoustic echo suppression active for 850ms to let room reverb and mic buffer clear
+        if (echoCooldownTimerRef.current) clearTimeout(echoCooldownTimerRef.current);
+        echoCooldownTimerRef.current = setTimeout(() => {
+          isSpeakingRef.current = false;
+          setLiveTranscript("");
+        }, 850);
+      };
+
+      utterance.onerror = () => {
+        setIsSpeaking(false);
+        isSpeakingRef.current = false;
+      };
 
       window.speechSynthesis.speak(utterance);
     } catch (err) {
       console.warn("TTS error:", err);
       setIsSpeaking(false);
-    }
-  }, []);
-
-  const stopSpeaking = useCallback(() => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+      isSpeakingRef.current = false;
     }
   }, []);
 
@@ -115,7 +158,41 @@ export function StudyJarvisLive({
   const processVoiceInput = useCallback(
     async (spokenQuery: string) => {
       const q = spokenQuery.trim();
-      if (!q || isProcessingRef.current) return;
+      if (!q || isProcessingRef.current || isSpeakingRef.current) return;
+
+      // Acoustic Echo Cancellation: check if the recognized phrase is JARVIS's own speech
+      const cleanQ = q.toLowerCase().replace(/[^a-z0-9]/g, " ").trim();
+      if (!cleanQ || cleanQ.length < 2) return;
+
+      const now = Date.now();
+      const isEcho = recentSpokenTextsRef.current.some((item) => {
+        if (now - item.timestamp > 15000) return false;
+        const cleanSpoken = item.text.toLowerCase().replace(/[^a-z0-9]/g, " ").trim();
+
+        // Exact substring match
+        if (cleanSpoken.includes(cleanQ) || cleanQ.includes(cleanSpoken)) {
+          return true;
+        }
+
+        // Token overlap similarity (e.g. if mic misrecognized 1-2 words of JARVIS's sentence)
+        const qTokens = cleanQ.split(/\s+/).filter((w) => w.length >= 3);
+        const spokenTokens = new Set(cleanSpoken.split(/\s+/).filter((w) => w.length >= 3));
+        if (qTokens.length > 0 && spokenTokens.size > 0) {
+          let matched = 0;
+          for (const tok of qTokens) {
+            if (spokenTokens.has(tok)) matched++;
+          }
+          if (matched / Math.min(qTokens.length, spokenTokens.size) >= 0.55) {
+            return true;
+          }
+        }
+        return false;
+      });
+
+      if (isEcho) {
+        setLiveTranscript("");
+        return;
+      }
 
       stopSpeaking();
       isProcessingRef.current = true;
@@ -165,7 +242,7 @@ export function StudyJarvisLive({
     [userId, subject, cockpitContext, speakJarvis, stopSpeaking]
   );
 
-  // Speech Recognition Loop
+  // Speech Recognition Continuous Loop with Acoustic Shield Guard
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -196,7 +273,10 @@ export function StudyJarvisLive({
         };
 
         recognition.onresult = (event: any) => {
-          stopSpeaking();
+          // Acoustic Shield: Drop all audio frames picked up while JARVIS is speaking
+          if (isSpeakingRef.current) {
+            return;
+          }
 
           let interim = "";
           let finalTranscript = "";
@@ -219,7 +299,7 @@ export function StudyJarvisLive({
               if (current.length >= 2) {
                 processVoiceInput(current);
               }
-            }, 1200);
+            }, 1100);
           }
         };
 
@@ -250,6 +330,7 @@ export function StudyJarvisLive({
 
     return () => {
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      if (echoCooldownTimerRef.current) clearTimeout(echoCooldownTimerRef.current);
       if (recognition) {
         try {
           recognition.onend = null;
@@ -257,10 +338,17 @@ export function StudyJarvisLive({
         } catch {}
       }
     };
-  }, [isMuted, processVoiceInput, stopSpeaking]);
+  }, [isMuted, processVoiceInput]);
 
-  // Toggle Mute / Unmute
+  // Toggle Mute / Unmute or Interrupt Active Speech
   const toggleMute = () => {
+    // If JARVIS is speaking, clicking immediately silences it (barge-in / interrupt)
+    if (isSpeaking) {
+      stopSpeaking();
+      toast.info("JARVIS Speech Stopped");
+      return;
+    }
+
     const nextMuted = !isMuted;
     setIsMuted(nextMuted);
 
@@ -356,7 +444,13 @@ export function StudyJarvisLive({
               ? "bg-gradient-to-tr from-amber-950 via-zinc-900 to-indigo-950 border-amber-400 text-amber-300 shadow-amber-950/60"
               : "bg-gradient-to-tr from-cyan-950 via-zinc-900 to-purple-950 border-cyan-400/80 text-cyan-300 shadow-cyan-950/60 hover:scale-105"
           }`}
-          title={isMuted ? "Click to Unmute JARVIS" : "Click to Mute JARVIS"}
+          title={
+            isSpeaking
+              ? "Click to Stop Speaking (Interrupt)"
+              : isMuted
+              ? "Click to Unmute JARVIS"
+              : "Click to Mute JARVIS"
+          }
         >
           {/* Animated Core Icon */}
           {isMuted ? (
@@ -397,11 +491,22 @@ export function StudyJarvisLive({
               <Badge
                 variant="outline"
                 className={`text-[8px] py-0 px-1 border-white/10 ${
-                  isMuted ? "text-red-400 border-red-500/30" : isSpeaking ? "text-emerald-300" : "text-cyan-300"
+                  isMuted ? "text-red-400 border-red-500/30" : isSpeaking ? "text-emerald-300 border-emerald-500/40" : "text-cyan-300"
                 }`}
               >
                 {isMuted ? "MUTED" : isSpeaking ? "SPEAKING" : isThinking ? "THINKING" : "LISTENING"}
               </Badge>
+              {isSpeaking && (
+                <button
+                  type="button"
+                  onClick={stopSpeaking}
+                  className="flex items-center gap-0.5 text-[8px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/40 hover:bg-red-500/40 transition-colors"
+                  title="Interrupt Speech"
+                >
+                  <Square className="w-2 h-2 fill-current" />
+                  <span>Stop</span>
+                </button>
+              )}
             </div>
 
             <div className="flex items-center gap-1">
