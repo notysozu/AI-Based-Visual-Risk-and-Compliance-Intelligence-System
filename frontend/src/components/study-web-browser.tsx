@@ -40,6 +40,14 @@ export interface StudyBookmark {
 
 export const CURATED_STUDY_BOOKMARKS: StudyBookmark[] = [
   {
+    id: "gemini",
+    name: "Google Gemini AI",
+    url: "https://gemini.google.com",
+    category: "ai",
+    iconName: "Sparkles",
+    badge: "Official Gemini",
+  },
+  {
     id: "excalidraw",
     name: "Excalidraw Whiteboard",
     url: "https://excalidraw.com",

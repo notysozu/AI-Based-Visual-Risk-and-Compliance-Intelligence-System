@@ -3,13 +3,9 @@ import {
   Sparkles,
   Mic,
   MicOff,
-  Volume2,
-  VolumeX,
   Copy,
   Check,
-  RotateCcw,
-  Maximize2,
-  Minimize2,
+  ExternalLink,
   Move,
   X,
   Bot,
@@ -18,28 +14,21 @@ import {
   HelpCircle,
   Zap,
   BookOpen,
-  Clock,
-  Flame,
-  Award,
-  Radio,
-  Sliders
+  Trash2,
+  Share2,
+  Maximize2,
+  Minimize2,
+  AppWindow,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { askGeminiLive } from "@/lib/api";
-
-export interface LiveTurn {
-  id: string;
-  role: "user" | "assistant";
-  text: string;
-  timestamp: string;
-}
 
 interface StudyGeminiLiveProps {
   open: boolean;
   onClose: () => void;
-  userId: string | number;
+  userId?: string | number;
   subject?: string;
   activeTaskTitle?: string;
   secondsLeft?: number;
@@ -51,212 +40,118 @@ interface StudyGeminiLiveProps {
 export function StudyGeminiLive({
   open,
   onClose,
-  userId,
   subject = "General Study",
-  activeTaskTitle,
-  secondsLeft,
-  timerMode = "focus",
   pos = { x: 380, y: 70 },
   onPosChange,
 }: StudyGeminiLiveProps) {
-  // Voice & AI State
-  const [isMicActive, setIsMicActive] = useState(true);
-  const [isAiSpeaking, setIsAiSpeaking] = useState(false);
-  const [isThinking, setIsThinking] = useState(false);
-  const [audioVoiceEnabled, setAudioVoiceEnabled] = useState(true);
-  const [speechRate, setSpeechRate] = useState<number>(1.1);
-
-  // Live Transcripts & History
-  const [liveTranscript, setLiveTranscript] = useState("");
-  const [latestResponse, setLatestResponse] = useState<string>(
-    "Gemini Live is active. Speak any study question, ask for a formula, or say 'Quiz me'."
-  );
-  const [history, setHistory] = useState<LiveTurn[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
-  const [isCompact, setIsCompact] = useState(false);
+  // Speech-to-Text State
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  const [dictatedText, setDictatedText] = useState("");
   const [copied, setCopied] = useState(false);
-
-  // Speech Recognition & Silence Debounce Refs
-  const recognitionRef = useRef<any>(null);
-  const silenceTimerRef = useRef<any>(null);
-  const isQueryProcessingRef = useRef(false);
-  const speechHistoryRef = useRef<LiveTurn[]>([]);
 
   // Movable Window State
   const [windowPos, setWindowPos] = useState(pos);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, posX: 0, posY: 0 });
 
+  const recognitionRef = useRef<any>(null);
+
   useEffect(() => {
     setWindowPos(pos);
   }, [pos.x, pos.y]);
 
+  // Check speech recognition support
   useEffect(() => {
-    speechHistoryRef.current = history;
-  }, [history]);
-
-  // Natural TTS Speech Synthesis
-  const speakText = useCallback(
-    (textToSpeak: string) => {
-      if (!audioVoiceEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) return;
-
-      try {
-        window.speechSynthesis.cancel(); // Stop any pending speech
-
-        // Clean out brackets or code marks for natural sound
-        const clean = textToSpeak.replace(/<[^>]*>?/gm, "").replace(/[`*#_]/g, "").trim();
-        if (!clean) return;
-
-        const utterance = new SpeechSynthesisUtterance(clean);
-        utterance.rate = speechRate;
-        utterance.pitch = 1.0;
-
-        // Try to select high-quality English voice
-        const voices = window.speechSynthesis.getVoices();
-        const preferredVoice =
-          voices.find((v) => v.lang.startsWith("en") && (v.name.includes("Google") || v.name.includes("Natural") || v.name.includes("Siri") || v.name.includes("Samantha"))) ||
-          voices.find((v) => v.lang.startsWith("en")) ||
-          voices[0];
-
-        if (preferredVoice) utterance.voice = preferredVoice;
-
-        utterance.onstart = () => setIsAiSpeaking(true);
-        utterance.onend = () => setIsAiSpeaking(false);
-        utterance.onerror = () => setIsAiSpeaking(false);
-
-        window.speechSynthesis.speak(utterance);
-      } catch (err) {
-        console.warn("TTS error:", err);
-        setIsAiSpeaking(false);
+    if (typeof window !== "undefined") {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        setSpeechSupported(false);
       }
-    },
-    [audioVoiceEnabled, speechRate]
-  );
-
-  // Stop TTS immediately on barge-in / user speech
-  const stopSpeaking = useCallback(() => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      setIsAiSpeaking(false);
     }
   }, []);
 
-  // Send voice query to backend
-  const sendQuery = useCallback(
-    async (queryText: string) => {
-      if (!queryText.trim() || isQueryProcessingRef.current) return;
-
-      // Barge-in: cut off any current TTS audio
-      stopSpeaking();
-
-      isQueryProcessingRef.current = true;
-      setIsThinking(true);
-      const userPrompt = queryText.trim();
-      setLiveTranscript("");
-
-      const userTurn: LiveTurn = {
-        id: `usr-${Date.now()}`,
-        role: "user",
-        text: userPrompt,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      };
-
-      setHistory((prev) => [...prev, userTurn]);
-
+  // Launch Google Gemini Window or Tab
+  const launchGemini = useCallback((promptText?: string) => {
+    const textToUse = (promptText || dictatedText).trim();
+    if (textToUse) {
       try {
-        const res = await askGeminiLive({
-          user_id: userId,
-          prompt: userPrompt,
-          subject,
-          active_task: activeTaskTitle,
-          history: speechHistoryRef.current.slice(-4).map((h) => ({
-            role: h.role,
-            content: h.text,
-          })),
-        });
+        navigator.clipboard.writeText(textToUse);
+        toast.success("Copied to clipboard! Paste directly in Gemini.");
+      } catch {}
+    }
 
-        const reply = res.text || "I'm ready for your next question.";
-        setLatestResponse(reply);
+    // Open Gemini in a dedicated companion window
+    const width = 900;
+    const height = 850;
+    const left = Math.max(50, window.screen.width - width - 50);
+    const top = 50;
 
-        const aiTurn: LiveTurn = {
-          id: `asst-${Date.now()}`,
-          role: "assistant",
-          text: reply,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        };
+    window.open(
+      "https://gemini.google.com",
+      "GoogleGeminiStudyCompanion",
+      `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`
+    );
+  }, [dictatedText]);
 
-        setHistory((prev) => [...prev, aiTurn]);
+  // Open Gemini in Full Tab
+  const openGeminiTab = useCallback((promptText?: string) => {
+    const textToUse = (promptText || dictatedText).trim();
+    if (textToUse) {
+      try {
+        navigator.clipboard.writeText(textToUse);
+        toast.success("Copied to clipboard! Paste directly in Gemini.");
+      } catch {}
+    }
+    window.open("https://gemini.google.com", "_blank", "noopener,noreferrer");
+  }, [dictatedText]);
 
-        // Speak aloud
-        speakText(reply);
-      } catch (err: any) {
-        console.error("Gemini Live error:", err);
-        const errMsg = "I had trouble processing that. Please ask again.";
-        setLatestResponse(errMsg);
-        speakText(errMsg);
-      } finally {
-        setIsThinking(false);
-        isQueryProcessingRef.current = false;
-      }
-    },
-    [userId, subject, activeTaskTitle, speakText, stopSpeaking]
-  );
+  // Toggle Continuous Speech-to-Text Dictation
+  const toggleListening = () => {
+    if (!speechSupported) {
+      toast.error("Speech Recognition is not supported on this browser. Please use Chrome, Edge, or Safari.");
+      return;
+    }
 
-  // Always-Live Continuous Speech Recognition Hook
-  useEffect(() => {
-    if (!open || !isMicActive || typeof window === "undefined") {
+    if (isListening) {
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
         } catch {}
       }
-      return;
-    }
+      setIsListening(false);
+    } else {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      toast.error("Speech recognition not supported in this browser. Use Chrome, Edge, or Safari.");
-      return;
-    }
-
-    let recognition: any = null;
-
-    const startRecognition = () => {
       try {
-        recognition = new SpeechRecognition();
+        const recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = "en-US";
 
-        recognition.onresult = (event: any) => {
-          // Barge-in: user is speaking, stop AI speech
-          stopSpeaking();
+        recognition.onstart = () => {
+          setIsListening(true);
+          toast.info("Listening... Speak your study question or thoughts.");
+        };
 
+        recognition.onresult = (event: any) => {
           let interim = "";
           let finalTranscript = "";
 
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
+          for (let i = 0; i < event.results.length; ++i) {
             const part = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
-              finalTranscript += part;
+              finalTranscript += part + " ";
             } else {
               interim += part;
             }
           }
 
-          const currentSpoken = (finalTranscript || interim).trim();
-          if (currentSpoken) {
-            setLiveTranscript(currentSpoken);
-
-            // Silence debounce timer (~1.2s of silence dispatches the query automatically)
-            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-            silenceTimerRef.current = setTimeout(() => {
-              if (currentSpoken.length >= 2) {
-                sendQuery(currentSpoken);
-              }
-            }, 1200);
+          const combined = (finalTranscript + interim).trim();
+          if (combined) {
+            setDictatedText(combined);
           }
         };
 
@@ -267,157 +162,145 @@ export function StudyGeminiLive({
         };
 
         recognition.onend = () => {
-          // Auto-restart loop to keep listening live in Study Mode
-          if (isMicActive && open) {
-            try {
-              recognition.start();
-            } catch {}
-          }
+          setIsListening(false);
         };
 
         recognitionRef.current = recognition;
         recognition.start();
       } catch (err) {
-        console.warn("Could not start continuous speech recognition:", err);
+        console.warn("Failed to start speech recognition:", err);
+        setIsListening(false);
       }
-    };
+    }
+  };
 
-    startRecognition();
+  // Cleanup speech recognition on unmount or close
+  useEffect(() => {
+    if (!open && recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+      setIsListening(false);
+    }
+  }, [open]);
 
-    return () => {
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      if (recognition) {
-        try {
-          recognition.onend = null;
-          recognition.stop();
-        } catch {}
-      }
-    };
-  }, [open, isMicActive, sendQuery, stopSpeaking]);
-
-  // Copy reply to clipboard
+  // Copy Dictated Text
   const handleCopy = () => {
-    if (!latestResponse) return;
-    navigator.clipboard.writeText(latestResponse);
-    setCopied(true);
-    toast.success("Copied Gemini response");
-    setTimeout(() => setCopied(false), 2000);
+    if (!dictatedText.trim()) return;
+    try {
+      navigator.clipboard.writeText(dictatedText.trim());
+      setCopied(true);
+      toast.success("Copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy to clipboard");
+    }
   };
 
-  // Quick Prompt Trigger
-  const handleQuickPrompt = (promptText: string) => {
-    sendQuery(promptText);
-  };
+  // Quick Study Prompt Chips
+  const studyPrompts = [
+    { label: "💡 Explain Concept", prompt: `Explain the core concept and principles of ${subject} step-by-step with practical examples.` },
+    { label: "📝 5-Question Quiz", prompt: `Generate a 5-question active recall practice quiz with detailed explanations for ${subject}.` },
+    { label: "📐 Formulas & Rules", prompt: `Summarize the foundational formulas, mathematical equations, and theorems for ${subject}.` },
+    { label: "🧠 Memory Mnemonic", prompt: `Provide high-retention memory mnemonics and visualization techniques for key ${subject} topics.` },
+    { label: "📋 Flashcard Summary", prompt: `Create concise high-yield revision flashcards for my upcoming exam in ${subject}.` },
+  ];
 
-  // Drag-to-Move
+  // Dragging Handlers
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest("button, input, select, iframe, a")) return;
-    e.preventDefault();
+    if ((e.target as HTMLElement).closest("button, input, textarea, a")) return;
+    setIsDragging(true);
     dragStartRef.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
       posX: windowPos.x,
       posY: windowPos.y,
     };
-    setIsDragging(true);
   };
 
   useEffect(() => {
-    if (!isDragging) return;
-    const onMouseMove = (e: MouseEvent) => {
-      const deltaX = e.clientX - dragStartRef.current.mouseX;
-      const deltaY = e.clientY - dragStartRef.current.mouseY;
-      const nextX = Math.max(8, Math.min(window.innerWidth - 300, dragStartRef.current.posX + deltaX));
-      const nextY = Math.max(52, Math.min(window.innerHeight - 150, dragStartRef.current.posY + deltaY));
-      const newPos = { x: nextX, y: nextY };
-      setWindowPos(newPos);
-      if (onPosChange) onPosChange(newPos);
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const dx = e.clientX - dragStartRef.current.mouseX;
+      const dy = e.clientY - dragStartRef.current.mouseY;
+      const newX = Math.max(10, Math.min(window.innerWidth - 380, dragStartRef.current.posX + dx));
+      const newY = Math.max(40, Math.min(window.innerHeight - 200, dragStartRef.current.posY + dy));
+      const nextPos = { x: newX, y: newY };
+      setWindowPos(nextPos);
+      onPosChange?.(nextPos);
     };
-    const onMouseUp = () => setIsDragging(false);
 
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
+    const handleMouseUp = () => {
+      if (isDragging) setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    }
+
     return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, onPosChange]);
 
   if (!open) return null;
 
-  // Determine current orb state
-  let orbState = "idle";
-  if (isThinking) orbState = "thinking";
-  else if (isAiSpeaking) orbState = "speaking";
-  else if (isMicActive) orbState = "listening";
-
   return (
     <div
-      style={{
-        left: `${windowPos.x}px`,
-        top: `${windowPos.y}px`,
-        width: isCompact ? "320px" : "390px",
-      }}
-      className="fixed z-35 rounded-3xl border border-purple-500/30 bg-black/45 backdrop-blur-3xl shadow-[0_12px_40px_rgba(168,85,247,0.25)] flex flex-col overflow-hidden select-none transition-all duration-200"
+      style={{ left: `${windowPos.x}px`, top: `${windowPos.y}px` }}
+      className="fixed z-40 w-[420px] max-w-[95vw] select-none rounded-2xl border border-purple-500/30 bg-zinc-950/90 backdrop-blur-2xl shadow-2xl shadow-purple-950/40 text-white overflow-hidden transition-shadow flex flex-col font-sans"
     >
-      {/* 1. Header Bar with macOS Minimize Dot */}
+      {/* 1. Window Title Bar */}
       <div
         onMouseDown={handleMouseDown}
-        className="cursor-grab active:cursor-grabbing flex items-center justify-between px-3.5 py-2.5 border-b border-white/10 bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-black/40 group"
+        className="flex items-center justify-between px-3.5 py-2.5 bg-gradient-to-r from-purple-950/60 via-zinc-900/80 to-indigo-950/60 border-b border-white/10 cursor-move"
       >
-        <div className="flex items-center gap-2">
-          {/* Green minimize dot */}
+        {/* macOS Traffic Lights */}
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={onClose}
-            className="w-3 h-3 rounded-full bg-emerald-500 hover:bg-emerald-400 transition-colors shadow-sm flex items-center justify-center group"
-            title="Hide Gemini Live"
+            className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500 border border-red-600/60 flex items-center justify-center transition-transform active:scale-90"
+            title="Close"
           >
-            <span className="opacity-0 group-hover:opacity-100 text-[8px] text-black font-bold">−</span>
+            <X className="w-2 h-2 text-black/80 opacity-0 hover:opacity-100 transition-opacity" />
           </button>
+          <button
+            type="button"
+            onClick={() => launchGemini()}
+            className="w-3 h-3 rounded-full bg-yellow-500/80 hover:bg-yellow-500 border border-yellow-600/60 flex items-center justify-center transition-transform active:scale-90"
+            title="Launch Gemini Companion Window"
+          >
+            <AppWindow className="w-2 h-2 text-black/80 opacity-0 hover:opacity-100 transition-opacity" />
+          </button>
+          <button
+            type="button"
+            onClick={() => openGeminiTab()}
+            className="w-3 h-3 rounded-full bg-emerald-500/80 hover:bg-emerald-500 border border-emerald-600/60 flex items-center justify-center transition-transform active:scale-90"
+            title="Open Gemini in New Tab"
+          >
+            <ExternalLink className="w-2 h-2 text-black/80 opacity-0 hover:opacity-100 transition-opacity" />
+          </button>
+        </div>
 
-          <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-            <Sparkles className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
-            <span>Gemini Live Voice AI</span>
-          </div>
-
-          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-purple-500/40 text-purple-300 font-mono">
-            Always Live
+        {/* Title */}
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-white/90">
+          <Sparkles className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
+          <span>Google Gemini AI</span>
+          <Badge variant="outline" className="text-[9px] py-0 px-1 border-purple-500/40 text-purple-300">
+            Live
           </Badge>
         </div>
 
+        {/* Action Controls */}
         <div className="flex items-center gap-1">
-          {/* Audio Output Toggle */}
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => {
-              setAudioVoiceEnabled(!audioVoiceEnabled);
-              if (audioVoiceEnabled) stopSpeaking();
-              toast.info(audioVoiceEnabled ? "Voice audio muted" : "Voice audio enabled");
-            }}
-            className={`h-6 w-6 rounded-md ${audioVoiceEnabled ? "text-purple-300 hover:text-white" : "text-white/40 hover:text-white"} hover:bg-white/10`}
-            title={audioVoiceEnabled ? "Mute Voice Speech" : "Enable Voice Speech"}
-          >
-            {audioVoiceEnabled ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />}
-          </Button>
-
-          {/* Compact toggle */}
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setIsCompact(!isCompact)}
-            className="h-6 w-6 text-white/60 hover:text-white hover:bg-white/10 rounded-md"
-            title={isCompact ? "Expand Window" : "Compact HUD Mode"}
-          >
-            {isCompact ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
-          </Button>
-
           <Button
             size="icon"
             variant="ghost"
             onClick={onClose}
-            className="h-6 w-6 text-white/60 hover:text-red-400 hover:bg-white/10 rounded-md"
+            className="h-6 w-6 text-white/60 hover:text-white hover:bg-white/10 rounded-md"
             title="Close"
           >
             <X className="h-3.5 w-3.5" />
@@ -425,190 +308,152 @@ export function StudyGeminiLive({
         </div>
       </div>
 
-      {/* 2. Gemini Live Holographic Aurora Orb Center */}
-      <div className="p-4 flex flex-col items-center justify-center text-center relative overflow-hidden bg-gradient-to-b from-transparent via-purple-950/10 to-black/30 border-b border-white/10">
-        {/* Animated Glow Halo */}
-        <div
-          className={`absolute w-32 h-32 rounded-full blur-2xl transition-all duration-700 pointer-events-none ${
-            orbState === "thinking"
-              ? "bg-purple-600/40 animate-pulse scale-125"
-              : orbState === "speaking"
-              ? "bg-emerald-500/35 animate-ping scale-110"
-              : orbState === "listening"
-              ? "bg-cyan-500/30 animate-pulse"
-              : "bg-purple-500/15"
-          }`}
-        />
+      {/* 2. Main Window Body */}
+      <div className="p-4 space-y-3.5 text-xs">
+        {/* Direct 1-Click Launch Header */}
+        <div className="p-3 rounded-xl bg-gradient-to-br from-purple-900/40 via-indigo-900/30 to-purple-950/50 border border-purple-500/30 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center shadow-md">
+                <Sparkles className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-white text-xs">Google Gemini Direct</h4>
+                <p className="text-[10px] text-purple-200/70">Official Google Gemini AI Workspace</p>
+              </div>
+            </div>
+            <Badge className="bg-purple-600/30 text-purple-300 border-purple-500/40 text-[10px]">
+              {subject}
+            </Badge>
+          </div>
 
-        {/* Central Glowing Orb */}
-        <div className="relative z-10 my-1">
-          <button
-            type="button"
-            onClick={() => {
-              setIsMicActive(!isMicActive);
-              if (isMicActive) stopSpeaking();
-              toast.info(!isMicActive ? "Gemini Live Listening" : "Microphone Muted");
-            }}
-            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500 shadow-xl border ${
-              orbState === "thinking"
-                ? "bg-gradient-to-tr from-purple-600 via-indigo-500 to-pink-500 border-purple-300 shadow-[0_0_25px_rgba(168,85,247,0.6)] animate-spin"
-                : orbState === "speaking"
-                ? "bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-400 border-emerald-300 shadow-[0_0_25px_rgba(16,185,129,0.6)] scale-105"
-                : isMicActive
-                ? "bg-gradient-to-tr from-cyan-600 via-indigo-600 to-purple-600 border-cyan-300/80 shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:scale-105"
-                : "bg-zinc-900 border-white/20 text-white/40 shadow-inner"
-            }`}
-            title={isMicActive ? "Click to Mute Mic" : "Click to Enable Live Mic"}
-          >
-            {orbState === "thinking" ? (
-              <Sparkles className="h-8 w-8 text-white animate-spin" />
-            ) : orbState === "speaking" ? (
-              <Volume2 className="h-8 w-8 text-white animate-bounce" />
-            ) : isMicActive ? (
-              <Mic className="h-8 w-8 text-white drop-shadow-md" />
-            ) : (
-              <MicOff className="h-8 w-8 text-white/50" />
-            )}
-          </button>
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <Button
+              size="sm"
+              onClick={() => launchGemini()}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-medium shadow-md flex items-center justify-center gap-1.5 h-8"
+            >
+              <AppWindow className="h-3.5 w-3.5" />
+              <span>Launch App Window</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => openGeminiTab()}
+              className="border-white/20 hover:bg-white/10 text-white/90 text-xs font-medium flex items-center justify-center gap-1.5 h-8"
+            >
+              <ExternalLink className="h-3.5 w-3.5 text-cyan-300" />
+              <span>Open in Tab</span>
+            </Button>
+          </div>
         </div>
 
-        {/* Live Status Label & Audio Waveform Bars */}
-        <div className="mt-2 space-y-1 z-10">
-          <div className="flex items-center justify-center gap-1.5 text-xs font-semibold">
-            {orbState === "thinking" ? (
-              <span className="text-purple-300 flex items-center gap-1">
-                <Sparkles className="h-3 w-3 animate-spin" /> Synthesizing answer...
+        {/* 3. Live Speech-to-Text Dictation Pad */}
+        <div className="space-y-2 p-3 rounded-xl bg-zinc-900/70 border border-white/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Mic className={`h-3.5 w-3.5 ${isListening ? "text-red-400 animate-pulse" : "text-purple-400"}`} />
+              <span className="font-semibold text-white/90 text-xs">Speech-to-Text Dictation</span>
+            </div>
+            {isListening && (
+              <span className="flex items-center gap-1 text-[10px] text-red-400 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
+                Listening Live...
               </span>
-            ) : orbState === "speaking" ? (
-              <span className="text-emerald-300 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                Gemini speaking...
-              </span>
-            ) : isMicActive ? (
-              <span className="text-cyan-300 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                Listening live · Speak freely
-              </span>
-            ) : (
-              <span className="text-white/40">Mic muted · Click orb to start</span>
             )}
           </div>
 
-          <p className="text-[10px] text-white/50 font-mono">
-            {subject} {activeTaskTitle ? `· ${activeTaskTitle}` : ""}
-          </p>
-        </div>
-
-        {/* User Real-Time Transcription Bubble */}
-        {liveTranscript && (
-          <div className="mt-2.5 px-3 py-1.5 rounded-xl bg-cyan-950/60 border border-cyan-500/40 text-xs text-cyan-200 max-w-full truncate shadow-md animate-pulse">
-            <span className="text-[10px] uppercase font-bold text-cyan-400 mr-1.5">You:</span>
-            <span>"{liveTranscript}"</span>
+          <div className="relative">
+            <Textarea
+              placeholder="Click 'Start Dictating' or type here, then send to Gemini..."
+              rows={3}
+              value={dictatedText}
+              onChange={(e) => setDictatedText(e.target.value)}
+              className="bg-zinc-950/80 border-white/15 text-xs text-white resize-none pr-8 focus-visible:ring-purple-500/50"
+            />
+            {dictatedText && (
+              <button
+                type="button"
+                onClick={() => setDictatedText("")}
+                className="absolute top-2 right-2 p-1 text-white/40 hover:text-white"
+                title="Clear text"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* 3. Latest Response & Playback Area */}
-      <div className="p-3.5 space-y-2.5 bg-black/30">
-        <div className="flex items-center justify-between text-[11px] text-white/60">
-          <span className="flex items-center gap-1 font-semibold text-purple-300">
-            <Bot className="h-3.5 w-3.5 text-purple-400" />
-            <span>Gemini Response</span>
-          </span>
-
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => speakText(latestResponse)}
-              className="text-white/60 hover:text-purple-300 p-1 rounded"
-              title="Replay Audio"
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <Button
+              size="sm"
+              variant={isListening ? "destructive" : "secondary"}
+              onClick={toggleListening}
+              className={`h-7 px-2.5 text-[11px] gap-1.5 font-medium transition-all ${
+                isListening
+                  ? "bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30"
+                  : "bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40"
+              }`}
             >
-              <RotateCcw className="h-3 w-3" />
-            </button>
+              {isListening ? (
+                <>
+                  <MicOff className="h-3 w-3" />
+                  <span>Stop Dictating</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="h-3 w-3" />
+                  <span>Start Dictating</span>
+                </>
+              )}
+            </Button>
 
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="text-white/60 hover:text-white p-1 rounded"
-              title="Copy text"
-            >
-              {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-            </button>
-          </div>
-        </div>
+            <div className="flex items-center gap-1.5">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleCopy}
+                disabled={!dictatedText.trim()}
+                className="h-7 px-2 text-[11px] text-white/70 hover:text-white hover:bg-white/10 gap-1"
+                title="Copy text"
+              >
+                {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                <span>{copied ? "Copied" : "Copy"}</span>
+              </Button>
 
-        <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-xs text-white/90 leading-relaxed font-sans shadow-inner selection:bg-purple-500 selection:text-white">
-          {latestResponse}
-        </div>
-
-        {/* 4. Quick Suggested Voice Prompts */}
-        {!isCompact && (
-          <div className="space-y-1.5 pt-1">
-            <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider block">
-              Instant Prompts:
-            </span>
-            <div className="flex gap-1.5 flex-wrap">
-              {[
-                { label: "Quiz me on this", query: `Quiz me with 1 active recall question for ${subject}` },
-                { label: "Key formula", query: `Give me the key formula and rule for ${subject}` },
-                { label: "Mnemonic hook", query: `Give me a quick mnemonic to remember this in ${subject}` },
-                { label: "Explain simply", query: `Explain this concept in simple 2 sentences` },
-                { label: "Sprint Motivation", query: `Give me a 1-sentence high-energy study motivation quote` },
-              ].map((chip) => (
-                <button
-                  key={chip.label}
-                  type="button"
-                  onClick={() => handleQuickPrompt(chip.query)}
-                  className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 hover:bg-purple-600/30 hover:border-purple-500/40 text-[10px] text-white/80 hover:text-white font-medium transition-all"
-                >
-                  {chip.label}
-                </button>
-              ))}
+              <Button
+                size="sm"
+                onClick={() => launchGemini(dictatedText)}
+                disabled={!dictatedText.trim()}
+                className="h-7 px-2.5 text-[11px] bg-purple-600 hover:bg-purple-500 text-white font-semibold gap-1 shadow-sm"
+              >
+                <Sparkles className="h-3 w-3" />
+                <span>Send to Gemini</span>
+              </Button>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* 5. Session History Accordion */}
-        {history.length > 0 && !isCompact && (
-          <div className="pt-1 border-t border-white/10">
-            <button
-              type="button"
-              onClick={() => setShowHistory(!showHistory)}
-              className="w-full flex items-center justify-between text-[11px] text-white/60 hover:text-white py-1"
-            >
-              <span className="flex items-center gap-1">
-                <MessageSquare className="h-3 w-3 text-purple-400" />
-                <span>Session Dialogue ({history.length} turns)</span>
-              </span>
-              <span className="text-[10px] text-purple-300 font-mono">
-                {showHistory ? "Hide" : "Show"}
-              </span>
-            </button>
-
-            {showHistory && (
-              <div className="mt-2 space-y-2 max-h-40 overflow-y-auto custom-scrollbar p-2 rounded-xl bg-black/40 border border-white/10 text-xs">
-                {history.map((turn) => (
-                  <div
-                    key={turn.id}
-                    className={`p-2 rounded-lg ${
-                      turn.role === "user"
-                        ? "bg-cyan-950/30 border border-cyan-500/20 text-cyan-200"
-                        : "bg-purple-950/30 border border-purple-500/20 text-white/90"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-[10px] text-white/40 mb-0.5">
-                      <span className="font-bold uppercase tracking-wider">
-                        {turn.role === "user" ? "You" : "Gemini"}
-                      </span>
-                      <span>{turn.timestamp}</span>
-                    </div>
-                    <p className="leading-snug">{turn.text}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+        {/* 4. Instant Study Prompts for Gemini */}
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-semibold text-white/50 uppercase tracking-wider">
+            Quick Study Starters ({subject})
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {studyPrompts.map((p, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  setDictatedText(p.prompt);
+                  launchGemini(p.prompt);
+                }}
+                className="text-[11px] px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500/40 text-white/80 hover:text-white transition-all text-left flex items-center gap-1"
+              >
+                <span>{p.label}</span>
+              </button>
+            ))}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
