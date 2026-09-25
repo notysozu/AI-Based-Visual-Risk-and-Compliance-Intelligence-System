@@ -362,18 +362,46 @@ CRITICAL SPOKEN VOICE GUIDELINES:
 
     @staticmethod
     def _generate_agent_heuristic_reply(agent: AgentProfile, prompt: str, username: str, subject: str) -> str:
-        """Intelligent heuristic response generator tailored to the active agent."""
+        """Intelligent heuristic response generator tailored to the active agent and prompt context."""
+        p_low = prompt.lower()
+
+        # Quantum Mechanics & Modern Physics
+        if any(k in p_low for k in ["quantum", "schrodinger", "wavefunction", "superposition", "entanglement", "qubit"]):
+            return f"In quantum mechanics, state vectors evolve deterministically under unitary transformations until measurement projects them onto observable eigenstates."
+
+        # Calculus & Analysis
+        if any(k in p_low for k in ["derivative", "integral", "calculus", "limit", "taylor series", "gradient"]):
+            return f"For {subject}, evaluate the rate of change via the limit of difference quotients, or compute cumulative accumulation across defined integration boundaries."
+
+        # Linear Algebra
+        if any(k in p_low for k in ["matrix", "eigenvalue", "eigenvector", "vector space", "svd", "determinant"]):
+            return f"Eigenvectors define invariant rotational axes under linear transformations, scaled directly by their characteristic eigenvalues."
+
+        # Software Architecture & Algorithms
+        if any(k in p_low for k in ["algorithm", "complexity", "big o", "recursion", "data structure", "tree", "graph", "api", "code"]):
+            return f"Optimal architecture balances asymptotic time complexity against cache locality and explicit state boundaries."
+
+        # Active Recall & Study Strategy
+        if any(k in p_low for k in ["feynman", "remember", "memory", "recall", "study method", "spaced repetition", "quiz"]):
+            return f"To master {subject}, apply the Feynman technique: explain the concept simply without jargon, isolate knowledge gaps, and test through active retrieval."
+
+        # Category-based tailored synthesis
         if agent.category == "STEM & Mathematics":
-            return f"As your {agent.name}, I recommend approaching this through foundational axioms and step-by-step mathematical derivation for {subject}."
+            return f"As your {agent.name}, I recommend approaching this through foundational axioms, algebraic reduction, and step-by-step mathematical derivation for {subject}."
         elif agent.category == "STEM & Physics":
-            return f"From a first-principles physics perspective, we can evaluate the conservation laws and state variables governing this phenomenon, {username}."
+            return f"From a first-principles physics perspective, we evaluate conservation laws, boundary conditions, and governing field equations for {subject}, {username}."
+        elif agent.category == "STEM & Chemistry":
+            return f"In chemical kinetics and thermodynamics, reaction spontaneity is driven by minimizing Gibbs free energy and transition state activation barriers."
+        elif agent.category == "STEM & Biology":
+            return f"Biological systems optimize homeostatic equilibrium through metabolic feedback loops, cellular signaling, and synaptic plasticity."
         elif agent.category == "Software Engineering":
             return f"As your {agent.name}, I suggest structuring this with clean modularity, deterministic state boundaries, and optimal asymptotic complexity."
         elif agent.category == "Cognitive & Study Strategy":
             return f"To maximize your retention for {subject}, I recommend an intense 45-minute focus sprint followed by an active recall session."
         elif agent.category == "Wealth & Economics":
-            return f"Evaluating the asymmetric upside and risk distribution, systematic long-term compounding yields the highest expected value, {username}."
+            return f"Evaluating the asymmetric upside and risk distribution, systematic long-term compounding yields exponential expected value, {username}."
         elif agent.category == "Philosophy & Humanities":
-            return f"Reflecting on this from a stoic perspective, focus with clarity on what is within your direct control, {username}."
+            return f"Reflecting from first principles, focus with clarity on what is within your direct volition and control, {username}."
         else:
-            return f"Right away, {username}. I am standing by as your {agent.name} to optimize your study session."
+            return f"Understood, {username}. As your {agent.name}, I am analyzing {subject} through first principles to maximize your focus and performance."
+

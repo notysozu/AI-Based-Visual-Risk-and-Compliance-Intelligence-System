@@ -30,6 +30,7 @@ import { askJarvis } from "@/lib/api";
 import {
   parseLocalJarvisCommand,
   executeJarvisCockpitAction,
+  generateClientJarvisIntelligence,
   type JarvisCockpitContext,
   type JarvisActionPayload,
 } from "@/lib/jarvis-actions";
@@ -79,7 +80,16 @@ export function StudyJarvisLive({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, posX: 0, posY: 0 });
 
-  // References for Acoustic Shield & Memory
+  // References for Stable Dynamic Context, Acoustic Shield & Memory
+  const userIdRef = useRef(userId);
+  userIdRef.current = userId;
+
+  const subjectRef = useRef(subject);
+  subjectRef.current = subject;
+
+  const cockpitContextRef = useRef(cockpitContext);
+  cockpitContextRef.current = cockpitContext;
+
   const recognitionRef = useRef<any>(null);
   const silenceTimerRef = useRef<any>(null);
   const isProcessingRef = useRef(false);
@@ -214,11 +224,15 @@ export function StudyJarvisLive({
       setIsThinking(true);
       setLiveTranscript("");
 
+      const currentContext = cockpitContextRef.current;
+      const currentSubject = subjectRef.current;
+      const currentUserId = userIdRef.current;
+
       try {
-        // 1. Check local high-speed screen/timer/note actions
+        // 1. Check local high-speed screen/timer/note actions first
         const localAction = parseLocalJarvisCommand(q);
-        if (localAction) {
-          const confirmationText = await executeJarvisCockpitAction(localAction, cockpitContext);
+        if (localAction && currentContext) {
+          const confirmationText = await executeJarvisCockpitAction(localAction, currentContext);
           setLastSpeech(confirmationText);
           setLastActionTag(localAction.type.replace("_", " ").toUpperCase());
           speakJarvis(confirmationText);
@@ -228,50 +242,75 @@ export function StudyJarvisLive({
         }
 
         // 2. Call backend 100-Agent Swarm Orchestrator with Long-Term Memory
-        const res = await askJarvis({
-          user_id: userId,
-          prompt: q,
-          subject,
-          history: conversationHistoryRef.current.slice(-4),
-          cockpit_context: cockpitContext as Record<string, unknown>,
-        });
+        let replyText = "";
+        let agentProfile: { id: string; name: string; category: string } | null = null;
+        let memoryCount: number | undefined = undefined;
 
-        const reply = res.text || "Command executed, sir.";
-        setLastSpeech(reply);
+        try {
+          const res = await askJarvis({
+            user_id: currentUserId,
+            prompt: q,
+            subject: currentSubject,
+            history: conversationHistoryRef.current.slice(-4),
+            cockpit_context: {
+              subject: currentSubject,
+              isTimerRunning: currentContext?.isTimerRunning,
+              timerMode: currentContext?.timerMode,
+            },
+          });
 
-        if (res.agent) {
-          setActiveAgent(res.agent);
+          if (res?.text) {
+            replyText = res.text;
+            if (res.agent) agentProfile = res.agent;
+            if (res.memories_count !== undefined) memoryCount = res.memories_count;
+
+            if (res.action && typeof res.action === "object" && currentContext) {
+              const actionPayload = res.action as JarvisActionPayload;
+              await executeJarvisCockpitAction(actionPayload, currentContext);
+              setLastActionTag(actionPayload.type.replace("_", " ").toUpperCase());
+            } else {
+              setLastActionTag(null);
+            }
+          }
+        } catch (apiErr) {
+          console.warn("Jarvis API call fallback to 100-Agent client swarm:", apiErr);
         }
-        if (res.memories_count !== undefined) {
-          setMemoriesCount(res.memories_count);
-        }
 
-        if (res.action && typeof res.action === "object") {
-          const actionPayload = res.action as JarvisActionPayload;
-          await executeJarvisCockpitAction(actionPayload, cockpitContext);
-          setLastActionTag(actionPayload.type.replace("_", " ").toUpperCase());
-        } else {
+        // 3. If backend was unreachable or delayed, generate 100-Agent Swarm Intelligence on client
+        if (!replyText) {
+          const clientIntel = generateClientJarvisIntelligence(q, currentSubject, {
+            isTimerRunning: currentContext?.isTimerRunning,
+            timerMode: currentContext?.timerMode,
+            secondsLeft: currentContext?.secondsLeft,
+          });
+          replyText = clientIntel.text;
+          agentProfile = clientIntel.agent;
           setLastActionTag(null);
         }
 
+        setLastSpeech(replyText);
+        if (agentProfile) setActiveAgent(agentProfile);
+        if (memoryCount !== undefined) setMemoriesCount(memoryCount);
+
         conversationHistoryRef.current.push({ role: "user", content: q });
-        conversationHistoryRef.current.push({ role: "assistant", content: reply });
+        conversationHistoryRef.current.push({ role: "assistant", content: replyText });
         if (conversationHistoryRef.current.length > 10) {
           conversationHistoryRef.current = conversationHistoryRef.current.slice(-10);
         }
 
-        speakJarvis(reply);
+        speakJarvis(replyText);
       } catch (err) {
         console.error("Jarvis voice processing error:", err);
-        const fallback = "I'm standing by, sir. Let me know which concept, note, or timer you would like to explore.";
-        setLastSpeech(fallback);
-        speakJarvis(fallback);
+        const clientIntel = generateClientJarvisIntelligence(q, currentSubject);
+        setLastSpeech(clientIntel.text);
+        setActiveAgent(clientIntel.agent);
+        speakJarvis(clientIntel.text);
       } finally {
         setIsThinking(false);
         isProcessingRef.current = false;
       }
     },
-    [userId, subject, cockpitContext, speakJarvis, stopSpeaking]
+    [speakJarvis, stopSpeaking]
   );
 
   // Speech Recognition Continuous Loop with Acoustic Shield Guard

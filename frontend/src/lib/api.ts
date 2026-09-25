@@ -1,13 +1,17 @@
+const isBrowserHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+
 let activeBaseUrl = import.meta.env.VITE_API_BASE_URL || "https://api.visualrisk.sonu-kumar.in";
 
-const CANDIDATE_URLS = Array.from(new Set([
+const ALL_CANDIDATES = [
   import.meta.env.VITE_API_BASE_URL,
   "https://api.visualrisk.sonu-kumar.in",
-  "http://127.0.0.1:8000",
-  "http://127.0.0.1:8001",
-  "http://localhost:8000",
-  "http://localhost:8001",
-].filter(Boolean))) as string[];
+  isBrowserHttps ? null : "http://127.0.0.1:8000",
+  isBrowserHttps ? null : "http://127.0.0.1:8001",
+  isBrowserHttps ? null : "http://localhost:8000",
+  isBrowserHttps ? null : "http://localhost:8001",
+].filter(Boolean) as string[];
+
+const CANDIDATE_URLS = Array.from(new Set(ALL_CANDIDATES));
 
 async function request(path: string, options: RequestInit = {}) {
   let lastError: any = null;
@@ -15,10 +19,14 @@ async function request(path: string, options: RequestInit = {}) {
 
   for (const baseUrl of urlsToTry) {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 9000);
+
       const res = await fetch(`${baseUrl}${path}`, {
         headers: { "Content-Type": "application/json" },
+        signal: options.signal || controller.signal,
         ...options,
-      });
+      }).finally(() => clearTimeout(timeoutId));
 
       if (!res.ok) {
         let errorDetail = res.statusText;
@@ -38,8 +46,12 @@ async function request(path: string, options: RequestInit = {}) {
       return await res.json();
     } catch (err: any) {
       lastError = err;
-      // If it's a network connection failure, try next port candidate
-      if (err instanceof TypeError || (err.message && (err.message.includes("fetch") || err.message.includes("Failed") || err.message.includes("NetworkError")))) {
+      // If it's a network connection failure or abort, try next candidate
+      if (
+        err instanceof TypeError ||
+        err.name === "AbortError" ||
+        (err.message && (err.message.includes("fetch") || err.message.includes("Failed") || err.message.includes("NetworkError")))
+      ) {
         continue;
       }
       throw err;
