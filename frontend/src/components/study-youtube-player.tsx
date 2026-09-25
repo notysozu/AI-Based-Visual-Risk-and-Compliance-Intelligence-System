@@ -17,7 +17,8 @@ import {
   Headphones,
   Move,
   X,
-  Minus
+  Check,
+  Film
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +40,7 @@ export const CURATED_YOUTUBE_PRESETS: YouTubePreset[] = [
     id: "lofi-girl-live",
     title: "Lofi Girl — beats to relax/study to",
     category: "lofi",
-    videoId: "jfKfPfyJRdk", // 24/7 Lofi Hip Hop live stream
+    videoId: "jfKfPfyJRdk",
     isLive: true,
     tag: "24/7 Lofi Stream",
     thumbnail: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?q=80&w=300&auto=format&fit=crop",
@@ -48,7 +49,7 @@ export const CURATED_YOUTUBE_PRESETS: YouTubePreset[] = [
     id: "synthwave-boy-live",
     title: "Synthwave Radio — Chill synth & retro beats",
     category: "synthwave",
-    videoId: "4xDzrJKXOOY", // Synthwave radio
+    videoId: "4xDzrJKXOOY",
     isLive: true,
     tag: "Synthwave Focus",
     thumbnail: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=300&auto=format&fit=crop",
@@ -57,15 +58,15 @@ export const CURATED_YOUTUBE_PRESETS: YouTubePreset[] = [
     id: "deep-focus-ambient",
     title: "Deep Ambient Rain & Thunderstorm for Focus",
     category: "ambient",
-    videoId: "mPZkdNFkNps", // Rain ambient
-    tag: "Rain & Ambient",
+    videoId: "mPZkdNFkNps",
+    tag: "Rain & Thunder",
     thumbnail: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?q=80&w=300&auto=format&fit=crop",
   },
   {
     id: "mozart-classical-study",
     title: "Mozart & Classical Piano for Brainpower",
     category: "classical",
-    videoId: "Rb0UmrCXxVA", // Classical Mozart
+    videoId: "Rb0UmrCXxVA",
     tag: "Classical Piano",
     thumbnail: "https://images.unsplash.com/photo-1520523839898-507127053c37?q=80&w=300&auto=format&fit=crop",
   },
@@ -73,7 +74,7 @@ export const CURATED_YOUTUBE_PRESETS: YouTubePreset[] = [
     id: "coffee-shop-jazz",
     title: "Tokyo Coffee Shop Ambience & Gentle Jazz",
     category: "lofi",
-    videoId: "5qap5aO4i9A", // Coffee shop lofi
+    videoId: "5qap5aO4i9A",
     tag: "Coffee Shop Jazz",
     thumbnail: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=300&auto=format&fit=crop",
   },
@@ -81,7 +82,7 @@ export const CURATED_YOUTUBE_PRESETS: YouTubePreset[] = [
     id: "binaural-alpha-waves",
     title: "Alpha Waves 432Hz — Memory & Super Focus",
     category: "noise",
-    videoId: "WPni755-Krg", // 432Hz Alpha
+    videoId: "WPni755-Krg",
     tag: "Binaural Beats",
     thumbnail: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=300&auto=format&fit=crop",
   },
@@ -89,7 +90,7 @@ export const CURATED_YOUTUBE_PRESETS: YouTubePreset[] = [
     id: "brown-noise-adhd",
     title: "Pure Brown Noise for ADHD & Deep Work",
     category: "noise",
-    videoId: "RqzGzwTY-6w", // Brown noise
+    videoId: "RqzGzwTY-6w",
     tag: "Brown Noise ADHD",
     thumbnail: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=300&auto=format&fit=crop",
   },
@@ -103,38 +104,28 @@ export const CURATED_YOUTUBE_PRESETS: YouTubePreset[] = [
   },
 ];
 
-export function extractYouTubeId(urlOrId: string): string | null {
-  if (!urlOrId) return null;
-  const trimmed = urlOrId.trim();
+export function extractYouTubeVideoId(input: string): string | null {
+  if (!input) return null;
+  const trimmed = input.trim();
 
-  // If it's already an 11-char ID
+  // Direct video ID (11 chars)
   if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
     return trimmed;
   }
 
-  // Handle standard YouTube URL patterns
-  try {
-    const parsed = new URL(trimmed.startsWith("http") ? trimmed : `https://${trimmed}`);
-    if (parsed.hostname.includes("youtube.com")) {
-      const v = parsed.searchParams.get("v");
-      if (v && v.length === 11) return v;
-      if (parsed.pathname.startsWith("/embed/")) {
-        const id = parsed.pathname.split("/embed/")[1]?.split("/")[0]?.split("?")[0];
-        if (id && id.length === 11) return id;
-      }
-      if (parsed.pathname.startsWith("/live/")) {
-        const id = parsed.pathname.split("/live/")[1]?.split("/")[0]?.split("?")[0];
-        if (id && id.length === 11) return id;
-      }
-    } else if (parsed.hostname.includes("youtu.be")) {
-      const id = parsed.pathname.slice(1).split("/")[0]?.split("?")[0];
-      if (id && id.length === 11) return id;
-    }
-  } catch {}
+  // youtube.com/watch?v=VIDEO_ID
+  const vMatch = trimmed.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+  if (vMatch && vMatch[1]) {
+    return vMatch[1];
+  }
 
-  // Fallback regex match
-  const match = trimmed.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/))([a-zA-Z0-9_-]{11})/);
-  return match ? match[1] : null;
+  // youtube.com/live/VIDEO_ID
+  const liveMatch = trimmed.match(/youtube\.com\/live\/([^"&?\/\s]{11})/i);
+  if (liveMatch && liveMatch[1]) {
+    return liveMatch[1];
+  }
+
+  return null;
 }
 
 interface StudyYouTubePlayerProps {
@@ -147,37 +138,20 @@ interface StudyYouTubePlayerProps {
 export function StudyYouTubePlayer({
   open,
   onClose,
-  pos = { x: 440, y: 68 },
+  pos = { x: 30, y: 70 },
   onPosChange,
 }: StudyYouTubePlayerProps) {
-  const [currentVideoId, setCurrentVideoId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("study_youtube_current_id") || CURATED_YOUTUBE_PRESETS[0].videoId;
-    }
-    return CURATED_YOUTUBE_PRESETS[0].videoId;
-  });
-
-  const [currentTitle, setCurrentTitle] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("study_youtube_current_title") || CURATED_YOUTUBE_PRESETS[0].title;
-    }
-    return CURATED_YOUTUBE_PRESETS[0].title;
-  });
-
-  const [urlInput, setUrlInput] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("all");
-  const [isMiniPiP, setIsMiniPiP] = useState(false);
-
-  // Custom Saved Streams
-  const [customFavorites, setCustomFavorites] = useState<{ id: string; title: string; videoId: string }[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("study_youtube_favorites");
-        if (saved) return JSON.parse(saved);
-      } catch {}
-    }
+  const [activePreset, setActivePreset] = useState<YouTubePreset>(CURATED_YOUTUBE_PRESETS[0]);
+  const [customInput, setCustomInput] = useState("");
+  const [savedFavorites, setSavedFavorites] = useState<YouTubePreset[]>(() => {
+    try {
+      const saved = localStorage.getItem("study_youtube_favorites");
+      if (saved) return JSON.parse(saved);
+    } catch {}
     return [];
   });
+  const [activeTab, setActiveTab] = useState<"curated" | "favorites" | "custom">("curated");
+  const [isCompact, setIsCompact] = useState(false);
 
   // Movable Window State
   const [windowPos, setWindowPos] = useState(pos);
@@ -188,152 +162,166 @@ export function StudyYouTubePlayer({
     setWindowPos(pos);
   }, [pos.x, pos.y]);
 
-  const handleSelectVideo = (videoId: string, title: string) => {
-    setCurrentVideoId(videoId);
-    setCurrentTitle(title);
+  useEffect(() => {
     try {
-      localStorage.setItem("study_youtube_current_id", videoId);
-      localStorage.setItem("study_youtube_current_title", title);
+      localStorage.setItem("study_youtube_favorites", JSON.stringify(savedFavorites));
     } catch {}
-    toast.success(`Playing: ${title}`);
+  }, [savedFavorites]);
+
+  const handleSelectPreset = (preset: YouTubePreset) => {
+    setActivePreset(preset);
   };
 
-  const handleCustomSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!urlInput.trim()) return;
-
-    const extracted = extractYouTubeId(urlInput);
-    if (extracted) {
-      const title = `Custom Stream (${extracted})`;
-      handleSelectVideo(extracted, title);
-      setUrlInput("");
-    } else {
-      // If it's a search term or invalid URL
-      const searchId = "jfKfPfyJRdk"; // Default fallback
-      toast.info("Opening YouTube stream via search format");
-      handleSelectVideo(searchId, `Search: ${urlInput}`);
-    }
-  };
-
-  const handleSaveFavorite = () => {
-    if (!currentVideoId) return;
-    if (customFavorites.some((f) => f.videoId === currentVideoId)) {
-      toast.info("Already in your saved study streams");
+  const handleLoadCustom = () => {
+    const vid = extractYouTubeVideoId(customInput);
+    if (!vid) {
+      toast.error("Invalid YouTube link or Video ID");
       return;
     }
-    const updated = [
-      {
-        id: `fav-${Date.now()}`,
-        title: currentTitle || "Custom Focus Video",
-        videoId: currentVideoId,
-      },
-      ...customFavorites,
-    ];
-    setCustomFavorites(updated);
-    try {
-      localStorage.setItem("study_youtube_favorites", JSON.stringify(updated));
-    } catch {}
-    toast.success("Added to saved study streams");
+
+    const newPreset: YouTubePreset = {
+      id: `custom-${Date.now()}`,
+      title: "Custom YouTube Stream",
+      category: "lofi",
+      videoId: vid,
+      tag: "Custom Stream",
+      thumbnail: `https://img.youtube.com/vi/${vid}/hqdefault.jpg`,
+    };
+
+    setActivePreset(newPreset);
+    toast.success("Loaded YouTube video stream");
   };
 
-  const handleRemoveFavorite = (favId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const updated = customFavorites.filter((f) => f.id !== favId);
-    setCustomFavorites(updated);
-    try {
-      localStorage.setItem("study_youtube_favorites", JSON.stringify(updated));
-    } catch {}
-    toast.info("Removed from saved streams");
+  const handleSaveFavorite = (preset: YouTubePreset) => {
+    if (savedFavorites.some((f) => f.videoId === preset.videoId)) {
+      toast.info("Already saved in favorites");
+      return;
+    }
+    setSavedFavorites((prev) => [...prev, preset]);
+    toast.success(`Saved "${preset.title}" to favorites`);
   };
 
-  // Drag-to-Move
+  const handleRemoveFavorite = (id: string) => {
+    setSavedFavorites((prev) => prev.filter((f) => f.id !== id));
+    toast.success("Removed from favorites");
+  };
+
+  // Dragging Handlers
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest("button, input, select, iframe, a")) return;
-    e.preventDefault();
+    if ((e.target as HTMLElement).closest("button, input, iframe, a")) return;
+    setIsDragging(true);
     dragStartRef.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
       posX: windowPos.x,
       posY: windowPos.y,
     };
-    setIsDragging(true);
   };
 
   useEffect(() => {
-    if (!isDragging) return;
-    const onMouseMove = (e: MouseEvent) => {
-      const deltaX = e.clientX - dragStartRef.current.mouseX;
-      const deltaY = e.clientY - dragStartRef.current.mouseY;
-      const nextX = Math.max(8, Math.min(window.innerWidth - 300, dragStartRef.current.posX + deltaX));
-      const nextY = Math.max(52, Math.min(window.innerHeight - 150, dragStartRef.current.posY + deltaY));
-      const newPos = { x: nextX, y: nextY };
-      setWindowPos(newPos);
-      if (onPosChange) onPosChange(newPos);
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const dx = e.clientX - dragStartRef.current.mouseX;
+      const dy = e.clientY - dragStartRef.current.mouseY;
+      const newX = Math.max(10, Math.min(window.innerWidth - 420, dragStartRef.current.posX + dx));
+      const newY = Math.max(40, Math.min(window.innerHeight - 200, dragStartRef.current.posY + dy));
+      const nextPos = { x: newX, y: newY };
+      setWindowPos(nextPos);
+      onPosChange?.(nextPos);
     };
-    const onMouseUp = () => setIsDragging(false);
 
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
+    const handleMouseUp = () => {
+      if (isDragging) setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    }
+
     return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, onPosChange]);
 
   if (!open) return null;
 
-  const filteredPresets =
-    activeCategory === "all"
-      ? CURATED_YOUTUBE_PRESETS
-      : CURATED_YOUTUBE_PRESETS.filter((p) => p.category === activeCategory);
-
   return (
     <div
-      style={{
-        left: `${windowPos.x}px`,
-        top: `${windowPos.y}px`,
-        width: isMiniPiP ? "340px" : "440px",
-      }}
-      className="fixed z-30 rounded-2xl border border-red-500/20 bg-black/40 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden select-none transition-all duration-200"
+      style={{ left: `${windowPos.x}px`, top: `${windowPos.y}px` }}
+      className={`fixed z-40 w-[450px] max-w-[95vw] select-none rounded-2xl border border-white/10 bg-[#0F0F0F]/95 backdrop-blur-2xl shadow-2xl shadow-black/90 text-white overflow-hidden transition-all flex flex-col font-sans ${
+        isCompact ? "h-auto" : ""
+      }`}
     >
-      {/* Header Bar */}
+      {/* 1. YouTube Authentic Header Bar */}
       <div
         onMouseDown={handleMouseDown}
-        className="cursor-grab active:cursor-grabbing flex items-center justify-between px-3 py-2 border-b border-white/10 bg-gradient-to-r from-red-950/40 via-black/40 to-black/40 group"
+        className="flex items-center justify-between px-3.5 py-2.5 bg-[#000000]/90 border-b border-white/5 cursor-move"
       >
-        <div className="flex items-center gap-2">
-          {/* Green minimize dot */}
+        {/* macOS Traffic Lights */}
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={onClose}
-            className="w-3 h-3 rounded-full bg-emerald-500 hover:bg-emerald-400 transition-colors shadow-sm flex items-center justify-center group"
-            title="Hide YouTube Player"
+            className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500 border border-red-600/60 flex items-center justify-center transition-transform active:scale-90"
+            title="Close"
           >
-            <span className="opacity-0 group-hover:opacity-100 text-[8px] text-black font-bold">−</span>
+            <X className="w-2 h-2 text-black/80 opacity-0 hover:opacity-100 transition-opacity" />
           </button>
-
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-white">
-            <Youtube className="h-3.5 w-3.5 text-red-500 fill-red-500" />
-            <span className="truncate max-w-[170px]">YouTube Focus Player</span>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsCompact(!isCompact)}
+            className="w-3 h-3 rounded-full bg-yellow-500/80 hover:bg-yellow-500 border border-yellow-600/60 flex items-center justify-center transition-transform active:scale-90"
+            title={isCompact ? "Expand Player" : "Mini-Player Mode"}
+          >
+            {isCompact ? (
+              <Maximize2 className="w-2 h-2 text-black/80 opacity-0 hover:opacity-100 transition-opacity" />
+            ) : (
+              <Minimize2 className="w-2 h-2 text-black/80 opacity-0 hover:opacity-100 transition-opacity" />
+            )}
+          </button>
+          <a
+            href={`https://www.youtube.com/watch?v=${activePreset.videoId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-3 h-3 rounded-full bg-emerald-500/80 hover:bg-emerald-500 border border-emerald-600/60 flex items-center justify-center transition-transform active:scale-90"
+            title="Open in YouTube"
+          >
+            <ExternalLink className="w-2 h-2 text-black/80 opacity-0 hover:opacity-100 transition-opacity" />
+          </a>
         </div>
 
+        {/* Brand Header */}
+        <div className="flex items-center gap-2 text-xs font-bold text-white tracking-wide">
+          <div className="px-1.5 py-0.5 rounded bg-[#FF0000] text-white flex items-center justify-center">
+            <Youtube className="h-3 w-3 fill-white" />
+          </div>
+          <span>YouTube Focus</span>
+          {activePreset.isLive && (
+            <span className="flex items-center gap-1 text-[9px] text-white font-bold bg-[#FF0000] px-1.5 py-0.2 rounded uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+              Live
+            </span>
+          )}
+        </div>
+
+        {/* Controls */}
         <div className="flex items-center gap-1">
           <Button
             size="icon"
             variant="ghost"
-            onClick={() => setIsMiniPiP(!isMiniPiP)}
-            className="h-6 w-6 text-white/60 hover:text-white hover:bg-white/10"
-            title={isMiniPiP ? "Expand Window" : "Picture-in-Picture Mini Mode"}
+            onClick={() => handleSaveFavorite(activePreset)}
+            className="h-6 w-6 text-white/60 hover:text-[#FF0000] hover:bg-white/5 rounded-md"
+            title="Bookmark Stream"
           >
-            {isMiniPiP ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
+            <Bookmark className="h-3.5 w-3.5" />
           </Button>
-
           <Button
             size="icon"
             variant="ghost"
             onClick={onClose}
-            className="h-6 w-6 text-white/60 hover:text-red-400 hover:bg-white/10"
+            className="h-6 w-6 text-white/60 hover:text-white hover:bg-white/5 rounded-md"
             title="Close"
           >
             <X className="h-3.5 w-3.5" />
@@ -341,152 +329,176 @@ export function StudyYouTubePlayer({
         </div>
       </div>
 
-      {/* YouTube IFrame Embed Screen */}
-      <div className="relative w-full aspect-video bg-black/90 overflow-hidden border-b border-white/10">
-        <iframe
-          src={`https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(
-            typeof window !== "undefined" ? window.location.origin : ""
-          )}`}
-          title={currentTitle}
-          className="absolute inset-0 w-full h-full border-0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-        />
-      </div>
-
-      {/* Title & Actions Bar */}
-      <div className="p-2.5 bg-black/30 border-b border-white/10 flex items-center justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold text-white truncate">{currentTitle}</p>
-          <div className="flex items-center gap-1.5 text-[10px] text-white/50">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-            <span>Active Study Audio</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleSaveFavorite}
-            className="h-6 px-2 text-[10px] text-white/70 hover:text-white hover:bg-white/10 rounded-md gap-1"
-            title="Bookmark this stream"
-          >
-            <Bookmark className="h-3 w-3 text-red-400" />
-            <span className="hidden sm:inline">Save</span>
-          </Button>
-
-          <a
-            href={`https://www.youtube.com/watch?v=${currentVideoId}`}
-            target="_blank"
-            rel="noreferrer"
-            className="h-6 px-2 text-[10px] text-white/70 hover:text-white hover:bg-white/10 rounded-md flex items-center gap-1"
-            title="Open on YouTube in new tab"
-          >
-            <ExternalLink className="h-3 w-3" />
-          </a>
+      {/* 2. Embedded Video Frame */}
+      <div className="p-3 bg-[#0F0F0F]">
+        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-white/10 shadow-lg">
+          <iframe
+            key={activePreset.videoId}
+            src={`https://www.youtube.com/embed/${activePreset.videoId}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0`}
+            title={activePreset.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            className="w-full h-full border-0"
+          />
         </div>
       </div>
 
-      {/* Expanded Controls: URL Input & Curated Channels */}
-      {!isMiniPiP && (
-        <div className="p-3 space-y-3 max-h-[260px] overflow-y-auto custom-scrollbar bg-black/20">
-          {/* Custom URL or ID Search */}
-          <form onSubmit={handleCustomSubmit} className="flex gap-1.5">
-            <Input
-              placeholder="Paste any YouTube link, ID, or search..."
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              className="h-7 bg-zinc-900/80 border-white/15 text-xs text-white placeholder:text-white/40"
-            />
-            <Button
-              type="submit"
-              size="sm"
-              className="h-7 px-3 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shrink-0 gap-1"
+      {/* 3. Navigation Tabs & Channel Selector */}
+      {!isCompact && (
+        <div className="p-3 pt-0 space-y-2.5 text-xs">
+          {/* YouTube Style Pills */}
+          <div className="flex items-center gap-1.5 p-1 rounded-full bg-[#212121] border border-white/5">
+            <button
+              type="button"
+              onClick={() => setActiveTab("curated")}
+              className={`flex-1 py-1 px-2.5 rounded-full text-[11px] font-semibold transition-all ${
+                activeTab === "curated"
+                  ? "bg-white text-black shadow-sm"
+                  : "text-white/70 hover:text-white"
+              }`}
             >
-              <Play className="h-3 w-3 fill-current" /> Play
-            </Button>
-          </form>
-
-          {/* Category Chips */}
-          <div className="flex gap-1 overflow-x-auto pb-1 custom-scrollbar text-[10px]">
-            {[
-              { id: "all", label: "All Curated" },
-              { id: "lofi", label: "Lofi Beats" },
-              { id: "ambient", label: "Rain Ambient" },
-              { id: "classical", label: "Classical" },
-              { id: "synthwave", label: "Synthwave" },
-              { id: "noise", label: "ADHD Noise" },
-            ].map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setActiveCategory(cat.id)}
-                className={`px-2 py-0.5 rounded-full font-medium whitespace-nowrap transition-colors ${
-                  activeCategory === cat.id
-                    ? "bg-red-500/80 text-white font-bold"
-                    : "bg-white/10 text-white/60 hover:text-white hover:bg-white/15"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
+              Featured Streams
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("favorites")}
+              className={`flex-1 py-1 px-2.5 rounded-full text-[11px] font-semibold transition-all flex items-center justify-center gap-1 ${
+                activeTab === "favorites"
+                  ? "bg-white text-black shadow-sm"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              <span>Library</span>
+              {savedFavorites.length > 0 && (
+                <span className="w-3.5 h-3.5 rounded-full bg-[#FF0000] text-white text-[9px] font-bold flex items-center justify-center">
+                  {savedFavorites.length}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("custom")}
+              className={`flex-1 py-1 px-2.5 rounded-full text-[11px] font-semibold transition-all ${
+                activeTab === "custom"
+                  ? "bg-white text-black shadow-sm"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              URL / Search
+            </button>
           </div>
 
-          {/* Curated Presets Grid */}
-          <div className="grid grid-cols-2 gap-1.5">
-            {filteredPresets.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleSelectVideo(item.videoId, item.title)}
-                className={`p-2 rounded-xl text-left border transition-all flex items-center gap-2 group ${
-                  currentVideoId === item.videoId
-                    ? "bg-red-950/30 border-red-500/40 shadow-sm"
-                    : "bg-black/40 border-white/10 hover:border-white/20 hover:bg-white/5"
-                }`}
-              >
-                <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 relative bg-zinc-800">
-                  <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
-                  {currentVideoId === item.videoId && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <Play className="h-3 w-3 text-red-400 fill-current animate-pulse" />
+          {/* TAB 1: CURATED STREAMS */}
+          {activeTab === "curated" && (
+            <div className="grid grid-cols-2 gap-2 max-h-[190px] overflow-y-auto pr-1 custom-scrollbar">
+              {CURATED_YOUTUBE_PRESETS.map((preset) => {
+                const isSelected = activePreset.id === preset.id;
+                return (
+                  <div
+                    key={preset.id}
+                    onClick={() => handleSelectPreset(preset)}
+                    className={`p-2 rounded-xl cursor-pointer transition-all border text-left group relative flex items-center gap-2 ${
+                      isSelected
+                        ? "bg-[#282828] border-[#FF0000]/60 text-white shadow-md"
+                        : "bg-[#1F1F1F] hover:bg-[#2A2A2A] border-white/5 text-white/80 hover:text-white"
+                    }`}
+                  >
+                    <div className="relative w-12 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-black">
+                      <img
+                        src={preset.thumbnail}
+                        alt={preset.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Play className="h-3.5 w-3.5 text-white fill-white" />
+                      </div>
+                      {preset.isLive && (
+                        <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded bg-[#FF0000] text-white text-[7px] font-bold uppercase">
+                          Live
+                        </span>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold text-white truncate group-hover:text-red-300">
-                    {item.tag}
-                  </p>
-                  <p className="text-[9px] text-white/50 truncate">{item.title}</p>
-                </div>
-              </button>
-            ))}
-          </div>
+                    <div className="flex-1 min-w-0">
+                      <h5 className="font-semibold text-xs truncate">{preset.title}</h5>
+                      <p className="text-[10px] text-white/50 truncate">{preset.tag}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-          {/* User's Custom Bookmarks */}
-          {customFavorites.length > 0 && (
-            <div className="space-y-1.5 pt-1 border-t border-white/10">
-              <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider block">
-                Saved Custom Streams
-              </span>
-              <div className="space-y-1">
-                {customFavorites.map((fav) => (
+          {/* TAB 2: SAVED FAVORITES */}
+          {activeTab === "favorites" && (
+            <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-1 custom-scrollbar">
+              {savedFavorites.length === 0 ? (
+                <div className="text-center py-6 text-white/40 text-xs space-y-1">
+                  <Bookmark className="h-6 w-6 mx-auto opacity-30 text-[#FF0000]" />
+                  <p>No saved YouTube streams yet.</p>
+                  <p className="text-[10px] text-white/30">Bookmark videos for quick access during study</p>
+                </div>
+              ) : (
+                savedFavorites.map((fav) => (
                   <div
                     key={fav.id}
-                    onClick={() => handleSelectVideo(fav.videoId, fav.title)}
-                    className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-between text-xs cursor-pointer"
+                    onClick={() => handleSelectPreset(fav)}
+                    className="flex items-center justify-between p-2 rounded-xl bg-[#1F1F1F] hover:bg-[#2A2A2A] border border-white/5 cursor-pointer group"
                   >
-                    <span className="truncate text-[11px] text-white/90">{fav.title}</span>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-10 h-7 rounded bg-black overflow-hidden flex-shrink-0">
+                        <img
+                          src={fav.thumbnail}
+                          alt={fav.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="truncate">
+                        <p className="font-semibold text-xs text-white truncate">{fav.title}</p>
+                        <p className="text-[10px] text-white/50 truncate">{fav.tag}</p>
+                      </div>
+                    </div>
+
                     <button
                       type="button"
-                      onClick={(e) => handleRemoveFavorite(fav.id, e)}
-                      className="text-white/40 hover:text-red-400 p-0.5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFavorite(fav.id);
+                      }}
+                      className="p-1.5 text-white/40 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remove"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                ))}
+                ))
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: CUSTOM URL PARSER */}
+          {activeTab === "custom" && (
+            <div className="space-y-2 p-2.5 rounded-xl bg-[#1F1F1F] border border-white/5">
+              <p className="text-[10px] text-white/60">
+                Paste any YouTube video or live stream URL:
+              </p>
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="text"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={customInput}
+                  onChange={(e) => setCustomInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleLoadCustom();
+                  }}
+                  className="h-8 bg-[#0F0F0F] border-white/10 text-xs text-white placeholder-white/30"
+                />
+                <Button
+                  size="sm"
+                  onClick={handleLoadCustom}
+                  className="h-8 bg-[#FF0000] hover:bg-red-600 text-white font-bold text-xs px-3"
+                >
+                  Play
+                </Button>
               </div>
             </div>
           )}

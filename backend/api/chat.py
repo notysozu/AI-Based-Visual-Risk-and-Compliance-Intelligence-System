@@ -600,3 +600,152 @@ CRITICAL VOICE INSTRUCTIONS:
         "prompt": prompt,
         "timestamp": datetime.utcnow().isoformat()
     }
+
+
+@router.post("/jarvis")
+async def jarvis_voice_assistant(req: Dict[str, Any]):
+    """
+    JARVIS Autonomous Voice Copilot endpoint.
+    Handles natural voice commands, screen/window action parsing, and ultra-crisp voice synthesis responses.
+    """
+    user_id = str(req.get("user_id") or "1")
+    prompt = (req.get("prompt") or "").strip()
+    subject = (req.get("subject") or "Study").strip()
+    history = req.get("history") or []
+
+    if not prompt:
+        return {
+            "text": "Jarvis online. Standing by for your command, sir.",
+            "action": None,
+            "prompt": "",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    p_low = prompt.lower()
+    user = await crud.get_user(user_id)
+    username = user.username if user and user.username else "Sir"
+
+    # 1. Action Pattern Matching
+    # Take note / idea
+    if any(k in p_low for k in ["take a note", "note down", "write a note", "save an idea", "save idea", "add a note", "remember this", "make a note"]):
+        cleaned = re.sub(r"^(jarvis\s*,?\s*|hey jarvis\s*,?\s*|please\s*)", "", prompt, flags=re.IGNORECASE)
+        cleaned = re.sub(r"^(take a note\s*(that|about|:|to)?|note down\s*(that|about|:|to)?|write a note\s*(that|about|:|to)?|save an idea\s*(that|about|:|to)?|save idea\s*(that|about|:|to)?|add a note\s*(that|about|:|to)?|remember this\s*(that|about|:|to)?|make a note\s*(that|about|:|to)?)\s*", "", cleaned, flags=re.IGNORECASE).strip()
+        
+        note_content = cleaned if cleaned else prompt
+        words = note_content.split()
+        note_title = " ".join(words[:4]).capitalize() if len(words) >= 4 else note_content.capitalize()
+
+        created_note = None
+        if user:
+            try:
+                created_note = await crud.save_user_note(user.id, {
+                    "title": note_title,
+                    "content": note_content,
+                    "category": "ideas",
+                    "tags": ["jarvis", subject.lower()]
+                })
+            except Exception as e:
+                print(f"[Jarvis] Auto-note save error: {e}")
+
+        return {
+            "text": f"Noted, {username}. I have recorded that into your notes.",
+            "action": {
+                "type": "create_note",
+                "payload": {
+                    "id": str(created_note.id) if created_note else str(uuid.uuid4()),
+                    "title": note_title,
+                    "content": note_content,
+                    "category": "ideas"
+                }
+            },
+            "prompt": prompt,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    # Window Actions
+    if "open youtube" in p_low or "play youtube" in p_low or "start youtube" in p_low:
+        return {"text": f"Opening YouTube focus player, {username}.", "action": {"type": "open_youtube"}, "prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
+    if "close youtube" in p_low or "hide youtube" in p_low:
+        return {"text": f"YouTube player dismissed.", "action": {"type": "close_youtube"}, "prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
+
+    if "open spotify" in p_low or "play spotify" in p_low or "start spotify" in p_low:
+        return {"text": f"Launching Spotify music player.", "action": {"type": "open_spotify"}, "prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
+    if "close spotify" in p_low or "hide spotify" in p_low:
+        return {"text": f"Spotify player closed.", "action": {"type": "close_spotify"}, "prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
+
+    if "open browser" in p_low or "launch browser" in p_low or "show browser" in p_low:
+        return {"text": f"Opening in-cockpit web browser.", "action": {"type": "open_browser"}, "prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
+    if "close browser" in p_low or "hide browser" in p_low:
+        return {"text": f"Closing web browser.", "action": {"type": "close_browser"}, "prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
+
+    if "open note" in p_low or "show note" in p_low or "open my notes" in p_low:
+        return {"text": f"Opening your notes and ideas board.", "action": {"type": "open_notes"}, "prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
+    if "close note" in p_low or "hide note" in p_low:
+        return {"text": f"Notes board closed.", "action": {"type": "close_notes"}, "prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
+
+    if "open workspace" in p_low or "show tasks" in p_low or "open planner" in p_low or "show planner" in p_low:
+        return {"text": f"Opening your workspace and planner.", "action": {"type": "open_workspace"}, "prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
+    if "close workspace" in p_low or "hide workspace" in p_low:
+        return {"text": f"Workspace minimized.", "action": {"type": "close_workspace"}, "prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
+
+    if "start timer" in p_low or "play timer" in p_low or "resume timer" in p_low:
+        return {"text": f"Starting your focus sprint timer now.", "action": {"type": "start_timer"}, "prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
+    if "pause timer" in p_low or "stop timer" in p_low:
+        return {"text": f"Timer paused.", "action": {"type": "pause_timer"}, "prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
+    if "reset timer" in p_low:
+        return {"text": f"Timer reset to beginning.", "action": {"type": "reset_timer"}, "prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
+
+    # LLM Query for complex requests or academic knowledge
+    system_prompt = f"""You are J.A.R.V.I.S., the ultra-intelligent, highly capable AI assistant and cockpit copilot for {username}.
+Subject in focus: {subject}.
+CRITICAL INSTRUCTIONS:
+1. Speak in a crisp, polite, refined British tone (e.g. 'Right away, sir', 'Certainly', 'At your service').
+2. Keep spoken responses to 1 to 2 concise sentences.
+3. Use plain English without markdown asterisks, hashes, or bullet points so it sounds natural when spoken.
+4. Answer scientific, academic, and technical queries with sharp first-principles precision."""
+
+    messages_payload = [{"role": "system", "content": system_prompt}]
+    for h in history[-3:]:
+        r = h.get("role")
+        c = h.get("content") or h.get("text")
+        if r in ["user", "assistant"] and c:
+            messages_payload.append({"role": r, "content": c})
+    messages_payload.append({"role": "user", "content": prompt})
+
+    try:
+        from ai_engine.llm_integration.client import get_groq_client, get_active_groq_models
+        client = get_groq_client()
+        if client:
+            models_to_try = get_active_groq_models(client)
+            for m in models_to_try:
+                try:
+                    resp = client.chat.completions.create(
+                        model=m,
+                        messages=messages_payload,
+                        temperature=0.4,
+                        max_tokens=180,
+                        timeout=7.0
+                    )
+                    content = resp.choices[0].message.content.strip()
+                    clean_content = re.sub(r"<think>[\s\S]*?</think>", "", content).strip()
+                    clean_content = clean_content.replace("**", "").replace("*", "").replace("###", "").replace("##", "")
+                    if clean_content:
+                        return {
+                            "text": clean_content,
+                            "action": None,
+                            "prompt": prompt,
+                            "timestamp": datetime.utcnow().isoformat()
+                        }
+                except Exception:
+                    continue
+    except Exception as e:
+        print(f"[Jarvis] LLM error: {e}")
+
+    # Fallback JARVIS response
+    return {
+        "text": f"Right away, {username}. I'm standing by to manage your study windows, notes, and timers.",
+        "action": None,
+        "prompt": prompt,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+

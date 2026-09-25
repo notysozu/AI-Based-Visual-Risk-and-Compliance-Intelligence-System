@@ -49,7 +49,8 @@ async def save_persistence_snapshot():
             AppCacheDoc,
             RefreshTokenDoc,
             PasswordResetTokenDoc,
-            EmailVerificationTokenDoc
+            EmailVerificationTokenDoc,
+            UserNoteDoc
         )
 
         users = await UserDoc.find_all().to_list()
@@ -62,6 +63,7 @@ async def save_persistence_snapshot():
         refresh_tokens = await RefreshTokenDoc.find_all().to_list()
         reset_tokens = await PasswordResetTokenDoc.find_all().to_list()
         verify_tokens = await EmailVerificationTokenDoc.find_all().to_list()
+        user_notes = await UserNoteDoc.find_all().to_list()
 
         snapshot = {
             "version": 1,
@@ -76,6 +78,7 @@ async def save_persistence_snapshot():
             "refresh_tokens": [rt.model_dump(mode="json") for rt in refresh_tokens],
             "password_reset_tokens": [pr.model_dump(mode="json") for pr in reset_tokens],
             "email_verification_tokens": [ev.model_dump(mode="json") for ev in verify_tokens],
+            "user_notes": [n.model_dump(mode="json") for n in user_notes],
         }
 
         temp_file = f"{PERSISTENCE_FILE}.tmp"
@@ -204,6 +207,30 @@ async def load_persistence_snapshot():
                     rt.id = rtid
                 await rt.insert()
 
+        # Restore user notes
+        for n_data in data.get("user_notes", []):
+            nid = n_data.get("id") or n_data.get("_id")
+            existing_note = None
+            if nid:
+                try:
+                    from bson import ObjectId
+                    if ObjectId.is_valid(str(nid)):
+                        existing_note = await UserNoteDoc.get(ObjectId(str(nid)))
+                except Exception:
+                    pass
+            if not existing_note:
+                note = UserNoteDoc(**n_data)
+                if nid:
+                    try:
+                        from bson import ObjectId
+                        if ObjectId.is_valid(str(nid)):
+                            note.id = ObjectId(str(nid))
+                        else:
+                            note.id = nid
+                    except Exception:
+                        note.id = nid
+                await note.insert()
+
         print(f"[MongoDB Persistence] Rehydrated {len(data.get('users', []))} users and {len(data.get('chat_sessions', []))} chat sessions from persistent store.")
     except Exception as e:
         print(f"[MongoDB Persistence] Rehydration notice: {e}")
@@ -225,7 +252,8 @@ async def init_mongodb():
         AppCacheDoc,
         RefreshTokenDoc,
         PasswordResetTokenDoc,
-        EmailVerificationTokenDoc
+        EmailVerificationTokenDoc,
+        UserNoteDoc
     )
 
     document_models = [
@@ -238,7 +266,8 @@ async def init_mongodb():
         AppCacheDoc,
         RefreshTokenDoc,
         PasswordResetTokenDoc,
-        EmailVerificationTokenDoc
+        EmailVerificationTokenDoc,
+        UserNoteDoc
     ]
 
     try:

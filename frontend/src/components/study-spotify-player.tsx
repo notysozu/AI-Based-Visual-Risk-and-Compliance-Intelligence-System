@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  Music,
   ExternalLink,
   Sparkles,
   Bookmark,
@@ -12,7 +11,11 @@ import {
   Radio,
   Headphones,
   Sliders,
-  Move
+  Move,
+  Search,
+  Plus,
+  Music2,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +41,7 @@ export const CURATED_SPOTIFY_PRESETS: SpotifyPreset[] = [
     type: "playlist",
     embedUrl: "https://open.spotify.com/embed/playlist/37i9dQZF1DWZeKCadgRdKQ?utm_source=generator&theme=0",
     tag: "Deep Focus",
-    accent: "#10b981",
+    accent: "#1DB954",
     thumbnail: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=300&auto=format&fit=crop",
   },
   {
@@ -48,7 +51,7 @@ export const CURATED_SPOTIFY_PRESETS: SpotifyPreset[] = [
     type: "playlist",
     embedUrl: "https://open.spotify.com/embed/playlist/37i9dQZF1DXdLEN7aqioXM?utm_source=generator&theme=0",
     tag: "Lofi Beats",
-    accent: "#8b5cf6",
+    accent: "#1DB954",
     thumbnail: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?q=80&w=300&auto=format&fit=crop",
   },
   {
@@ -58,7 +61,7 @@ export const CURATED_SPOTIFY_PRESETS: SpotifyPreset[] = [
     type: "playlist",
     embedUrl: "https://open.spotify.com/embed/playlist/37i9dQZF1DX3rxVfibe1L0?utm_source=generator&theme=0",
     tag: "Electronic Focus",
-    accent: "#06b6d4",
+    accent: "#1DB954",
     thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=300&auto=format&fit=crop",
   },
   {
@@ -68,7 +71,7 @@ export const CURATED_SPOTIFY_PRESETS: SpotifyPreset[] = [
     type: "playlist",
     embedUrl: "https://open.spotify.com/embed/playlist/37i9dQZF1DX4sWSpwq3LiO?utm_source=generator&theme=0",
     tag: "Peaceful Piano",
-    accent: "#ec4899",
+    accent: "#1DB954",
     thumbnail: "https://images.unsplash.com/photo-1520523839898-507127053c37?q=80&w=300&auto=format&fit=crop",
   },
   {
@@ -78,17 +81,17 @@ export const CURATED_SPOTIFY_PRESETS: SpotifyPreset[] = [
     type: "playlist",
     embedUrl: "https://open.spotify.com/embed/playlist/37i9dQZF1DX0SM0LYsmbMT?utm_source=generator&theme=0",
     tag: "Coffeehouse Jazz",
-    accent: "#f59e0b",
+    accent: "#1DB954",
     thumbnail: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=300&auto=format&fit=crop",
   },
   {
     id: "spotify-synthwave",
-    title: "Synthwave / Retro Focus",
-    subtitle: "Chilled 80s synthesizer melodies",
+    title: "Synthwave Focus",
+    subtitle: "Chilled retro synthesizer melodies",
     type: "playlist",
     embedUrl: "https://open.spotify.com/embed/playlist/37i9dQZF1DXdLEN7aqioXM?utm_source=generator&theme=0",
     tag: "Retro Synth",
-    accent: "#6366f1",
+    accent: "#1DB954",
     thumbnail: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=300&auto=format&fit=crop",
   },
 ];
@@ -97,24 +100,24 @@ export function parseSpotifyEmbedUrl(input: string): string | null {
   if (!input) return null;
   const trimmed = input.trim();
 
-  // If already an embed URL
   if (trimmed.includes("open.spotify.com/embed/")) {
-    return trimmed.includes("?") ? trimmed : `${trimmed}?utm_source=generator&theme=0`;
+    return trimmed;
   }
 
-  // Handle open.spotify.com URL
-  // e.g. https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ?si=...
-  try {
-    const match = trimmed.match(/open\.spotify\.com\/(playlist|album|track|artist|episode)\/([a-zA-Z0-9]+)/);
-    if (match && match[1] && match[2]) {
-      return `https://open.spotify.com/embed/${match[1]}/${match[2]}?utm_source=generator&theme=0`;
-    }
-  } catch {}
+  // Handle standard Spotify Web URLs: https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ
+  const webMatch = trimmed.match(/open\.spotify\.com\/(playlist|album|track|artist|show|episode)\/([a-zA-Z0-9]+)/);
+  if (webMatch) {
+    const type = webMatch[1];
+    const id = webMatch[2];
+    return `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`;
+  }
 
-  // Handle spotify URI e.g. spotify:playlist:37i9dQZF1DWZeKCadgRdKQ
-  const uriMatch = trimmed.match(/spotify:(playlist|album|track|artist|episode):([a-zA-Z0-9]+)/);
-  if (uriMatch && uriMatch[1] && uriMatch[2]) {
-    return `https://open.spotify.com/embed/${uriMatch[1]}/${uriMatch[2]}?utm_source=generator&theme=0`;
+  // Handle Spotify URIs: spotify:playlist:37i9dQZF1DWZeKCadgRdKQ
+  const uriMatch = trimmed.match(/spotify:(playlist|album|track|artist|show|episode):([a-zA-Z0-9]+)/);
+  if (uriMatch) {
+    const type = uriMatch[1];
+    const id = uriMatch[2];
+    return `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`;
   }
 
   return null;
@@ -130,38 +133,22 @@ interface StudySpotifyPlayerProps {
 export function StudySpotifyPlayer({
   open,
   onClose,
-  pos = { x: 440, y: 68 },
+  pos = { x: 30, y: 70 },
   onPosChange,
 }: StudySpotifyPlayerProps) {
-  const [currentEmbedUrl, setCurrentEmbedUrl] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("study_spotify_current_url") || CURATED_SPOTIFY_PRESETS[0].embedUrl;
-    }
-    return CURATED_SPOTIFY_PRESETS[0].embedUrl;
-  });
-
-  const [currentTitle, setCurrentTitle] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("study_spotify_current_title") || CURATED_SPOTIFY_PRESETS[0].title;
-    }
-    return CURATED_SPOTIFY_PRESETS[0].title;
-  });
-
-  const [urlInput, setUrlInput] = useState("");
-  const [isCompactMode, setIsCompactMode] = useState(false);
-
-  // Custom Saved Playlists
-  const [customFavorites, setCustomFavorites] = useState<{ id: string; title: string; embedUrl: string }[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("study_spotify_favorites");
-        if (saved) return JSON.parse(saved);
-      } catch {}
-    }
+  const [activePreset, setActivePreset] = useState<SpotifyPreset>(CURATED_SPOTIFY_PRESETS[0]);
+  const [customUrlInput, setCustomUrlInput] = useState("");
+  const [savedFavorites, setSavedFavorites] = useState<SpotifyPreset[]>(() => {
+    try {
+      const saved = localStorage.getItem("study_spotify_favorites");
+      if (saved) return JSON.parse(saved);
+    } catch {}
     return [];
   });
+  const [activeTab, setActiveTab] = useState<"curated" | "favorites" | "custom">("curated");
+  const [isCompact, setIsCompact] = useState(false);
 
-  // Movable Window State
+  // Movable Window Position
   const [windowPos, setWindowPos] = useState(pos);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, posX: 0, posY: 0 });
@@ -170,96 +157,88 @@ export function StudySpotifyPlayer({
     setWindowPos(pos);
   }, [pos.x, pos.y]);
 
-  const handleSelectPreset = (preset: SpotifyPreset) => {
-    setCurrentEmbedUrl(preset.embedUrl);
-    setCurrentTitle(preset.title);
+  useEffect(() => {
     try {
-      localStorage.setItem("study_spotify_current_url", preset.embedUrl);
-      localStorage.setItem("study_spotify_current_title", preset.title);
+      localStorage.setItem("study_spotify_favorites", JSON.stringify(savedFavorites));
     } catch {}
-    toast.success(`Spotify loaded: ${preset.title}`);
+  }, [savedFavorites]);
+
+  const handleSelectPreset = (preset: SpotifyPreset) => {
+    setActivePreset(preset);
   };
 
-  const handleCustomSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!urlInput.trim()) return;
-
-    const parsed = parseSpotifyEmbedUrl(urlInput);
-    if (parsed) {
-      setCurrentEmbedUrl(parsed);
-      setCurrentTitle("Custom Spotify Stream");
-      try {
-        localStorage.setItem("study_spotify_current_url", parsed);
-        localStorage.setItem("study_spotify_current_title", "Custom Spotify Stream");
-      } catch {}
-      setUrlInput("");
-      toast.success("Loaded custom Spotify playlist/track");
-    } else {
-      toast.error("Please paste a valid Spotify playlist, album, or track link");
-    }
-  };
-
-  const handleSaveFavorite = () => {
-    if (customFavorites.some((f) => f.embedUrl === currentEmbedUrl)) {
-      toast.info("Already in your saved Spotify playlists");
+  const handleLoadCustomUrl = () => {
+    const embed = parseSpotifyEmbedUrl(customUrlInput);
+    if (!embed) {
+      toast.error("Invalid Spotify URL. Paste a playlist, album, or track link.");
       return;
     }
-    const updated = [
-      {
-        id: `fav-spot-${Date.now()}`,
-        title: currentTitle || "Custom Playlist",
-        embedUrl: currentEmbedUrl,
-      },
-      ...customFavorites,
-    ];
-    setCustomFavorites(updated);
-    try {
-      localStorage.setItem("study_spotify_favorites", JSON.stringify(updated));
-    } catch {}
-    toast.success("Added to saved Spotify playlists");
+
+    const newPreset: SpotifyPreset = {
+      id: `custom-${Date.now()}`,
+      title: "Custom Spotify Stream",
+      subtitle: customUrlInput.split("?")[0],
+      type: "playlist",
+      embedUrl: embed,
+      tag: "Custom",
+      accent: "#1DB954",
+      thumbnail: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=300&auto=format&fit=crop",
+    };
+
+    setActivePreset(newPreset);
+    toast.success("Loaded Spotify music stream");
   };
 
-  const handleRemoveFavorite = (favId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const updated = customFavorites.filter((f) => f.id !== favId);
-    setCustomFavorites(updated);
-    try {
-      localStorage.setItem("study_spotify_favorites", JSON.stringify(updated));
-    } catch {}
-    toast.info("Removed from saved playlists");
+  const handleSaveFavorite = (preset: SpotifyPreset) => {
+    if (savedFavorites.some((f) => f.embedUrl === preset.embedUrl)) {
+      toast.info("Already in your favorites");
+      return;
+    }
+    setSavedFavorites((prev) => [...prev, preset]);
+    toast.success(`Saved "${preset.title}" to favorites`);
   };
 
-  // Drag-to-Move
+  const handleRemoveFavorite = (id: string) => {
+    setSavedFavorites((prev) => prev.filter((f) => f.id !== id));
+    toast.success("Removed from favorites");
+  };
+
+  // Dragging Handlers
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest("button, input, select, iframe, a")) return;
-    e.preventDefault();
+    if ((e.target as HTMLElement).closest("button, input, iframe, a")) return;
+    setIsDragging(true);
     dragStartRef.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
       posX: windowPos.x,
       posY: windowPos.y,
     };
-    setIsDragging(true);
   };
 
   useEffect(() => {
-    if (!isDragging) return;
-    const onMouseMove = (e: MouseEvent) => {
-      const deltaX = e.clientX - dragStartRef.current.mouseX;
-      const deltaY = e.clientY - dragStartRef.current.mouseY;
-      const nextX = Math.max(8, Math.min(window.innerWidth - 300, dragStartRef.current.posX + deltaX));
-      const nextY = Math.max(52, Math.min(window.innerHeight - 150, dragStartRef.current.posY + deltaY));
-      const newPos = { x: nextX, y: nextY };
-      setWindowPos(newPos);
-      if (onPosChange) onPosChange(newPos);
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const dx = e.clientX - dragStartRef.current.mouseX;
+      const dy = e.clientY - dragStartRef.current.mouseY;
+      const newX = Math.max(10, Math.min(window.innerWidth - 380, dragStartRef.current.posX + dx));
+      const newY = Math.max(40, Math.min(window.innerHeight - 200, dragStartRef.current.posY + dy));
+      const nextPos = { x: newX, y: newY };
+      setWindowPos(nextPos);
+      onPosChange?.(nextPos);
     };
-    const onMouseUp = () => setIsDragging(false);
 
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
+    const handleMouseUp = () => {
+      if (isDragging) setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    }
+
     return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, onPosChange]);
 
@@ -267,53 +246,76 @@ export function StudySpotifyPlayer({
 
   return (
     <div
-      style={{
-        left: `${windowPos.x}px`,
-        top: `${windowPos.y}px`,
-        width: isCompactMode ? "340px" : "420px",
-      }}
-      className="fixed z-30 rounded-2xl border border-emerald-500/20 bg-black/40 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden select-none transition-all duration-200"
+      style={{ left: `${windowPos.x}px`, top: `${windowPos.y}px` }}
+      className={`fixed z-40 w-[420px] max-w-[95vw] select-none rounded-2xl border border-white/10 bg-[#121212]/95 backdrop-blur-2xl shadow-2xl shadow-black/90 text-white overflow-hidden transition-all flex flex-col font-sans ${
+        isCompact ? "h-auto" : ""
+      }`}
     >
-      {/* Header Bar */}
+      {/* 1. Spotify Authentic Header Bar */}
       <div
         onMouseDown={handleMouseDown}
-        className="cursor-grab active:cursor-grabbing flex items-center justify-between px-3 py-2 border-b border-white/10 bg-gradient-to-r from-emerald-950/40 via-black/40 to-black/40 group"
+        className="flex items-center justify-between px-3.5 py-2.5 bg-[#000000]/80 border-b border-white/5 cursor-move"
       >
-        <div className="flex items-center gap-2">
-          {/* Green minimize dot */}
+        {/* macOS Traffic Lights */}
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={onClose}
-            className="w-3 h-3 rounded-full bg-emerald-500 hover:bg-emerald-400 transition-colors shadow-sm flex items-center justify-center group"
-            title="Hide Spotify Player"
+            className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500 border border-red-600/60 flex items-center justify-center transition-transform active:scale-90"
+            title="Close"
           >
-            <span className="opacity-0 group-hover:opacity-100 text-[8px] text-black font-bold">−</span>
+            <X className="w-2 h-2 text-black/80 opacity-0 hover:opacity-100 transition-opacity" />
           </button>
-
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-white">
-            <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 flex items-center justify-center text-black font-black text-[9px]">
-              S
-            </span>
-            <span className="truncate max-w-[170px]">Spotify Focus Audio</span>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsCompact(!isCompact)}
+            className="w-3 h-3 rounded-full bg-yellow-500/80 hover:bg-yellow-500 border border-yellow-600/60 flex items-center justify-center transition-transform active:scale-90"
+            title={isCompact ? "Expand Window" : "Compact Player Mode"}
+          >
+            {isCompact ? (
+              <Maximize2 className="w-2 h-2 text-black/80 opacity-0 hover:opacity-100 transition-opacity" />
+            ) : (
+              <Minimize2 className="w-2 h-2 text-black/80 opacity-0 hover:opacity-100 transition-opacity" />
+            )}
+          </button>
+          <a
+            href="https://open.spotify.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-3 h-3 rounded-full bg-emerald-500/80 hover:bg-emerald-500 border border-emerald-600/60 flex items-center justify-center transition-transform active:scale-90"
+            title="Open Full Spotify Web App"
+          >
+            <ExternalLink className="w-2 h-2 text-black/80 opacity-0 hover:opacity-100 transition-opacity" />
+          </a>
         </div>
 
+        {/* Title / Brand */}
+        <div className="flex items-center gap-2 text-xs font-bold text-white tracking-wide">
+          <span className="w-4 h-4 rounded-full bg-[#1DB954] text-black flex items-center justify-center text-[9px] font-black">
+            S
+          </span>
+          <span>Spotify</span>
+          <span className="text-[10px] text-[#1DB954] font-medium bg-[#1DB954]/10 px-1.5 py-0.2 rounded-full border border-[#1DB954]/30">
+            Connect
+          </span>
+        </div>
+
+        {/* Controls */}
         <div className="flex items-center gap-1">
           <Button
             size="icon"
             variant="ghost"
-            onClick={() => setIsCompactMode(!isCompactMode)}
-            className="h-6 w-6 text-white/60 hover:text-white hover:bg-white/10"
-            title={isCompactMode ? "Expand Library" : "Compact Player Only"}
+            onClick={() => handleSaveFavorite(activePreset)}
+            className="h-6 w-6 text-white/60 hover:text-[#1DB954] hover:bg-white/5 rounded-md"
+            title="Save to Favorites"
           >
-            {isCompactMode ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
+            <Bookmark className="h-3.5 w-3.5" />
           </Button>
-
           <Button
             size="icon"
             variant="ghost"
             onClick={onClose}
-            className="h-6 w-6 text-white/60 hover:text-emerald-400 hover:bg-white/10"
+            className="h-6 w-6 text-white/60 hover:text-white hover:bg-white/5 rounded-md"
             title="Close"
           >
             <X className="h-3.5 w-3.5" />
@@ -321,132 +323,170 @@ export function StudySpotifyPlayer({
         </div>
       </div>
 
-      {/* Spotify Official Responsive Embed Iframe */}
-      <div className="w-full bg-black/90 border-b border-white/10 p-1">
-        <iframe
-          src={currentEmbedUrl}
-          width="100%"
-          height={isCompactMode ? "152" : "232"}
-          frameBorder="0"
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          loading="lazy"
-          className="rounded-xl"
-          title="Spotify Focus Player"
-        />
-      </div>
-
-      {/* Actions & Connect Bar */}
-      <div className="p-2.5 bg-black/30 border-b border-white/10 flex items-center justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold text-white truncate">{currentTitle}</p>
-          <div className="flex items-center gap-1.5 text-[10px] text-white/50">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span>Spotify Connect Enabled</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleSaveFavorite}
-            className="h-6 px-2 text-[10px] text-white/70 hover:text-white hover:bg-white/10 rounded-md gap-1"
-            title="Bookmark playlist"
-          >
-            <Bookmark className="h-3 w-3 text-emerald-400" />
-            <span className="hidden sm:inline">Save</span>
-          </Button>
-
-          <a
-            href="https://open.spotify.com"
-            target="_blank"
-            rel="noreferrer"
-            className="h-6 px-2 text-[10px] bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-md flex items-center gap-1 font-semibold"
-            title="Open Spotify Web App to control devices"
-          >
-            <ExternalLink className="h-3 w-3" />
-            <span>Open App</span>
-          </a>
+      {/* 2. Embedded Official Spotify Iframe Player */}
+      <div className="p-3 bg-[#121212]">
+        <div className="w-full rounded-xl overflow-hidden bg-[#181818] border border-white/5 shadow-inner">
+          <iframe
+            key={activePreset.embedUrl}
+            src={activePreset.embedUrl}
+            width="100%"
+            height={isCompact ? "80" : "152"}
+            frameBorder="0"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+            title="Spotify Focus Player"
+            className="w-full transition-all"
+          />
         </div>
       </div>
 
-      {/* Curated Focus Playlists & Link Input */}
-      {!isCompactMode && (
-        <div className="p-3 space-y-3 max-h-[240px] overflow-y-auto custom-scrollbar bg-black/20">
-          {/* Custom Spotify Link Input */}
-          <form onSubmit={handleCustomSubmit} className="flex gap-1.5">
-            <Input
-              placeholder="Paste Spotify playlist, album, or track link..."
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              className="h-7 bg-zinc-900/80 border-white/15 text-xs text-white placeholder:text-white/40"
-            />
-            <Button
-              type="submit"
-              size="sm"
-              className="h-7 px-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shrink-0 gap-1"
+      {/* 3. Navigation Tabs & Playlist Selector */}
+      {!isCompact && (
+        <div className="p-3 pt-0 space-y-2.5 text-xs">
+          {/* Authentic Spotify Pill Tabs */}
+          <div className="flex items-center gap-1.5 p-1 rounded-full bg-[#181818] border border-white/5">
+            <button
+              type="button"
+              onClick={() => setActiveTab("curated")}
+              className={`flex-1 py-1 px-2.5 rounded-full text-[11px] font-semibold transition-all ${
+                activeTab === "curated"
+                  ? "bg-[#282828] text-white shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
             >
-              <Play className="h-3 w-3 fill-current" /> Load
-            </Button>
-          </form>
-
-          {/* Curated Presets Grid */}
-          <div className="grid grid-cols-2 gap-1.5">
-            {CURATED_SPOTIFY_PRESETS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleSelectPreset(item)}
-                className={`p-2 rounded-xl text-left border transition-all flex items-center gap-2 group ${
-                  currentEmbedUrl === item.embedUrl
-                    ? "bg-emerald-950/30 border-emerald-500/40 shadow-sm"
-                    : "bg-black/40 border-white/10 hover:border-white/20 hover:bg-white/5"
-                }`}
-              >
-                <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 relative bg-zinc-800">
-                  <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
-                  {currentEmbedUrl === item.embedUrl && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <Play className="h-3 w-3 text-emerald-400 fill-current animate-pulse" />
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold text-white truncate group-hover:text-emerald-300">
-                    {item.title}
-                  </p>
-                  <p className="text-[9px] text-white/50 truncate">{item.tag}</p>
-                </div>
-              </button>
-            ))}
+              Curated
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("favorites")}
+              className={`flex-1 py-1 px-2.5 rounded-full text-[11px] font-semibold transition-all flex items-center justify-center gap-1 ${
+                activeTab === "favorites"
+                  ? "bg-[#282828] text-white shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              <span>Library</span>
+              {savedFavorites.length > 0 && (
+                <span className="w-3.5 h-3.5 rounded-full bg-[#1DB954] text-black text-[9px] font-black flex items-center justify-center">
+                  {savedFavorites.length}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("custom")}
+              className={`flex-1 py-1 px-2.5 rounded-full text-[11px] font-semibold transition-all ${
+                activeTab === "custom"
+                  ? "bg-[#282828] text-white shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              Custom Link
+            </button>
           </div>
 
-          {/* User's Custom Bookmarks */}
-          {customFavorites.length > 0 && (
-            <div className="space-y-1.5 pt-1 border-t border-white/10">
-              <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider block">
-                Saved Playlists
-              </span>
-              <div className="space-y-1">
-                {customFavorites.map((fav) => (
+          {/* TAB 1: CURATED PLAYLISTS */}
+          {activeTab === "curated" && (
+            <div className="grid grid-cols-2 gap-2 max-h-[190px] overflow-y-auto pr-1 custom-scrollbar">
+              {CURATED_SPOTIFY_PRESETS.map((preset) => {
+                const isSelected = activePreset.id === preset.id;
+                return (
+                  <div
+                    key={preset.id}
+                    onClick={() => handleSelectPreset(preset)}
+                    className={`p-2 rounded-xl cursor-pointer transition-all border text-left group relative flex items-center gap-2 ${
+                      isSelected
+                        ? "bg-[#282828] border-[#1DB954]/50 text-white shadow-lg"
+                        : "bg-[#181818] hover:bg-[#222222] border-white/5 text-white/80 hover:text-white"
+                    }`}
+                  >
+                    <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-zinc-800">
+                      <img
+                        src={preset.thumbnail}
+                        alt={preset.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Play className="h-4 w-4 text-[#1DB954] fill-[#1DB954]" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h5 className="font-semibold text-xs truncate">{preset.title}</h5>
+                      <p className="text-[10px] text-white/50 truncate">{preset.tag}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* TAB 2: SAVED FAVORITES */}
+          {activeTab === "favorites" && (
+            <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-1 custom-scrollbar">
+              {savedFavorites.length === 0 ? (
+                <div className="text-center py-6 text-white/40 text-xs space-y-1">
+                  <Bookmark className="h-6 w-6 mx-auto opacity-30 text-[#1DB954]" />
+                  <p>No saved playlists yet.</p>
+                  <p className="text-[10px] text-white/30">Bookmark playlists or add custom Spotify links</p>
+                </div>
+              ) : (
+                savedFavorites.map((fav) => (
                   <div
                     key={fav.id}
-                    onClick={() => {
-                      setCurrentEmbedUrl(fav.embedUrl);
-                      setCurrentTitle(fav.title);
-                    }}
-                    className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-between text-xs cursor-pointer"
+                    onClick={() => handleSelectPreset(fav)}
+                    className="flex items-center justify-between p-2 rounded-xl bg-[#181818] hover:bg-[#222222] border border-white/5 cursor-pointer group"
                   >
-                    <span className="truncate text-[11px] text-white/90">{fav.title}</span>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-[#282828] flex items-center justify-center text-[#1DB954]">
+                        <Music2 className="h-4 w-4" />
+                      </div>
+                      <div className="truncate">
+                        <p className="font-semibold text-xs text-white truncate">{fav.title}</p>
+                        <p className="text-[10px] text-white/50 truncate">{fav.subtitle}</p>
+                      </div>
+                    </div>
+
                     <button
                       type="button"
-                      onClick={(e) => handleRemoveFavorite(fav.id, e)}
-                      className="text-white/40 hover:text-red-400 p-0.5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFavorite(fav.id);
+                      }}
+                      className="p-1.5 text-white/40 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remove"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                ))}
+                ))
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: CUSTOM URL PARSER */}
+          {activeTab === "custom" && (
+            <div className="space-y-2 p-2.5 rounded-xl bg-[#181818] border border-white/5">
+              <p className="text-[10px] text-white/60">
+                Paste any Spotify playlist, album, or song link:
+              </p>
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="text"
+                  placeholder="https://open.spotify.com/playlist/..."
+                  value={customUrlInput}
+                  onChange={(e) => setCustomUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleLoadCustomUrl();
+                  }}
+                  className="h-8 bg-[#121212] border-white/10 text-xs text-white placeholder-white/30"
+                />
+                <Button
+                  size="sm"
+                  onClick={handleLoadCustomUrl}
+                  className="h-8 bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold text-xs px-3"
+                >
+                  Load
+                </Button>
               </div>
             </div>
           )}

@@ -241,3 +241,83 @@ async def get_study_logs(
     Retrieve historical study logs for the user from MongoDB.
     """
     return await crud.get_study_records(user_id=user_id, limit=limit, offset=offset)
+
+
+# ──────────────────────────────────────────────
+# Study Notes Endpoints (Jarvis & Notes Module)
+# ──────────────────────────────────────────────
+
+@router.get("/notes/{user_id}")
+async def get_study_notes_endpoint(
+    user_id: str,
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 100
+):
+    """
+    Retrieve user study notes from MongoDB.
+    """
+    user = await crud.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    notes = await crud.get_user_notes(user_id, category=category, search=search, limit=limit)
+    return [
+        {
+            "id": str(n.id),
+            "user_id": n.user_id,
+            "title": n.title,
+            "content": n.content,
+            "category": n.category,
+            "tags": n.tags,
+            "is_pinned": n.is_pinned,
+            "created_at": n.created_at.isoformat() if isinstance(n.created_at, datetime) else str(n.created_at),
+            "updated_at": n.updated_at.isoformat() if isinstance(n.updated_at, datetime) else str(n.updated_at)
+        }
+        for n in notes
+    ]
+
+
+@router.post("/notes/{user_id}")
+async def save_study_note_endpoint(
+    user_id: str,
+    payload: Dict[str, Any] = Body(...)
+):
+    """
+    Create or update a note in MongoDB.
+    """
+    user = await crud.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    note = await crud.save_user_note(user_id, payload)
+    return {
+        "id": str(note.id),
+        "user_id": note.user_id,
+        "title": note.title,
+        "content": note.content,
+        "category": note.category,
+        "tags": note.tags,
+        "is_pinned": note.is_pinned,
+        "created_at": note.created_at.isoformat() if isinstance(note.created_at, datetime) else str(note.created_at),
+        "updated_at": note.updated_at.isoformat() if isinstance(note.updated_at, datetime) else str(note.updated_at)
+    }
+
+
+@router.delete("/notes/{user_id}/{note_id}")
+async def delete_study_note_endpoint(
+    user_id: str,
+    note_id: str
+):
+    """
+    Delete a user note from MongoDB.
+    """
+    user = await crud.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    deleted = await crud.delete_user_note(user_id, note_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return {"status": "deleted", "note_id": note_id}
+

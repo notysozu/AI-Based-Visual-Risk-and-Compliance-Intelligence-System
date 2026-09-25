@@ -1246,3 +1246,109 @@ async def delete_cache(cache_key: str) -> bool:
         return True
     return False
 
+
+# ──────────────────────────────────────────────
+# User Notes Operations (JARVIS & Study Notes)
+# ──────────────────────────────────────────────
+
+async def get_user_notes(
+    user_id: Union[str, int, ObjectId],
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 100
+) -> List[models.UserNoteDoc]:
+    """Retrieve user notes filtered by category or search term, sorted by pinned and updated_at desc."""
+    user = await get_user(user_id)
+    u_id_str = str(user.id) if user else str(user_id)
+
+    query_filter: Dict[str, Any] = {"user_id": u_id_str}
+    if category and category != "all":
+        query_filter["category"] = category
+
+    notes = await models.UserNoteDoc.find(query_filter).sort([("-is_pinned", 1), ("-updated_at", 1)]).limit(limit).to_list()
+
+    if search:
+        s_low = search.lower().strip()
+        notes = [n for n in notes if s_low in (n.title or "").lower() or s_low in (n.content or "").lower() or any(s_low in t.lower() for t in n.tags)]
+
+    return notes
+
+
+async def save_user_note(
+    user_id: Union[str, int, ObjectId],
+    note_data: Dict[str, Any]
+) -> models.UserNoteDoc:
+    """Create or update a note in MongoDB."""
+    user = await get_user(user_id)
+    u_id_str = str(user.id) if user else str(user_id)
+
+    note_id = note_data.get("id") or note_data.get("_id")
+    now = datetime.utcnow()
+
+    existing: Optional[models.UserNoteDoc] = None
+    if note_id:
+        oid = _to_object_id(note_id)
+        if oid:
+            existing = await models.UserNoteDoc.get(oid)
+        if not existing:
+            try:
+                existing = await models.UserNoteDoc.find_one(models.UserNoteDoc.id == str(note_id))
+            except Exception:
+                pass
+
+    if existing and existing.user_id == u_id_str:
+        if "title" in note_data:
+            existing.title = note_data["title"]
+        if "content" in note_data:
+            existing.content = note_data["content"]
+        if "category" in note_data:
+            existing.category = note_data["category"]
+        if "tags" in note_data:
+            existing.tags = note_data["tags"]
+        if "is_pinned" in note_data:
+            existing.is_pinned = bool(note_data["is_pinned"])
+        existing.updated_at = now
+        await existing.save()
+        await _sync_disk()
+        return existing
+
+    new_note = models.UserNoteDoc(
+        user_id=u_id_str,
+        title=note_data.get("title", "Untitled Note"),
+        content=note_data.get("content", ""),
+        category=note_data.get("category", "ideas"),
+        tags=note_data.get("tags", []),
+        is_pinned=bool(note_data.get("is_pinned", False)),
+        created_at=now,
+        updated_at=now
+    )
+    await new_note.insert()
+    await _sync_disk()
+    return new_note
+
+
+async def delete_user_note(
+    user_id: Union[str, int, ObjectId],
+    note_id: str
+) -> bool:
+    """Delete a user note from MongoDB."""
+    user = await get_user(user_id)
+    u_id_str = str(user.id) if user else str(user_id)
+
+    oid = _to_object_id(note_id)
+    note: Optional[models.UserNoteDoc] = None
+    if oid:
+        note = await models.UserNoteDoc.get(oid)
+    if not note:
+        try:
+            note = await models.UserNoteDoc.find_one(models.UserNoteDoc.id == str(note_id))
+        except Exception:
+            pass
+
+    if note and note.user_id == u_id_str:
+        await note.delete()
+        await _sync_disk()
+        return True
+    return False
+
+

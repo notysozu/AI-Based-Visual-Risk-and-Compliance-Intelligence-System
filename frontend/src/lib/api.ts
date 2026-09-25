@@ -392,3 +392,42 @@ export function updateAutonomyModeApi(
     body: JSON.stringify({ autonomy_mode: mode, auto_planner_enabled: autoPlannerEnabled }),
   });
 }
+
+// --- Study Notes & JARVIS Voice Copilot APIs ---
+
+export function getStudyNotes(
+  userId: string | number,
+  category?: string,
+  search?: string
+) {
+  const queryParams = new URLSearchParams();
+  if (category) queryParams.set("category", category);
+  if (search) queryParams.set("search", search);
+  const q = queryParams.toString() ? `?${queryParams.toString()}` : "";
+  return request(`/study/notes/${userId}${q}`);
+}
+
+export function saveStudyNote(userId: string | number, payload: Record<string, unknown>) {
+  return request(`/study/notes/${userId}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteStudyNote(userId: string | number, noteId: string) {
+  return request(`/study/notes/${userId}/${encodeURIComponent(noteId)}`, {
+    method: "DELETE",
+  });
+}
+
+export function askJarvis(payload: {
+  user_id?: string | number;
+  prompt: string;
+  subject?: string;
+  history?: Array<{ role: string; content?: string; text?: string }>;
+}) {
+  return request("/chat/jarvis", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}

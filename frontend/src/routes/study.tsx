@@ -90,7 +90,11 @@ import { StudyYouTubePlayer } from "@/components/study-youtube-player";
 import { StudySpotifyPlayer } from "@/components/study-spotify-player";
 import { StudyWebBrowser } from "@/components/study-web-browser";
 import { StudyGeminiLive } from "@/components/study-gemini-live";
-import { Youtube, Globe, Music, Radio, Headphones, Bot } from "lucide-react";
+import { StudyNotesWindow } from "@/components/study-notes-window";
+import { StudyJarvisLive } from "@/components/study-jarvis-live";
+import { type JarvisCockpitContext, type JarvisAppId } from "@/lib/jarvis-actions";
+import { saveStudyNote } from "@/lib/api";
+import { Youtube, Globe, Music, Radio, Headphones, Bot, FileText, Mic } from "lucide-react";
 import { tooltipStyle } from "@/routes/dashboard";
 
 export const Route = createFileRoute("/study")({
@@ -235,6 +239,39 @@ function StudyCockpitPage() {
     });
   };
 
+  const [notesOpen, setNotesOpen] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("study_notes_open") === "true";
+    }
+    return false;
+  });
+
+  const [notesPos, setNotesPos] = useState<{ x: number; y: number }>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("study_notes_pos");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.x === "number" && typeof parsed.y === "number") return parsed;
+        } catch {}
+      }
+    }
+    return { x: 120, y: 70 };
+  });
+
+  const [jarvisPos, setJarvisPos] = useState<{ x: number; y: number }>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("study_jarvis_pos");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.x === "number" && typeof parsed.y === "number") return parsed;
+        } catch {}
+      }
+    }
+    return { x: 24, y: typeof window !== "undefined" ? window.innerHeight - 150 : 550 };
+  });
+
   const toggleBrowser = () => {
     setBrowserOpen((prev) => {
       const next = !prev;
@@ -242,6 +279,101 @@ function StudyCockpitPage() {
       return next;
     });
   };
+
+  const toggleNotes = () => {
+    setNotesOpen((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("study_notes_open", String(next)); } catch {}
+      return next;
+    });
+  };
+
+  // JARVIS Autonomous Cockpit Controller Context
+  const jarvisCockpitContext: JarvisCockpitContext = useMemo(
+    () => ({
+      openApp: (app: JarvisAppId) => {
+        if (app === "youtube") setYoutubeOpen(true);
+        else if (app === "spotify") setSpotifyOpen(true);
+        else if (app === "browser") setBrowserOpen(true);
+        else if (app === "notes") setNotesOpen(true);
+        else if (app === "workspace") setSidebarOpen(true);
+        else if (app === "settings") setSettingsOpen(true);
+      },
+      closeApp: (app: JarvisAppId) => {
+        if (app === "youtube") setYoutubeOpen(false);
+        else if (app === "spotify") setSpotifyOpen(false);
+        else if (app === "browser") setBrowserOpen(false);
+        else if (app === "notes") setNotesOpen(false);
+        else if (app === "workspace") setSidebarOpen(false);
+        else if (app === "settings") setSettingsOpen(false);
+      },
+      toggleApp: (app: JarvisAppId) => {
+        if (app === "youtube") setYoutubeOpen((p) => !p);
+        else if (app === "spotify") setSpotifyOpen((p) => !p);
+        else if (app === "browser") setBrowserOpen((p) => !p);
+        else if (app === "notes") setNotesOpen((p) => !p);
+        else if (app === "workspace") setSidebarOpen((p) => !p);
+        else if (app === "settings") setSettingsOpen((p) => !p);
+      },
+      startTimer: () => setIsTimerRunning(true),
+      pauseTimer: () => setIsTimerRunning(false),
+      resetTimer: () => {
+        setIsTimerRunning(false);
+        if (timerMode === "focus") setSecondsLeft(focusLengthMins * 60);
+        else if (timerMode === "shortBreak") setSecondsLeft(breakLengthMins * 60);
+        else setSecondsLeft(longBreakLengthMins * 60);
+      },
+      setTimerMinutes: (mins: number) => {
+        setFocusLengthMins(mins);
+        if (timerMode === "focus") setSecondsLeft(mins * 60);
+      },
+      setTimerMode: (mode: "focus" | "shortBreak" | "longBreak") => {
+        setTimerMode(mode);
+        if (mode === "focus") setSecondsLeft(focusLengthMins * 60);
+        else if (mode === "shortBreak") setSecondsLeft(breakLengthMins * 60);
+        else setSecondsLeft(longBreakLengthMins * 60);
+      },
+      createNote: async (note) => {
+        try {
+          await saveStudyNote(p.id ?? "1", {
+            title: note.title,
+            content: note.content,
+            category: note.category || "ideas",
+            tags: ["jarvis", selectedSubject.toLowerCase()],
+          });
+          setNotesOpen(true);
+        } catch (err) {
+          console.warn("Jarvis save note failed:", err);
+        }
+      },
+      setWallpaperByTheme: (themeKeyword: string) => {
+        const kw = themeKeyword.toLowerCase();
+        const match = STUDY_WALLPAPERS.find(
+          (w) =>
+            w.title.toLowerCase().includes(kw) ||
+            w.category.toLowerCase().includes(kw) ||
+            w.tag.toLowerCase().includes(kw)
+        );
+        if (match) {
+          setActiveWallpaper(match);
+          try {
+            localStorage.setItem("study_active_wallpaper_id", match.id);
+          } catch {}
+          return true;
+        }
+        return false;
+      },
+      subject: selectedSubject,
+    }),
+    [
+      p.id,
+      selectedSubject,
+      timerMode,
+      focusLengthMins,
+      breakLengthMins,
+      longBreakLengthMins,
+    ]
+  );
 
   // Window position (movable via top header bar)
   const [windowPos, setWindowPos] = useState<{ x: number; y: number }>(() => {
@@ -1212,6 +1344,21 @@ function StudyCockpitPage() {
           <Button
             size="sm"
             variant="ghost"
+            onClick={toggleNotes}
+            className={`h-6 px-2 text-[11px] rounded-md font-medium gap-1 transition-all ${
+              notesOpen
+                ? "bg-amber-600/80 text-white shadow-sm border border-amber-500/40"
+                : "text-white/80 hover:text-white hover:bg-white/10"
+            }`}
+            title="Toggle Study Notes & Ideas (MongoDB Synced)"
+          >
+            <FileText className="h-3 w-3 text-amber-300" />
+            <span>Notes</span>
+          </Button>
+
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={toggleGeminiLive}
             className={`h-6 px-2 text-[11px] rounded-md font-medium gap-1.5 transition-all ${
               geminiLiveOpen
@@ -2036,6 +2183,19 @@ function StudyCockpitPage() {
           {browserOpen && <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-cyan-400" />}
         </button>
 
+        {/* Study Notes & Ideas App */}
+        <button
+          type="button"
+          onClick={toggleNotes}
+          className={`relative p-2.5 rounded-xl flex flex-col items-center justify-center transition-all group ${
+            notesOpen ? "bg-amber-600/30 border border-amber-500/40 text-amber-300" : "hover:bg-white/10 text-white/70 hover:text-white"
+          }`}
+          title="Study Notes & Ideas (MongoDB Synced)"
+        >
+          <FileText className="h-4 w-4" />
+          {notesOpen && <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-amber-400" />}
+        </button>
+
         {/* Gemini Live Voice Copilot */}
         <button
           type="button"
@@ -2064,7 +2224,36 @@ function StudyCockpitPage() {
         </button>
       </div>
 
-      {/* 6. FLOATING GEMINI LIVE VOICE AI COPILOT */}
+      {/* 6. JARVIS AUTONOMOUS LIVE VOICE COPILOT (SCREEN & COCKPIT CONTROLLER) */}
+      <StudyJarvisLive
+        userId={p.id ?? "1"}
+        subject={selectedSubject}
+        cockpitContext={jarvisCockpitContext}
+        pos={jarvisPos}
+        onPosChange={(p) => {
+          setJarvisPos(p);
+          try {
+            localStorage.setItem("study_jarvis_pos", JSON.stringify(p));
+          } catch {}
+        }}
+      />
+
+      {/* 7. FLOATING STUDY NOTES & IDEAS WINDOW */}
+      <StudyNotesWindow
+        open={notesOpen}
+        onClose={() => setNotesOpen(false)}
+        userId={p.id ?? "1"}
+        subject={selectedSubject}
+        pos={notesPos}
+        onPosChange={(p) => {
+          setNotesPos(p);
+          try {
+            localStorage.setItem("study_notes_pos", JSON.stringify(p));
+          } catch {}
+        }}
+      />
+
+      {/* 8. FLOATING GEMINI LIVE VOICE AI COPILOT */}
       <StudyGeminiLive
         open={geminiLiveOpen}
         onClose={() => setGeminiLiveOpen(false)}
@@ -2082,7 +2271,7 @@ function StudyCockpitPage() {
         }}
       />
 
-      {/* 7. FLOATING YOUTUBE FOCUS PLAYER WINDOW */}
+      {/* 9. FLOATING YOUTUBE FOCUS PLAYER WINDOW */}
       <StudyYouTubePlayer
         open={youtubeOpen}
         onClose={() => setYoutubeOpen(false)}
@@ -2093,7 +2282,7 @@ function StudyCockpitPage() {
         }}
       />
 
-      {/* 8. FLOATING SPOTIFY FOCUS PLAYER WINDOW */}
+      {/* 10. FLOATING SPOTIFY FOCUS PLAYER WINDOW */}
       <StudySpotifyPlayer
         open={spotifyOpen}
         onClose={() => setSpotifyOpen(false)}
@@ -2104,7 +2293,7 @@ function StudyCockpitPage() {
         }}
       />
 
-      {/* 9. FLOATING IN-COCKPIT WEB BROWSER WINDOW */}
+      {/* 11. FLOATING IN-COCKPIT WEB BROWSER WINDOW */}
       <StudyWebBrowser
         open={browserOpen}
         onClose={() => setBrowserOpen(false)}

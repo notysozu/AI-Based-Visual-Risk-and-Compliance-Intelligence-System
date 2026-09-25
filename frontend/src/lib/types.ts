@@ -159,3 +159,16 @@ export type TwinContextValue = {
   loadScenarioPresets: () => Promise<{ scenA: ScenarioPreset; scenB: ScenarioPreset } | null>;
   resetToDemo: (role?: UserRole, randomize?: boolean) => void;
 };
+
+export type StudyNote = {
+  id: string;
+  user_id?: string;
+  title: string;
+  content: string;
+  category: "ideas" | "study" | "formulas" | "quick";
+  tags: string[];
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
+};
+

@@ -222,6 +222,22 @@ class ChatSessionDoc(Document):
         indexes = ["user_id", "updated_at"]
 
 
+class UserNoteDoc(Document):
+    """MongoDB User study notes, ideas, formulas, and JARVIS voice memos."""
+    user_id: str
+    title: str = "Untitled Note"
+    content: str = ""
+    category: str = "ideas"  # "ideas", "study", "formulas", "quick"
+    tags: List[str] = []
+    is_pinned: bool = False
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "user_notes"
+        indexes = ["user_id", "category", "updated_at"]
+
+
 # Backwards compatibility class aliases
 User = UserDoc
 FinancialRecord = FinancialRecordDoc
@@ -234,3 +250,5 @@ AppCache = AppCacheDoc
 RefreshToken = RefreshTokenDoc
 PasswordResetToken = PasswordResetTokenDoc
 EmailVerificationToken = EmailVerificationTokenDoc
+UserNote = UserNoteDoc
+
